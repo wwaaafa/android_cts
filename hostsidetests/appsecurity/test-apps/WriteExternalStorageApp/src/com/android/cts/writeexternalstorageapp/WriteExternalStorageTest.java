@@ -327,6 +327,9 @@ public class WriteExternalStorageTest extends AndroidTestCase {
                         assertDirNoWriteAccess(path);
                     } else {
                         assertDirReadWriteAccess(path);
+                        for (final File dir : buildCommonChildDirs(path)) {
+                            dir.mkdirs();
+                        }
                         assertDirReadWriteAccess(buildCommonChildDirs(path));
                     }
                 }
