@@ -3601,6 +3601,7 @@ bool nativeImageReaderTestBase(
         if (readerListener.onImageAvailableCount() != NUM_TEST_IMAGES) {
             LOG_ERROR(errorString, "Camera %s timeout capturing %d images. Got %d",
                     cameraId, NUM_TEST_IMAGES, readerListener.onImageAvailableCount());
+            testCase.resetWithErrorLog();
             goto cleanup;
         }
 
