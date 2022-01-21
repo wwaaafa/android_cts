@@ -16,32 +16,27 @@
 
 package android.security.cts;
 
-import com.android.tradefed.device.ITestDevice;
-import com.android.compatibility.common.util.CrashUtils;
-
 import android.platform.test.annotations.AsbSecurityTest;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+
 import com.android.tradefed.testtype.DeviceJUnit4ClassRunner;
 
+import org.junit.runner.RunWith;
+import org.junit.Test;
+
 @RunWith(DeviceJUnit4ClassRunner.class)
-public class CVE_2020_0073 extends SecurityTestCase {
+public class CVE_2021_39675 extends SecurityTestCase {
 
     /**
-     * b/147309942
-     * Vulnerability Behaviour: SIGABRT in self
+     * b/205729183
+     * Vulnerability Behavior: EXIT_VULNERABLE (113)
      */
+    @AsbSecurityTest(cveBugId = 205729183)
     @Test
-    @AsbSecurityTest(cveBugId = 147309942)
-    public void testPocCVE_2020_0073() throws Exception {
+    public void testPocCVE_2021_39675() throws Exception {
         AdbUtils.assumeHasNfc(getDevice());
         assumeIsSupportedNfcDevice(getDevice());
         pocPusher.only64();
-        String binaryName = "CVE-2020-0073";
-        String signals[] = {CrashUtils.SIGABRT};
-        AdbUtils.pocConfig testConfig = new AdbUtils.pocConfig(binaryName, getDevice());
-        testConfig.config = new CrashUtils.Config().setProcessPatterns(binaryName);
-        testConfig.config.setSignals(signals);
-        AdbUtils.runPocAssertNoCrashesNotVulnerable(testConfig);
+        AdbUtils.runPocAssertExitStatusNotVulnerable("CVE-2021-39675", getDevice(),
+                 AdbUtils.TIMEOUT_SEC);
     }
 }
