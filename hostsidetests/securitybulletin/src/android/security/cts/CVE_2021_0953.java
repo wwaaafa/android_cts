@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (C) 2021 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,37 +16,28 @@
 
 package android.security.cts;
 
-
-import android.platform.test.annotations.AppModeFull;
 import android.platform.test.annotations.AsbSecurityTest;
-
+import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.testtype.DeviceJUnit4ClassRunner;
 import com.android.tradefed.testtype.junit4.BaseHostJUnit4Test;
 
-import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(DeviceJUnit4ClassRunner.class)
-public class CVE_2021_0965 extends BaseHostJUnit4Test {
-    private static final String TEST_PKG = "android.security.cts.CVE_2021_0965";
-    private static final String TEST_CLASS = TEST_PKG + "." + "DeviceTest";
-    private static final String TEST_APP = "CVE-2021-0965.apk";
+public class CVE_2021_0953 extends BaseHostJUnit4Test {
 
-    @Before
-    public void setUp() throws Exception {
-        uninstallPackage(getDevice(), TEST_PKG);
-    }
-
-    /**
-     * b/194300867
-     */
-    @AppModeFull
-    @AsbSecurityTest(cveBugId = 194300867)
+    @AsbSecurityTest(cveBugId = 184046278)
     @Test
-    public void testPocCVE_2021_0965() throws Exception {
-        installPackage(TEST_APP, new String[0]);
-        Assert.assertTrue(runDeviceTests(TEST_PKG, TEST_CLASS, "testPermission"));
+    public void testPocCVE_2021_0953() throws Exception {
+        final String TEST_PKG = "android.security.cts.CVE_2021_0953";
+        final String TEST_CLASS = TEST_PKG + "." + "DeviceTest";
+        final String TEST_APP = "CVE-2021-0953.apk";
+        ITestDevice device = getDevice();
+        AdbUtils.runCommandLine("input keyevent KEYCODE_WAKEUP", device);
+        AdbUtils.runCommandLine("input keyevent KEYCODE_MENU", device);
+        AdbUtils.runCommandLine("input keyevent KEYCODE_HOME", device);
+        installPackage(TEST_APP);
+        runDeviceTests(TEST_PKG, TEST_CLASS, "testMutablePendingIntent");
     }
 }
