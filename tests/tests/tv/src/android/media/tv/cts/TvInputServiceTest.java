@@ -28,6 +28,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.media.PlaybackParams;
 import android.media.tv.AitInfo;
+import android.media.AudioPresentation;
 import android.media.tv.TvContentRating;
 import android.media.tv.TvContract;
 import android.media.tv.TvInputInfo;
@@ -95,12 +96,20 @@ public class TvInputServiceTest {
     private static final Uri CHANNEL_0 = TvContract.buildChannelUri(0);
     /** The maximum time to wait for an operation. */
     private static final long TIME_OUT = 5000L;
+    private static final int AUDIO_PRESENTATION_ID_UNKNOWN =
+            AudioPresentation.PRESENTATION_ID_UNKNOWN;
+    private static final int AUDIO_PROGRAM_ID_UNKNOWN =
+            AudioPresentation.PROGRAM_ID_UNKNOWN;
     private static final TvTrackInfo TEST_TV_TRACK =
             new TvTrackInfo.Builder(TvTrackInfo.TYPE_VIDEO, "testTrackId")
                     .setVideoWidth(1920)
                     .setVideoHeight(1080)
                     .setLanguage("und")
                     .build();
+    private static final AudioPresentation TEST_AUDIO_PRESENTATION =
+            new AudioPresentation.Builder(1)
+                .setProgramId(123)
+                .build();
 
     private TvRecordingClient mTvRecordingClient;
     private Instrumentation mInstrumentation;
@@ -118,6 +127,8 @@ public class TvInputServiceTest {
         private int mVideoUnavailableCount;
         private int mTrackSelectedCount;
         private int mTrackChangedCount;
+        private int mAudioPresentationSelectedCount;
+        private int mAudioPresentationChangedCount;
         private int mVideoSizeChanged;
         private int mContentAllowedCount;
         private int mContentBlockedCount;
@@ -128,7 +139,10 @@ public class TvInputServiceTest {
         private Integer mVideoUnavailableReason;
         private Integer mTrackSelectedType;
         private String mTrackSelectedTrackId;
+        private Integer mAudioPresentationId;
+        private Integer mAudioProgramId;
         private List<TvTrackInfo> mTracksChangedTrackList;
+        private List<AudioPresentation> mAudioPresentationsList;
         private TvContentRating mContentBlockedRating;
         private Integer mTimeShiftStatusChangedStatus;
         private AitInfo mAitInfo;
@@ -164,6 +178,20 @@ public class TvInputServiceTest {
         }
 
         @Override
+        public void onAudioPresentationSelected(String inputId, int presentationId, int programId) {
+            mAudioPresentationSelectedCount++;
+            mAudioPresentationId = presentationId;
+            mAudioProgramId = programId;
+        }
+
+        @Override
+        public void onAudioPresentationsChanged(String inputId,
+                                                List<AudioPresentation> audioPresentations) {
+            mAudioPresentationChangedCount++;
+            mAudioPresentationsList = audioPresentations;
+        }
+
+        @Override
         public void onVideoSizeChanged(String inputId, int width, int height) {
             mVideoSizeChanged++;
         }
@@ -196,6 +224,8 @@ public class TvInputServiceTest {
             mVideoUnavailableCount = 0;
             mTrackSelectedCount = 0;
             mTrackChangedCount = 0;
+            mAudioPresentationSelectedCount = 0;
+            mAudioPresentationChangedCount = 0;
             mContentAllowedCount = 0;
             mContentBlockedCount = 0;
             mTimeShiftStatusChangedCount = 0;
@@ -208,6 +238,9 @@ public class TvInputServiceTest {
             mTrackSelectedType = null;
             mTrackSelectedTrackId = null;
             mTracksChangedTrackList = null;
+            mAudioPresentationsList = null;
+            mAudioPresentationId = AUDIO_PRESENTATION_ID_UNKNOWN;
+            mAudioProgramId = AUDIO_PROGRAM_ID_UNKNOWN;
             mContentBlockedRating = null;
             mTimeShiftStatusChangedStatus = null;
             mAitInfo = null;
@@ -804,6 +837,33 @@ public class TvInputServiceTest {
 
         assertThat(mCallback.mTrackChangedCount).isEqualTo(1);
         assertThat(mCallback.mTracksChangedTrackList).isEqualTo(tracks);
+    }
+
+    @Test
+    public void verifyCallbackAudioPresentationChanged() {
+        final CountingSession session = tune(CHANNEL_0);
+        resetCounts();
+        resetPassedValues();
+        ArrayList<AudioPresentation> audioPresentations = new ArrayList<>();
+        audioPresentations.add(TEST_AUDIO_PRESENTATION);
+        session.notifyAudioPresentationChanged(audioPresentations);
+        PollingCheck.waitFor(TIME_OUT, () -> mCallback.mAudioPresentationChangedCount > 0);
+        assertThat(mCallback.mAudioPresentationChangedCount).isEqualTo(1);
+        assertThat(mCallback.mAudioPresentationsList).isEqualTo(audioPresentations);
+    }
+
+    @Test
+    public void verifyCallbackAudioPresentationSelected() {
+        final CountingSession session = tune(CHANNEL_0);
+        resetCounts();
+        resetPassedValues();
+        session.notifyAudioPresentationSelected(TEST_AUDIO_PRESENTATION.getPresentationId(),
+                                                TEST_AUDIO_PRESENTATION.getProgramId());
+        PollingCheck.waitFor(TIME_OUT, () -> mCallback.mAudioPresentationSelectedCount > 0);
+        assertThat(mCallback.mAudioPresentationSelectedCount).isEqualTo(1);
+        assertThat(mCallback.mAudioPresentationId).isEqualTo(
+            TEST_AUDIO_PRESENTATION.getPresentationId());
+        assertThat(mCallback.mAudioProgramId).isEqualTo(TEST_AUDIO_PRESENTATION.getProgramId());
     }
 
     @Test
