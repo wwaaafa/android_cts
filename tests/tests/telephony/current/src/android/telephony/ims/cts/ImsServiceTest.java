@@ -16,6 +16,10 @@
 
 package android.telephony.ims.cts;
 
+import static android.telephony.ims.RegistrationManager.SUGGESTED_ACTION_NONE;
+import static android.telephony.ims.RegistrationManager.SUGGESTED_ACTION_TRIGGER_PLMN_BLOCK;
+import static android.telephony.ims.RegistrationManager.SUGGESTED_ACTION_TRIGGER_PLMN_BLOCK_WITH_TIMEOUT;
+
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
@@ -24,6 +28,7 @@ import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 import android.app.Activity;
 import android.app.UiAutomation;
@@ -147,6 +152,7 @@ public class ImsServiceTest {
     private static int sTestSlot = 0;
     private static int sTestSub = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
     private static boolean sDeviceUceEnabled;
+    private static boolean sSupportsImsHal = false;
 
     private static final int TEST_CONFIG_KEY = 1000;
     private static final int TEST_CONFIG_VALUE_INT = 0xDEADBEEF;
@@ -313,6 +319,11 @@ public class ImsServiceTest {
 
         TelephonyManager tm = (TelephonyManager) getContext()
                 .getSystemService(Context.TELEPHONY_SERVICE);
+        Pair<Integer, Integer> halVersion = tm.getHalVersion(TelephonyManager.HAL_SERVICE_IMS);
+        if (!(halVersion.equals(TelephonyManager.HAL_VERSION_UNKNOWN)
+                || halVersion.equals(TelephonyManager.HAL_VERSION_UNSUPPORTED))) {
+            sSupportsImsHal = true;
+        }
         sTestSub = ImsUtils.getPreferredActiveSubId();
         sTestSlot = SubscriptionManager.getSlotIndex(sTestSub);
         if (tm.getSimState(sTestSlot) != TelephonyManager.SIM_STATE_READY) {
@@ -4858,6 +4869,118 @@ public class ImsServiceTest {
 
         imsRcsManager.unregisterImsStateCallback(rcsCallback);
         imsSipManager.unregisterImsStateCallback(sipCallback);
+    }
+
+    @Test
+    public void testUnregisteredCallbackCompatibility() throws Exception {
+        if (!ImsUtils.shouldTestImsService()) {
+            return;
+        }
+
+        assumeTrue(sSupportsImsHal);
+
+        triggerFrameworkConnectToCarrierImsService();
+
+        // Start de-registered
+        ImsReasonInfo reasonInfo = new ImsReasonInfo(ImsReasonInfo.CODE_LOCAL_NETWORK_NO_SERVICE,
+                ImsReasonInfo.CODE_UNSPECIFIED, "");
+        sServiceConnector.getCarrierService().getImsRegistration().onDeregistered(reasonInfo);
+
+        LinkedBlockingQueue<ImsReasonInfo> mDeregQueue =
+                new LinkedBlockingQueue<>();
+        RegistrationManager.RegistrationCallback callback =
+                new RegistrationManager.RegistrationCallback() {
+            @Override
+            public void onUnregistered(ImsReasonInfo info) {
+                mDeregQueue.offer(info);
+            }
+        };
+
+        final UiAutomation automan = InstrumentationRegistry.getInstrumentation().getUiAutomation();
+        try {
+            automan.adoptShellPermissionIdentity();
+            ImsManager imsManager = getContext().getSystemService(ImsManager.class);
+            ImsMmTelManager mmTelManager = imsManager.getImsMmTelManager(sTestSub);
+            mmTelManager.registerImsRegistrationCallback(getContext().getMainExecutor(), callback);
+        } finally {
+            automan.dropShellPermissionIdentity();
+        }
+
+        ImsReasonInfo receivedInfo = waitForResult(mDeregQueue);
+        assertNotNull(receivedInfo);
+        assertEquals(reasonInfo, receivedInfo);
+
+        // onDeregistered with extra
+        reasonInfo = new ImsReasonInfo(ImsReasonInfo.CODE_REGISTRATION_ERROR,
+                ImsReasonInfo.CODE_UNSPECIFIED, "");
+        sServiceConnector.getCarrierService().getImsRegistration().onDeregistered(
+                reasonInfo, SUGGESTED_ACTION_TRIGGER_PLMN_BLOCK);
+
+        receivedInfo = waitForResult(mDeregQueue);
+        assertNotNull(receivedInfo);
+        assertEquals(reasonInfo, receivedInfo);
+    }
+
+    @Test
+    public void testMmTelManagerRegistrationBlock() throws Exception {
+        if (!ImsUtils.shouldTestImsService()) {
+            return;
+        }
+
+        assumeTrue(sSupportsImsHal);
+
+        triggerFrameworkConnectToCarrierImsService();
+
+        ImsReasonInfo reasonInfo = new ImsReasonInfo(ImsReasonInfo.CODE_REGISTRATION_ERROR,
+                ImsReasonInfo.CODE_UNSPECIFIED, "");
+
+        // Start de-registered
+        sServiceConnector.getCarrierService().getImsRegistration().onDeregistered(
+                reasonInfo, SUGGESTED_ACTION_NONE);
+
+        LinkedBlockingQueue<Integer> mDeregQueue =
+                new LinkedBlockingQueue<>();
+        RegistrationManager.RegistrationCallback callback =
+                new RegistrationManager.RegistrationCallback() {
+            @Override
+            public void onUnregistered(ImsReasonInfo info, int suggestedAction) {
+                mDeregQueue.offer(suggestedAction);
+            }
+        };
+
+        final UiAutomation automan = InstrumentationRegistry.getInstrumentation().getUiAutomation();
+        try {
+            automan.adoptShellPermissionIdentity();
+            ImsManager imsManager = getContext().getSystemService(ImsManager.class);
+            ImsMmTelManager mmTelManager = imsManager.getImsMmTelManager(sTestSub);
+            mmTelManager.registerImsRegistrationCallback(getContext().getMainExecutor(), callback);
+        } finally {
+            automan.dropShellPermissionIdentity();
+        }
+
+        int suggestedAction = waitForResult(mDeregQueue);
+        assertNotEquals(SUGGESTED_ACTION_TRIGGER_PLMN_BLOCK, suggestedAction);
+        assertNotEquals(SUGGESTED_ACTION_TRIGGER_PLMN_BLOCK_WITH_TIMEOUT, suggestedAction);
+
+        // fatal error
+        sServiceConnector.getCarrierService().getImsRegistration().onDeregistered(
+                reasonInfo, SUGGESTED_ACTION_TRIGGER_PLMN_BLOCK);
+
+        suggestedAction = waitForResult(mDeregQueue);
+        assertEquals(SUGGESTED_ACTION_TRIGGER_PLMN_BLOCK, suggestedAction);
+
+        // repeated error
+        sServiceConnector.getCarrierService().getImsRegistration().onDeregistered(
+                reasonInfo, SUGGESTED_ACTION_TRIGGER_PLMN_BLOCK_WITH_TIMEOUT);
+
+        suggestedAction = waitForResult(mDeregQueue);
+        assertEquals(SUGGESTED_ACTION_TRIGGER_PLMN_BLOCK_WITH_TIMEOUT, suggestedAction);
+
+        // without extra
+        sServiceConnector.getCarrierService().getImsRegistration().onDeregistered(reasonInfo);
+
+        suggestedAction = waitForResult(mDeregQueue);
+        assertEquals(SUGGESTED_ACTION_NONE, suggestedAction);
     }
 
     private void verifyIntKey(ProvisioningManager pm,
