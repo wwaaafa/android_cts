@@ -63,7 +63,10 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
             deleteMedia(uri, mContext);
         }
         mUriList.clear();
-        mActivity.finish();
+
+        if (mActivity != null) {
+            mActivity.finish();
+        }
     }
 
     @Test
