@@ -50,7 +50,7 @@ import static org.junit.Assert.assertEquals;
  * Check whether a higher bitrate gives a lower average QP reported from encoder
  *
  */
-@MediaHeavyPresubmitTest
+@SmallTest
 @AppModeFull(reason = "TODO: evaluate and port to instant")
 @RunWith(Parameterized.class)
 public class VideoEncodingStatisticsTest extends VideoCodecTestBase {
@@ -203,6 +203,7 @@ public class VideoEncodingStatisticsTest extends VideoCodecTestBase {
         }
     }
 
+    @SmallTest
     @Test
     public void testEncodingStatisticsAvgQp() throws Exception {
        testEncStatRateAvgQp(mCodecName, mCodecMimeType, mBitRateMode);
