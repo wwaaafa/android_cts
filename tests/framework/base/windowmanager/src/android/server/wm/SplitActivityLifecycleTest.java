@@ -16,6 +16,7 @@
 
 package android.server.wm;
 
+import static android.app.WindowConfiguration.WINDOWING_MODE_FULLSCREEN;
 import static android.app.WindowConfiguration.WINDOWING_MODE_MULTI_WINDOW;
 import static android.content.Intent.FLAG_ACTIVITY_MULTIPLE_TASK;
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
@@ -73,7 +74,10 @@ public class SplitActivityLifecycleTest extends TaskFragmentOrganizerTestBase {
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        mOwnerActivity = startActivity(ActivityA.class);
+        // Launch activities in fullscreen, otherwise, some tests fail on devices which use freeform
+        // as the default windowing mode, because tests' prerequisite are that activity A, B, and C
+        // need to overlay completely, but they can be partially overlay as freeform windows.
+        mOwnerActivity = startActivityInWindowingModeFullScreen(ActivityA.class);
         mOwnerToken = getActivityToken(mOwnerActivity);
     }
 
@@ -384,7 +388,7 @@ public class SplitActivityLifecycleTest extends TaskFragmentOrganizerTestBase {
     private void testActivityLaunchInExpandedTaskFragmentInternal() {
 
         final TaskFragmentCreationParams fullScreenParamsC = mTaskFragmentOrganizer
-                .generateTaskFragParams(mOwnerToken);
+                .generateTaskFragParams(mOwnerToken, new Rect(), WINDOWING_MODE_FULLSCREEN);
         final IBinder taskFragTokenC = fullScreenParamsC.getFragmentToken();
         final WindowContainerTransaction wct = new WindowContainerTransaction()
                 .createTaskFragment(fullScreenParamsC)
@@ -498,7 +502,10 @@ public class SplitActivityLifecycleTest extends TaskFragmentOrganizerTestBase {
     public void testLaunchEmbeddedActivityWithShowWhenLocked() {
         assumeTrue(supportsLockScreen());
 
+        // Create lock screen session and set credentials (since some devices will not show a
+        // lockscreen without credentials set).
         final LockScreenSession lockScreenSession = createManagedLockScreenSession();
+        lockScreenSession.setLockCredential();
         // Initialize test environment by launching Activity A and B (with showWhenLocked)
         // side-by-side.
         initializeSplitActivities(false /* verifyEmbeddedTask */, true /* showWhenLocked */);
@@ -518,7 +525,10 @@ public class SplitActivityLifecycleTest extends TaskFragmentOrganizerTestBase {
     public void testLaunchEmbeddedActivitiesWithoutShowWhenLocked() {
         assumeTrue(supportsLockScreen());
 
+        // Create lock screen session and set credentials (since some devices will not show a
+        // lockscreen without credentials set).
         final LockScreenSession lockScreenSession = createManagedLockScreenSession();
+        lockScreenSession.setLockCredential();
         // Initialize test environment by launching Activity A and B side-by-side.
         initializeSplitActivities(false /* verifyEmbeddedTask */, false /* showWhenLocked */);
 
@@ -538,7 +548,10 @@ public class SplitActivityLifecycleTest extends TaskFragmentOrganizerTestBase {
     public void testLaunchEmbeddedActivitiesWithShowWhenLocked() {
         assumeTrue(supportsLockScreen());
 
+        // Create lock screen session and set credentials (since some devices will not show a
+        // lockscreen without credentials set).
         final LockScreenSession lockScreenSession = createManagedLockScreenSession();
+        lockScreenSession.setLockCredential();
         // Initialize test environment by launching Activity A and B side-by-side.
         mOwnerActivity.setShowWhenLocked(true);
         initializeSplitActivities(false /* verifyEmbeddedTask */, true /* showWhenLocked */);
@@ -561,7 +574,7 @@ public class SplitActivityLifecycleTest extends TaskFragmentOrganizerTestBase {
     @Test
     public void testTranslucentAdjacentTaskFragment() {
         // Create ActivityB on top of ActivityA
-        Activity activityB = startActivity(ActivityB.class);
+        Activity activityB = startActivityInWindowingModeFullScreen(ActivityB.class);
         waitAndAssertResumedActivity(mActivityB, "Activity B must be resumed.");
         waitAndAssertActivityState(mActivityA, STATE_STOPPED,
                 "Activity A is occluded by Activity B, so it must be stopped.");
