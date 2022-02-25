@@ -41,7 +41,6 @@ import com.android.bedstead.testapp.TestAppInstance;
 
 import org.junit.ClassRule;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.function.BiConsumer;
@@ -63,7 +62,6 @@ public class NoAdminLeakingTest {
 
     private static final TestApp sTestApp = sDeviceState.testApps().any();
 
-    @Test
     @Postsubmit(reason = "new test")
     @CanSetPolicyTest(policy = LockscreenPolicyWithUnifiedChallenge.class)
     public void testPasswordQuality_adminPolicyNotAvailableToNonAdmin() {
@@ -71,7 +69,6 @@ public class NoAdminLeakingTest {
                 (dpm, who) -> dpm.getPasswordQuality(who));
     }
 
-    @Test
     @Postsubmit(reason = "new test")
     @CanSetPolicyTest(policy = LockscreenPolicyWithUnifiedChallenge.class)
     public void testPasswordMinimumLength_adminPolicyNotAvailableToNonAdmin() {
@@ -79,7 +76,6 @@ public class NoAdminLeakingTest {
                 (dpm, who) -> dpm.getPasswordMinimumLength(who));
     }
 
-    @Test
     @Postsubmit(reason = "new test")
     @CanSetPolicyTest(policy = LockscreenPolicyWithUnifiedChallenge.class)
     public void testPasswordMinimumLetters_adminPolicyNotAvailableToNonAdmin() {
@@ -87,7 +83,6 @@ public class NoAdminLeakingTest {
                 (dpm, who) -> dpm.getPasswordMinimumLetters(who));
     }
 
-    @Test
     @Postsubmit(reason = "new test")
     @CanSetPolicyTest(policy = LockscreenPolicyWithUnifiedChallenge.class)
     public void testPasswordMinimumNonLetter_adminPolicyNotAvailableToNonAdmin() {
@@ -95,7 +90,6 @@ public class NoAdminLeakingTest {
                 (dpm, who) -> dpm.getPasswordMinimumNonLetter(who));
     }
 
-    @Test
     @Postsubmit(reason = "new test")
     @CanSetPolicyTest(policy = LockscreenPolicyWithUnifiedChallenge.class)
     public void testPasswordMinimumLowerCase_adminPolicyNotAvailableToNonAdmin() {
@@ -103,7 +97,6 @@ public class NoAdminLeakingTest {
                 (dpm, who) -> dpm.getPasswordMinimumLowerCase(who));
     }
 
-    @Test
     @Postsubmit(reason = "new test")
     @CanSetPolicyTest(policy = LockscreenPolicyWithUnifiedChallenge.class)
     public void testPasswordMinimumUpperCase_adminPolicyNotAvailableToNonAdmin() {
@@ -111,7 +104,6 @@ public class NoAdminLeakingTest {
                 (dpm, who) -> dpm.getPasswordMinimumUpperCase(who));
     }
 
-    @Test
     @Postsubmit(reason = "new test")
     @CanSetPolicyTest(policy = LockscreenPolicyWithUnifiedChallenge.class)
     public void testPasswordMinimumNumeric_adminPolicyNotAvailableToNonAdmin() {
@@ -119,7 +111,6 @@ public class NoAdminLeakingTest {
                 (dpm, who) -> dpm.getPasswordMinimumNumeric(who));
     }
 
-    @Test
     @Postsubmit(reason = "new test")
     @CanSetPolicyTest(policy = LockscreenPolicyWithUnifiedChallenge.class)
     public void testPasswordMinimumSymbols_adminPolicyNotAvailableToNonAdmin() {
@@ -127,7 +118,6 @@ public class NoAdminLeakingTest {
                 (dpm, who) -> dpm.getPasswordMinimumSymbols(who));
     }
 
-    @Test
     @Postsubmit(reason = "new test")
     @CanSetPolicyTest(policy = LockscreenPolicyWithUnifiedChallenge.class)
     public void testPasswordHistoryLength_adminPolicyNotAvailableToNonAdmin() {
@@ -135,7 +125,6 @@ public class NoAdminLeakingTest {
                 (dpm, who) -> dpm.getPasswordHistoryLength(who));
     }
 
-    @Test
     @Postsubmit(reason = "new test")
     @CanSetPolicyTest(policy = LockscreenPolicyWithUnifiedChallenge.class)
     public void testPasswordExpiration_adminPolicyNotAvailableToNonAdmin() {
@@ -143,7 +132,6 @@ public class NoAdminLeakingTest {
                 (dpm, who) -> dpm.getPasswordExpiration(who));
     }
 
-    @Test
     @Postsubmit(reason = "new test")
     @CanSetPolicyTest(policy = LockscreenPolicyWithUnifiedChallenge.class)
     public void testPasswordExpirationTimeout_adminPolicyNotAvailableToNonAdmin() {
@@ -151,7 +139,6 @@ public class NoAdminLeakingTest {
                 (dpm, who) -> dpm.getPasswordExpirationTimeout(who));
     }
 
-    @Test
     @Postsubmit(reason = "new test")
     @CanSetPolicyTest(policy = LockscreenPolicyWithUnifiedChallenge.class)
     public void testMaximumFailedPasswordsForWipe_adminPolicyNotAvailableToNonAdmin() {
@@ -159,7 +146,6 @@ public class NoAdminLeakingTest {
                 (dpm, who) -> dpm.getMaximumFailedPasswordsForWipe(who));
     }
 
-    @Test
     @Postsubmit(reason = "new test")
     @CanSetPolicyTest(policy = LockscreenPolicyWithUnifiedChallenge.class)
     public void testMaximumTimeToLock_adminPolicyNotAvailableToNonAdmin() {
@@ -167,7 +153,6 @@ public class NoAdminLeakingTest {
                 (dpm, who) -> dpm.getMaximumTimeToLock(who));
     }
 
-    @Test
     @Postsubmit(reason = "new test")
     @CanSetPolicyTest(policy = LockscreenPolicyWithUnifiedChallenge.class)
     public void testRequiredStrongAuthTimeout_adminPolicyNotAvailableToNonAdmin() {
@@ -175,7 +160,6 @@ public class NoAdminLeakingTest {
                 (dpm, who) -> dpm.getRequiredStrongAuthTimeout(who));
     }
 
-    @Test
     @Postsubmit(reason = "new test")
     @CanSetPolicyTest(policy = ScreenCaptureDisabled.class)
     public void testScreenCaptureDisabled_adminPolicyNotAvailableToNonAdmin() {
@@ -183,7 +167,6 @@ public class NoAdminLeakingTest {
                 (dpm, who) -> dpm.getScreenCaptureDisabled(who));
     }
 
-    @Test
     @Postsubmit(reason = "new test")
     @CanSetPolicyTest(policy = LockscreenPolicyWithUnifiedChallenge.class)
     public void testTrustAgentConfiguration_adminPolicyNotAvailableToNonAdmin() {
