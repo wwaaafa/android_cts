@@ -247,6 +247,7 @@
 
     <!-- b/204721335 -->
     <option name="compatibility:exclude-filter" value="CtsWindowManagerJetpackTestCases android.server.wm.jetpack.SidecarTest#testSidecarInterface_onWindowLayoutChangeListener" />
+    <option name="compatibility:exclude-filter" value="CtsWindowManagerJetpackTestCases android.server.wm.jetpack.SidecarTest#testSidecarInterface_getWindowLayoutInfo" />
 
     <!-- b/209382234 -->
     <option name="compatibility:exclude-filter" value="CtsDevicePolicyTestCases android.devicepolicy.cts.KeyManagementTest" />
@@ -255,5 +256,8 @@
 
     <!-- b/203177211 -->
     <option name="compatibility:exclude-filter" value="CtsAppSecurityHostTestCases android.appsecurity.cts.ListeningPortsTest#testNoRemotelyAccessibleListeningUdpPorts" />
+
+  <!-- b/182630972, b/214019488 -->
+    <option name="compatibility:exclude-filter" value="CtsWindowManagerDeviceTestCases android.server.wm.PinnedStackTests#testEnterPipWithMinimalSize" />
 
 </configuration>
