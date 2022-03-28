@@ -58,6 +58,8 @@ public class FrameDropTestBase {
     static final int MAX_FRAME_DROP_FOR_30S_30FPS_PC_R = 3;
     // For perf class S, two frame drops per 10 seconds at 60 fps i.e. 6 drops per 30 seconds
     static final int MAX_FRAME_DROP_FOR_30S_60FPS_PC_S = 6;
+    // For perf class T, one frame drop per 10 seconds at 60 fps i.e. 3 drops per 30 seconds
+    static final int MAX_FRAME_DROP_FOR_30S_60FPS_PC_T = 3;
 
     final String mMime;
     final String mDecoderName;
@@ -103,6 +105,9 @@ public class FrameDropTestBase {
         m1080p30FpsTestFiles.put(AV1, "bbb_1920x1080_4mbps_30fps_av1.mp4");
 
         switch (Utils.getPerfClass()) {
+            case Build.VERSION_CODES.TIRAMISU:
+                MAX_FRAME_DROP_FOR_30S = MAX_FRAME_DROP_FOR_30S_60FPS_PC_T;
+                break;
             case Build.VERSION_CODES.S:
                 MAX_FRAME_DROP_FOR_30S = MAX_FRAME_DROP_FOR_30S_60FPS_PC_S;
                 break;
@@ -175,7 +180,9 @@ public class FrameDropTestBase {
         if (frameRate == 30) {
             pc = frameDropCount <= MAX_FRAME_DROP_FOR_30S_30FPS_PC_R ? Build.VERSION_CODES.R : 0;
         } else {
-            pc = frameDropCount <= MAX_FRAME_DROP_FOR_30S_60FPS_PC_S ? Build.VERSION_CODES.S : 0;
+            pc = frameDropCount <= MAX_FRAME_DROP_FOR_30S_60FPS_PC_T ? Build.VERSION_CODES.TIRAMISU
+                    : frameDropCount <= MAX_FRAME_DROP_FOR_30S_60FPS_PC_S ? Build.VERSION_CODES.S
+                    : 0;
         }
         return pc;
     }

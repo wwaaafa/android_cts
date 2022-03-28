@@ -98,16 +98,16 @@ public class FrameDropTest extends FrameDropTestBase {
 
     /**
      * This test validates that the playback of 1920x1080 resolution asset of 3 seconds duration
-     * at 60 fps for S perf class,  for at least 30 seconds worth of  frames or for 31 seconds of
-     * elapsed time. must not drop more than 6 frames for S perf class.
+     * at 60 fps for S/T perf class,  for at least 30 seconds worth of  frames or for 31 seconds of
+     * elapsed time. must not drop more than 6 frames for S perf class / 3 frames for T perf class.
      */
     @LargeTest
     @Test(timeout = CodecTestBase.PER_TEST_TIMEOUT_LARGE_TEST_MS)
     @CddTest(requirement="2.2.7.1/5.3/H-1-1")
     public void test60Fps() throws Exception {
-        Assume.assumeTrue("Test is limited to S performance class devices or devices that do not " +
-                        "advertise performance class",
-                Utils.isSPerfClass() || !Utils.isPerfClass());
+        Assume.assumeTrue("Test is limited to S/T performance class devices or devices that do " +
+                        "not advertise performance class",
+                Utils.isSPerfClass() || Utils.isTPerfClass() || !Utils.isPerfClass());
         testDecodeToSurface(60);
     }
 }
