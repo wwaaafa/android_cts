@@ -60,6 +60,7 @@ import android.telephony.SignalThresholdInfo;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
+import android.telephony.data.NetworkSlicingConfig;
 import android.util.Base64;
 import android.util.Log;
 
@@ -81,6 +82,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -740,7 +742,12 @@ public class CarrierApiTest extends BaseCarrierApiTest {
         assertThat(mTelephonyManager.iccCloseLogicalChannel(response.getChannel())).isTrue();
 
         // Close opened channel twice.
-        assertThat(mTelephonyManager.iccCloseLogicalChannel(response.getChannel())).isFalse();
+        try {
+            boolean result = mTelephonyManager.iccCloseLogicalChannel(response.getChannel());
+            assertThat(result).isFalse();
+        } catch (IllegalArgumentException ex) {
+            //IllegalArgumentException is expected sometimes because of different behaviour of modem
+        }
 
         // Channel 0 is guaranteed to be always available and cannot be closed, per TS 102 221
         // Section 11.1.17
@@ -1404,5 +1411,16 @@ public class CarrierApiTest extends BaseCarrierApiTest {
                 TelephonyManager.DATA_ENABLED_REASON_CARRIER, !isDataEnabled);
         mTelephonyManager.setDataEnabledForReason(
                 TelephonyManager.DATA_ENABLED_REASON_CARRIER, isDataEnabled);
+    }
+
+    /**
+     * This test checks that applications with carrier privileges can get network slicing
+     * configuration.
+     */
+    @Test
+    public void testGetNetworkSlicingConfiguration() {
+        CompletableFuture<NetworkSlicingConfig> resultFuture = new CompletableFuture<>();
+        mTelephonyManager.getNetworkSlicingConfiguration(
+                AsyncTask.SERIAL_EXECUTOR, resultFuture::complete);
     }
 }

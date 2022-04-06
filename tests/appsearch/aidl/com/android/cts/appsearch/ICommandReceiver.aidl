@@ -15,6 +15,7 @@
  */
 package com.android.cts.appsearch;
 
+import android.os.Bundle;
 import java.util.List;
 
 interface ICommandReceiver {
@@ -22,6 +23,8 @@ interface ICommandReceiver {
 
     List<String> globalGet(in String packageName, in String databaseName, in String namespace,
         in String id);
+
+    List<String> globalGetSchema(String packageName, String databaseName);
 
     boolean indexGloballySearchableDocument(in String databaseName, in String namespace,
         in String id, in List<Bundle> permissionBundles);

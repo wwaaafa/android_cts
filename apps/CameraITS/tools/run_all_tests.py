@@ -312,8 +312,9 @@ def get_updated_yml_file(yml_file_contents):
     Updated yml file contents.
   """
   os.chmod(YAML_FILE_DIR, 0o755)
-  _, new_yaml_file = tempfile.mkstemp(
+  file_descriptor, new_yaml_file = tempfile.mkstemp(
       suffix='.yml', prefix='config_', dir=YAML_FILE_DIR)
+  os.close(file_descriptor)
   with open(new_yaml_file, 'w') as f:
     yaml.dump(yml_file_contents, stream=f, default_flow_style=False)
   new_yaml_file_name = os.path.basename(new_yaml_file)
@@ -348,7 +349,10 @@ def main():
   logging.basicConfig(level=logging.INFO)
   # Make output directories to hold the generated files.
   topdir = tempfile.mkdtemp(prefix='CameraITS_')
-  subprocess.call(['chmod', 'g+rx', topdir])
+  try:
+    subprocess.call(['chmod', 'g+rx', topdir])
+  except OSError as e:
+    logging.info(repr(e))
   logging.info('Saving output files to: %s', topdir)
 
   scenes = []
@@ -412,7 +416,7 @@ def main():
     auto_scene_switch = True
   else:
     auto_scene_switch = False
-    logging.info('Manual testing: no tablet defined or testing scene5.')
+    logging.info('No tablet: manual, sensor_fusion, or scene5 testing.')
 
   for camera_id in camera_id_combos:
     test_params_content['camera'] = camera_id
@@ -504,13 +508,13 @@ def main():
         # Handle repeated test
         if 'tests/' in test:
           cmd = [
-              'python3',
+              'python',
               os.path.join(os.environ['CAMERA_ITS_TOP'], test), '-c',
               '%s' % new_yml_file_name
           ]
         else:
           cmd = [
-              'python3',
+              'python',
               os.path.join(os.environ['CAMERA_ITS_TOP'], 'tests', s, test),
               '-c',
               '%s' % new_yml_file_name

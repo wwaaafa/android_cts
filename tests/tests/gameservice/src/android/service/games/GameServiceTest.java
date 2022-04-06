@@ -20,30 +20,44 @@ import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentat
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
+import android.app.Activity;
 import android.app.GameManager;
+import android.app.Instrumentation;
+import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
+import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.ImageDecoder;
 import android.graphics.Rect;
+import android.net.Uri;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.provider.MediaStore;
 import android.service.games.testing.ActivityResult;
+import android.service.games.testing.GetResultActivity;
 import android.service.games.testing.IGameServiceTestService;
 import android.support.test.uiautomator.By;
 import android.support.test.uiautomator.UiDevice;
+import android.support.test.uiautomator.UiObject;
+import android.support.test.uiautomator.UiSelector;
 import android.support.test.uiautomator.Until;
+import android.util.Log;
 import android.util.Size;
 import android.view.WindowManager;
 import android.view.WindowMetrics;
 
-import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.compatibility.common.util.PollingCheck;
@@ -57,7 +71,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized.Parameter;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -68,6 +86,8 @@ import java.util.regex.Pattern;
  */
 @RunWith(AndroidJUnit4.class)
 public final class GameServiceTest {
+    static final String TAG = "GameServiceTest";
+
     private static final String GAME_PACKAGE_NAME = "android.service.games.cts.game";
     private static final String FALSE_POSITIVE_GAME_PACKAGE_NAME =
             "android.service.games.cts.falsepositive";
@@ -83,7 +103,11 @@ public final class GameServiceTest {
     private static final String TOUCH_VERIFIER_PACKAGE_NAME =
             "android.service.games.cts.touchverifier";
 
+    @Parameter(0)
+    public String mVolumeName;
+
     private ServiceConnection mServiceConnection;
+    private ContentResolver mContentResolver;
 
     @Before
     public void setUp() throws Exception {
@@ -106,9 +130,15 @@ public final class GameServiceTest {
 
         GameManager gameManager =
                 getInstrumentation().getContext().getSystemService(GameManager.class);
+
         ShellIdentityUtils.invokeMethodWithShellPermissionsNoReturn(gameManager,
                 manager -> manager.setGameServiceProvider(
                         getInstrumentation().getContext().getPackageName()));
+        mContentResolver = getInstrumentation().getContext().getContentResolver();
+
+        if (gameServiceFeaturePresent()) {
+            waitForGameServiceConnected();
+        }
     }
 
     @After
@@ -193,31 +223,11 @@ public final class GameServiceTest {
         assumeGameServiceFeaturePresent();
 
         launchAndWaitForPackage(GAME_PACKAGE_NAME);
-        swipeFromTopEdgeToShowSystemBars();
 
-        Rect touchableBounds = waitForTouchableOverlayBounds();
+        waitForTouchableOverlayBounds();
 
-        Bitmap overlayScreenshot = Bitmap.createBitmap(
-                getInstrumentation().getUiAutomation().takeScreenshot(),
-                touchableBounds.left,
-                touchableBounds.top,
-                touchableBounds.width(),
-                touchableBounds.height());
-
-        // TODO(b/218901969): UI automator does not appear to have visibility into the overlay;
-        //                    therefore, it cannot be used to validate the overlay's contents.
-        //                    We should try and see if we can expose the overlay to UI automator in
-        //                    order to have a more foolproof validation check. We will use this
-        //                    magenta background check in the meantime.
-        // The overlay background is set to magenta. Verify that it has been rendered by checking
-        // the corners.
-        assertThat(overlayScreenshot.getPixel(0, 0)).isEqualTo(Color.MAGENTA);
-        assertThat(overlayScreenshot.getPixel(0, overlayScreenshot.getHeight() - 1)).isEqualTo(
-                Color.MAGENTA);
-        assertThat(overlayScreenshot.getPixel(overlayScreenshot.getWidth() - 1, 0)).isEqualTo(
-                Color.MAGENTA);
-        assertThat(overlayScreenshot.getPixel(overlayScreenshot.getWidth() - 1,
-                overlayScreenshot.getHeight() - 1)).isEqualTo(Color.MAGENTA);
+        assertThat(UiAutomatorUtils.getUiDevice().findObject(
+                By.text("Overlay was rendered on: " + GAME_PACKAGE_NAME))).isNotNull();
     }
 
     @Test
@@ -225,7 +235,6 @@ public final class GameServiceTest {
         assumeGameServiceFeaturePresent();
 
         launchAndWaitForPackage(TOUCH_VERIFIER_PACKAGE_NAME);
-        swipeFromTopEdgeToShowSystemBars();
 
         Rect touchableBounds = waitForTouchableOverlayBounds();
         UiAutomatorUtils.getUiDevice().click(touchableBounds.centerX(), touchableBounds.centerY());
@@ -263,7 +272,6 @@ public final class GameServiceTest {
                                 .pkg(SYSTEM_BAR_VERIFIER_PACKAGE_NAME))
                 .click();
 
-        assertOverlayDoesNotAppear();
         assertThat(
                 getTestService().getOnSystemBarVisibilityChangedInfo().getTimesShown())
                 .isEqualTo(0);
@@ -277,12 +285,19 @@ public final class GameServiceTest {
         launchAndWaitForPackage(GAME_PACKAGE_NAME);
         swipeFromTopEdgeToShowSystemBars();
 
-        assertThat(waitForTouchableOverlayBounds().isEmpty()).isFalse();
         assertThat(
                 getTestService().getOnSystemBarVisibilityChangedInfo().getTimesShown())
                 .isEqualTo(1);
 
-        assertThat(waitForOverlayToDisappear().isEmpty()).isTrue();
+        PollingCheck.waitFor(
+                () -> {
+                    try {
+                        return getTestService().getOnSystemBarVisibilityChangedInfo()
+                                .getTimesHidden() > 0;
+                    } catch (RemoteException e) {
+                        return false;
+                    }
+                });
         assertThat(
                 getTestService().getOnSystemBarVisibilityChangedInfo().getTimesHidden())
                 .isEqualTo(1);
@@ -378,76 +393,146 @@ public final class GameServiceTest {
     }
 
     @Test
-    public void takeScreenshot_expectedBitmapReturned() throws Exception {
+    public void takeScreenshot_expectedScreenshotSaved() throws Exception {
         assumeGameServiceFeaturePresent();
 
         launchAndWaitForPackage(TAKE_SCREENSHOT_VERIFIER_PACKAGE_NAME);
 
         // Make sure that the overlay is shown so that assertions can be made to check that
         // the overlay is excluded from the game screenshot.
-        getTestService().showOverlayForFocusedGameSession();
-        Rect overlayBounds = waitForTouchableOverlayBounds();
+        final Rect overlayBounds = waitForTouchableOverlayBounds();
 
-        Bitmap gameScreenshot = getTestService().getBitmapScreenshotForFocusedGameSession();
+        long startTimeSecs = Instant.now().getEpochSecond();
+        final boolean ret = getTestService().takeScreenshotForFocusedGameSession();
 
-        // Make sure a screenshot was taken and has the same dimensions as the device screen.
-        assertNotNull(gameScreenshot);
+        // Make sure a screenshot was taken, saved in media, and has the same dimensions as the
+        // device screen.
+        assertTrue(ret);
 
-        Size screenSize = getScreenSize();
-        assertThat(gameScreenshot.getWidth()).isEqualTo(screenSize.getWidth());
-        assertThat(gameScreenshot.getHeight()).isEqualTo(screenSize.getHeight());
+        List<Uri> screenshotUris = PollingCheck.waitFor(TimeUnit.SECONDS.toMillis(5),
+                () -> getScreenshotsFromLastFiveSeconds(startTimeSecs), uris -> !uris.isEmpty());
+        for (Uri screenshotUri : screenshotUris) {
+            final ImageDecoder.Source source = ImageDecoder.createSource(mContentResolver,
+                    screenshotUri);
+            // convert the hardware bitmap to a mutable 4-byte bitmap to get/compare pixel
+            final Bitmap gameScreenshot = ImageDecoder.decodeBitmap(source).copy(
+                    Bitmap.Config.ARGB_8888, true);
 
-        // The test game is always fullscreen red. It is too expensive to verify that the entire
-        // bitmap is red, so spot check certain areas.
+            final Size screenSize = getScreenSize();
+            assertThat(gameScreenshot.getWidth()).isEqualTo(screenSize.getWidth());
+            assertThat(gameScreenshot.getHeight()).isEqualTo(screenSize.getHeight());
 
-        // 1. Make sure that the overlay is excluded from the screenshot by checking pixels within
-        // the overlay bounds:
+            // The test game is always fullscreen red. It is too expensive to verify that
+            // the entire bitmap is red, so spot check certain areas.
 
-        // top-left of overlay bounds:
-        assertThat(
-                gameScreenshot.getPixel(overlayBounds.left + 1, overlayBounds.top + 1)).isEqualTo(
-                Color.RED);
-        // bottom-left corner of overlay bounds:
-        assertThat(gameScreenshot.getPixel(overlayBounds.left + 1,
-                overlayBounds.bottom - 1)).isEqualTo(Color.RED);
-        // top-right corner of overlay bounds:
-        assertThat(
-                gameScreenshot.getPixel(overlayBounds.right - 1, overlayBounds.top + 1)).isEqualTo(
-                Color.RED);
-        // bottom-right corner of overlay bounds:
-        assertThat(gameScreenshot.getPixel(overlayBounds.right - 1,
-                overlayBounds.bottom - 1)).isEqualTo(Color.RED);
-        // middle corner of overlay bounds:
-        assertThat(gameScreenshot.getPixel((overlayBounds.left + overlayBounds.right) / 2,
-                (overlayBounds.top + overlayBounds.bottom) / 2)).isEqualTo(Color.RED);
+            // 1. Make sure that the overlay is excluded from the screenshot by checking
+            // pixels within the overlay bounds:
 
-        // 2. Also check some pixels between the edge of the screen and the overlay bounds:
+            // top-left of overlay bounds:
+            assertThat(
+                    gameScreenshot.getPixel(overlayBounds.left + 1,
+                            overlayBounds.top + 1)).isEqualTo(
+                    Color.RED);
+            // bottom-left corner of overlay bounds:
+            assertThat(gameScreenshot.getPixel(overlayBounds.left + 1,
+                    overlayBounds.bottom - 1)).isEqualTo(Color.RED);
+            // top-right corner of overlay bounds:
+            assertThat(
+                    gameScreenshot.getPixel(overlayBounds.right - 1,
+                            overlayBounds.top + 1)).isEqualTo(
+                    Color.RED);
+            // bottom-right corner of overlay bounds:
+            assertThat(gameScreenshot.getPixel(overlayBounds.right - 1,
+                    overlayBounds.bottom - 1)).isEqualTo(Color.RED);
+            // middle corner of overlay bounds:
+            assertThat(
+                    gameScreenshot.getPixel((overlayBounds.left + overlayBounds.right) / 2,
+                            (overlayBounds.top + overlayBounds.bottom) / 2)).isEqualTo(
+                    Color.RED);
 
-        // above and to the left of the overlay
-        assertThat(
-                gameScreenshot.getPixel(overlayBounds.left / 2, overlayBounds.top / 2)).isEqualTo(
-                Color.RED);
-        // below and to the left of the overlay
-        assertThat(gameScreenshot.getPixel(overlayBounds.left / 2,
-                (overlayBounds.bottom + gameScreenshot.getHeight()) / 2)).isEqualTo(Color.RED);
-        // above and to the right of the overlay
-        assertThat(gameScreenshot.getPixel((overlayBounds.left + gameScreenshot.getWidth()) / 2,
-                overlayBounds.top / 2)).isEqualTo(Color.RED);
-        // below and to the right of the overlay
-        assertThat(gameScreenshot.getPixel((overlayBounds.left + gameScreenshot.getWidth()) / 2,
-                (overlayBounds.bottom + gameScreenshot.getHeight()) / 2)).isEqualTo(Color.RED);
+            // 2. Also check some pixels between the edge of the screen and the overlay
+            // bounds:
 
-        // 3. Finally check some pixels at the corners of the screen:
+            // above and to the left of the overlay
+            assertThat(
+                    gameScreenshot.getPixel(overlayBounds.left / 2,
+                            overlayBounds.top / 2)).isEqualTo(
+                    Color.RED);
+            // below and to the left of the overlay
+            assertThat(gameScreenshot.getPixel(overlayBounds.left / 2,
+                    (overlayBounds.bottom + gameScreenshot.getHeight()) / 2)).isEqualTo(
+                    Color.RED);
+            // above and to the right of the overlay
+            assertThat(gameScreenshot.getPixel(
+                    (overlayBounds.left + gameScreenshot.getWidth()) / 2,
+                    overlayBounds.top / 2)).isEqualTo(Color.RED);
+            // below and to the right of the overlay
+            assertThat(gameScreenshot.getPixel(
+                    (overlayBounds.left + gameScreenshot.getWidth()) / 2,
+                    (overlayBounds.bottom + gameScreenshot.getHeight()) / 2)).isEqualTo(
+                    Color.RED);
 
-        // top-left corner of screen
-        assertThat(gameScreenshot.getPixel(0, 0)).isEqualTo(Color.RED);
-        // bottom-left corner of screen
-        assertThat(gameScreenshot.getPixel(0, gameScreenshot.getHeight() - 1)).isEqualTo(Color.RED);
-        // top-right corner of screen
-        assertThat(gameScreenshot.getPixel(gameScreenshot.getWidth() - 1, 0)).isEqualTo(Color.RED);
-        // bottom-right corner of screen
-        assertThat(gameScreenshot.getPixel(gameScreenshot.getWidth() - 1,
-                gameScreenshot.getHeight() - 1)).isEqualTo(Color.RED);
+            // 3. Finally check some pixels at the corners of the screen:
+
+            // top-left corner of screen
+            assertThat(gameScreenshot.getPixel(0, 0)).isEqualTo(Color.RED);
+            // bottom-left corner of screen
+            assertThat(
+                    gameScreenshot.getPixel(0, gameScreenshot.getHeight() - 1)).isEqualTo(
+                    Color.RED);
+            // top-right corner of screen
+            assertThat(gameScreenshot.getPixel(gameScreenshot.getWidth() - 1, 0)).isEqualTo(
+                    Color.RED);
+            // bottom-right corner of screen
+            assertThat(gameScreenshot.getPixel(gameScreenshot.getWidth() - 1,
+                    gameScreenshot.getHeight() - 1)).isEqualTo(Color.RED);
+            final PendingIntent pi = MediaStore.createDeleteRequest(mContentResolver,
+                    ImmutableList.of(screenshotUri));
+            final GetResultActivity.Result result = startIntentWithGrant(pi);
+            assertEquals(Activity.RESULT_OK, result.resultCode);
+        }
+    }
+
+    private List<Uri> getScreenshotsFromLastFiveSeconds(long startTimeSecs) {
+        final Uri contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+        final List<Uri> screenshotUris = new ArrayList<>();
+        try (Cursor cursor = mContentResolver.query(contentUri,
+                new String[]{MediaStore.MediaColumns._ID, MediaStore.MediaColumns.DISPLAY_NAME,
+                        MediaStore.MediaColumns.DATE_ADDED}, null, null,
+                MediaStore.MediaColumns.DATE_ADDED + " DESC")) {
+            while (cursor.moveToNext()) {
+                final long addedTimeSecs = cursor.getLong(2);
+                // try to find the latest screenshot file created within 5s
+                if (addedTimeSecs >= startTimeSecs && addedTimeSecs - startTimeSecs < 5) {
+                    final long id = cursor.getLong(0);
+                    final Uri screenshotUri = ContentUris.withAppendedId(contentUri, id);
+                    final String name = cursor.getString(1);
+                    Log.d(TAG, "Found screenshot with name " + name);
+                    screenshotUris.add(screenshotUri);
+                }
+            }
+        }
+        return screenshotUris;
+    }
+
+    private GetResultActivity.Result startIntentWithGrant(PendingIntent pi) throws Exception {
+        final Instrumentation inst = InstrumentationRegistry.getInstrumentation();
+        final Intent intent = new Intent(inst.getContext(), GetResultActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+        final UiDevice device = UiDevice.getInstance(inst);
+        final GetResultActivity activity = (GetResultActivity) inst.startActivitySync(intent);
+        inst.waitForIdleSync();
+        activity.mResult.clear();
+        device.waitForIdle();
+        activity.startIntentSenderForResult(pi.getIntentSender(), 42, null, 0, 0, 0);
+        device.waitForIdle();
+        final UiSelector grant = new UiSelector().textMatches("(?i)Allow");
+        final boolean grantExists = new UiObject(grant).waitForExists(5000);
+        if (grantExists) {
+            device.findObject(grant).click();
+        }
+        return activity.getResult();
     }
 
     private IGameServiceTestService getTestService() {
@@ -455,8 +540,12 @@ public final class GameServiceTest {
     }
 
     private static void assumeGameServiceFeaturePresent() {
-        assumeTrue(getInstrumentation().getContext().getPackageManager().hasSystemFeature(
-                PackageManager.FEATURE_GAME_SERVICE));
+        assumeTrue(gameServiceFeaturePresent());
+    }
+
+    private static boolean gameServiceFeaturePresent() {
+        return getInstrumentation().getContext().getPackageManager().hasSystemFeature(
+                PackageManager.FEATURE_GAME_SERVICE);
     }
 
     private static void launchAndWaitForPackage(String packageName) throws Exception {
@@ -486,12 +575,12 @@ public final class GameServiceTest {
     }
 
     private void waitForGameServiceConnected() {
-        PollingCheck.waitFor(() -> isGameServiceConnected(),
+        PollingCheck.waitFor(TimeUnit.SECONDS.toMillis(5), () -> isGameServiceConnected(),
                 "Timed out waiting for game service to connect");
     }
 
     private void waitForGameServiceDisconnected() {
-        PollingCheck.waitFor(() -> !isGameServiceConnected(),
+        PollingCheck.waitFor(TimeUnit.SECONDS.toMillis(5), () -> !isGameServiceConnected(),
                 "Timed out waiting for game service to disconnect");
     }
 
@@ -505,7 +594,7 @@ public final class GameServiceTest {
 
     private Rect waitForTouchableOverlayBounds() {
         return PollingCheck.waitFor(
-                5_000L,
+                TimeUnit.SECONDS.toMillis(5),
                 () -> {
                     try {
                         return getTestService().getTouchableOverlayBounds();
@@ -513,7 +602,7 @@ public final class GameServiceTest {
                         throw new RuntimeException(e);
                     }
                 },
-                bounds -> !bounds.isEmpty());
+                bounds -> bounds != null && !bounds.isEmpty());
     }
 
     private void assertOverlayDoesNotAppear() {
@@ -522,7 +611,7 @@ public final class GameServiceTest {
 
     private Rect waitForOverlayToDisappear() {
         return PollingCheck.waitFor(
-                20_000L,
+                TimeUnit.SECONDS.toMillis(20),
                 () -> {
                     try {
                         return getTestService().getTouchableOverlayBounds();
@@ -535,7 +624,8 @@ public final class GameServiceTest {
 
     private static void forceStop(String packageName) {
         ShellUtils.runShellCommand("am force-stop %s", packageName);
-        UiAutomatorUtils.getUiDevice().wait(Until.gone(By.pkg(packageName).depth(0)), 20_000L);
+        UiAutomatorUtils.getUiDevice().wait(Until.gone(By.pkg(packageName).depth(0)),
+                TimeUnit.SECONDS.toMillis(20));
     }
 
     private static int getActivityTaskId(String packageName, String componentName) {

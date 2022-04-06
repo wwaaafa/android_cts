@@ -22,8 +22,8 @@ import android.app.Instrumentation;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.media.tv.interactive.TvInteractiveAppInfo;
 import android.media.tv.interactive.TvInteractiveAppManager;
+import android.media.tv.interactive.TvInteractiveAppServiceInfo;
 import android.media.tv.interactive.TvInteractiveAppView;
 import android.os.ConditionVariable;
 import android.tv.cts.R;
@@ -56,7 +56,8 @@ public class TvInteractiveAppViewTest {
     private TvInteractiveAppViewStubActivity mActivity;
     private TvInteractiveAppView mTvInteractiveAppView;
     private TvInteractiveAppManager mManager;
-    private TvInteractiveAppInfo mStubInfo;
+    private TvInteractiveAppServiceInfo mStubInfo;
+    private TvInteractiveAppView.OnUnhandledInputEventListener mOnUnhandledInputEventListener;
 
     @Rule
     public RequiredFeatureRule featureRule = new RequiredFeatureRule(
@@ -127,7 +128,7 @@ public class TvInteractiveAppViewTest {
                 Context.TV_INTERACTIVE_APP_SERVICE);
         assertNotNull("Failed to get TvInteractiveAppManager.", mManager);
 
-        for (TvInteractiveAppInfo info : mManager.getTvInteractiveAppServiceList()) {
+        for (TvInteractiveAppServiceInfo info : mManager.getTvInteractiveAppServiceList()) {
             if (info.getServiceInfo().name.equals(StubTvInteractiveAppService.class.getName())) {
                 mStubInfo = info;
             }
@@ -179,6 +180,25 @@ public class TvInteractiveAppViewTest {
                         && mCallback.mState
                         == TvInteractiveAppManager.INTERACTIVE_APP_STATE_RUNNING
                         && mCallback.mErr == TvInteractiveAppManager.ERROR_NONE;
+            }
+        }.run();
+    }
+
+    @Test
+    public void testGetOnUnhandledInputEventListener() {
+        mOnUnhandledInputEventListener = new TvInteractiveAppView.OnUnhandledInputEventListener() {
+            @Override
+            public boolean onUnhandledInputEvent(InputEvent event) {
+                return true;
+            }
+        };
+        mTvInteractiveAppView.setOnUnhandledInputEventListener(getExecutor(),
+                mOnUnhandledInputEventListener);
+        new PollingCheck(TIME_OUT_MS) {
+            @Override
+            protected boolean check() {
+                return mTvInteractiveAppView.getOnUnhandledInputEventListener()
+                        == mOnUnhandledInputEventListener;
             }
         }.run();
     }

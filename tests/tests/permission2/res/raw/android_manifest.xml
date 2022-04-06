@@ -715,6 +715,91 @@
     <protected-broadcast android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
     <protected-broadcast android:name="android.app.action.SHOW_NEW_USER_DISCLAIMER" />
 
+    <!-- Moved from packages/services/Telephony in T -->
+    <protected-broadcast android:name="android.telecom.action.CURRENT_TTY_MODE_CHANGED" />
+    <protected-broadcast android:name="android.intent.action.SERVICE_STATE" />
+    <protected-broadcast android:name="android.intent.action.RADIO_TECHNOLOGY" />
+    <protected-broadcast android:name="android.intent.action.EMERGENCY_CALLBACK_MODE_CHANGED" />
+    <protected-broadcast android:name="android.intent.action.EMERGENCY_CALL_STATE_CHANGED" />
+    <protected-broadcast android:name="android.intent.action.SIG_STR" />
+    <protected-broadcast android:name="android.intent.action.ANY_DATA_STATE" />
+    <protected-broadcast android:name="android.intent.action.DATA_STALL_DETECTED" />
+    <protected-broadcast android:name="android.intent.action.SIM_STATE_CHANGED" />
+    <protected-broadcast android:name="android.intent.action.USER_ACTIVITY_NOTIFICATION" />
+    <protected-broadcast android:name="android.telephony.action.SHOW_NOTICE_ECM_BLOCK_OTHERS" />
+    <protected-broadcast android:name="android.intent.action.ACTION_MDN_STATE_CHANGED" />
+    <protected-broadcast android:name="android.telephony.action.SERVICE_PROVIDERS_UPDATED" />
+    <protected-broadcast android:name="android.provider.Telephony.SIM_FULL" />
+    <protected-broadcast android:name="com.android.internal.telephony.carrier_key_download_alarm" />
+    <protected-broadcast android:name="com.android.internal.telephony.data-restart-trysetup" />
+    <protected-broadcast android:name="com.android.internal.telephony.data-stall" />
+    <protected-broadcast android:name="com.android.internal.telephony.provisioning_apn_alarm" />
+    <protected-broadcast android:name="android.intent.action.DATA_SMS_RECEIVED" />
+    <protected-broadcast android:name="android.provider.Telephony.SMS_RECEIVED" />
+    <protected-broadcast android:name="android.provider.Telephony.SMS_DELIVER" />
+    <protected-broadcast android:name="android.provider.Telephony.SMS_REJECTED" />
+    <protected-broadcast android:name="android.provider.Telephony.WAP_PUSH_DELIVER" />
+    <protected-broadcast android:name="android.provider.Telephony.WAP_PUSH_RECEIVED" />
+    <protected-broadcast android:name="android.provider.Telephony.SMS_CB_RECEIVED" />
+    <protected-broadcast android:name="android.provider.action.SMS_EMERGENCY_CB_RECEIVED" />
+    <protected-broadcast android:name="android.provider.Telephony.SMS_SERVICE_CATEGORY_PROGRAM_DATA_RECEIVED" />
+    <protected-broadcast android:name="android.provider.Telephony.SECRET_CODE" />
+    <protected-broadcast android:name="com.android.internal.stk.command" />
+    <protected-broadcast android:name="com.android.internal.stk.session_end" />
+    <protected-broadcast android:name="com.android.internal.stk.icc_status_change" />
+    <protected-broadcast android:name="com.android.internal.stk.alpha_notify" />
+    <protected-broadcast android:name="com.android.internal.telephony.CARRIER_SIGNAL_REDIRECTED" />
+    <protected-broadcast android:name="com.android.internal.telephony.CARRIER_SIGNAL_REQUEST_NETWORK_FAILED" />
+    <protected-broadcast android:name="com.android.internal.telephony.CARRIER_SIGNAL_PCO_VALUE" />
+    <protected-broadcast android:name="com.android.internal.telephony.CARRIER_SIGNAL_RESET" />
+    <protected-broadcast android:name="com.android.internal.telephony.CARRIER_SIGNAL_DEFAULT_NETWORK_AVAILABLE" />
+    <protected-broadcast android:name="com.android.internal.telephony.PROVISION" />
+    <protected-broadcast android:name="com.android.internal.telephony.ACTION_LINE1_NUMBER_ERROR_DETECTED" />
+    <protected-broadcast android:name="com.android.internal.provider.action.VOICEMAIL_SMS_RECEIVED" />
+    <protected-broadcast android:name="com.android.intent.isim_refresh" />
+    <protected-broadcast android:name="com.android.ims.ACTION_RCS_SERVICE_AVAILABLE" />
+    <protected-broadcast android:name="com.android.ims.ACTION_RCS_SERVICE_UNAVAILABLE" />
+    <protected-broadcast android:name="com.android.ims.ACTION_RCS_SERVICE_DIED" />
+    <protected-broadcast android:name="com.android.ims.ACTION_PRESENCE_CHANGED" />
+    <protected-broadcast android:name="com.android.ims.ACTION_PUBLISH_STATUS_CHANGED" />
+    <protected-broadcast android:name="com.android.ims.IMS_SERVICE_UP" />
+    <protected-broadcast android:name="com.android.ims.IMS_SERVICE_DOWN" />
+    <protected-broadcast android:name="com.android.ims.IMS_INCOMING_CALL" />
+    <protected-broadcast android:name="com.android.ims.internal.uce.UCE_SERVICE_UP" />
+    <protected-broadcast android:name="com.android.ims.internal.uce.UCE_SERVICE_DOWN" />
+    <protected-broadcast android:name="com.android.imsconnection.DISCONNECTED" />
+    <protected-broadcast android:name="com.android.intent.action.IMS_FEATURE_CHANGED" />
+    <protected-broadcast android:name="com.android.intent.action.IMS_CONFIG_CHANGED" />
+    <protected-broadcast android:name="android.telephony.ims.action.WFC_IMS_REGISTRATION_ERROR" />
+    <protected-broadcast android:name="com.android.phone.vvm.omtp.sms.REQUEST_SENT" />
+    <protected-broadcast android:name="com.android.phone.vvm.ACTION_VISUAL_VOICEMAIL_SERVICE_EVENT" />
+    <protected-broadcast android:name="com.android.internal.telephony.CARRIER_VVM_PACKAGE_INSTALLED" />
+    <protected-broadcast android:name="com.android.cellbroadcastreceiver.GET_LATEST_CB_AREA_INFO" />
+    <protected-broadcast android:name="com.android.internal.telephony.ACTION_CARRIER_CERTIFICATE_DOWNLOAD" />
+    <protected-broadcast android:name="com.android.internal.telephony.action.COUNTRY_OVERRIDE" />
+    <protected-broadcast android:name="com.android.internal.telephony.OPEN_DEFAULT_SMS_APP" />
+    <protected-broadcast android:name="com.android.internal.telephony.ACTION_TEST_OVERRIDE_CARRIER_ID" />
+    <protected-broadcast android:name="android.telephony.action.SIM_CARD_STATE_CHANGED" />
+    <protected-broadcast android:name="android.telephony.action.SIM_APPLICATION_STATE_CHANGED" />
+    <protected-broadcast android:name="android.telephony.action.SIM_SLOT_STATUS_CHANGED" />
+    <protected-broadcast android:name="android.telephony.action.SUBSCRIPTION_CARRIER_IDENTITY_CHANGED" />
+    <protected-broadcast android:name="android.telephony.action.SUBSCRIPTION_SPECIFIC_CARRIER_IDENTITY_CHANGED" />
+    <protected-broadcast android:name="android.telephony.action.TOGGLE_PROVISION" />
+    <protected-broadcast android:name="android.telephony.action.NETWORK_COUNTRY_CHANGED" />
+    <protected-broadcast android:name="android.telephony.action.PRIMARY_SUBSCRIPTION_LIST_CHANGED" />
+    <protected-broadcast android:name="android.telephony.action.MULTI_SIM_CONFIG_CHANGED" />
+    <protected-broadcast android:name="android.telephony.action.CARRIER_SIGNAL_RESET" />
+    <protected-broadcast android:name="android.telephony.action.CARRIER_SIGNAL_PCO_VALUE" />
+    <protected-broadcast android:name="android.telephony.action.CARRIER_SIGNAL_DEFAULT_NETWORK_AVAILABLE" />
+    <protected-broadcast android:name="android.telephony.action.CARRIER_SIGNAL_REDIRECTED" />
+    <protected-broadcast android:name="android.telephony.action.CARRIER_SIGNAL_REQUEST_NETWORK_FAILED" />
+    <protected-broadcast android:name="com.android.phone.settings.CARRIER_PROVISIONING" />
+    <protected-broadcast android:name="com.android.phone.settings.TRIGGER_CARRIER_PROVISIONING" />
+    <protected-broadcast android:name="android.telephony.action.ANOMALY_REPORTED" />
+    <protected-broadcast android:name="android.intent.action.SUBSCRIPTION_INFO_RECORD_ADDED" />
+    <protected-broadcast android:name="android.intent.action.ACTION_MANAGED_ROAMING_IND" />
+    <protected-broadcast android:name="android.telephony.ims.action.RCS_SINGLE_REGISTRATION_CAPABILITY_UPDATE" />
+
     <!-- Added in T -->
     <protected-broadcast android:name="android.app.action.LOST_MODE_LOCATION_UPDATE" />
 
@@ -1023,7 +1108,7 @@
       targetSdkVersion}</a> of {@link android.os.Build.VERSION_CODES#S} or lower, this permission
       must not be used and the READ_EXTERNAL_STORAGE permission must be used instead.
      <p>Protection level: dangerous -->
-    <permission android:name="android.permission.READ_MEDIA_IMAGE"
+    <permission android:name="android.permission.READ_MEDIA_IMAGES"
                 android:permissionGroup="android.permission-group.UNDEFINED"
                 android:label="@string/permlab_readMediaImage"
                 android:description="@string/permdesc_readMediaImage"
@@ -1881,11 +1966,12 @@
         android:label="@string/permlab_changeWifiState"
         android:protectionLevel="normal" />
 
-    <!-- Allows applications to enable/disable wifi auto join. This permission
-         is used to let OEMs grant their trusted app access to a subset of privileged wifi APIs
-         to improve wifi performance.
-         <p>Not for use by third-party applications. -->
-    <permission android:name="android.permission.MANAGE_WIFI_AUTO_JOIN"
+    <!-- This permission is used to let OEMs grant their trusted app access to a subset of
+     privileged wifi APIs to improve wifi performance. Allows applications to manage
+     Wi-Fi network selection related features such as enable or disable global auto-join,
+     modify connectivity scan intervals, and approve Wi-Fi Direct connections.
+     <p>Not for use by third-party applications. -->
+    <permission android:name="android.permission.MANAGE_WIFI_NETWORK_SELECTION"
                 android:protectionLevel="signature|privileged|knownSigner"
                 android:knownCerts="@array/wifi_known_signers" />
 
@@ -2379,14 +2465,6 @@
     <!-- Permissions for lost mode -->
     <!-- ======================================== -->
     <eat-comment />
-
-    <!-- @SystemApi Allows an application to send location to the device admin when an
-         organization-owned device is in lost mode.
-         <p>Not for use by third-party applications.
-         @hide
-    -->
-    <permission android:name="android.permission.SEND_LOST_MODE_LOCATION_UPDATES"
-        android:protectionLevel="signature|privileged"/>
 
     <!-- @SystemApi Allows an application to trigger lost mode on an organization-owned device.
          <p>Not for use by third-party applications.
@@ -3085,7 +3163,7 @@
 
          <p>Not for use by third-party applications. -->
     <permission android:name="android.permission.SYSTEM_APPLICATION_OVERLAY"
-                android:protectionLevel="signature|recents|role"/>
+                android:protectionLevel="signature|recents|role|installer"/>
 
     <!-- @deprecated Use {@link android.Manifest.permission#REQUEST_COMPANION_RUN_IN_BACKGROUND}
          @hide
@@ -3643,6 +3721,12 @@
     <permission android:name="android.permission.BIND_ATTESTATION_VERIFICATION_SERVICE"
                 android:protectionLevel="signature" />
 
+    <!-- Allows the caller to generate keymint keys with the INCLUDE_UNIQUE_ID tag, which
+         uniquely identifies the device via the attestation certificate.
+         @hide @TestApi -->
+    <permission android:name="android.permission.REQUEST_UNIQUE_ID_ATTESTATION"
+         android:protectionLevel="signature" />
+
     <!-- ========================================= -->
     <!-- Permissions for special development tools -->
     <!-- ========================================= -->
@@ -3712,23 +3796,6 @@
         the system. -->
     <permission android:name="android.permission.REQUEST_INCIDENT_REPORT_APPROVAL"
         android:protectionLevel="signature|privileged" />
-
-    <!-- ========================================= -->
-    <!-- Permissions for AdServices -->
-    <!-- ========================================= -->
-    <eat-comment />
-
-    <!-- Allows an application to access AdServices Topics API. -->
-    <permission android:name="android.permission.ACCESS_ADSERVICES_TOPICS"
-        android:protectionLevel="normal" />
-
-    <!-- Allows an application to access AdServices Attribution APIs. -->
-    <permission android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION"
-        android:protectionLevel="normal" />
-
-    <!-- Allows an application to access AdServices Custom Audiences APIs. -->
-    <permission android:name="android.permission.ACCESS_ADSERVICES_CUSTOM_AUDIENCES"
-        android:protectionLevel="normal" />
 
     <!-- ==================================== -->
     <!-- Private permissions                  -->
@@ -4138,7 +4205,7 @@
     <permission android:name="android.permission.MANAGE_HOTWORD_DETECTION"
                 android:protectionLevel="internal|preinstalled" />
 
-    <!-- Allows an application to read the lockscreen visibility via keyguard manager.
+    <!-- Allows an application to subscribe to keyguard locked (i.e., showing) state.
          <p>Protection level: internal|role
          <p>Intended for use by ROLE_ASSISTANT only.
     -->
@@ -5126,6 +5193,14 @@
         android:protectionLevel="signature|privileged|development|appop|retailDemo" />
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" />
 
+    <!-- Allows an application to query broadcast response stats (see
+         {@link android.app.usage.BroadcastResponseStats}).
+         @SystemApi
+         @hide
+    -->
+    <permission android:name="android.permission.ACCESS_BROADCAST_RESPONSE_STATS"
+        android:protectionLevel="signature|privileged|development" />
+
     <!-- Allows a data loader to read a package's access logs. The access logs contain the
          set of pages referenced over time.
          <p>Declaring the permission implies intention to use the API and the user of the
@@ -5933,12 +6008,12 @@
       generation service.
     @hide  <p>Not for use by third-party applications.</p> -->
     <permission android:name="android.permission.MANAGE_WALLPAPER_EFFECTS_GENERATION"
-        android:protectionLevel="signature|role" />
+        android:protectionLevel="signature|privileged" />
 
     <!-- @SystemApi Allows an application to manage the cloudsearch service.
      @hide  <p>Not for use by third-party applications.</p> -->
     <permission android:name="android.permission.MANAGE_CLOUDSEARCH"
-        android:protectionLevel="signature" />
+        android:protectionLevel="signature|privileged|role" />
 
     <!-- Allows an app to set the theme overlay in /vendor/overlay
          being used.
@@ -5982,7 +6057,7 @@
     <!-- @SystemApi Allows an application to turn on / off quiet mode.
          @hide -->
     <permission android:name="android.permission.MODIFY_QUIET_MODE"
-                android:protectionLevel="signature|privileged|development" />
+                android:protectionLevel="signature|privileged|development|role" />
 
     <!-- Allows internal management of the camera framework
          @hide -->
@@ -6035,10 +6110,10 @@
     <permission android:name="android.permission.MANAGE_APPOPS"
                 android:protectionLevel="signature" />
 
-    <!-- @hide Permission that allows background clipboard access.
-         <p>Not for use by third-party applications. -->
+    <!-- @SystemApi Permission that allows background clipboard access.
+         @hide Not for use by third-party applications. -->
     <permission android:name="android.permission.READ_CLIPBOARD_IN_BACKGROUND"
-        android:protectionLevel="signature" />
+        android:protectionLevel="signature|role" />
 
     <!-- @hide Permission that suppresses the notification when the clipboard is accessed.
          <p>Not for use by third-party applications. -->
@@ -6148,7 +6223,7 @@
     <!-- Allows the use of FLAG_SLIPPERY, which permits touch events to slip from the current
          window to the window where the touch currently is on top of.  @hide -->
     <permission android:name="android.permission.ALLOW_SLIPPERY_TOUCHES"
-                android:protectionLevel="signature|recents" />
+                android:protectionLevel="signature|privileged|recents|role" />
     <!--  Allows the caller to change the associations between input devices and displays.
         Very dangerous! @hide -->
     <permission android:name="android.permission.ASSOCIATE_INPUT_DEVICE_TO_DISPLAY"
@@ -6386,6 +6461,12 @@
     -->
     <permission android:name="android.permission.SET_UNRESTRICTED_KEEP_CLEAR_AREAS"
                 android:protectionLevel="signature|privileged" />
+
+    <!-- Allows an UID to be visible to the application based on an interaction between the
+         two apps. This permission is not intended to be held by apps.
+         @hide @TestApi  -->
+    <permission android:name="android.permission.MAKE_UID_VISIBLE"
+                android:protectionLevel="signature" />
 
     <!-- Attribution for Geofencing service. -->
     <attribution android:tag="GeofencingService" android:label="@string/geofencing_service"/>

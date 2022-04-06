@@ -102,39 +102,7 @@ public class DefaultDisplayModeTest {
     }
 
     @Test
-    public void testDisplayChangedOnSetAndClearUserPreferredDisplayMode() throws Exception {
-        Display.Mode[] modes = mDefaultDisplay.getSupportedModes();
-        assumeTrue("Need two or more display modes to exercise switching.", modes.length > 1);
-
-        // Test set
-        Display.Mode initialDefaultMode = mDefaultDisplay.getDefaultMode();
-
-        Display.Mode newDefaultMode = findNonDefaultMode(mDefaultDisplay);
-        assertNotNull(newDefaultMode);
-        DefaultModeListener listener =
-                new DefaultModeListener(mDefaultDisplay, newDefaultMode.getModeId());
-        Handler handler = new Handler(Looper.getMainLooper());
-        mDisplayManager.registerDisplayListener(listener, handler);
-        try {
-            mDisplayManager.setGlobalUserPreferredDisplayMode(newDefaultMode);
-            assertTrue(listener.await());
-        } finally {
-            mDisplayManager.unregisterDisplayListener(listener);
-        }
-
-        // Test clear
-        listener = new DefaultModeListener(mDefaultDisplay, initialDefaultMode.getModeId());
-        mDisplayManager.registerDisplayListener(listener, handler);
-        try {
-            mDisplayManager.clearGlobalUserPreferredDisplayMode();
-            assertTrue(listener.await());
-        } finally {
-            mDisplayManager.unregisterDisplayListener(listener);
-        }
-    }
-
-    @Test
-    public void testDisplayChangedOnSetAndClearUserPreferredDisplayModeForSpecificDevice()
+    public void testSetAndClearUserPreferredDisplayModeGeneratesDisplayChangedEvents()
             throws Exception {
         Display.Mode[] modes = mDefaultDisplay.getSupportedModes();
         assumeTrue("Need two or more display modes to exercise switching.", modes.length > 1);
@@ -144,30 +112,139 @@ public class DefaultDisplayModeTest {
 
         Display.Mode newDefaultMode = findNonDefaultMode(mDefaultDisplay);
         assertNotNull(newDefaultMode);
-        DefaultModeListener listener =
-                new DefaultModeListener(mDefaultDisplay, newDefaultMode.getModeId());
+        final CountDownLatch setUserPrefModeSignal = new CountDownLatch(1);
+        DisplayManager.DisplayListener listener = new DisplayManager.DisplayListener() {
+            @Override
+            public void onDisplayAdded(int displayId) {}
+
+            @Override
+            public void onDisplayRemoved(int displayId) {}
+
+            @Override
+            public void onDisplayChanged(int displayId) {
+                if (displayId != mDefaultDisplay.getDisplayId()) {
+                    return;
+                }
+                if (newDefaultMode.getModeId() == mDefaultDisplay.getDefaultMode().getModeId()) {
+                    setUserPrefModeSignal.countDown();
+                }
+            }
+        };
         Handler handler = new Handler(Looper.getMainLooper());
         mDisplayManager.registerDisplayListener(listener, handler);
         try {
-            mDefaultDisplay.setUserPreferredDisplayMode(newDefaultMode);
-            assertTrue(listener.await());
+            mDisplayManager.setGlobalUserPreferredDisplayMode(newDefaultMode);
+            // Wait until the display change is effective.
+            assertTrue(setUserPrefModeSignal.await(DISPLAY_CHANGE_TIMEOUT_SECS, TimeUnit.SECONDS));
         } finally {
             mDisplayManager.unregisterDisplayListener(listener);
         }
 
         // Test clear
-        listener = new DefaultModeListener(mDefaultDisplay, initialDefaultMode.getModeId());
+        final CountDownLatch clearUserPrefModeSignal = new CountDownLatch(1);
+        listener = new DisplayManager.DisplayListener() {
+            @Override
+            public void onDisplayAdded(int displayId) {}
+
+            @Override
+            public void onDisplayRemoved(int displayId) {}
+
+            @Override
+            public void onDisplayChanged(int displayId) {
+                if (displayId != mDefaultDisplay.getDisplayId()) {
+                    return;
+                }
+                if (initialDefaultMode.getModeId()
+                        == mDefaultDisplay.getDefaultMode().getModeId()) {
+                    clearUserPrefModeSignal.countDown();
+                }
+            }
+        };
         mDisplayManager.registerDisplayListener(listener, handler);
         try {
-            mDefaultDisplay.clearUserPreferredDisplayMode();
-            assertTrue(listener.await());
+            mDisplayManager.clearGlobalUserPreferredDisplayMode();
+            // Wait until the display change is effective.
+            assertTrue(clearUserPrefModeSignal.await(DISPLAY_CHANGE_TIMEOUT_SECS,
+                    TimeUnit.SECONDS));
         } finally {
             mDisplayManager.unregisterDisplayListener(listener);
         }
     }
 
     @Test
-    public void testSetUserPreferredDisplayModeForSpecificDevice() {
+    public void
+            testSetAndClearUserPreferredDisplayModeForSpecificDisplayGeneratesDisplayChangedEvents()
+            throws Exception {
+        Display.Mode[] modes = mDefaultDisplay.getSupportedModes();
+        assumeTrue("Need two or more display modes to exercise switching.", modes.length > 1);
+
+        // Test set
+        Display.Mode initialDefaultMode = mDefaultDisplay.getDefaultMode();
+
+        Display.Mode newDefaultMode = findNonDefaultMode(mDefaultDisplay);
+        assertNotNull(newDefaultMode);
+        final CountDownLatch setUserPrefModeSignal = new CountDownLatch(1);
+        DisplayManager.DisplayListener listener = new DisplayManager.DisplayListener() {
+            @Override
+            public void onDisplayAdded(int displayId) {}
+
+            @Override
+            public void onDisplayRemoved(int displayId) {}
+
+            @Override
+            public void onDisplayChanged(int displayId) {
+                if (displayId != mDefaultDisplay.getDisplayId()) {
+                    return;
+                }
+                if (newDefaultMode.getModeId()
+                        == mDefaultDisplay.getDefaultMode().getModeId()) {
+                    setUserPrefModeSignal.countDown();
+                }
+            }
+        };
+        Handler handler = new Handler(Looper.getMainLooper());
+        mDisplayManager.registerDisplayListener(listener, handler);
+        try {
+            mDefaultDisplay.setUserPreferredDisplayMode(newDefaultMode);
+            // Wait until the display change is effective.
+            assertTrue(setUserPrefModeSignal.await(DISPLAY_CHANGE_TIMEOUT_SECS, TimeUnit.SECONDS));
+        } finally {
+            mDisplayManager.unregisterDisplayListener(listener);
+        }
+
+        // Test clear
+        final CountDownLatch clearUserPrefModeSignal = new CountDownLatch(1);
+        listener = new DisplayManager.DisplayListener() {
+            @Override
+            public void onDisplayAdded(int displayId) {}
+
+            @Override
+            public void onDisplayRemoved(int displayId) {}
+
+            @Override
+            public void onDisplayChanged(int displayId) {
+                if (displayId != mDefaultDisplay.getDisplayId()) {
+                    return;
+                }
+                if (initialDefaultMode.getModeId()
+                        == mDefaultDisplay.getDefaultMode().getModeId()) {
+                    clearUserPrefModeSignal.countDown();
+                }
+            }
+        };
+        mDisplayManager.registerDisplayListener(listener, handler);
+        try {
+            mDefaultDisplay.clearUserPreferredDisplayMode();
+            // Wait until the display change is effective.
+            assertTrue(clearUserPrefModeSignal.await(DISPLAY_CHANGE_TIMEOUT_SECS,
+                    TimeUnit.SECONDS));
+        } finally {
+            mDisplayManager.unregisterDisplayListener(listener);
+        }
+    }
+
+    @Test
+    public void testSetUserPreferredDisplayModeForSpecificDisplay() {
         Display.Mode[] modes = mDefaultDisplay.getSupportedModes();
         assumeTrue("Need two or more display modes to exercise switching.", modes.length > 1);
 
@@ -185,7 +262,7 @@ public class DefaultDisplayModeTest {
     }
 
     @Test
-    public void testSetUserPreferredRefreshRateForSpecificDevice() {
+    public void testSetUserPreferredRefreshRateForSpecificDisplay() {
         Display.Mode[] modes = mDefaultDisplay.getSupportedModes();
         assumeTrue("Need two or more display modes to exercise switching.", modes.length > 1);
 
@@ -206,7 +283,7 @@ public class DefaultDisplayModeTest {
     }
 
     @Test
-    public void testSetUserPreferredResolutionForSpecificDevice() {
+    public void testSetUserPreferredResolutionForSpecificDisplay() {
         Display.Mode[] modes = mDefaultDisplay.getSupportedModes();
         assumeTrue("Need two or more display modes to exercise switching.", modes.length > 1);
 
@@ -349,39 +426,6 @@ public class DefaultDisplayModeTest {
         }
         return new Point(-1, -1);
     }
-
-    private static class DefaultModeListener implements DisplayManager.DisplayListener {
-        private final Display mDisplay;
-        private final int mAwaitedDefaultModeId;
-        private final CountDownLatch mLatch;
-
-        private DefaultModeListener(Display display, int awaitedDefaultModeId) {
-            mDisplay = display;
-            mAwaitedDefaultModeId = awaitedDefaultModeId;
-            mLatch = new CountDownLatch(1);
-        }
-
-        @Override
-        public void onDisplayAdded(int displayId) {}
-
-        @Override
-        public void onDisplayChanged(int displayId) {
-            if (displayId != mDisplay.getDisplayId()) {
-                return;
-            }
-
-            if (mAwaitedDefaultModeId == mDisplay.getDefaultMode().getModeId()) {
-                mLatch.countDown();
-            }
-        }
-
-        @Override
-        public void onDisplayRemoved(int displayId) {}
-
-        public boolean await() throws InterruptedException {
-            return mLatch.await(DISPLAY_CHANGE_TIMEOUT_SECS, TimeUnit.SECONDS);
-        }
-    };
 
     private void waitUntil(Display display, Predicate<Display> pred, Duration maxWait)
             throws InterruptedException {

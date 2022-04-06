@@ -46,6 +46,7 @@ import static android.content.pm.PackageManager.FEATURE_TELEVISION;
 import static android.content.pm.PackageManager.FEATURE_VR_MODE_HIGH_PERFORMANCE;
 import static android.content.pm.PackageManager.FEATURE_WATCH;
 import static android.content.pm.PackageManager.MATCH_DEFAULT_ONLY;
+import static android.os.UserHandle.USER_SYSTEM;
 import static android.server.wm.ActivityLauncher.KEY_ACTIVITY_TYPE;
 import static android.server.wm.ActivityLauncher.KEY_DISPLAY_ID;
 import static android.server.wm.ActivityLauncher.KEY_INTENT_EXTRAS;
@@ -76,6 +77,7 @@ import static android.server.wm.UiDeviceUtils.pressUnlockButton;
 import static android.server.wm.UiDeviceUtils.pressWakeupButton;
 import static android.server.wm.UiDeviceUtils.waitForDeviceIdle;
 import static android.server.wm.WindowManagerState.STATE_RESUMED;
+import static android.server.wm.WindowManagerState.STATE_STOPPED;
 import static android.server.wm.app.Components.BROADCAST_RECEIVER_ACTIVITY;
 import static android.server.wm.app.Components.BroadcastReceiverActivity.ACTION_TRIGGER_BROADCAST;
 import static android.server.wm.app.Components.BroadcastReceiverActivity.EXTRA_BROADCAST_ORIENTATION;
@@ -103,6 +105,7 @@ import static android.server.wm.third.Components.THIRD_ACTIVITY;
 import static android.view.Display.DEFAULT_DISPLAY;
 import static android.view.Display.INVALID_DISPLAY;
 import static android.view.Surface.ROTATION_0;
+import static android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
 import static android.view.WindowManager.LayoutParams.TYPE_BASE_APPLICATION;
 
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
@@ -164,6 +167,7 @@ import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 
 import com.android.compatibility.common.util.AppOpsUtils;
@@ -181,10 +185,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -236,12 +238,13 @@ public abstract class ActivityManagerTestBase {
     private static final int UI_MODE_TYPE_VR_HEADSET = 0x07;
 
     static final boolean ENABLE_SHELL_TRANSITIONS =
-            SystemProperties.getBoolean("persist.debug.shell_transit", false);
+            SystemProperties.getBoolean("persist.wm.debug.shell_transit", false);
 
     private static Boolean sHasHomeScreen = null;
     private static Boolean sSupportsSystemDecorsOnSecondaryDisplays = null;
     private static Boolean sSupportsInsecureLockScreen = null;
     private static Boolean sIsAssistantOnTop = null;
+    private static Boolean sIsTablet = null;
     private static boolean sIllegalTaskStateFound;
 
     protected static final int INVALID_DEVICE_ROTATION = -1;
@@ -326,6 +329,11 @@ public abstract class ActivityManagerTestBase {
 
     protected static String getAmStartCmdOverHome(final ComponentName activityName) {
         return "am start --activity-task-on-home -n " + getActivityName(activityName);
+    }
+
+    protected static String getAmStartCmdWithDismissKeyguardIfInsecure(
+            final ComponentName activityName) {
+        return "am start --dismiss-keyguard-if-insecure -n " + getActivityName(activityName);
     }
 
     protected WindowManagerStateHelper mWmState = new WindowManagerStateHelper();
@@ -792,6 +800,11 @@ public abstract class ActivityManagerTestBase {
         mWmState.waitForValidState(activityName);
     }
 
+    protected void launchActivityWithDismissKeyguardIfInsecure(final ComponentName activityName) {
+        executeShellCommand(getAmStartCmdWithDismissKeyguardIfInsecure(activityName));
+        mWmState.waitForValidState(activityName);
+    }
+
     protected static void waitForIdle() {
         getInstrumentation().waitForIdleSync();
     }
@@ -1053,9 +1066,20 @@ public abstract class ActivityManagerTestBase {
         return hasDeviceFeature(FEATURE_TELEVISION);
     }
 
-    protected boolean isTablet() {
-        // Larger than approx 7" tablets
-        return mContext.getResources().getConfiguration().smallestScreenWidthDp >= 600;
+    public static boolean isTablet() {
+        if (sIsTablet == null) {
+            // Use WindowContext with type application overlay to prevent the metrics overridden by
+            // activity bounds. Note that process configuration may still be overridden by
+            // foreground Activity.
+            final Context appContext = ApplicationProvider.getApplicationContext();
+            final Display defaultDisplay = appContext.getSystemService(DisplayManager.class)
+                    .getDisplay(DEFAULT_DISPLAY);
+            final Context windowContext = appContext.createWindowContext(defaultDisplay,
+                    TYPE_APPLICATION_OVERLAY, null /* options */);
+            sIsTablet = windowContext.getResources()
+                    .getConfiguration().smallestScreenWidthDp >= 600;
+        }
+        return sIsTablet;
     }
 
     protected boolean isOperatorTierDevice() {
@@ -1112,6 +1136,21 @@ public abstract class ActivityManagerTestBase {
         mWmState.assertValidity();
         assertTrue(message, mWmState.hasActivityState(activityName, STATE_RESUMED));
         mWmState.assertVisibility(activityName, true /* visible */);
+    }
+
+    /**
+     * Waits and asserts that the activity represented by the given activity name is stopped and
+     * invisible.
+     *
+     * @param activityName the activity name
+     * @param message the error message
+     */
+    public void waitAndAssertStoppedActivity(ComponentName activityName, String message) {
+        mWmState.waitForValidState(activityName);
+        mWmState.waitForActivityState(activityName, STATE_STOPPED);
+        mWmState.assertValidity();
+        assertTrue(message, mWmState.hasActivityState(activityName, STATE_STOPPED));
+        mWmState.assertVisibility(activityName, false /* visible */);
     }
 
     // TODO: Switch to using a feature flag, when available.
@@ -1317,31 +1356,20 @@ public abstract class ActivityManagerTestBase {
         return mObjectTracker.manage(new FontScaleSession());
     }
 
+    /** Allows requesting orientation in case ignore_orientation_request is set to true. */
+    protected void disableIgnoreOrientationRequest() {
+        mObjectTracker.manage(new IgnoreOrientationRequestSession(DEFAULT_DISPLAY, false));
+    }
+
     /**
      * Test @Rule class that disables screen doze settings before each test method running and
      * restoring to initial values after test method finished.
      */
-    protected static class DisableScreenDozeRule implements TestRule {
+    protected class DisableScreenDozeRule implements TestRule {
+        AmbientDisplayConfiguration mConfig;
 
-        /** Copied from android.provider.Settings.Secure since these keys are hidden. */
-        private static final String[] DOZE_SETTINGS = {
-                "doze_enabled",
-                "doze_always_on",
-                "doze_pulse_on_pick_up",
-                "doze_pulse_on_long_press",
-                "doze_pulse_on_double_tap",
-                "doze_wake_screen_gesture",
-                "doze_wake_display_gesture",
-                "doze_tap_gesture",
-                "doze_quick_pickup_gesture"
-        };
-
-        private String get(String key) {
-            return executeShellCommand("settings get secure " + key).trim();
-        }
-
-        private void put(String key, String value) {
-            executeShellCommand("settings put secure " + key + " " + value);
+        DisableScreenDozeRule() {
+            mConfig = new AmbientDisplayConfiguration(mContext);
         }
 
         @Override
@@ -1349,13 +1377,18 @@ public abstract class ActivityManagerTestBase {
             return new Statement() {
                 @Override
                 public void evaluate() throws Throwable {
-                    final Map<String, String> initialValues = new HashMap<>();
-                    Arrays.stream(DOZE_SETTINGS).forEach(k -> initialValues.put(k, get(k)));
                     try {
-                        Arrays.stream(DOZE_SETTINGS).forEach(k -> put(k, "0"));
+                        SystemUtil.runWithShellPermissionIdentity(() -> {
+                            // disable current doze settings
+                            mConfig.disableDozeSettings(true /* shouldDisableNonUserConfigurable */,
+                                    USER_SYSTEM);
+                        });
                         base.evaluate();
                     } finally {
-                        Arrays.stream(DOZE_SETTINGS).forEach(k -> put(k, initialValues.get(k)));
+                        SystemUtil.runWithShellPermissionIdentity(() -> {
+                            // restore doze settings
+                            mConfig.restoreDozeSettings(USER_SYSTEM);
+                        });
                     }
                 }
             };
@@ -2685,7 +2718,7 @@ public abstract class ActivityManagerTestBase {
         final int mDisplayId;
         final boolean mInitialIgnoreOrientationRequest;
 
-        IgnoreOrientationRequestSession(int displayId, boolean enable) {
+        public IgnoreOrientationRequestSession(int displayId, boolean enable) {
             mDisplayId = displayId;
             Matcher matcher = IGNORE_ORIENTATION_REQUEST_PATTERN.matcher(
                     executeShellCommand(WM_GET_IGNORE_ORIENTATION_REQUEST + " -d " + mDisplayId));

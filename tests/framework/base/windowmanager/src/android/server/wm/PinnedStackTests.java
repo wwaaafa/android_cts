@@ -50,6 +50,7 @@ import static android.server.wm.app.Components.PIP_ON_STOP_ACTIVITY;
 import static android.server.wm.app.Components.PipActivity.ACTION_ENTER_PIP;
 import static android.server.wm.app.Components.PipActivity.ACTION_FINISH;
 import static android.server.wm.app.Components.PipActivity.ACTION_FINISH_LAUNCH_INTO_PIP_HOST;
+import static android.server.wm.app.Components.PipActivity.ACTION_LAUNCH_TRANSLUCENT_ACTIVITY;
 import static android.server.wm.app.Components.PipActivity.ACTION_MOVE_TO_BACK;
 import static android.server.wm.app.Components.PipActivity.ACTION_ON_PIP_REQUESTED;
 import static android.server.wm.app.Components.PipActivity.ACTION_START_LAUNCH_INTO_PIP_CONTAINER;
@@ -334,13 +335,13 @@ public class PinnedStackTests extends ActivityManagerTestBase {
                 extraString(EXTRA_ENTER_PIP_ASPECT_RATIO_NUMERATOR, Integer.toString(2)),
                 extraString(EXTRA_ENTER_PIP_ASPECT_RATIO_DENOMINATOR, Integer.toString(1)),
                 extraString(EXTRA_EXPANDED_PIP_ASPECT_RATIO_NUMERATOR, Integer.toString(1)),
-                extraString(EXTRA_EXPANDED_PIP_ASPECT_RATIO_DENOMINATOR, Integer.toString(5)));
+                extraString(EXTRA_EXPANDED_PIP_ASPECT_RATIO_DENOMINATOR, Integer.toString(4)));
         // Wait for animation complete since we are comparing aspect ratio
         waitForEnterPipAnimationComplete(PIP_ACTIVITY);
         assertPinnedStackExists();
         // Assert that we have entered PIP and that the aspect ratio is correct
         final Rect bounds = getPinnedStackBounds();
-        assertFloatEquals((float) bounds.width() / bounds.height(), (float) 1.0f / 5.0f);
+        assertFloatEquals((float) bounds.width() / bounds.height(), (float) 1.0f / 4.0f);
     }
 
     @Test
@@ -515,16 +516,16 @@ public class PinnedStackTests extends ActivityManagerTestBase {
     }
 
     @Test
-    public void testPreferDockBigOverlaysWithExpandedPip() {
-        testPreferDockBigOverlaysWithExpandedPip(true);
+    public void testShouldDockBigOverlaysWithExpandedPip() {
+        testShouldDockBigOverlaysWithExpandedPip(true);
     }
 
     @Test
-    public void testNotPreferDockBigOverlaysWithExpandedPip() {
-        testPreferDockBigOverlaysWithExpandedPip(false);
+    public void testShouldNotDockBigOverlaysWithExpandedPip() {
+        testShouldDockBigOverlaysWithExpandedPip(false);
     }
 
-    private void testPreferDockBigOverlaysWithExpandedPip(boolean preferDock) {
+    private void testShouldDockBigOverlaysWithExpandedPip(boolean shouldDock) {
         assumeTrue(supportsExpandedPip());
         TestActivitySession<TestActivity> testSession = createManagedTestActivitySession();
         final Intent intent = new Intent(mContext, TestActivity.class);
@@ -541,7 +542,7 @@ public class PinnedStackTests extends ActivityManagerTestBase {
         waitForEnterPipAnimationComplete(PIP_ACTIVITY);
         assertPinnedStackExists();
 
-        testSession.runOnMainSyncAndWait(() -> activity.setPreferDockBigOverlays(preferDock));
+        testSession.runOnMainSyncAndWait(() -> activity.setShouldDockBigOverlays(shouldDock));
 
         mWmState.assertResumedActivity("Activity must be resumed", activity.getComponentName());
         assertPinnedStackExists();
@@ -549,8 +550,15 @@ public class PinnedStackTests extends ActivityManagerTestBase {
             final Task task = mWmState.getTaskByActivity(activity.getComponentName());
             final TaskInfo info = mTaskOrganizer.getTaskInfo(task.getTaskId());
 
-            assertEquals(preferDock, info.getPreferDockBigOverlays());
+            assertEquals(shouldDock, info.shouldDockBigOverlays());
         });
+
+        final boolean[] actual = new boolean[] {!shouldDock};
+        testSession.runOnMainSyncAndWait(() -> {
+            actual[0] = activity.shouldDockBigOverlays();
+        });
+
+        assertEquals(shouldDock, actual[0]);
     }
 
     @Test
@@ -1462,16 +1470,28 @@ public class PinnedStackTests extends ActivityManagerTestBase {
     }
 
     @Test
-    public void testAutoPipOnLaunchingAnotherActivity() {
+    public void testAutoPipOnLaunchingRegularActivity() {
         // Launch the PIP activity and set its pip params to allow auto-pip.
         launchActivity(PIP_ACTIVITY, extraString(EXTRA_ALLOW_AUTO_PIP, "true"));
         assertPinnedStackDoesNotExist();
 
-        // Launch another and ensure that there is a pinned stack.
+        // Launch a regular activity and ensure that there is a pinned stack.
         launchActivity(TEST_ACTIVITY, WINDOWING_MODE_FULLSCREEN);
         waitForEnterPip(PIP_ACTIVITY);
         assertPinnedStackExists();
         waitAndAssertActivityState(PIP_ACTIVITY, STATE_PAUSED, "activity must be paused");
+    }
+
+    @Test
+    public void testAutoPipOnLaunchingTranslucentActivity() {
+        // Launch the PIP activity and set its pip params to allow auto-pip.
+        launchActivity(PIP_ACTIVITY, extraString(EXTRA_ALLOW_AUTO_PIP, "true"));
+        assertPinnedStackDoesNotExist();
+
+        // Launch a translucent activity from PipActivity itself and
+        // ensure that there is no pinned stack.
+        mBroadcastActionTrigger.doAction(ACTION_LAUNCH_TRANSLUCENT_ACTIVITY);
+        assertPinnedStackDoesNotExist();
     }
 
     @Test

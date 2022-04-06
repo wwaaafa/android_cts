@@ -30,13 +30,13 @@ import com.android.tradefed.targetprep.TestAppInstallSetup;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.testtype.InstrumentationTest;
 import com.android.tradefed.util.AaptParser;
+import com.android.tradefed.util.FileUtil;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -69,20 +69,12 @@ public class ApkPackageNameCheck {
             fail(String.format("%s does not exists", testcases));
             return;
         }
-        File[] listConfig = testcases.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                if (name.endsWith(".config")) {
-                    return true;
-                }
-                return false;
-            }
-        });
-        assertTrue(listConfig.length > 0);
+        Set<File> listConfigs = FileUtil.findFilesObject(testcases, ".*\\.config");
+        assertTrue(listConfigs.size() > 0);
         // We check all apk installed by all modules
         Map<String, String> packageNames = new HashMap<>();
 
-        for (File config : listConfig) {
+        for (File config : listConfigs) {
             IConfiguration c = ConfigurationFactory.getInstance()
                     .createConfigurationFromArgs(new String[] {config.getAbsolutePath()});
             // For each config, we check all the apk it's going to install
@@ -97,15 +89,17 @@ public class ApkPackageNameCheck {
                     if (prep instanceof FilePusher && ((FilePusher) prep).shouldAppendBitness()) {
                         for (File f : ((PushFilePreparer) prep).getPushSpecs(null).values()) {
                             String path = f.getPath();
-                            if (!new File(testcases, path + "32").exists()
-                                    || !new File(testcases, path + "64").exists()) {
+                            File file32 = FileUtil.findFile(config.getParentFile(), path + "32");
+                            File file64 = FileUtil.findFile(config.getParentFile(), path + "64");
+                            if (file32 == null || file64 == null) {
                                 // TODO: Enforce should abort on failure is True in CTS
                                 if (((FilePusher) prep).shouldAbortOnFailure()) {
                                     fail(
                                             String.format(
-                                                    "File %s[32/64] wasn't found in testcases/ while "
-                                                            + "it's expected to be pushed as part of "
-                                                            + "%s",
+                                                    "File %s[32/64] wasn't found in module "
+                                                            + "dependencies while "
+                                                            + "it's expected to be pushed as part"
+                                                            + " of %s.",
                                                     path, config.getName()));
                                 }
                             }
@@ -113,26 +107,29 @@ public class ApkPackageNameCheck {
                     } else if (prep instanceof PushFilePreparer) {
                         for (File f : ((PushFilePreparer) prep).getPushSpecs(null).values()) {
                             String path = f.getPath();
-                            if (!new File(testcases, path).exists()) {
+                            File toBePushed = FileUtil.findFile(config.getParentFile(), path);
+                            if (toBePushed == null) {
                                 // TODO: Enforce should abort on failure is True in CTS
                                 if (((PushFilePreparer) prep).shouldAbortOnFailure()) {
                                     fail(
                                             String.format(
-                                                    "File %s wasn't found in testcases/ while it's "
-                                                            + "expected to be pushed as part of %s",
+                                                    "File %s wasn't found in module dependencies "
+                                                            + "while it's expected to be pushed "
+                                                            + "as part of %s.",
                                                     path, config.getName()));
                                 }
                             }
                         }
                     }
                 }
-    
+
+                // All apks need to be in the config dir or sub-dir
                 for (File apk : apkNames) {
                     String apkName = apk.getName();
-                    File apkFile = new File(testcases, apkName);
-                    if (!apkFile.exists()) {
+                    File apkFile = FileUtil.findFile(config.getParentFile(), apkName);
+                    if (apkFile == null || !apkFile.exists()) {
                         fail(String.format("Module %s is trying to install %s which does not "
-                                + "exists in testcases/", config.getName(), apkFile));
+                                + "exists in testcases/", config.getName(), apkName));
                     }
                     AaptParser res = AaptParser.parse(apkFile);
                     assertNotNull(res);

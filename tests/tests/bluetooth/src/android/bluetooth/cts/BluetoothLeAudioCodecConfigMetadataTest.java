@@ -75,8 +75,7 @@ public class BluetoothLeAudioCodecConfigMetadataTest {
                 mAdapter.isLeAudioBroadcastAssistantSupported() == FEATURE_SUPPORTED;
         if (mIsBroadcastAssistantSupported) {
             boolean isBroadcastAssistantEnabledInConfig =
-                    TestUtils.getProfileConfigValueOrDie(
-                            BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT);
+                    TestUtils.isProfileEnabled(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT);
             assertTrue("Config must be true when profile is supported",
                     isBroadcastAssistantEnabledInConfig);
         }
@@ -85,8 +84,7 @@ public class BluetoothLeAudioCodecConfigMetadataTest {
                 mAdapter.isLeAudioBroadcastSourceSupported() == FEATURE_SUPPORTED;
         if (!mIsBroadcastSourceSupported) {
             boolean isBroadcastSourceEnabledInConfig =
-                    TestUtils.getProfileConfigValueOrDie(
-                            BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT);
+                    TestUtils.isProfileEnabled(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT);
             assertTrue("Config must be true when profile is supported",
                     isBroadcastSourceEnabledInConfig);
         }
@@ -95,7 +93,9 @@ public class BluetoothLeAudioCodecConfigMetadataTest {
     @After
     public void tearDown() {
         if (mHasBluetooth) {
-            assertTrue(BTAdapterUtils.disableAdapter(mAdapter, mContext));
+            if (mAdapter != null) {
+                assertTrue(BTAdapterUtils.disableAdapter(mAdapter, mContext));
+            }
             mAdapter = null;
             TestUtils.dropPermissionAsShellUid();
         }
@@ -115,6 +115,21 @@ public class BluetoothLeAudioCodecConfigMetadataTest {
     }
 
     @Test
+    public void testCreateCodecConfigMetadataFromCopy() {
+        if (shouldSkipTest()) {
+            return;
+        }
+        BluetoothLeAudioCodecConfigMetadata codecMetadata =
+                new BluetoothLeAudioCodecConfigMetadata.Builder()
+                        .setAudioLocation(TEST_AUDIO_LOCATION_FRONT_LEFT).build();
+        BluetoothLeAudioCodecConfigMetadata codecMetadataCopy =
+                new BluetoothLeAudioCodecConfigMetadata.Builder(codecMetadata).build();
+        assertEquals(codecMetadata, codecMetadataCopy);
+        assertEquals(TEST_AUDIO_LOCATION_FRONT_LEFT, codecMetadataCopy.getAudioLocation());
+        assertArrayEquals(TEST_METADATA_BYTES, codecMetadata.getRawMetadata());
+    }
+
+    @Test
     public void testCreateCodecConfigMetadataFromBytes() {
         if (shouldSkipTest()) {
             return;
@@ -124,8 +139,7 @@ public class BluetoothLeAudioCodecConfigMetadataTest {
         byte[] metadataBytes = codecMetadata.getRawMetadata();
         assertNotNull(metadataBytes);
         assertArrayEquals(TEST_METADATA_BYTES, metadataBytes);
-        // TODO: Implement implicit LTV byte conversion in the API class
-        // assertEquals(TEST_AUDIO_LOCATION_FRONT_LEFT, codecMetadata.getAudioLocation());
+        assertEquals(TEST_AUDIO_LOCATION_FRONT_LEFT, codecMetadata.getAudioLocation());
     }
 
     private boolean shouldSkipTest() {

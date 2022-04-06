@@ -22,6 +22,7 @@ import static org.junit.Assert.assertThrows;
 
 import android.annotation.NonNull;
 import android.app.UiAutomation;
+import android.bluetooth.BluetoothActivityEnergyInfo;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
@@ -34,11 +35,14 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.os.Build;
 import android.os.SystemProperties;
 import android.test.AndroidTestCase;
 import android.util.Log;
 
 import androidx.test.InstrumentationRegistry;
+
+import com.android.compatibility.common.util.ApiLevelUtil;
 
 import java.io.IOException;
 import java.util.List;
@@ -54,7 +58,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * BluetoothAdapter}.
  */
 public class BluetoothAdapterTest extends AndroidTestCase {
-    private static final String TAG = "BasicAdapterTest";
+    private static final String TAG = "BluetoothAdapterTest";
     private static final int SET_NAME_TIMEOUT = 5000; // ms timeout for setting adapter name
 
     private boolean mHasBluetooth;
@@ -329,10 +333,10 @@ public class BluetoothAdapterTest extends AndroidTestCase {
         int maxConnectedAudioDevicesConfig = 0;
         try {
             Resources bluetoothRes = mContext.getPackageManager()
-                    .getResourcesForApplication("com.android.bluetooth");
+                    .getResourcesForApplication("com.android.bluetooth.services");
             maxConnectedAudioDevicesConfig = bluetoothRes.getInteger(
                     bluetoothRes.getIdentifier("config_bluetooth_max_connected_audio_devices",
-                    "integer", "com.android.bluetooth"));
+                    "integer", "com.android.bluetooth.services"));
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
@@ -407,14 +411,14 @@ public class BluetoothAdapterTest extends AndroidTestCase {
 
         // Verify return value without permission.BLUETOOTH_CONNECT
         mUiAutomation.dropShellPermissionIdentity();
-        assertThrows(SecurityException.class, () -> mAdapter.getUuids());
+        assertThrows(SecurityException.class, () -> mAdapter.getUuidsList());
         mUiAutomation.adoptShellPermissionIdentity(BLUETOOTH_CONNECT);
 
-        assertNotNull(mAdapter.getUuids());
+        assertNotNull(mAdapter.getUuidsList());
         assertTrue(BTAdapterUtils.disableAdapter(mAdapter, mContext));
 
         // Verify return value if Bluetooth is not enabled
-        assertNull(mAdapter.getUuids());
+        assertEquals(0, mAdapter.getUuidsList().size());
 
     }
 
@@ -440,7 +444,7 @@ public class BluetoothAdapterTest extends AndroidTestCase {
 
     public void test_BluetoothConnectionCallback_disconnectReasonText() {
         assertEquals("Reason unknown", BluetoothAdapter.BluetoothConnectionCallback
-                .disconnectReasonText(BluetoothStatusCodes.ERROR_UNKNOWN));
+                .disconnectReasonToString(BluetoothStatusCodes.ERROR_UNKNOWN));
     }
 
     public void test_registerBluetoothConnectionCallback() {
@@ -479,48 +483,41 @@ public class BluetoothAdapterTest extends AndroidTestCase {
                 mAdapter.unregisterBluetoothConnectionCallback(callback));
     }
 
-    public void test_registerServiceLifecycleCallback() {
+    public void test_requestControllerActivityEnergyInfo() {
         if (!mHasBluetooth) return;
 
-        BluetoothAdapter.ServiceLifecycleCallback callback =
-                new BluetoothAdapter.ServiceLifecycleCallback() {
+        BluetoothAdapter.OnBluetoothActivityEnergyInfoCallback callback =
+                new BluetoothAdapter.OnBluetoothActivityEnergyInfoCallback() {
                     @Override
-                    public void onBluetoothServiceUp() {}
+                    public void onBluetoothActivityEnergyInfoAvailable(
+                            BluetoothActivityEnergyInfo info) {
+                        assertNotNull(info);
+                    }
+
                     @Override
-                    public void onBluetoothServiceDown() {}
+                    public void onBluetoothActivityEnergyInfoError(int errorCode) {}
                 };
 
         // Verify parameter
         assertThrows(NullPointerException.class,
-                () -> mAdapter.registerServiceLifecycleCallback(null));
-
-        assertThrows(NullPointerException.class,
-                () -> mAdapter.unregisterServiceLifecycleCallback(null));
+                () -> mAdapter.requestControllerActivityEnergyInfo(null, callback));
     }
 
-    public void test_requestControllerActivityEnergyInfo() {
-        if (!mHasBluetooth) return;
-
-        // Verify parameter
-        assertThrows(NullPointerException.class,
-                () -> mAdapter.requestControllerActivityEnergyInfo(null));
-    }
-
-    public void test_factoryReset() {
+    public void test_clearBluetooth() {
         if (!mHasBluetooth) return;
 
         assertTrue(BTAdapterUtils.enableAdapter(mAdapter, mContext));
 
         // Verify throws SecurityException without permission.BLUETOOTH_PRIVILEGED
-        assertThrows(SecurityException.class, () -> mAdapter.factoryReset());
+        assertThrows(SecurityException.class, () -> mAdapter.clearBluetooth());
         mUiAutomation.dropShellPermissionIdentity();
         // Verify throws SecurityException without permission.BLUETOOTH_CONNECT
-        assertThrows(SecurityException.class, () -> mAdapter.factoryReset());
+        assertThrows(SecurityException.class, () -> mAdapter.clearBluetooth());
 
         mUiAutomation.adoptShellPermissionIdentity(BLUETOOTH_CONNECT);
         assertTrue(BTAdapterUtils.disableAdapter(mAdapter, mContext));
         // Verify throws RuntimeException when trying to save sysprop for later (permission denied)
-        assertThrows(RuntimeException.class, () -> mAdapter.factoryReset());
+        assertThrows(RuntimeException.class, () -> mAdapter.clearBluetooth());
     }
 
     public void test_BluetoothProfile_getConnectionStateName() {
@@ -582,8 +579,19 @@ public class BluetoothAdapterTest extends AndroidTestCase {
                 BluetoothProfile.getProfileName(BluetoothProfile.LE_AUDIO));
         assertEquals("HAP_CLIENT",
                 BluetoothProfile.getProfileName(BluetoothProfile.HAP_CLIENT));
-        assertEquals("UNKNOWN_PROFILE",
-                BluetoothProfile.getProfileName(BluetoothProfile.HAP_CLIENT + 1));
+
+        if (!ApiLevelUtil.isAtLeast(Build.VERSION_CODES.TIRAMISU)) {
+            return;
+        }
+
+        assertEquals("VOLUME_CONTROL",
+                BluetoothProfile.getProfileName(BluetoothProfile.VOLUME_CONTROL));
+        assertEquals("CSIP_SET_COORDINATOR",
+                BluetoothProfile.getProfileName(BluetoothProfile.CSIP_SET_COORDINATOR));
+        assertEquals("LE_AUDIO_BROADCAST",
+                BluetoothProfile.getProfileName(BluetoothProfile.LE_AUDIO_BROADCAST));
+        assertEquals("LE_AUDIO_BROADCAST_ASSISTANT",
+                BluetoothProfile.getProfileName(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT));
     }
 
     private static void sleep(long t) {

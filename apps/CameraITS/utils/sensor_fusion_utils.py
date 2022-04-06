@@ -17,14 +17,22 @@
 import bisect
 import codecs
 import logging
+import math
+import os
 import struct
 import time
 import unittest
 
+import cv2
+from matplotlib import pylab
+import matplotlib.pyplot
 import numpy as np
 import scipy.spatial
 import serial
 from serial.tools import list_ports
+
+import camera_properties_utils
+import image_processing_utils
 
 # Constants for Rotation Rig
 ARDUINO_ANGLE_MAX = 180.0  # degrees
@@ -54,6 +62,33 @@ CANAKIT_VID = 0x04d8
 
 HS755HB_ANGLE_MAX = 202.0  # throw for rotation motor in degrees
 
+# From test_sensor_fusion
+_FEATURE_MARGIN = 0.20  # Only take feature points from center 20% so that
+                        # rotation measured has less rolling shutter effect.
+_FEATURE_PTS_MIN = 30  # Min number of feature pts to perform rotation analysis.
+# cv2.goodFeatures to track.
+# 'POSTMASK' is the measurement method in all previous versions of Android.
+# 'POSTMASK' finds best features on entire frame and then masks the features
+# to the vertical center FEATURE_MARGIN for the measurement.
+# 'PREMASK' is a new measurement that is used when FEATURE_PTS_MIN is not
+# found in frame. This finds the best 2*FEATURE_PTS_MIN in the FEATURE_MARGIN
+# part of the frame.
+_CV2_FEATURE_PARAMS_POSTMASK = dict(maxCorners=240,
+                                    qualityLevel=0.3,
+                                    minDistance=7,
+                                    blockSize=7)
+_CV2_FEATURE_PARAMS_PREMASK = dict(maxCorners=2*_FEATURE_PTS_MIN,
+                                   qualityLevel=0.3,
+                                   minDistance=7,
+                                   blockSize=7)
+_GYRO_SAMP_RATE_MIN = 100.0  # Samples/second: min gyro sample rate.
+_CV2_LK_PARAMS = dict(winSize=(15, 15),
+                      maxLevel=2,
+                      criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
+                                10, 0.03))  # cv2.calcOpticalFlowPyrLK params.
+_ROTATION_PER_FRAME_MIN = 0.001  # rads/s
+
+# unittest constants
 _COARSE_FIT_RANGE = 20  # Range area around coarse fit to do optimization.
 _CORR_TIME_OFFSET_MAX = 50  # ms max shift to try and match camera/gyro times.
 _CORR_TIME_OFFSET_STEP = 0.5  # ms step for shifts.
@@ -62,6 +97,9 @@ _CORR_TIME_OFFSET_STEP = 0.5  # ms step for shifts.
 _MSEC_TO_NSEC = 1000000
 _NSEC_TO_SEC = 1E-9
 _SEC_TO_NSEC = int(1/_NSEC_TO_SEC)
+_RADS_TO_DEGS = 180/math.pi
+
+_NUM_GYRO_PTS_TO_AVG = 20
 
 
 def serial_port_def(name):
@@ -193,20 +231,15 @@ def arduino_rotate_servo_to_angle(ch, angle, serial_port, move_time):
   time.sleep(move_time)
 
 
-def arduino_rotate_servo(ch, angles, servo_speed, move_time, serial_port):
+def arduino_rotate_servo(ch, angles, move_time, serial_port):
   """Rotate servo through 'angles'.
 
   Args:
     ch: str; servo to rotate
     angles: list of ints; servo angles to move to
-    servo_speed: int; move speed between [1, 255]
     move_time: int; time required to allow for arduino movement
     serial_port: object; serial port
   """
-
-  # set servo speed
-  logging.debug('Servo speed: %d', servo_speed)
-  set_servo_speed(ch, servo_speed, serial_port, delay=0)
 
   for angle in angles:
     angle_norm = int(round(angle*ARDUINO_ANGLE_MAX/HS755HB_ANGLE_MAX, 0))
@@ -243,6 +276,9 @@ def rotation_rig(rotate_cntl, rotate_ch, num_rotations, angles, servo_speed,
     logging.debug('Moving servo to origin')
     arduino_rotate_servo_to_angle(rotate_ch, 0, arduino_serial_port, 1)
 
+    # set servo speed
+    set_servo_speed(rotate_ch, servo_speed, arduino_serial_port, delay=0)
+
   elif rotate_cntl.lower() == 'canakit':
     canakit_serial_port = serial_port_def('Canakit')
 
@@ -253,8 +289,7 @@ def rotation_rig(rotate_cntl, rotate_ch, num_rotations, angles, servo_speed,
   logging.debug('Rotating phone %dx', num_rotations)
   for _ in range(num_rotations):
     if rotate_cntl == 'arduino':
-      arduino_rotate_servo(rotate_ch, angles, servo_speed, move_time,
-                           arduino_serial_port)
+      arduino_rotate_servo(rotate_ch, angles, move_time, arduino_serial_port)
     elif rotate_cntl == 'canakit':
       canakit_set_relay_channel_state(canakit_serial_port, rotate_ch, 'ON')
       canakit_set_relay_channel_state(canakit_serial_port, rotate_ch, 'OFF')
@@ -273,6 +308,7 @@ def set_servo_speed(ch, servo_speed, serial_port, delay=0):
     serial_port: object; serial port
     delay: int; time in seconds
   """
+  logging.debug('Servo speed: %d', servo_speed)
   if servo_speed < ARDUINO_SERVO_SPEED_MIN:
     logging.debug('Servo speed must be >= %d.', ARDUINO_SERVO_SPEED_MIN)
     servo_speed = ARDUINO_SERVO_SPEED_MIN
@@ -284,6 +320,27 @@ def set_servo_speed(ch, servo_speed, serial_port, delay=0):
                                        int(ch), servo_speed]]
   arduino_send_cmd(serial_port, cmd)
   time.sleep(delay)
+
+
+def calc_max_rotation_angle(rotations, sensor_type):
+  """Calculates the max angle of deflection from rotations.
+
+  Args:
+    rotations: numpy array of rotation per event
+    sensor_type: string 'Camera' or 'Gyro'
+
+  Returns:
+    maximum angle of rotation for the given rotations
+  """
+  rotations *= _RADS_TO_DEGS
+  rotations_sum = np.cumsum(rotations)
+  rotation_max = max(rotations_sum)
+  rotation_min = min(rotations_sum)
+  logging.debug('%s min: %.2f, max %.2f rotation (degrees)',
+                sensor_type, rotation_min, rotation_max)
+  logging.debug('%s max rotation: %.2f degrees',
+                sensor_type, (rotation_max-rotation_min))
+  return rotation_max-rotation_min
 
 
 def get_gyro_rotations(gyro_events, cam_times):
@@ -342,6 +399,126 @@ def get_gyro_rotations(gyro_events, cam_times):
     gyro_rots.append(gyro_sum)
   gyro_rots = np.array(gyro_rots)
   return gyro_rots
+
+
+def procrustes_rotation(x, y):
+  """Performs a Procrustes analysis to conform points in x to y.
+
+  Procrustes analysis determines a linear transformation (translation,
+  reflection, orthogonal rotation and scaling) of the points in y to best
+  conform them to the points in matrix x, using the sum of squared errors
+  as the metric for fit criterion.
+
+  Args:
+    x: Target coordinate matrix
+    y: Input coordinate matrix
+
+  Returns:
+    The rotation component of the transformation that maps x to y.
+  """
+  x0 = (x-x.mean(0)) / np.sqrt(((x-x.mean(0))**2.0).sum())
+  y0 = (y-y.mean(0)) / np.sqrt(((y-y.mean(0))**2.0).sum())
+  u, _, vt = np.linalg.svd(np.dot(x0.T, y0), full_matrices=False)
+  return np.dot(vt.T, u.T)
+
+
+def get_cam_rotations(frames, facing, h, file_name_stem, start_frame):
+  """Get the rotations of the camera between each pair of frames.
+
+  Takes N frames and returns N-1 angular displacements corresponding to the
+  rotations between adjacent pairs of frames, in radians.
+  Only takes feature points from center so that rotation measured has less
+  rolling shutter effect.
+  Requires FEATURE_PTS_MIN to have enough data points for accurate measurements.
+  Uses FEATURE_PARAMS for cv2 to identify features in checkerboard images.
+  Ensures camera rotates enough.
+
+  Args:
+    frames: List of N images (as RGB numpy arrays).
+    facing: Direction camera is facing.
+    h: Pixel height of each frame.
+    file_name_stem: file name stem including location for data.
+    start_frame: int; index to start at
+
+  Returns:
+    numpy array of N-1 camera rotation measurements (rad).
+  """
+  gframes = []
+  for frame in frames:
+    frame = (frame * 255.0).astype(np.uint8)  # cv2 uses [0, 255]
+    gframes.append(cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY))
+  num_frames = len(gframes)
+  logging.debug('num_frames: %d', num_frames)
+  # create mask
+  ymin = int(h * (1 - _FEATURE_MARGIN) / 2)
+  ymax = int(h * (1 + _FEATURE_MARGIN) / 2)
+  pre_mask = np.zeros_like(gframes[0])
+  pre_mask[ymin:ymax, :] = 255
+
+  for masking in ['post', 'pre']:  # Do post-masking (original) method 1st
+    logging.debug('Using %s masking method', masking)
+    rotations = []
+    for i in range(1, num_frames):
+      j = i - 1
+      gframe0 = gframes[j]
+      gframe1 = gframes[i]
+      if masking == 'post':
+        p0 = cv2.goodFeaturesToTrack(
+            gframe0, mask=None, **_CV2_FEATURE_PARAMS_POSTMASK)
+        post_mask = (p0[:, 0, 1] >= ymin) & (p0[:, 0, 1] <= ymax)
+        p0_filtered = p0[post_mask]
+      else:
+        p0_filtered = cv2.goodFeaturesToTrack(
+            gframe0, mask=pre_mask, **_CV2_FEATURE_PARAMS_PREMASK)
+      num_features = len(p0_filtered)
+      if num_features < _FEATURE_PTS_MIN:
+        for pt in np.rint(p0_filtered).astype(int):
+          x, y = pt[0][0], pt[0][1]
+          cv2.circle(frames[j], (x, y), 3, (100, 255, 255), -1)
+        image_processing_utils.write_image(
+            frames[j], f'{file_name_stem}_features{j+start_frame:03d}.png')
+        msg = (f'Not enough features in frame {j+start_frame}. Need at least '
+               f'{_FEATURE_PTS_MIN} features, got {num_features}.')
+        if masking == 'pre':
+          raise AssertionError(msg)
+        else:
+          logging.debug(msg)
+          break
+      else:
+        logging.debug('Number of features in frame %s is %d',
+                      str(j+start_frame).zfill(3), num_features)
+      p1, st, _ = cv2.calcOpticalFlowPyrLK(gframe0, gframe1, p0_filtered, None,
+                                           **_CV2_LK_PARAMS)
+      tform = procrustes_rotation(p0_filtered[st == 1], p1[st == 1])
+      if facing == camera_properties_utils.LENS_FACING_BACK:
+        rotation = -math.atan2(tform[0, 1], tform[0, 0])
+      elif facing == camera_properties_utils.LENS_FACING_FRONT:
+        rotation = math.atan2(tform[0, 1], tform[0, 0])
+      else:
+        raise AssertionError(f'Unknown lens facing: {facing}.')
+      rotations.append(rotation)
+      if i == 1:
+        # Save debug visualization of features that are being
+        # tracked in the first frame.
+        frame = frames[j]
+        for x, y in np.rint(p0_filtered[st == 1]).astype(int):
+          cv2.circle(frame, (x, y), 3, (100, 255, 255), -1)
+        image_processing_utils.write_image(
+            frame, f'{file_name_stem}_features{j+start_frame:03d}.png')
+    if i == num_frames-1:
+      logging.debug('Correct num of frames found: %d', i)
+      break  # exit if enough features in all frames
+  if i != num_frames-1:
+    raise AssertionError('Neither method found enough features in all frames')
+
+  rotations = np.array(rotations)
+  rot_per_frame_max = max(abs(rotations))
+  logging.debug('Max rotation in frame: %.2f degrees',
+                rot_per_frame_max*_RADS_TO_DEGS)
+  if rot_per_frame_max < _ROTATION_PER_FRAME_MIN:
+    raise AssertionError(f'Device not moved enough: {rot_per_frame_max:.3f} '
+                         f'movement. THRESH: {_ROTATION_PER_FRAME_MIN} rads.')
+  return rotations
 
 
 def get_best_alignment_offset(cam_times, cam_rots, gyro_events):
@@ -403,6 +580,53 @@ def get_best_alignment_offset(cam_times, cam_rots, gyro_events):
         f'Coefficients are < 0: a: {fit_coeffs[0]}, c: {fit_coeffs[2]}.')
 
   return exact_best_shift, fit_coeffs, shift_candidates, spatial_distances
+
+
+def plot_gyro_events(gyro_events, plot_name, log_path):
+  """Plot x, y, and z on the gyro events.
+
+  Samples are grouped into NUM_GYRO_PTS_TO_AVG groups and averaged to minimize
+  random spikes in data.
+
+  Args:
+    gyro_events: List of gyroscope events.
+    plot_name:  name of plot(s).
+    log_path: location to save data.
+  """
+
+  nevents = (len(gyro_events) // _NUM_GYRO_PTS_TO_AVG) * _NUM_GYRO_PTS_TO_AVG
+  gyro_events = gyro_events[:nevents]
+  times = np.array([(e['time'] - gyro_events[0]['time']) * _NSEC_TO_SEC
+                    for e in gyro_events])
+  x = np.array([e['x'] for e in gyro_events])
+  y = np.array([e['y'] for e in gyro_events])
+  z = np.array([e['z'] for e in gyro_events])
+
+  # Group samples into size-N groups & average each together to minimize random
+  # spikes in data.
+  times = times[_NUM_GYRO_PTS_TO_AVG//2::_NUM_GYRO_PTS_TO_AVG]
+  x = x.reshape(nevents//_NUM_GYRO_PTS_TO_AVG, _NUM_GYRO_PTS_TO_AVG).mean(1)
+  y = y.reshape(nevents//_NUM_GYRO_PTS_TO_AVG, _NUM_GYRO_PTS_TO_AVG).mean(1)
+  z = z.reshape(nevents//_NUM_GYRO_PTS_TO_AVG, _NUM_GYRO_PTS_TO_AVG).mean(1)
+
+  pylab.figure(plot_name)
+  # x & y on same axes
+  pylab.subplot(2, 1, 1)
+  pylab.title(f'{plot_name}(mean of {_NUM_GYRO_PTS_TO_AVG} pts)')
+  pylab.plot(times, x, 'r', label='x')
+  pylab.plot(times, y, 'g', label='y')
+  pylab.ylim([np.amin(z), np.amax(z)])
+  pylab.ylabel('gyro x,y movement (rads/s)')
+  pylab.legend()
+
+  # z on separate axes
+  pylab.subplot(2, 1, 2)
+  pylab.plot(times, z, 'b', label='z')
+  pylab.xlabel('time (seconds)')
+  pylab.ylabel('gyro z movement (rads/s)')
+  pylab.legend()
+  file_name = os.path.join(log_path, plot_name)
+  matplotlib.pyplot.savefig(f'{file_name}_gyro_events.png')
 
 
 class SensorFusionUtilsTests(unittest.TestCase):

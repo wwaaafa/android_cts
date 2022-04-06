@@ -17,9 +17,13 @@
 package android.photopicker.cts;
 
 import static android.provider.CloudMediaProviderContract.AlbumColumns;
+import static android.provider.CloudMediaProviderContract.EXTRA_ALBUM_ID;
+import static android.provider.CloudMediaProviderContract.EXTRA_MEDIA_COLLECTION_ID;
+import static android.provider.CloudMediaProviderContract.EXTRA_SYNC_GENERATION;
 import static android.provider.CloudMediaProviderContract.MediaCollectionInfo;
 import static android.provider.CloudMediaProviderContract.MediaColumns;
 
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -87,18 +91,24 @@ public class PickerProviderMediaGenerator {
             mPrivateDir = context.getFilesDir();
         }
 
-        public Cursor getMedia(long generation, String albumdId, String mimeType, long sizeBytes) {
-            return getCursor(mMedia, generation, albumdId, mimeType, sizeBytes,
+        public Cursor getMedia(long generation, String albumId, String mimeType, long sizeBytes) {
+            final Cursor cursor = getCursor(mMedia, generation, albumId, mimeType, sizeBytes,
                     /* isDeleted */ false);
+            cursor.setExtras(buildCursorExtras(mCollectionId, generation > 0, albumId != null));
+            return cursor;
         }
 
         public Cursor getAlbums(String mimeType, long sizeBytes) {
-            return getCursor(mAlbums, mimeType, sizeBytes);
+            final Cursor cursor = getCursor(mAlbums, mimeType, sizeBytes);
+            cursor.setExtras(buildCursorExtras(mCollectionId, false, false));
+            return cursor;
         }
 
         public Cursor getDeletedMedia(long generation) {
-            return getCursor(mDeletedMedia, generation, /* albumId */ null, /* mimeType */ null,
-                    /* sizeBytes */ 0, /* isDeleted */ true);
+            final Cursor cursor = getCursor(mDeletedMedia, generation, /* albumId */ null,
+                    /* mimeType */ null, /* sizeBytes */ 0, /* isDeleted */ true);
+            cursor.setExtras(buildCursorExtras(mCollectionId, generation > 0, false));
+            return cursor;
         }
 
         public Bundle getMediaCollectionInfo() {
@@ -115,6 +125,23 @@ public class PickerProviderMediaGenerator {
         public void setAccountInfo(String accountName, Intent configIntent) {
             mAccountName = accountName;
             mAccountConfigurationIntent = configIntent;
+        }
+
+        public Bundle buildCursorExtras(String mediaCollectionId, boolean honoredSyncGeneration,
+                boolean honoredAlbumdId) {
+            final ArrayList<String> honoredArgs = new ArrayList<>();
+            if (honoredSyncGeneration) {
+                honoredArgs.add(EXTRA_SYNC_GENERATION);
+            }
+            if (honoredAlbumdId) {
+                honoredArgs.add(EXTRA_ALBUM_ID);
+            }
+
+            final Bundle bundle = new Bundle();
+            bundle.putString(EXTRA_MEDIA_COLLECTION_ID, mediaCollectionId);
+            bundle.putStringArrayList(ContentResolver.EXTRA_HONORED_ARGS, honoredArgs);
+
+            return bundle;
         }
 
         public void addMedia(String localId, String cloudId, String albumId, String mimeType,
@@ -404,10 +431,10 @@ public class PickerProviderMediaGenerator {
                 bundle = new Bundle();
             }
 
-            albumId = bundle.getString(CloudMediaProviderContract.EXTRA_FILTER_ALBUM, null);
-            mimeType = bundle.getString(CloudMediaProviderContract.EXTRA_FILTER_MIME_TYPE,
+            albumId = bundle.getString(CloudMediaProviderContract.EXTRA_ALBUM_ID, null);
+            mimeType = bundle.getString(CloudMediaProviderContract.EXTRA_MIME_TYPE,
                     null);
-            sizeBytes = bundle.getLong(CloudMediaProviderContract.EXTRA_FILTER_SIZE_BYTES, 0);
+            sizeBytes = bundle.getLong(CloudMediaProviderContract.EXTRA_SIZE_LIMIT_BYTES, 0);
             generation = bundle.getLong(CloudMediaProviderContract.EXTRA_SYNC_GENERATION, 0);
         }
     }

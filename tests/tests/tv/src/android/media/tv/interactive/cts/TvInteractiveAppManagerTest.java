@@ -25,8 +25,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.tv.interactive.AppLinkInfo;
-import android.media.tv.interactive.TvInteractiveAppInfo;
 import android.media.tv.interactive.TvInteractiveAppManager;
+import android.media.tv.interactive.TvInteractiveAppServiceInfo;
 import android.media.tv.interactive.TvInteractiveAppView;
 import android.os.Bundle;
 import android.os.ConditionVariable;
@@ -87,8 +87,8 @@ public class TvInteractiveAppManagerTest {
         }
 
         @Override
-        public void onTvInteractiveAppInfoUpdated(TvInteractiveAppInfo iAppInfo) {
-            super.onTvInteractiveAppInfoUpdated(iAppInfo);
+        public void onTvInteractiveAppServiceInfoUpdated(TvInteractiveAppServiceInfo iAppInfo) {
+            super.onTvInteractiveAppServiceInfoUpdated(iAppInfo);
         }
 
         @Override
@@ -158,7 +158,7 @@ public class TvInteractiveAppManagerTest {
         runTestOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mManager.registerCallback(mCallback, getExecutor());
+                mManager.registerCallback(getExecutor(), mCallback);
             }
         });
     }
@@ -177,50 +177,29 @@ public class TvInteractiveAppManagerTest {
     }
 
     @Test
-    public void testGetTvInteractiveAppInfoList() throws Exception {
-        List<TvInteractiveAppInfo> list = mManager.getTvInteractiveAppServiceList();
+    public void testGetTvInteractiveAppServiceInfoList() throws Exception {
+        List<TvInteractiveAppServiceInfo> list = mManager.getTvInteractiveAppServiceList();
 
-        for (TvInteractiveAppInfo info : list) {
-            if (info.getServiceInfo().name.equals(StubTvInteractiveAppService.class.getName())) {
+        for (TvInteractiveAppServiceInfo info : list) {
+            if (info.getServiceInfo().name.equals(StubTvInteractiveAppService.class.getName())
+                    && info.getSupportedTypes()
+                    == (TvInteractiveAppServiceInfo.INTERACTIVE_APP_TYPE_HBBTV
+                            | TvInteractiveAppServiceInfo.INTERACTIVE_APP_TYPE_GINGA)) {
                 return;
             }
         }
         throw new AssertionFailedError(
-                "getTvInteractiveAppServiceList() doesn't contain valid TvInteractiveAppInfo: "
+                "getTvInteractiveAppServiceList() doesn't contain valid "
+                        + "TvInteractiveAppServiceInfo: "
                         + StubTvInteractiveAppService.class.getName());
     }
 
     @Test
-    public void testPrepare() throws Exception {
-        List<TvInteractiveAppInfo> list = mManager.getTvInteractiveAppServiceList();
-
-        TvInteractiveAppInfo stubInfo = null;
-        for (TvInteractiveAppInfo info : list) {
-            if (info.getServiceInfo().name.equals(StubTvInteractiveAppService.class.getName())) {
-                stubInfo = info;
-                break;
-            }
-        }
-        assertNotNull(stubInfo);
-        stubInfo.getSupportedTypes();
-
-        mManager.prepare(stubInfo.getId(), TvInteractiveAppInfo.INTERACTIVE_APP_TYPE_HBBTV);
-        PollingCheck.waitFor(TIME_OUT_MS, () -> mCallback.mIAppServiceId != null);
-        assertThat(mCallback.mIAppServiceId).isEqualTo(stubInfo.getId());
-        assertThat(mCallback.mType).isEqualTo(TvInteractiveAppInfo.INTERACTIVE_APP_TYPE_HBBTV);
-        assertThat(StubTvInteractiveAppService.sType)
-                .isEqualTo(TvInteractiveAppInfo.INTERACTIVE_APP_TYPE_HBBTV);
-        assertThat(mCallback.mState)
-                .isEqualTo(TvInteractiveAppManager.SERVICE_STATE_PREPARING);
-        assertThat(mCallback.mErr).isEqualTo(TvInteractiveAppManager.ERROR_NONE);
-    }
-
-    @Test
     public void testAppLinkCommand() throws Exception {
-        List<TvInteractiveAppInfo> list = mManager.getTvInteractiveAppServiceList();
+        List<TvInteractiveAppServiceInfo> list = mManager.getTvInteractiveAppServiceList();
 
-        TvInteractiveAppInfo stubInfo = null;
-        for (TvInteractiveAppInfo info : list) {
+        TvInteractiveAppServiceInfo stubInfo = null;
+        for (TvInteractiveAppServiceInfo info : list) {
             if (info.getServiceInfo().name.equals(StubTvInteractiveAppService.class.getName())) {
                 stubInfo = info;
                 break;
@@ -241,10 +220,10 @@ public class TvInteractiveAppManagerTest {
 
     @Test
     public void testAppLinkInfo() throws Exception {
-        List<TvInteractiveAppInfo> list = mManager.getTvInteractiveAppServiceList();
+        List<TvInteractiveAppServiceInfo> list = mManager.getTvInteractiveAppServiceList();
 
-        TvInteractiveAppInfo stubInfo = null;
-        for (TvInteractiveAppInfo info : list) {
+        TvInteractiveAppServiceInfo stubInfo = null;
+        for (TvInteractiveAppServiceInfo info : list) {
             if (info.getServiceInfo().name.equals(StubTvInteractiveAppService.class.getName())) {
                 stubInfo = info;
                 break;
@@ -252,30 +231,33 @@ public class TvInteractiveAppManagerTest {
         }
         assertNotNull(stubInfo);
 
-        AppLinkInfo info = new AppLinkInfo.Builder("pkg_name", "clazz_name").build();
+        AppLinkInfo info = new AppLinkInfo("pkg_name", "clazz_name", "https://uri.test");
 
         mManager.registerAppLinkInfo(stubInfo.getId(), info);
         PollingCheck.waitFor(
                 TIME_OUT_MS, () -> StubTvInteractiveAppService.sAppLinkInfo != null);
-        assertThat(StubTvInteractiveAppService.sAppLinkInfo.getPackageName()).isEqualTo("pkg_name");
-        assertThat(StubTvInteractiveAppService.sAppLinkInfo.getClassName()).isEqualTo("clazz_name");
+        assertThat(StubTvInteractiveAppService.sAppLinkInfo.getComponentName().getPackageName())
+                .isEqualTo("pkg_name");
+        assertThat(StubTvInteractiveAppService.sAppLinkInfo.getComponentName().getClassName())
+                .isEqualTo("clazz_name");
+        assertThat(StubTvInteractiveAppService.sAppLinkInfo.getUri().toString())
+                .isEqualTo("https://uri.test");
 
         mManager.unregisterAppLinkInfo(stubInfo.getId(), info);
         PollingCheck.waitFor(
                 TIME_OUT_MS, () -> StubTvInteractiveAppService.sAppLinkInfo == null);
 
-        info = new AppLinkInfo.Builder("pkg1", "class1").setPackageName("pkg2")
-                .setClassName("class2").setUriScheme("url1").setUriHost("host2")
-                .setUriPrefix("prefix").build();
+        info = new AppLinkInfo("pkg2", "class2", "http://applinkinfo.com");
 
         mManager.registerAppLinkInfo(stubInfo.getId(), info);
         PollingCheck.waitFor(
                 TIME_OUT_MS, () -> StubTvInteractiveAppService.sAppLinkInfo != null);
-        assertThat(StubTvInteractiveAppService.sAppLinkInfo.getPackageName()).isEqualTo("pkg2");
-        assertThat(StubTvInteractiveAppService.sAppLinkInfo.getClassName()).isEqualTo("class2");
-        assertThat(StubTvInteractiveAppService.sAppLinkInfo.getUriScheme()).isEqualTo("url1");
-        assertThat(StubTvInteractiveAppService.sAppLinkInfo.getUriHost()).isEqualTo("host2");
-        assertThat(StubTvInteractiveAppService.sAppLinkInfo.getUriPrefix()).isEqualTo("prefix");
+        assertThat(StubTvInteractiveAppService.sAppLinkInfo.getComponentName().getPackageName())
+                .isEqualTo("pkg2");
+        assertThat(StubTvInteractiveAppService.sAppLinkInfo.getComponentName().getClassName())
+                .isEqualTo("class2");
+        assertThat(StubTvInteractiveAppService.sAppLinkInfo.getUri().toString())
+                .isEqualTo("http://applinkinfo.com");
     }
 
     private static void assertBundlesAreEqual(Bundle actual, Bundle expected) {

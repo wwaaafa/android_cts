@@ -81,8 +81,7 @@ public class BluetoothLeAudioContentMetadataTest {
                 mAdapter.isLeAudioBroadcastAssistantSupported() == FEATURE_SUPPORTED;
         if (mIsBroadcastAssistantSupported) {
             boolean isBroadcastAssistantEnabledInConfig =
-                    TestUtils.getProfileConfigValueOrDie(
-                            BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT);
+                    TestUtils.isProfileEnabled(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT);
             assertTrue("Config must be true when profile is supported",
                     isBroadcastAssistantEnabledInConfig);
         }
@@ -91,8 +90,7 @@ public class BluetoothLeAudioContentMetadataTest {
                 mAdapter.isLeAudioBroadcastSourceSupported() == FEATURE_SUPPORTED;
         if (!mIsBroadcastSourceSupported) {
             boolean isBroadcastSourceEnabledInConfig =
-                    TestUtils.getProfileConfigValueOrDie(
-                            BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT);
+                    TestUtils.isProfileEnabled(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT);
             assertTrue("Config must be true when profile is supported",
                     isBroadcastSourceEnabledInConfig);
         }
@@ -101,7 +99,9 @@ public class BluetoothLeAudioContentMetadataTest {
     @After
     public void tearDown() {
         if (mHasBluetooth) {
-            assertTrue(BTAdapterUtils.disableAdapter(mAdapter, mContext));
+            if (mAdapter != null) {
+                assertTrue(BTAdapterUtils.disableAdapter(mAdapter, mContext));
+            }
             mAdapter = null;
             TestUtils.dropPermissionAsShellUid();
         }
@@ -117,8 +117,22 @@ public class BluetoothLeAudioContentMetadataTest {
                         .setProgramInfo(TEST_PROGRAM_INFO).setLanguage(TEST_LANGUAGE).build();
         assertEquals(TEST_PROGRAM_INFO, contentMetadata.getProgramInfo());
         assertEquals(TEST_LANGUAGE, contentMetadata.getLanguage());
-        // TODO: Implement implicit LTV byte conversion in the API class
-        // assertArrayEquals(TEST_METADATA_BYTES, contentMetadata.getRawMetadata());
+        assertArrayEquals(TEST_METADATA_BYTES, contentMetadata.getRawMetadata());
+    }
+
+    @Test
+    public void testCreateCodecConfigMetadataFromCopy() {
+        if (shouldSkipTest()) {
+            return;
+        }
+        BluetoothLeAudioContentMetadata contentMetadata =
+                new BluetoothLeAudioContentMetadata.Builder()
+                        .setProgramInfo(TEST_PROGRAM_INFO).setLanguage(TEST_LANGUAGE).build();
+        BluetoothLeAudioContentMetadata contentMetadataCopy =
+                new BluetoothLeAudioContentMetadata.Builder(contentMetadata).build();
+        assertEquals(TEST_PROGRAM_INFO, contentMetadataCopy.getProgramInfo());
+        assertEquals(TEST_LANGUAGE, contentMetadataCopy.getLanguage());
+        assertArrayEquals(TEST_METADATA_BYTES, contentMetadataCopy.getRawMetadata());
     }
 
     @Test
@@ -131,9 +145,8 @@ public class BluetoothLeAudioContentMetadataTest {
         byte[] metadataBytes = contentMetadata.getRawMetadata();
         assertNotNull(metadataBytes);
         assertArrayEquals(TEST_METADATA_BYTES, metadataBytes);
-        // TODO: Implement implicit LTV byte conversion in the API class
-        // assertEquals(TEST_PROGRAM_INFO, contentMetadata.getProgramInfo());
-        // assertEquals(TEST_LANGUAGE, contentMetadata.getLanguage());
+        assertEquals(TEST_PROGRAM_INFO, contentMetadata.getProgramInfo());
+        assertEquals(TEST_LANGUAGE, contentMetadata.getLanguage());
     }
 
     private boolean shouldSkipTest() {

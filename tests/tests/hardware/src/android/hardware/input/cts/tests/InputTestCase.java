@@ -86,9 +86,12 @@ public abstract class InputTestCase {
         mTestActivity.clearUnhandleKeyCode();
         mTestActivity.setInputCallback(mInputListener);
         mDecorView = mTestActivity.getWindow().getDecorView();
-        requestFocusSync();
 
         onSetUp();
+
+        PollingCheck.waitFor(mTestActivity::hasWindowFocus);
+        assertTrue(mCurrentTestCase + ": Activity window must have focus",
+                mTestActivity.hasWindowFocus());
 
         mEvents.clear();
     }
@@ -394,18 +397,8 @@ public abstract class InputTestCase {
         }
     }
 
-    protected void requestFocusSync() {
-        mTestActivity.runOnUiThread(() -> {
-            mDecorView.setFocusable(true);
-            mDecorView.setFocusableInTouchMode(true);
-            mDecorView.requestFocus();
-        });
-        PollingCheck.waitFor(mDecorView::hasFocus);
-    }
-
     protected class PointerCaptureSession implements AutoCloseable {
         protected PointerCaptureSession() {
-            requestFocusSync();
             ensurePointerCaptureState(true);
         }
 

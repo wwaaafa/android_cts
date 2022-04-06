@@ -61,16 +61,15 @@ import android.content.pm.Signature;
 import android.content.pm.SigningInfo;
 import android.content.pm.cts.util.AbandonAllPackageSessionsRule;
 import android.os.Bundle;
-import android.os.ConditionVariable;
 import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
 import android.os.Process;
 import android.os.RemoteException;
-import android.os.UserHandle;
 import android.platform.test.annotations.AppModeFull;
 import android.util.PackageUtils;
 
 import androidx.test.InstrumentationRegistry;
+import androidx.test.filters.LargeTest;
 
 import com.android.internal.util.ConcurrentUtils;
 import com.android.internal.util.HexDump;
@@ -79,7 +78,6 @@ import libcore.util.HexEncoding;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -101,20 +99,24 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @RunWith(Parameterized.class)
 @AppModeFull
 public class PackageManagerShellCommandTest {
-    private static final String TEST_APP_PACKAGE = "com.example.helloworld";
+    static final String TEST_APP_PACKAGE = "com.example.helloworld";
 
     private static final String CTS_PACKAGE_NAME = "android.content.cts";
 
     private static final String TEST_APK_PATH = "/data/local/tmp/cts/content/";
-    private static final String TEST_HW5 = "HelloWorld5.apk";
+    static final String TEST_HW5 = "HelloWorld5.apk";
     private static final String TEST_HW5_SPLIT0 = "HelloWorld5_hdpi-v4.apk";
     private static final String TEST_HW5_SPLIT1 = "HelloWorld5_mdpi-v4.apk";
     private static final String TEST_HW5_SPLIT2 = "HelloWorld5_xhdpi-v4.apk";
@@ -154,7 +156,7 @@ public class PackageManagerShellCommandTest {
 
     private static final String PACKAGE_MIME_TYPE = "application/vnd.android.package-archive";
 
-    private static final long DEFAULT_STREAMING_VERIFICATION_TIMEOUT = 3 * 1000;
+    static final long DEFAULT_STREAMING_VERIFICATION_TIMEOUT = 3 * 1000;
 
     @Rule
     public AbandonAllPackageSessionsRule mAbandonSessionsRule = new AbandonAllPackageSessionsRule();
@@ -1398,90 +1400,6 @@ public class PackageManagerShellCommandTest {
         }
     }
 
-    @Ignore
-    @Test
-    public void testGetFirstInstallTime() throws Exception {
-        final int currentUser = getContext().getUserId();
-        final long startTimeMillisForCurrentUser = System.currentTimeMillis();
-        installPackage(TEST_HW5);
-        assertTrue(isAppInstalledForUser(TEST_APP_PACKAGE, currentUser));
-        final long origFirstInstallTimeForCurrentUser = getFirstInstallTimeAsUser(
-                TEST_APP_PACKAGE, currentUser);
-        // Validate the timestamp
-        assertTrue(origFirstInstallTimeForCurrentUser > 0);
-        assertTrue(startTimeMillisForCurrentUser < origFirstInstallTimeForCurrentUser);
-        assertTrue(System.currentTimeMillis() > origFirstInstallTimeForCurrentUser);
-
-        // Install again with replace and the firstInstallTime should remain the same
-        installPackage(TEST_HW5);
-        long firstInstallTimeForCurrentUser = getFirstInstallTimeAsUser(
-                TEST_APP_PACKAGE, currentUser);
-        assertEquals(origFirstInstallTimeForCurrentUser, firstInstallTimeForCurrentUser);
-
-        // Start another user and install this test itself for that user
-        mSecondUser = createUser("Another User");
-        assertTrue(startUser(mSecondUser));
-        long startTimeMillisForSecondUser = System.currentTimeMillis();
-        installExistingPackageAsUser(getContext().getPackageName(), mSecondUser);
-        assertTrue(isAppInstalledForUser(getContext().getPackageName(), mSecondUser));
-        // Install test package with replace
-        installPackageAsUser(TEST_HW5, mSecondUser);
-        assertTrue(isAppInstalledForUser(TEST_APP_PACKAGE, mSecondUser));
-        firstInstallTimeForCurrentUser = getFirstInstallTimeAsUser(
-                TEST_APP_PACKAGE, currentUser);
-        // firstInstallTime should remain unchanged for the current user
-        assertEquals(origFirstInstallTimeForCurrentUser, firstInstallTimeForCurrentUser);
-
-        long firstInstallTimeForSecondUser = getFirstInstallTimeAsUser(
-                TEST_APP_PACKAGE, mSecondUser);
-        // firstInstallTime for the other user should be different
-        assertNotEquals(firstInstallTimeForCurrentUser, firstInstallTimeForSecondUser);
-        assertTrue(startTimeMillisForSecondUser < firstInstallTimeForSecondUser);
-        assertTrue(System.currentTimeMillis() > firstInstallTimeForSecondUser);
-
-        // Uninstall for the other user
-        uninstallPackageAsUser(TEST_APP_PACKAGE, mSecondUser);
-        assertFalse(isAppInstalledForUser(TEST_APP_PACKAGE, mSecondUser));
-        // Install test package as an existing package
-        startTimeMillisForSecondUser = System.currentTimeMillis();
-        installExistingPackageAsUser(TEST_APP_PACKAGE, mSecondUser);
-        assertTrue(isAppInstalledForUser(TEST_APP_PACKAGE, mSecondUser));
-
-        firstInstallTimeForCurrentUser = getFirstInstallTimeAsUser(
-                TEST_APP_PACKAGE, currentUser);
-        // firstInstallTime still remains unchanged for the current user
-        assertEquals(origFirstInstallTimeForCurrentUser, firstInstallTimeForCurrentUser);
-        firstInstallTimeForSecondUser = getFirstInstallTimeAsUser(TEST_APP_PACKAGE, mSecondUser);
-        // firstInstallTime for the other user should be different
-        assertNotEquals(firstInstallTimeForCurrentUser, firstInstallTimeForSecondUser);
-        assertTrue(startTimeMillisForSecondUser < firstInstallTimeForSecondUser);
-        assertTrue(System.currentTimeMillis() > firstInstallTimeForSecondUser);
-
-        // Uninstall for all users
-        uninstallPackageSilently(TEST_APP_PACKAGE);
-        assertFalse(isAppInstalledForUser(TEST_APP_PACKAGE, currentUser));
-        assertFalse(isAppInstalledForUser(TEST_APP_PACKAGE, mSecondUser));
-        // Reinstall for all users
-        installPackage(TEST_HW5);
-        assertTrue(isAppInstalledForUser(TEST_APP_PACKAGE, currentUser));
-        assertTrue(isAppInstalledForUser(TEST_APP_PACKAGE, mSecondUser));
-        firstInstallTimeForCurrentUser = getFirstInstallTimeAsUser(TEST_APP_PACKAGE, currentUser);
-        // First install time is now different because the package was fully uninstalled
-        assertNotEquals(origFirstInstallTimeForCurrentUser, firstInstallTimeForCurrentUser);
-        firstInstallTimeForSecondUser = getFirstInstallTimeAsUser(TEST_APP_PACKAGE, mSecondUser);
-        // Same firstInstallTime because package was installed for both users at the same time
-        assertEquals(firstInstallTimeForCurrentUser, firstInstallTimeForSecondUser);
-    }
-
-    private long getFirstInstallTimeAsUser(String packageName, int userId)
-            throws PackageManager.NameNotFoundException {
-        final Context contextAsUser = getContext().createContextAsUser(UserHandle.of(userId), 0);
-        final PackageManager packageManager = contextAsUser.getPackageManager();
-        final PackageInfo packageInfo = packageManager.getPackageInfo(packageName,
-                PackageManager.PackageInfoFlags.of(0));
-        return packageInfo.firstInstallTime;
-    }
-
     @Test
     public void testAppWithNoAppStorageUpdateSuccess() throws Exception {
         installPackage(TEST_HW_NO_APP_STORAGE);
@@ -1523,49 +1441,6 @@ public class PackageManagerShellCommandTest {
         assertTrue(isAppInstalled(TEST_APP_PACKAGE));
     }
 
-    @Ignore
-    @Test
-    public void testPackageFullyRemovedBroadcastAfterUninstall() throws IOException {
-        final int currentUser = getContext().getUserId();
-        // Start another user and install this test itself for that user
-        mSecondUser = createUser("Another User");
-        assertTrue(startUser(mSecondUser));
-        installExistingPackageAsUser(getContext().getPackageName(), mSecondUser);
-        installPackage(TEST_HW5);
-        assertTrue(isAppInstalledForUser(getContext().getPackageName(), currentUser));
-        assertTrue(isAppInstalledForUser(getContext().getPackageName(), mSecondUser));
-        assertTrue(isAppInstalledForUser(TEST_APP_PACKAGE, currentUser));
-        assertTrue(isAppInstalledForUser(TEST_APP_PACKAGE, mSecondUser));
-        final FullyRemovedBroadcastReceiver broadcastReceiverForCurrentUser =
-                new FullyRemovedBroadcastReceiver(TEST_APP_PACKAGE, currentUser);
-        final FullyRemovedBroadcastReceiver broadcastReceiverForSecondUser =
-                new FullyRemovedBroadcastReceiver(TEST_APP_PACKAGE, mSecondUser);
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(Intent.ACTION_PACKAGE_FULLY_REMOVED);
-        intentFilter.addDataScheme("package");
-        getContext().registerReceiver(
-                broadcastReceiverForCurrentUser, intentFilter, RECEIVER_EXPORTED);
-        getUiAutomation().adoptShellPermissionIdentity(
-                android.Manifest.permission.INTERACT_ACROSS_USERS,
-                android.Manifest.permission.INTERACT_ACROSS_USERS_FULL);
-        try {
-            getContext().createContextAsUser(UserHandle.of(mSecondUser), 0).registerReceiver(
-                    broadcastReceiverForSecondUser, intentFilter, RECEIVER_EXPORTED);
-        } finally {
-            getUiAutomation().dropShellPermissionIdentity();
-        }
-        // Verify that uninstall with "keep data" doesn't send the broadcast
-        uninstallPackageWithKeepData(TEST_APP_PACKAGE, mSecondUser);
-        assertFalse(broadcastReceiverForSecondUser.isBroadcastReceived());
-        installExistingPackageAsUser(TEST_APP_PACKAGE, mSecondUser);
-        // Verify that uninstall on a specific user only sends the broadcast to the user
-        uninstallPackageAsUser(TEST_APP_PACKAGE, mSecondUser);
-        assertTrue(broadcastReceiverForSecondUser.isBroadcastReceived());
-        assertFalse(broadcastReceiverForCurrentUser.isBroadcastReceived());
-        uninstallPackageSilently(TEST_APP_PACKAGE);
-        assertTrue(broadcastReceiverForCurrentUser.isBroadcastReceived());
-    }
-
     @Test
     public void testQuerySdkSandboxPackageName() throws Exception {
         final PackageManager pm = getPackageManager();
@@ -1601,28 +1476,51 @@ public class PackageManagerShellCommandTest {
         assertEquals(pm.getSdkSandboxPackageName(), names[0]);
     }
 
-    private static class FullyRemovedBroadcastReceiver extends BroadcastReceiver {
+    @LargeTest
+    @Test
+    public void testCreateUserCurAsType() throws Exception {
+        Pattern pattern = Pattern.compile("Success: created user id (\\d+)\\R*");
+        String commandResult = executeShellCommand("pm create-user --profileOf cur "
+                + "--user-type android.os.usertype.profile.CLONE test");
+        Matcher matcher = pattern.matcher(commandResult);
+        assertTrue(matcher.find());
+        commandResult = executeShellCommand("pm remove-user " + matcher.group(1));
+        assertEquals("Success: removed user\n", commandResult);
+        commandResult = executeShellCommand("pm create-user --profileOf current "
+                + "--user-type android.os.usertype.profile.CLONE test");
+        matcher = pattern.matcher(commandResult);
+        assertTrue(matcher.find());
+        commandResult = executeShellCommand("pm remove-user " + matcher.group(1));
+        assertEquals("Success: removed user\n", commandResult);
+    }
+
+    static class FullyRemovedBroadcastReceiver extends BroadcastReceiver {
         private final String mTargetPackage;
         private final int mTargetUserId;
-        private final ConditionVariable mUserReceivedBroadcast;
+        private final CompletableFuture<Boolean> mUserReceivedBroadcast = new CompletableFuture<>();
         FullyRemovedBroadcastReceiver(String packageName, int targetUserId) {
             mTargetPackage = packageName;
             mTargetUserId = targetUserId;
-            mUserReceivedBroadcast = new ConditionVariable();
-            mUserReceivedBroadcast.close();
         }
         @Override
         public void onReceive(Context context, Intent intent) {
-            context.unregisterReceiver(this);
             final String packageName = intent.getData().getEncodedSchemeSpecificPart();
             final int userId = context.getUserId();
             if (intent.getAction().equals(Intent.ACTION_PACKAGE_FULLY_REMOVED)
                     && packageName.equals(mTargetPackage) && userId == mTargetUserId) {
-                mUserReceivedBroadcast.open();
+                mUserReceivedBroadcast.complete(true);
+                context.unregisterReceiver(this);
             }
         }
-        public boolean isBroadcastReceived() {
-            return mUserReceivedBroadcast.block(2000);
+        public void assertBroadcastReceived() throws Exception {
+            assertTrue(mUserReceivedBroadcast.get(2, TimeUnit.SECONDS));
+        }
+        public void assertBroadcastNotReceived() throws Exception {
+            try {
+                assertFalse(mUserReceivedBroadcast.get(2, TimeUnit.SECONDS));
+            } catch (TimeoutException ignored) {
+                // expected
+            }
         }
     }
 
@@ -1694,20 +1592,12 @@ public class PackageManagerShellCommandTest {
         assertEquals("Success\n", executeShellCommand("pm install-commit " + sessionId));
     }
 
-    private boolean isAppInstalled(String packageName) throws IOException {
+    static boolean isAppInstalled(String packageName) throws IOException {
         final String commandResult = executeShellCommand("pm list packages");
         final int prefixLength = "package:".length();
         return Arrays.stream(commandResult.split("\\r?\\n")).anyMatch(
                 line -> line.length() > prefixLength && line.substring(prefixLength).equals(
                         packageName));
-    }
-
-    private boolean isAppInstalledForUser(String packageName, int userId) throws IOException {
-        final String commandResult = executeShellCommand(
-                String.format("pm list packages --user %d %s", userId, packageName)
-        );
-        return Arrays.stream(commandResult.split("\\r?\\n"))
-                .anyMatch(line -> line.equals("package:" + packageName));
     }
 
     private boolean isSdkInstalled(String name, int versionMajor) throws IOException {
@@ -1735,7 +1625,7 @@ public class PackageManagerShellCommandTest {
         }
     }
 
-    private String getSplits(String packageName) throws IOException {
+    static String getSplits(String packageName) throws IOException {
         final String commandResult = executeShellCommand("pm dump " + packageName);
         final String prefix = "    splits=[";
         final int prefixLength = prefix.length();
@@ -1748,7 +1638,7 @@ public class PackageManagerShellCommandTest {
         return splits.substring(prefixLength, splits.length() - 1);
     }
 
-    private static String createApkPath(String baseName) {
+    static String createApkPath(String baseName) {
         return TEST_APK_PATH + baseName;
     }
 
@@ -1764,20 +1654,6 @@ public class PackageManagerShellCommandTest {
         File file = new File(createApkPath(baseName));
         String result = executeShellCommand("pm " + mInstall + " -t -g " + file.getPath());
         assertTrue(result, result.startsWith(expectedResultStartsWith));
-    }
-
-    /* Install a package for a new user; this would replace the old package */
-    private void installPackageAsUser(String baseName, int userId) throws IOException {
-        File file = new File(createApkPath(baseName));
-        assertEquals("Success\n", executeShellCommand(
-                "pm " + mInstall + " -t -g --user " + userId + " " + file.getPath()));
-    }
-
-    /* Install an existing package for a new user */
-    private void installExistingPackageAsUser(String packageName, int userId) throws IOException {
-        String result = executeShellCommand(
-                String.format("pm install-existing --user %d %s", userId, packageName));
-        assertEquals("Package " + packageName + " installed for user: " + userId + "\n", result);
     }
 
     private void updatePackage(String packageName, String baseName) throws IOException {
@@ -1864,15 +1740,6 @@ public class PackageManagerShellCommandTest {
 
     private String uninstallPackageSilently(String packageName) throws IOException {
         return executeShellCommand("pm uninstall " + packageName);
-    }
-
-    /* Uninstall for one user */
-    private void uninstallPackageAsUser(String packageName, int userId) throws IOException {
-        executeShellCommand(String.format("pm uninstall --user %d %s", userId, packageName));
-    }
-
-    private void uninstallPackageWithKeepData(String packageName, int userId) throws IOException {
-        executeShellCommand(String.format("pm uninstall -k --user %d %s", userId, packageName));
     }
 
     private void uninstallSplits(String packageName, String[] splitNames) throws IOException {
