@@ -27,19 +27,26 @@ import android.graphics.Bitmap;
 import android.media.MediaFormat;
 import android.media.cts.MediaCodecTunneledPlayer;
 import android.media.cts.MediaHeavyPresubmitTest;
+import android.media.cts.TestArgs;
 import android.os.Environment;
 import android.platform.test.annotations.AppModeFull;
 import android.util.Log;
 import android.view.View;
 
+import androidx.test.platform.app.InstrumentationRegistry;
+
 import com.android.compatibility.common.util.MediaUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.FileOutputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -141,12 +148,22 @@ public class DecodeAccuracyTest extends DecodeAccuracyTestBase {
         "video_decode_with_cropping-vp9_520x360_30fps.webm"
     };
 
+    private static final String INP_PREFIX = WorkDir.getMediaDirString() +
+            "assets/decode_accuracy/";
+
     private View videoView;
     private VideoViewFactory videoViewFactory;
-    private String fileName;
     private String testName;
+    private String fileName;
+    private String decoderName;
     private String methodName;
     private SimplePlayer player;
+
+    public DecodeAccuracyTest(String decoderName, String fileName, String testName) {
+        this.testName = testName;
+        this.fileName = fileName;
+        this.decoderName = decoderName;
+    }
 
     @After
     @Override
@@ -163,64 +180,81 @@ public class DecodeAccuracyTest extends DecodeAccuracyTestBase {
         super.tearDown();
     }
 
-    @Parameters
-    public static Collection<Object[]> data() {
+    @Parameters(name = "{index}({0}_{2})")
+    public static Collection<Object[]> input() throws IOException {
         final List<Object[]> testParams = new ArrayList<>();
-        for (int i = 0; i < VIDEO_FILES.length; i++) {
-            final String file = VIDEO_FILES[i];
+        for (String file : VIDEO_FILES) {
             Pattern regex = Pattern.compile("^\\w+-(\\w+)_\\d+fps\\.\\w+");
             Matcher matcher = regex.matcher(file);
             String testName = "";
             if (matcher.matches()) {
                 testName = matcher.group(1);
             }
-            testParams.add(new Object[] { testName, file });
+            MediaFormat mediaFormat =
+                    MediaUtils.getTrackFormatForResource(INP_PREFIX + file, "video");
+            String mediaType = mediaFormat.getString(MediaFormat.KEY_MIME);
+            if (TestArgs.MEDIA_TYPE_PREFIX != null &&
+                    !mediaType.startsWith(TestArgs.MEDIA_TYPE_PREFIX)) {
+                continue;
+            }
+            String[] componentNames = MediaUtils.getDecoderNamesForMime(mediaType);
+            for (String componentName : componentNames) {
+                if (TestArgs.CODEC_PREFIX != null &&
+                        !componentName.startsWith(TestArgs.CODEC_PREFIX)) {
+                    continue;
+                }
+                if (MediaUtils.supports(componentName, mediaFormat)) {
+                    testParams.add(new Object[] {componentName, file, testName});
+                    // Test only the first decoder that supports given format.
+                    // Remove the following break statement to test all decoders on the device.
+                    break;
+                }
+            }
         }
         return testParams;
-    }
-
-    public DecodeAccuracyTest(String testName, String fileName) {
-        this.fileName = fileName;
-        this.testName = testName;
     }
 
     @Test(timeout = PER_TEST_TIMEOUT_MS)
     public void testGLViewDecodeAccuracy() throws Exception {
         this.methodName = "testGLViewDecodeAccuracy";
-        runTest(new GLSurfaceViewFactory(), new VideoFormat(fileName));
+        runTest(new GLSurfaceViewFactory(), new VideoFormat(fileName), decoderName);
     }
 
     @Test(timeout = PER_TEST_TIMEOUT_MS)
     public void testGLViewLargerHeightDecodeAccuracy() throws Exception {
         this.methodName = "testGLViewLargerHeightDecodeAccuracy";
-        runTest(new GLSurfaceViewFactory(), getLargerHeightVideoFormat(new VideoFormat(fileName)));
+        runTest(new GLSurfaceViewFactory(), getLargerHeightVideoFormat(new VideoFormat(fileName)),
+            decoderName);
     }
 
     @Test(timeout = PER_TEST_TIMEOUT_MS)
     public void testGLViewLargerWidthDecodeAccuracy() throws Exception {
         this.methodName = "testGLViewLargerWidthDecodeAccuracy";
-        runTest(new GLSurfaceViewFactory(), getLargerWidthVideoFormat(new VideoFormat(fileName)));
+        runTest(new GLSurfaceViewFactory(), getLargerWidthVideoFormat(new VideoFormat(fileName)),
+            decoderName);
     }
 
     @Test(timeout = PER_TEST_TIMEOUT_MS)
     public void testSurfaceViewVideoDecodeAccuracy() throws Exception {
         this.methodName = "testSurfaceViewVideoDecodeAccuracy";
-        runTest(new SurfaceViewFactory(), new VideoFormat(fileName));
+        runTest(new SurfaceViewFactory(), new VideoFormat(fileName), decoderName);
     }
 
     @Test(timeout = PER_TEST_TIMEOUT_MS)
     public void testSurfaceViewLargerHeightDecodeAccuracy() throws Exception {
         this.methodName = "testSurfaceViewLargerHeightDecodeAccuracy";
-        runTest(new SurfaceViewFactory(), getLargerHeightVideoFormat(new VideoFormat(fileName)));
+        runTest(new SurfaceViewFactory(), getLargerHeightVideoFormat(new VideoFormat(fileName)),
+            decoderName);
     }
 
     @Test(timeout = PER_TEST_TIMEOUT_MS)
     public void testSurfaceViewLargerWidthDecodeAccuracy() throws Exception {
         this.methodName = "testSurfaceViewLargerWidthDecodeAccuracy";
-        runTest(new SurfaceViewFactory(), getLargerWidthVideoFormat(new VideoFormat(fileName)));
+        runTest(new SurfaceViewFactory(), getLargerWidthVideoFormat(new VideoFormat(fileName)),
+            decoderName);
     }
 
-    private void runTest(VideoViewFactory videoViewFactory, VideoFormat vf) {
+    private void runTest(VideoViewFactory videoViewFactory, VideoFormat vf, String decoderName) {
         Log.i(TAG, "Running test for " + vf.toPrettyString());
         if (!MediaUtils.canDecodeVideo(vf.getMimeType(), vf.getWidth(), vf.getHeight(), 30)) {
             MediaUtils.skipTest(TAG, "No supported codec is found.");
@@ -249,12 +283,13 @@ public class DecodeAccuracyTest extends DecodeAccuracyTestBase {
         }
         final int golden = getGoldenId(vf.getDescription(), vf.getOriginalSize());
         assertTrue("No golden found.", golden != 0);
-        decodeVideo(vf, videoViewFactory);
+        decodeVideo(vf, videoViewFactory, decoderName);
         validateResult(vf, videoViewFactory.getVideoViewSnapshot(), golden);
     }
 
-    private void decodeVideo(VideoFormat videoFormat, VideoViewFactory videoViewFactory) {
-        this.player = new SimplePlayer(getHelper().getContext());
+    private void decodeVideo(VideoFormat videoFormat, VideoViewFactory videoViewFactory,
+            String decoderName) {
+        this.player = new SimplePlayer(getHelper().getContext(), decoderName);
         final SimplePlayer.PlayerResult playerResult = player.decodeVideoFrames(
                 videoViewFactory.getSurface(), videoFormat, 10);
         assertTrue(playerResult.getFailureMessage(), playerResult.isSuccess());

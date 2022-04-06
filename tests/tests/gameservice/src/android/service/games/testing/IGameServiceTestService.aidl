@@ -16,7 +16,6 @@
 package android.service.games.testing;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.service.games.testing.ActivityResult;
@@ -41,9 +40,7 @@ interface IGameServiceTestService {
 
     void restartFocusedGameSession();
 
-    void showOverlayForFocusedGameSession();
-
-    Bitmap getBitmapScreenshotForFocusedGameSession();
+    boolean takeScreenshotForFocusedGameSession();
 
     OnSystemBarVisibilityChangedInfo getOnSystemBarVisibilityChangedInfo();
 

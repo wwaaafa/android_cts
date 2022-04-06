@@ -34,8 +34,9 @@
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS"/>
 
     <application android:label="CtsWindowManagerDeviceTestCases"
-         android:requestLegacyExternalStorage="true"
-         android:enableOnBackInvokedCallback="true">
+                 android:requestLegacyExternalStorage="true"
+                 android:enableOnBackInvokedCallback="true"
+                 android:testOnly="true">
         <uses-library android:name="android.test.runner"/>
 
         <activity android:name="android.server.wm.ActivityManagerTestBase$ConfigChangeHandlingActivity"
@@ -433,6 +434,13 @@
         <activity android:name="android.server.wm.ActivityTransitionTests$LauncherActivity"/>
 
         <activity android:name="android.server.wm.ActivityTransitionTests$TransitionActivity"/>
+
+        <activity android:name="android.server.wm.ActivityTransitionTests$OverridePendingTransitionActivity"/>
+
+        <activity android:name="android.server.wm.ActivityTransitionTests$TransitionActivityWithWhiteBackground"
+            android:theme="@style/Theme.WhiteBackground"
+            android:exported="true"
+            android:colorMode="wideColorGamut"/>
 
         <activity android:name="android.server.wm.WindowUntrustedTouchTest$TestActivity"
                   android:exported="true"

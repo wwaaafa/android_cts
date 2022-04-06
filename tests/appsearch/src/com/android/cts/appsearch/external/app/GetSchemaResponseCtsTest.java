@@ -18,8 +18,6 @@ package android.app.appsearch.cts.app;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.junit.Assert.assertThrows;
-
 import android.app.appsearch.AppSearchSchema;
 import android.app.appsearch.GetSchemaResponse;
 import android.app.appsearch.PackageIdentifier;
@@ -142,52 +140,6 @@ public class GetSchemaResponseCtsTest {
     }
 
     @Test
-    public void testRebuild_noSupportedException() {
-        AppSearchSchema schema1 =
-                new AppSearchSchema.Builder("Email1")
-                        .addProperty(
-                                new AppSearchSchema.StringPropertyConfig.Builder("subject")
-                                        .setCardinality(
-                                                AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
-                                        .setIndexingType(
-                                                AppSearchSchema.StringPropertyConfig
-                                                        .INDEXING_TYPE_PREFIXES)
-                                        .setTokenizerType(
-                                                AppSearchSchema.StringPropertyConfig
-                                                        .TOKENIZER_TYPE_PLAIN)
-                                        .build())
-                        .build();
-
-        GetSchemaResponse.Builder builder =
-                new GetSchemaResponse.Builder(/*getVisibilitySettingSupported=*/ false)
-                        .setVersion(42)
-                        .addSchema(schema1);
-
-        GetSchemaResponse original = builder.build();
-        assertThrows(
-                UnsupportedOperationException.class,
-                () -> original.getSchemaTypesNotDisplayedBySystem());
-        assertThrows(
-                UnsupportedOperationException.class,
-                () -> original.getSchemaTypesVisibleToPackages());
-        assertThrows(
-                UnsupportedOperationException.class,
-                () -> original.getRequiredPermissionsForSchemaTypeVisibility());
-
-        // rebuild will throw same exception
-        GetSchemaResponse rebuild = builder.setVersion(42).build();
-        assertThrows(
-                UnsupportedOperationException.class,
-                () -> rebuild.getSchemaTypesNotDisplayedBySystem());
-        assertThrows(
-                UnsupportedOperationException.class,
-                () -> rebuild.getSchemaTypesVisibleToPackages());
-        assertThrows(
-                UnsupportedOperationException.class,
-                () -> original.getRequiredPermissionsForSchemaTypeVisibility());
-    }
-
-    @Test
     public void setVisibility() {
         byte[] sha256cert1 = new byte[32];
         byte[] sha256cert2 = new byte[32];
@@ -225,5 +177,14 @@ public class GetSchemaResponseCtsTest {
                                         SetSchemaRequest.READ_CONTACTS,
                                         SetSchemaRequest.READ_EXTERNAL_STORAGE),
                                 ImmutableSet.of(SetSchemaRequest.READ_ASSISTANT_APP_SEARCH_DATA)));
+    }
+
+    @Test
+    public void getEmptyVisibility() {
+        GetSchemaResponse getSchemaResponse =
+                new GetSchemaResponse.Builder().setVersion(42).build();
+        assertThat(getSchemaResponse.getSchemaTypesNotDisplayedBySystem()).isEmpty();
+        assertThat(getSchemaResponse.getSchemaTypesVisibleToPackages()).isEmpty();
+        assertThat(getSchemaResponse.getRequiredPermissionsForSchemaTypeVisibility()).isEmpty();
     }
 }

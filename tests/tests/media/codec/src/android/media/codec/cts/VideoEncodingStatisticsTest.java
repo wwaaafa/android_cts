@@ -23,6 +23,7 @@ import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.media.cts.MediaCodecWrapper;
 import android.media.cts.MediaHeavyPresubmitTest;
+import android.media.cts.TestArgs;
 import android.platform.test.annotations.AppModeFull;
 import android.util.Log;
 
@@ -69,9 +70,6 @@ public class VideoEncodingStatisticsTest extends VideoCodecTestBase {
     // List of bitrates used in quality and basic bitrate tests.
     private static final int[] TEST_BITRATES_SET = { 300000, 500000, 700000, 900000 };
 
-    private static final String CODEC_PREFIX_KEY = "codec-prefix";
-    private static final String mCodecPrefix;
-
     @Parameterized.Parameter(0)
     public String mCodecName;
 
@@ -81,18 +79,18 @@ public class VideoEncodingStatisticsTest extends VideoCodecTestBase {
     @Parameterized.Parameter(2)
     public int mBitRateMode;
 
-    static {
-        android.os.Bundle args = InstrumentationRegistry.getArguments();
-        mCodecPrefix = args.getString(CODEC_PREFIX_KEY);
-    }
-
     static private List<Object[]> prepareParamList(List<Object[]> exhaustiveArgsList) {
         final List<Object[]> argsList = new ArrayList<>();
         int argLength = exhaustiveArgsList.get(0).length;
         for (Object[] arg : exhaustiveArgsList) {
-            String[] encodersForMime = MediaUtils.getEncoderNamesForMime((String) arg[0]);
+            String mediaType = (String)arg[0];
+            if (TestArgs.MEDIA_TYPE_PREFIX != null &&
+                    !mediaType.startsWith(TestArgs.MEDIA_TYPE_PREFIX)) {
+                continue;
+            }
+            String[] encodersForMime = MediaUtils.getEncoderNamesForMime(mediaType);
             for (String encoder : encodersForMime) {
-                if (mCodecPrefix != null && !encoder.startsWith(mCodecPrefix)) {
+                if (TestArgs.CODEC_PREFIX != null && !encoder.startsWith(TestArgs.CODEC_PREFIX)) {
                     continue;
                 }
                 Object[] testArgs = new Object[argLength + 1];
@@ -158,11 +156,11 @@ public class VideoEncodingStatisticsTest extends VideoCodecTestBase {
                     FPS,
                     bitRateMode,
                     TEST_BITRATES_SET[i],
-                    true);
+                    false);
             // Enable encoding statistics at VIDEO_ENCODING_STATISTICS_LEVEL_1
             params.encodingStatisticsLevel = MediaFormat.VIDEO_ENCODING_STATISTICS_LEVEL_1;
             ArrayList<ByteBuffer> codecConfigs = new ArrayList<>();
-            VideoEncodeOutput videoEncodeOutput = encode(params, codecConfigs);
+            VideoEncodeOutput videoEncodeOutput = encodeAsync(params, codecConfigs);
             bufInfos = videoEncodeOutput.bufferInfo;
             if (bufInfos == null) {
                 // parameters not supported, try other bitrates
@@ -193,7 +191,7 @@ public class VideoEncodingStatisticsTest extends VideoCodecTestBase {
                 }
                 double differenceBitrate = TEST_BITRATES_SET[i] - TEST_BITRATES_SET[j];
                 double differenceAvgQp = avgSeqQp[i] - avgSeqQp[j];
-                if (differenceBitrate * differenceAvgQp > 0) {
+                if (differenceBitrate * differenceAvgQp >= 0) {
                     throw new RuntimeException("Target bitrates: " +
                             TEST_BITRATES_SET[j] + ", " + TEST_BITRATES_SET[i] +
                             ". Average QP: "

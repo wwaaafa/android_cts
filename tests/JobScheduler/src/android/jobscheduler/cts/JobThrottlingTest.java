@@ -90,7 +90,7 @@ public class JobThrottlingTest {
     private static final String TAG = JobThrottlingTest.class.getSimpleName();
     private static final long BACKGROUND_JOBS_EXPECTED_DELAY = 3_000;
     private static final long POLL_INTERVAL = 500;
-    private static final long DEFAULT_WAIT_TIMEOUT = 2000;
+    private static final long DEFAULT_WAIT_TIMEOUT = 5000;
     private static final long SHELL_TIMEOUT = 3_000;
     // TODO: mark Settings.System.SCREEN_OFF_TIMEOUT as @TestApi
     private static final String SCREEN_OFF_TIMEOUT = "screen_off_timeout";
@@ -266,8 +266,8 @@ public class JobThrottlingTest {
         Thread.sleep(TestJobSchedulerReceiver.JOB_INITIAL_BACKOFF);
         toggleDozeState(false);
         assertFalse("Job for background app started immediately when device exited doze",
-                mTestAppInterface.awaitJobStart(DEFAULT_WAIT_TIMEOUT));
-        Thread.sleep(BACKGROUND_JOBS_EXPECTED_DELAY - DEFAULT_WAIT_TIMEOUT);
+                mTestAppInterface.awaitJobStart(2000));
+        Thread.sleep(BACKGROUND_JOBS_EXPECTED_DELAY - 2000);
         assertTrue("Job for background app did not start after the expected delay of "
                         + BACKGROUND_JOBS_EXPECTED_DELAY + "ms",
                 mTestAppInterface.awaitJobStart(DEFAULT_WAIT_TIMEOUT));
@@ -422,8 +422,8 @@ public class JobThrottlingTest {
         assertFalse("Job started above thermal throttling threshold",
                 mTestAppInterface.awaitJobStart(DEFAULT_WAIT_TIMEOUT));
 
-        Thread.sleep(TestJobSchedulerReceiver.JOB_INITIAL_BACKOFF
-                - (System.currentTimeMillis() - jobStopTime));
+        Thread.sleep(Math.max(0, TestJobSchedulerReceiver.JOB_INITIAL_BACKOFF
+                - (System.currentTimeMillis() - jobStopTime)));
         ThermalUtils.overrideThermalNotThrottling();
         runJob();
         assertTrue("Job did not start back from throttling",
@@ -456,8 +456,8 @@ public class JobThrottlingTest {
         assertFalse("Job started above thermal throttling threshold",
                 mTestAppInterface.awaitJobStart(DEFAULT_WAIT_TIMEOUT));
 
-        Thread.sleep(TestJobSchedulerReceiver.JOB_INITIAL_BACKOFF
-                - (System.currentTimeMillis() - jobStopTime));
+        Thread.sleep(Math.max(0, TestJobSchedulerReceiver.JOB_INITIAL_BACKOFF
+                - (System.currentTimeMillis() - jobStopTime)));
         ThermalUtils.overrideThermalNotThrottling();
         runJob();
         assertTrue("Job did not start back from throttling",
@@ -1054,6 +1054,9 @@ public class JobThrottlingTest {
 
     @Test
     public void testRestrictingStopReason_Quota() throws Exception {
+        assumeFalse("not testable in automotive device", mAutomotiveDevice); // Test needs battery
+        assumeFalse("not testable in leanback device", mLeanbackOnly); // Test needs battery
+
         // Reduce allowed time for testing.
         mDeviceConfigStateHelper.set("qc_allowed_time_per_period_rare_ms", "60000");
         setChargingState(false);
@@ -1071,6 +1074,72 @@ public class JobThrottlingTest {
         assertEquals(JobParameters.STOP_REASON_QUOTA,
                 mTestAppInterface.getLastParams().getStopReason());
     }
+
+    /*
+    Tests currently disabled because they require changes inside the framework to lower the minimum
+    EJ quota to one minute (from 5 minutes).
+    TODO(224533485): make JS testable enough to enable these tests
+
+    @Test
+    public void testRestrictingStopReason_ExpeditedQuota_startOnCharging() throws Exception {
+        assumeFalse("not testable in automotive device", mAutomotiveDevice); // Test needs battery
+        assumeFalse("not testable in leanback device", mLeanbackOnly); // Test needs battery
+
+        // Reduce allowed time for testing. System to cap the time above 30 seconds.
+        mDeviceConfigStateHelper.set("qc_ej_limit_rare_ms", "30000");
+        mDeviceConfigStateHelper.set("runtime_min_ej_guarantee_ms", "30000");
+        // Start with charging so JobScheduler thinks the job can run for the maximum amount of
+        // time. We turn off charging later so quota clearly comes into effect.
+        setChargingState(true);
+        setTestPackageStandbyBucket(Bucket.RARE);
+
+        mTestAppInterface.scheduleJob(false, NETWORK_TYPE_NONE, true);
+        runJob();
+        assertTrue("New job didn't start",
+                mTestAppInterface.awaitJobStart(DEFAULT_WAIT_TIMEOUT));
+        assertTrue(mTestAppInterface.getLastParams().isExpeditedJob());
+        setChargingState(false);
+
+        assertFalse("Job stopped before using up quota",
+                mTestAppInterface.awaitJobStop(45_000));
+        Thread.sleep(15_000);
+
+        assertTrue("Job didn't stop after using up quota",
+                mTestAppInterface.awaitJobStop(DEFAULT_WAIT_TIMEOUT));
+        assertEquals(JobParameters.STOP_REASON_QUOTA,
+                mTestAppInterface.getLastParams().getStopReason());
+    }
+
+    @Test
+    public void testRestrictingStopReason_ExpeditedQuota_noCharging() throws Exception {
+        assumeFalse("not testable in automotive device", mAutomotiveDevice); // Test needs battery
+        assumeFalse("not testable in leanback device", mLeanbackOnly); // Test needs battery
+
+        // Reduce allowed time for testing.
+        mDeviceConfigStateHelper.set("qc_ej_limit_rare_ms", "30000");
+        mDeviceConfigStateHelper.set("runtime_min_ej_guarantee_ms", "30000");
+        setChargingState(false);
+        setTestPackageStandbyBucket(Bucket.RARE);
+
+        mTestAppInterface.scheduleJob(false, NETWORK_TYPE_NONE, true);
+        runJob();
+        assertTrue("New job didn't start",
+                mTestAppInterface.awaitJobStart(DEFAULT_WAIT_TIMEOUT));
+        assertTrue(mTestAppInterface.getLastParams().isExpeditedJob());
+
+        assertFalse("Job stopped before using up quota",
+                mTestAppInterface.awaitJobStop(45_000));
+        Thread.sleep(15_000);
+
+        assertTrue("Job didn't stop after using up quota",
+                mTestAppInterface.awaitJobStop(DEFAULT_WAIT_TIMEOUT));
+        // Charging state was false when the job started, so the trigger the timeout before
+        // QuotaController officially marks the quota finished.
+        final int stopReason = mTestAppInterface.getLastParams().getStopReason();
+        assertTrue(stopReason == JobParameters.STOP_REASON_TIMEOUT
+                || stopReason == JobParameters.STOP_REASON_QUOTA);
+    }
+     */
 
     @Test
     public void testRestrictingStopReason_BatterySaver() throws Exception {

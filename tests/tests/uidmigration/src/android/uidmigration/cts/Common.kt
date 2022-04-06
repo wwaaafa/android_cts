@@ -16,6 +16,7 @@
 
 package android.uidmigration.cts
 
+import android.content.pm.PackageManager
 import com.android.compatibility.common.util.SystemUtil.runShellCommand
 import com.android.server.pm.SharedUidMigration
 import com.android.server.pm.SharedUidMigration.PROPERTY_KEY
@@ -23,6 +24,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 
 const val TMP_APK_PATH = "/data/local/tmp/cts/uidmigration"
+
+val FLAG_ZERO = PackageManager.PackageInfoFlags.of(0)
 
 // What each APK meant
 // APK : pkg , with sharedUserId
@@ -45,6 +48,10 @@ inline fun <T> T?.assertNotNull(): T {
 
 @Suppress("NOTHING_TO_INLINE")
 inline fun assertEquals(a: Int, b: Int) = assertEquals(a.toLong(), b.toLong())
+
+// Identical regardless of order
+fun <T> Array<T>.sameAs(vararg items: T) =
+        size == items.size && all { items.contains(it) } && items.all { contains(it) }
 
 fun installPackage(apkPath: String): Boolean {
     return runShellCommand("pm install --force-queryable -t $apkPath") == "Success\n"

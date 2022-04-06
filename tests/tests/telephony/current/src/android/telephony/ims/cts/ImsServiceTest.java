@@ -1472,14 +1472,8 @@ public class ImsServiceTest {
                 ImsException.class);
 
         // IMS registers
-        ArraySet<String> featureTags = new ArraySet<>();
-        // Chat Session
-        featureTags.add(CHAT_FEATURE_TAG);
-        featureTags.add(FILE_TRANSFER_FEATURE_TAG);
-        ImsRegistrationAttributes attr = new ImsRegistrationAttributes.Builder(
-                IMS_REGI_TECH_LTE).setFeatureTags(featureTags).build();
-        sServiceConnector.getCarrierService().getImsRegistration().onRegistered(attr);
-        waitForParam(mQueue, attr);
+        sServiceConnector.getCarrierService().getImsRegistration().onRegistered(
+                IMS_REGI_TECH_LTE);
 
         // Notify framework that the RCS capability status is changed and PRESENCE UCE is enabled.
         RcsImsCapabilities capabilities =
@@ -1497,6 +1491,20 @@ public class ImsServiceTest {
         // Verify that the publish is triggered and receive the publish state changed callback.
         assertTrue(sServiceConnector.getCarrierService().waitForLatchCountdown(
                 TestImsService.LATCH_UCE_REQUEST_PUBLISH));
+
+        assertEquals(RcsUceAdapter.PUBLISH_STATE_PUBLISHING, waitForIntResult(publishStateQueue));
+        assertEquals(RcsUceAdapter.PUBLISH_STATE_OK, waitForIntResult(publishStateQueue));
+        publishStateQueue.clear();
+
+        // IMS registers
+        ArraySet<String> featureTags = new ArraySet<>();
+        // Chat Session
+        featureTags.add(CHAT_FEATURE_TAG);
+        featureTags.add(FILE_TRANSFER_FEATURE_TAG);
+        ImsRegistrationAttributes attr = new ImsRegistrationAttributes.Builder(
+                IMS_REGI_TECH_LTE).setFeatureTags(featureTags).build();
+        sServiceConnector.getCarrierService().getImsRegistration().onRegistered(attr);
+        waitForParam(mQueue, attr);
 
         assertEquals(RcsUceAdapter.PUBLISH_STATE_PUBLISHING, waitForIntResult(publishStateQueue));
         assertEquals(RcsUceAdapter.PUBLISH_STATE_OK, waitForIntResult(publishStateQueue));
@@ -2130,6 +2138,37 @@ public class ImsServiceTest {
         capExchangeImpl.setPublishOperator((listener, pidfXml, cb) -> {
             int networkResp = 403;
             String reason = "FORBIDDEN";
+            cb.onNetworkResponse(networkResp, reason);
+            listener.onPublish();
+        });
+
+        // Notify framework to send the PUBLISH request to the ImsService.
+        eventListener.onRequestPublishCapabilities(
+                RcsUceAdapter.CAPABILITY_UPDATE_TRIGGER_MOVE_TO_WLAN);
+
+        // Verify ImsService receive the publish request from framework.
+        assertTrue(sServiceConnector.getCarrierService().waitForLatchCountdown(
+                TestImsService.LATCH_UCE_REQUEST_PUBLISH));
+
+        try {
+            // Verify the publish state callback is received.
+            assertEquals(RcsUceAdapter.PUBLISH_STATE_PUBLISHING,
+                    waitForIntResult(publishStateQueue));
+            assertEquals(RcsUceAdapter.PUBLISH_STATE_RCS_PROVISION_ERROR,
+                    waitForIntResult(publishStateQueue));
+            // Verify the value of getting from the API is PUBLISH_STATE_RCS_PROVISION_ERROR
+            automation.adoptShellPermissionIdentity();
+            int publishState = uceAdapter.getUcePublishState();
+            assertEquals(RcsUceAdapter.PUBLISH_STATE_RCS_PROVISION_ERROR, publishState);
+        } finally {
+            publishStateQueue.clear();
+            automation.dropShellPermissionIdentity();
+        }
+
+        // Reply the SIP code 504 SERVER TIMEOUT
+        capExchangeImpl.setPublishOperator((listener, pidfXml, cb) -> {
+            int networkResp = 504;
+            String reason = "SERVER TIMEOUT";
             cb.onNetworkResponse(networkResp, reason);
             listener.onPublish();
         });

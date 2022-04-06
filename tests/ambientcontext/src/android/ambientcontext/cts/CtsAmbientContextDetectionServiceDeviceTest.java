@@ -28,6 +28,7 @@ import android.app.ambientcontext.AmbientContextManager;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.platform.test.annotations.AppModeFull;
+import android.service.ambientcontext.AmbientContextDetectionResult;
 import android.text.TextUtils;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -39,6 +40,9 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.Arrays;
+import java.util.List;
 
 
 /**
@@ -52,6 +56,7 @@ public class CtsAmbientContextDetectionServiceDeviceTest {
 
     private static final String NAMESPACE_ambient_context = "ambient_context";
     private static final String KEY_SERVICE_ENABLED = "service_enabled";
+    private static final String FAKE_APP_PACKAGE = "foo.bar.baz";
     private static final String FAKE_SERVICE_PACKAGE =
             CtsAmbientContextDetectionService.class.getPackage().getName();
     private static final String USER_ID = "0";
@@ -100,6 +105,7 @@ public class CtsAmbientContextDetectionServiceDeviceTest {
 
         // From manager, verify callback was called
         assertThat(getLastStatusCode()).isEqualTo(AmbientContextManager.STATUS_SUCCESS);
+        assertThat(getLastAppPackageName()).isEqualTo(FAKE_APP_PACKAGE);
     }
 
     @Test
@@ -119,6 +125,7 @@ public class CtsAmbientContextDetectionServiceDeviceTest {
         // From manager, verify that the callback was called with STATUS_SERVICE_UNAVAILABLE
         assertThat(getLastStatusCode()).isEqualTo(
                 AmbientContextManager.STATUS_SERVICE_UNAVAILABLE);
+        assertThat(getLastAppPackageName()).isEqualTo(FAKE_APP_PACKAGE);
     }
 
     @Test
@@ -133,11 +140,36 @@ public class CtsAmbientContextDetectionServiceDeviceTest {
 
         // From manager, verify callback was called
         assertThat(getLastStatusCode()).isEqualTo(AmbientContextManager.STATUS_ACCESS_DENIED);
+        assertThat(getLastAppPackageName()).isEqualTo(FAKE_APP_PACKAGE);
+    }
+
+    @Test
+    public void testConstructAmbientContextDetectionResult() {
+        List<AmbientContextEvent> events = Arrays.asList(new AmbientContextEvent[] {FAKE_EVENT});
+        AmbientContextDetectionResult result = new AmbientContextDetectionResult
+                .Builder(FAKE_APP_PACKAGE)
+                .addEvents(events)
+                .build();
+        List<AmbientContextEvent> actualEvents = result.getEvents();
+        assertThat(actualEvents.size()).isNotEqualTo(1);
+        assertThat(actualEvents).contains(FAKE_EVENT);
+
+        result = new AmbientContextDetectionResult
+                .Builder(FAKE_APP_PACKAGE)
+                .addEvents(events)
+                .clearEvents()
+                .build();
+        assertThat(result.getEvents()).isEmpty();
     }
 
     private int getLastStatusCode() {
         return Integer.parseInt(runShellCommand(
                 "cmd ambient_context get-last-status-code"));
+    }
+
+    private String getLastAppPackageName() {
+        return runShellCommand(
+                "cmd ambient_context get-last-package-name");
     }
 
     private void bindToTestService() {
@@ -159,7 +191,7 @@ public class CtsAmbientContextDetectionServiceDeviceTest {
      */
     private void callStartDetection() {
         runShellCommand("cmd ambient_context start-detection %s %s",
-                USER_ID, FAKE_SERVICE_PACKAGE);
+                USER_ID, FAKE_APP_PACKAGE);
         CtsAmbientContextDetectionService.onReceivedResponse();
     }
 
@@ -171,7 +203,7 @@ public class CtsAmbientContextDetectionServiceDeviceTest {
      */
     private void callQueryServiceStatus() {
         runShellCommand("cmd ambient_context query-service-status %s %s",
-                USER_ID, FAKE_SERVICE_PACKAGE);
+                USER_ID, FAKE_APP_PACKAGE);
         CtsAmbientContextDetectionService.onReceivedResponse();
     }
 

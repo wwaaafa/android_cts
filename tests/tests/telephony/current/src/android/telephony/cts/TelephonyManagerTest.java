@@ -1380,11 +1380,12 @@ public class TelephonyManagerTest {
         }
 
         assertEquals(mServiceState, mTelephonyManager.getServiceState());
-        assertServiceStateSanitization(mServiceState, mTelephonyManager.getServiceState(true,
-                true));
+        assertServiceStateSanitization(mServiceState, mTelephonyManager.getServiceState(
+                TelephonyManager.INCLUDE_LOCATION_DATA_NONE));
         assertServiceStateFineLocationSanitization(mServiceState,
-                mTelephonyManager.getServiceState(true, false));
-        assertEquals(mServiceState, mTelephonyManager.getServiceState(false, true));
+                mTelephonyManager.getServiceState(TelephonyManager.INCLUDE_LOCATION_DATA_COARSE));
+        assertEquals(mServiceState, mTelephonyManager.getServiceState(
+                TelephonyManager.INCLUDE_LOCATION_DATA_FINE));
     }
 
     private void assertServiceStateSanitization(ServiceState expectedServiceState,
@@ -3549,8 +3550,6 @@ public class TelephonyManagerTest {
         InstrumentationRegistry.getInstrumentation().getUiAutomation()
                 .adoptShellPermissionIdentity("android.permission.READ_PRIVILEGED_PHONE_STATE");
         List<UiccCardInfo> cardsInfo = mTelephonyManager.getUiccCardsInfo();
-        InstrumentationRegistry.getInstrumentation().getUiAutomation()
-                .dropShellPermissionIdentity();
         for (UiccCardInfo cardInfo : cardsInfo) {
             for (UiccPortInfo portInfo : cardInfo.getPorts()) {
                 int simCardState = mTelephonyManager.getSimCardState(cardInfo
@@ -3562,6 +3561,8 @@ public class TelephonyManagerTest {
                         TelephonyManager.SIM_STATE_PRESENT).contains(simCardState));
             }
         }
+        InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                .dropShellPermissionIdentity();
     }
 
     private boolean isDataEnabled() {
@@ -3581,6 +3582,7 @@ public class TelephonyManagerTest {
                 (tm) -> tm.setDataEnabledForReason(TelephonyManager.DATA_ENABLED_REASON_THERMAL,
                         false));
 
+        waitForMs(500);
         boolean isDataEnabledForReason = ShellIdentityUtils.invokeMethodWithShellPermissions(
                 mTelephonyManager, (tm) -> tm.isDataEnabledForReason(
                         TelephonyManager.DATA_ENABLED_REASON_THERMAL));
@@ -3595,6 +3597,7 @@ public class TelephonyManagerTest {
                 (tm) -> tm.setDataEnabledForReason(TelephonyManager.DATA_ENABLED_REASON_THERMAL,
                         true));
 
+        waitForMs(500);
         isDataEnabledForReason = ShellIdentityUtils.invokeMethodWithShellPermissions(
                 mTelephonyManager, (tm) -> tm.isDataEnabledForReason(
                         TelephonyManager.DATA_ENABLED_REASON_THERMAL));
@@ -3617,6 +3620,7 @@ public class TelephonyManagerTest {
                 (tm) -> tm.setDataEnabledForReason(TelephonyManager.DATA_ENABLED_REASON_POLICY,
                         false));
 
+        waitForMs(500);
         boolean isDataEnabledForReason = ShellIdentityUtils.invokeMethodWithShellPermissions(
                 mTelephonyManager, (tm) -> tm.isDataEnabledForReason(
                         TelephonyManager.DATA_ENABLED_REASON_POLICY));
@@ -3631,6 +3635,7 @@ public class TelephonyManagerTest {
                 (tm) -> tm.setDataEnabledForReason(TelephonyManager.DATA_ENABLED_REASON_POLICY,
                         true));
 
+        waitForMs(500);
         isDataEnabledForReason = ShellIdentityUtils.invokeMethodWithShellPermissions(
                 mTelephonyManager, (tm) -> tm.isDataEnabledForReason(
                         TelephonyManager.DATA_ENABLED_REASON_POLICY));
@@ -3728,6 +3733,7 @@ public class TelephonyManagerTest {
                         TelephonyManager.MOBILE_DATA_POLICY_DATA_ON_NON_DEFAULT_DURING_VOICE_CALL,
                         !allowDataDuringVoiceCall));
 
+        waitForMs(500);
         assertNotEquals(allowDataDuringVoiceCall,
                 ShellIdentityUtils.invokeMethodWithShellPermissions(
                         mTelephonyManager, getPolicyHelper));
@@ -3737,6 +3743,7 @@ public class TelephonyManagerTest {
                         TelephonyManager.MOBILE_DATA_POLICY_DATA_ON_NON_DEFAULT_DURING_VOICE_CALL,
                         allowDataDuringVoiceCall));
 
+        waitForMs(500);
         assertEquals(allowDataDuringVoiceCall,
                 ShellIdentityUtils.invokeMethodWithShellPermissions(
                         mTelephonyManager, getPolicyHelper));
@@ -3758,6 +3765,7 @@ public class TelephonyManagerTest {
                         TelephonyManager.MOBILE_DATA_POLICY_MMS_ALWAYS_ALLOWED,
                         !mmsAlwaysAllowed));
 
+        waitForMs(500);
         assertNotEquals(mmsAlwaysAllowed,
                 ShellIdentityUtils.invokeMethodWithShellPermissions(
                         mTelephonyManager, getPolicyHelper));
@@ -3767,6 +3775,7 @@ public class TelephonyManagerTest {
                         TelephonyManager.MOBILE_DATA_POLICY_MMS_ALWAYS_ALLOWED,
                         mmsAlwaysAllowed));
 
+        waitForMs(500);
         assertEquals(mmsAlwaysAllowed,
                 ShellIdentityUtils.invokeMethodWithShellPermissions(
                         mTelephonyManager, getPolicyHelper));
@@ -4364,6 +4373,7 @@ public class TelephonyManagerTest {
             return;
         }
 
+        boolean connectedToNrCell = false;
         for (CellInfo cellInfo : mTelephonyManager.getAllCellInfo()) {
             CellIdentity cellIdentity = cellInfo.getCellIdentity();
             int[] bands;
@@ -4381,10 +4391,20 @@ public class TelephonyManagerTest {
                             || (band >= AccessNetworkConstants.NgranBands.BAND_257
                             && band <= AccessNetworkConstants.NgranBands.BAND_261));
                 }
+                if (cellInfo.isRegistered()) {
+                    connectedToNrCell = true;
+                }
             } else {
                 continue;
             }
             assertTrue(bands.length > 0);
+        }
+
+        if (connectedToNrCell) {
+            assertEquals(TelephonyManager.NETWORK_TYPE_NR, mTelephonyManager.getDataNetworkType());
+        } else {
+            assertNotEquals(TelephonyManager.NETWORK_TYPE_NR,
+                    mTelephonyManager.getDataNetworkType());
         }
     }
 
@@ -4821,9 +4841,22 @@ public class TelephonyManagerTest {
 
         try {
             mTelephonyManager.checkCarrierPrivilegesForPackageAnyPhone(mSelfPackageName);
+            fail("TelephonyManager#checkCarrierPrivilegesForPackageAnyPhone must be protected "
+                    + "with READ_PRIVILEGED_PHONE_STATE");
+        } catch (SecurityException expected) {
+        }
+
+        try {
+            InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                    .adoptShellPermissionIdentity(
+                            "android.permission.READ_PRIVILEGED_PHONE_STATE");
+            mTelephonyManager.checkCarrierPrivilegesForPackageAnyPhone(mSelfPackageName);
         } catch (SecurityException e) {
-            fail("TelephonyManager#checkCarrierPrivilegesForPackageAnyPhone shouldn't require "
-                    + "READ_PRIVILEGED_PHONE_STATE");
+            fail("TelephonyManager#checkCarrierPrivilegesForPackageAnyPhone should not throw "
+                    + "SecurityException with READ_PRIVILEGED_PHONE_STATE permission");
+        } finally {
+            InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                    .dropShellPermissionIdentity();
         }
     }
 
@@ -4961,6 +4994,8 @@ public class TelephonyManagerTest {
     public void getUiccSlotInfoTest() {
         assumeTrue(hasFeature(PackageManager.FEATURE_TELEPHONY_SUBSCRIPTION));
 
+        InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                .adoptShellPermissionIdentity("android.permission.READ_PRIVILEGED_PHONE_STATE");
         UiccSlotInfo[] slotInfos = mTelephonyManager.getUiccSlotsInfo();
 
         if (slotInfos == null) {
@@ -4980,6 +5015,22 @@ public class TelephonyManagerTest {
                 portInfo.getLogicalSlotIndex();
                 portInfo.getPortIndex();
             }
+        }
+        InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                .dropShellPermissionIdentity();
+    }
+
+    @Test
+    public void testGetUiccSlotInfosFailsWithoutReadPhoneStatePrivilege() {
+        assumeTrue(hasFeature(PackageManager.FEATURE_TELEPHONY_SUBSCRIPTION));
+        try {
+            InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                    .dropShellPermissionIdentity();
+            mTelephonyManager.getUiccSlotsInfo();
+            fail("TelephonyManager#getUiccSlotsInfo must be protected "
+                    + "with READ_PRIVILEGED_PHONE_STATE");
+        } catch (SecurityException e) {
+            // expected
         }
     }
 

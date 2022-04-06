@@ -83,6 +83,9 @@ public class HearingAidProfileTest extends AndroidTestCase {
         if (!isBleSupported()) return;
         mIsBleSupported = true;
 
+        mIsHearingAidSupported = TestUtils.isProfileEnabled(BluetoothProfile.HEARING_AID);
+        if (!mIsHearingAidSupported) return;
+
         mUiAutomation = InstrumentationRegistry.getInstrumentation().getUiAutomation();
         mUiAutomation.adoptShellPermissionIdentity(BLUETOOTH_CONNECT);
 
@@ -95,17 +98,18 @@ public class HearingAidProfileTest extends AndroidTestCase {
         mConditionProfileIsConnected  = mProfileConnectedlock.newCondition();
         mIsProfileReady = false;
         mService = null;
-        mIsHearingAidSupported = mBluetoothAdapter.getProfileProxy(getContext(),
-                                                  new HearingAidsServiceListener(),
-                                                  BluetoothProfile.HEARING_AID);
-        if (!mIsHearingAidSupported) return;
+        mBluetoothAdapter.getProfileProxy(getContext(), new HearingAidsServiceListener(),
+                BluetoothProfile.HEARING_AID);
     }
 
     @Override
     public void tearDown() {
-        if (!mIsBleSupported) return;
-
-        assertTrue(BTAdapterUtils.disableAdapter(mBluetoothAdapter, mContext));
+        if (!(mIsBleSupported && mIsHearingAidSupported)) {
+            return;
+        }
+        if (mBluetoothAdapter != null) {
+            assertTrue(BTAdapterUtils.disableAdapter(mBluetoothAdapter, mContext));
+        }
         mUiAutomation.dropShellPermissionIdentity();
     }
 
@@ -134,17 +138,18 @@ public class HearingAidProfileTest extends AndroidTestCase {
         assertTrue(mIsProfileReady);
         assertNotNull(mService);
 
-        // Create a dummy device
+        // Create a fake device
         BluetoothDevice device = mBluetoothAdapter.getRemoteDevice("00:11:22:AA:BB:CC");
         assertNotNull(device);
 
         int connectionState = mService.getConnectionState(device);
-        // Dummy device should be disconnected
+        // Fake device should be disconnected
         assertEquals(connectionState, BluetoothProfile.STATE_DISCONNECTED);
     }
 
     /**
-     * Basic test case to make sure that a fictional device is disconnected.
+     * Basic test case to make sure that a fictional device throw a SecurityException when setting
+     * volume.
      */
     @MediumTest
     public void test_setVolume() {

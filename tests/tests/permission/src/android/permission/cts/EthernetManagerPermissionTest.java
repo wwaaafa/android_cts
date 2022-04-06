@@ -17,7 +17,6 @@
 package android.permission.cts;
 
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeNotNull;
 import static org.junit.Assume.assumeTrue;
 
@@ -55,16 +54,17 @@ public class EthernetManagerPermissionTest {
         assumeNotNull(mEthernetManager);
     }
 
-    private void callUpdateConfiguration() {
-        final IpConfiguration ipConfig = new IpConfiguration.Builder().build();
-        final NetworkCapabilities networkCapabilities =
-                new NetworkCapabilities.Builder().build();
-        final EthernetNetworkUpdateRequest request =
-                new EthernetNetworkUpdateRequest.Builder()
-                        .setIpConfiguration(ipConfig)
-                        .setNetworkCapabilities(networkCapabilities)
-                        .build();
-        mEthernetManager.updateConfiguration(TEST_IFACE, request, null, null);
+    private EthernetNetworkUpdateRequest buildUpdateRequest() {
+        return new EthernetNetworkUpdateRequest.Builder()
+                .setIpConfiguration(new IpConfiguration.Builder().build())
+                .setNetworkCapabilities(new NetworkCapabilities.Builder().build())
+                .build();
+    }
+
+    private EthernetNetworkUpdateRequest buildUpdateRequestWithoutCapabilities() {
+        return new EthernetNetworkUpdateRequest.Builder()
+                .setIpConfiguration(new IpConfiguration.Builder().build())
+                .build();
     }
 
     /**
@@ -74,84 +74,40 @@ public class EthernetManagerPermissionTest {
      *   {@link android.Manifest.permission#MANAGE_ETHERNET_NETWORKS}.
      */
     @Test
-    public void testUpdateConfiguration() {
-        assumeTrue(mContext.getPackageManager().hasSystemFeature(
-                PackageManager.FEATURE_AUTOMOTIVE));
+    public void testUpdateConfigurationRequiresPermissionManageEthernetNetworks() {
         assertThrows("Should not be able to call updateConfiguration without permission",
-                SecurityException.class, () -> callUpdateConfiguration());
+                SecurityException.class,
+                () -> mEthernetManager.updateConfiguration(TEST_IFACE,
+                        buildUpdateRequestWithoutCapabilities(), null, null));
     }
 
     /**
-     * Verify that calling {@link EthernetManager#connectNetwork(String, Executor, BiConsumer)}
+     * Verify that calling {@link EthernetManager#enableInterface}
      * requires permissions.
      * <p>Tests Permission:
      *   {@link android.Manifest.permission#MANAGE_ETHERNET_NETWORKS}.
      */
     @Test
-    public void testConnectNetwork() {
+    public void testEnableInterface() {
         assumeTrue(mContext.getPackageManager().hasSystemFeature(
                 PackageManager.FEATURE_AUTOMOTIVE));
-        assertThrows("Should not be able to call connectNetwork without permission",
+        assertThrows("Should not be able to call enableInterface without permission",
                 SecurityException.class,
-                () -> mEthernetManager.connectNetwork(TEST_IFACE, null, null));
+                () -> mEthernetManager.enableInterface(TEST_IFACE, null, null));
     }
 
     /**
-     * Verify that calling {@link EthernetManager#disconnectNetwork(String, Executor, BiConsumer)}
+     * Verify that calling {@link EthernetManager#disableInterface}
      * requires permissions.
      * <p>Tests Permission:
      *   {@link android.Manifest.permission#MANAGE_ETHERNET_NETWORKS}.
      */
     @Test
-    public void testDisconnectNetwork() {
+    public void testDisableInterface() {
         assumeTrue(mContext.getPackageManager().hasSystemFeature(
                 PackageManager.FEATURE_AUTOMOTIVE));
-        assertThrows("Should not be able to call disconnectNetwork without permission",
+        assertThrows("Should not be able to call disableInterface without permission",
                 SecurityException.class,
-                () -> mEthernetManager.disconnectNetwork(TEST_IFACE, null, null));
-    }
-
-    /**
-     * Verify that calling {@link EthernetManager#updateConfiguration(
-     * String, EthernetNetworkUpdateRequest, Executor, BiConsumer)} requires automotive feature.
-     * <p>Tests Feature:
-     *   {@link PackageManager#FEATURE_AUTOMOTIVE}.
-     */
-    @Test
-    public void testUpdateConfigurationHasAutomotiveFeature() {
-        assumeFalse(mContext.getPackageManager().hasSystemFeature(
-                PackageManager.FEATURE_AUTOMOTIVE));
-        assertThrows("Should not be able to call updateConfiguration without automotive feature",
-                UnsupportedOperationException.class, () -> callUpdateConfiguration());
-    }
-
-    /**
-     * Verify that calling {@link EthernetManager#connectNetwork(String, Executor, BiConsumer)}
-     * requires automotive feature.
-     * <p>Tests Feature:
-     *   {@link PackageManager#FEATURE_AUTOMOTIVE}.
-     */
-    @Test
-    public void testConnectNetworkHasAutomotiveFeature() {
-        assumeFalse(mContext.getPackageManager().hasSystemFeature(
-                PackageManager.FEATURE_AUTOMOTIVE));
-        assertThrows("Should not be able to call connectNetwork without automotive feature",
-                UnsupportedOperationException.class,
-                () -> mEthernetManager.connectNetwork(TEST_IFACE, null, null));
-    }
-
-    /**
-     * Verify that calling {@link EthernetManager#disconnectNetwork(String, Executor, BiConsumer)}
-     * requires automotive feature.
-     * <p>Tests Feature:
-     *   {@link PackageManager#FEATURE_AUTOMOTIVE}.
-     */
-    @Test
-    public void testDisconnectNetworkHasAutomotiveFeature() {
-        assumeFalse(mContext.getPackageManager().hasSystemFeature(
-                PackageManager.FEATURE_AUTOMOTIVE));
-        assertThrows("Should not be able to call disconnectNetwork without automotive feature",
-                UnsupportedOperationException.class,
-                () -> mEthernetManager.disconnectNetwork(TEST_IFACE, null, null));
+                () -> mEthernetManager.disableInterface(TEST_IFACE, null, null));
     }
 }

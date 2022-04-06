@@ -343,12 +343,13 @@ public class WindowUntrustedTouchTest {
     /** SAWs */
 
     @Test
-    public void testWhenOneSawWindowAboveThreshold_blocksTouch() throws Throwable {
+    public void testWhenOneSawWindowAboveThreshold_allowsTouch() throws Throwable {
         addSawOverlay(APP_A, WINDOW_1, .9f);
 
         mTouchHelper.tapOnViewCenter(mContainer);
 
-        assertTouchNotReceived();
+        // Opacity will be automatically capped and touches will pass through.
+        assertTouchReceived();
     }
 
     @Test
@@ -414,14 +415,15 @@ public class WindowUntrustedTouchTest {
     }
 
     @Test
-    public void testWhenOneSawWindowAboveThresholdAndSelfSawWindow_blocksTouch()
+    public void testWhenOneSawWindowAboveThresholdAndSelfSawWindow_allowsTouch()
             throws Throwable {
         addSawOverlay(APP_A, WINDOW_1, .9f);
         addSawOverlay(APP_SELF, WINDOW_1, .7f);
 
         mTouchHelper.tapOnViewCenter(mContainer);
 
-        assertTouchNotReceived();
+        // Opacity will be automatically capped and touches will pass through.
+        assertTouchReceived();
     }
 
     @Test
@@ -460,14 +462,15 @@ public class WindowUntrustedTouchTest {
     }
 
     @Test
-    public void testWhenThresholdIs0AndSawWindowAboveThreshold_blocksTouch()
+    public void testWhenThresholdIs0AndSawWindowAboveThreshold_allowsTouch()
             throws Throwable {
         setMaximumObscuringOpacityForTouch(0);
         addSawOverlay(APP_A, WINDOW_1, .1f);
 
         mTouchHelper.tapOnViewCenter(mContainer);
 
-        assertTouchNotReceived();
+        // Opacity will be automatically capped and touches will pass through.
+        assertTouchReceived();
     }
 
     @Test
@@ -658,6 +661,13 @@ public class WindowUntrustedTouchTest {
         assertThat(durationSet).isGreaterThan(
                 MAX_ANIMATION_DURATION_MS + ANIMATION_DURATION_TOLERANCE_MS);
         addExitAnimationActivity(APP_A);
+
+        // Wait for ExitAnimationActivity open transition to complete to avoid counting this
+        // transition in the duration of the exit animation below. Otherwise
+        // waitForAppTransitionRunningOnDisplay might return immediately if this transition is not
+        // done by then instead of waiting for the exit animation to start running.
+        assertTrue(mWmState.waitForAppTransitionIdleOnDisplay(Display.DEFAULT_DISPLAY));
+
         sendFinishToExitAnimationActivity(APP_A,
                 Components.ExitAnimationActivityReceiver.EXTRA_VALUE_LONG_ANIMATION_0_7);
         assertTrue(mWmState.waitForAppTransitionRunningOnDisplay(Display.DEFAULT_DISPLAY));
@@ -704,6 +714,12 @@ public class WindowUntrustedTouchTest {
     @Test
     public void testWhenExitAnimationBelowThreshold_allowsTouch() {
         addExitAnimationActivity(APP_A);
+
+        // Wait for ExitAnimationActivity open transition to complete to avoid
+        // waitForAppTransitionRunningOnDisplay returning immediately if this transition is not
+        // done by then instead of waiting for the exit animation to start running.
+        assertTrue(mWmState.waitForAppTransitionIdleOnDisplay(Display.DEFAULT_DISPLAY));
+
         sendFinishToExitAnimationActivity(APP_A,
                 Components.ExitAnimationActivityReceiver.EXTRA_VALUE_ANIMATION_0_7);
         assertTrue(mWmState.waitForAppTransitionRunningOnDisplay(Display.DEFAULT_DISPLAY));

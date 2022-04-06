@@ -17,7 +17,9 @@
 package android.view.inputmethod.cts;
 
 import static android.inputmethodservice.InputMethodService.FINISH_INPUT_NO_FALLBACK_CONNECTION;
+import static android.view.Display.DEFAULT_DISPLAY;
 import static android.view.View.VISIBLE;
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.WindowInsets.Type.ime;
 import static android.view.WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS;
 import static android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN;
@@ -31,6 +33,7 @@ import static android.view.inputmethod.cts.util.InputMethodVisibilityVerifier.ex
 import static android.view.inputmethod.cts.util.InputMethodVisibilityVerifier.expectImeVisible;
 import static android.view.inputmethod.cts.util.TestUtils.getOnMainSync;
 import static android.view.inputmethod.cts.util.TestUtils.runOnMainSync;
+import static android.widget.PopupWindow.INPUT_METHOD_NOT_NEEDED;
 
 import static com.android.compatibility.common.util.SystemUtil.runWithShellPermissionIdentity;
 import static com.android.cts.mockime.ImeEventStreamTestUtils.expectEvent;
@@ -42,6 +45,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
 import android.app.AlertDialog;
@@ -54,6 +58,7 @@ import android.os.SystemClock;
 import android.os.UserHandle;
 import android.platform.test.annotations.AppModeFull;
 import android.platform.test.annotations.AppModeInstant;
+import android.server.wm.WindowManagerState;
 import android.support.test.uiautomator.UiObject2;
 import android.text.TextUtils;
 import android.util.Log;
@@ -77,6 +82,8 @@ import android.view.inputmethod.cts.util.TestWebView;
 import android.view.inputmethod.cts.util.UnlockScreenRule;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.PopupWindow;
+import android.widget.TextView;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
@@ -672,6 +679,8 @@ public class KeyboardVisibilityControlTest extends EndToEndImeTestBase {
 
     @Test
     public void testRestoreImeVisibility() throws Exception {
+        // TODO(b/226110728): Remove after we can send ime restore signal to DisplayAreaOrganizer.
+        assumeFalse(isImeOrganized(DEFAULT_DISPLAY));
         runRestoreImeVisibility(TestSoftInputMode.UNCHANGED_WITH_BACKWARD_NAV, true);
     }
 
@@ -683,6 +692,67 @@ public class KeyboardVisibilityControlTest extends EndToEndImeTestBase {
     @Test
     public void testRestoreImeVisibility_noRestoreForHiddenWithForwardNav() throws Exception {
         runRestoreImeVisibility(TestSoftInputMode.HIDDEN_WITH_FORWARD_NAV, false);
+    }
+
+    /**
+     * Test case for Bug 225028378.
+     *
+     * <p>This test ensures that showing a non-ime-focusable {@link PopupWindow} with
+     * {@link PopupWindow#INPUT_METHOD_NOT_NEEDED} will be on top of the IME.</p>
+     */
+    @Test
+    public void testNonImeFocusablePopupWindow_onTopOfIme() throws Exception {
+        final Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
+        try (MockImeSession imeSession = MockImeSession.create(
+                InstrumentationRegistry.getInstrumentation().getContext(),
+                InstrumentationRegistry.getInstrumentation().getUiAutomation(),
+                new ImeSettings.Builder())) {
+            final ImeEventStream stream = imeSession.openEventStream();
+            final String marker = getTestMarker();
+            final AtomicReference<EditText> editorRef = new AtomicReference<>();
+            TestActivity.startSync(activity -> {
+                final LinearLayout layout = new LinearLayout(activity);
+                layout.setOrientation(LinearLayout.VERTICAL);
+                layout.setGravity(Gravity.BOTTOM);
+                final EditText editText = new EditText(activity);
+                editorRef.set(editText);
+                editText.setHint("focused editText");
+                editText.setPrivateImeOptions(marker);
+                editText.requestFocus();
+                layout.addView(editText);
+                return layout;
+            });
+            // Show IME.
+            runOnMainSync(() -> editorRef.get().getContext().getSystemService(
+                    InputMethodManager.class).showSoftInput(editorRef.get(), 0));
+
+            expectEvent(stream, editorMatcher("onStartInputView", marker), TIMEOUT);
+            expectImeVisible(TIMEOUT);
+
+            // Create then show a non-ime-focusable PopupWindow with INPUT_METHOD_NOT_NEEDED.
+            try (AutoCloseableWrapper<PopupWindow> popupWindowWrapper = AutoCloseableWrapper.create(
+                    TestUtils.getOnMainSync(() -> {
+                        final PopupWindow popup = new PopupWindow(editorRef.get().getContext());
+                        popup.setInputMethodMode(INPUT_METHOD_NOT_NEEDED);
+                        final TextView textView = new TextView(editorRef.get().getContext());
+                        textView.setText("Popup");
+                        popup.setContentView(textView);
+                        popup.setWidth(MATCH_PARENT);
+                        popup.setHeight(MATCH_PARENT);
+                        // Show the popup window.
+                        popup.showAsDropDown(textView);
+                        return popup;
+                    }), popup -> TestUtils.runOnMainSync(popup::dismiss))
+            ) {
+                instrumentation.waitForIdleSync();
+                // Verify IME became invisible when the non-ime-focusable PopupWindow is shown.
+                expectImeInvisible(NOT_EXPECT_TIMEOUT);
+
+                runOnMainSync(() ->popupWindowWrapper.get().dismiss());
+                // Verify IME became visible when the non-ime-focusable PopupWindow has dismissed.
+                expectImeVisible(TIMEOUT);
+            }
+        }
     }
 
     private enum TestSoftInputMode {
@@ -907,5 +977,14 @@ public class KeyboardVisibilityControlTest extends EndToEndImeTestBase {
                 CompatChanges.isChangeEnabled(CLEAR_SHOW_FORCED_FLAG_WHEN_LEAVING, packageName,
                         UserHandle.CURRENT)));
         return result.get();
+    }
+
+    /** Whether the IME DisplayArea is organized by WM Shell. */
+    private static boolean isImeOrganized(int displayId) {
+        final WindowManagerState wmState = new WindowManagerState();
+        wmState.computeState();
+        WindowManagerState.DisplayArea imeContainer =  wmState.getImeContainer(displayId);
+        assertNotNull("ImeContainer not found for display id: " + displayId, imeContainer);
+        return imeContainer.isOrganized();
     }
 }
