@@ -169,16 +169,7 @@ public class AudioTrackOffloadTest extends CtsAndroidTestCase {
                     bufferSizeInBytes3sec, read);
 
             track.play();
-            int written = 0;
-            while (written < read) {
-                int wrote = track.write(data, written, read - written,
-                        AudioTrack.WRITE_BLOCKING);
-                Log.i(TAG, String.format("wrote %d bytes (%d out of %d)", wrote, written, read));
-                if (wrote < 0) {
-                    fail("Unable to write all read data, wrote " + written + " bytes");
-                }
-                written += wrote;
-            }
+            writeAllBlocking(track, data);
 
             try {
                 final long elapsed = checkDataRequest(DATA_REQUEST_TIMEOUT_MS);
@@ -206,6 +197,19 @@ public class AudioTrackOffloadTest extends CtsAndroidTestCase {
                 track.release();
             }
         };
+    }
+
+    private void writeAllBlocking(AudioTrack track, byte[] data) {
+        int written = 0;
+        while (written < data.length) {
+            int wrote = track.write(data, written, data.length - written,
+                    AudioTrack.WRITE_BLOCKING);
+            if (wrote < 0) {
+                fail("Unable to write all read data, wrote " + written + " bytes");
+            }
+            written += wrote;
+            Log.i(TAG, String.format("wrote %d bytes (%d out of %d)", wrote, written, data.length));
+        }
     }
 
     private long checkDataRequest(long timeout) throws Exception {
