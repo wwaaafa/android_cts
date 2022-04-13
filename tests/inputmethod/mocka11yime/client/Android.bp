@@ -16,22 +16,14 @@ package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
-android_test_helper_app {
-    name: "StrictJavaPackagesTestApp",
-    defaults: ["cts_defaults"],
-    srcs: ["src/**/*.java"],
-    static_libs: [
-        "androidx.test.rules",
-        "androidx.test.core",
-    ],
+java_test_helper_library {
+    name: "cts-mock-a11y-ime-client",
     sdk_version: "test_current",
-    min_sdk_version: "29",
-    test_suites: [
-        "ats",
-        "cts",
-        "gts",
-        "general-tests",
-        "mts",
-        "tvts",
+    srcs: ["src/**/*.java"],
+    libs: ["junit"],
+    static_libs: [
+        "androidx.annotation_annotation",
+        "compatibility-device-util-axt",
+        "cts-mock-a11y-ime-common",
     ],
 }
