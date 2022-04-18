@@ -762,6 +762,31 @@ public class TelephonyManagerTest {
         } finally {
             setAppOpsPermissionAllowed(false, OPSTR_USE_ICC_AUTH_WITH_DEVICE_IDENTIFIER);
         }
+
+        // Verify getIccAuthentication:
+        // With app ops permission USE_ICC_AUTH_WITH_DEVICE_IDENTIFIER, should not throw
+        // SecurityException.
+        try {
+            setAppOpsPermissionAllowed(true, OPSTR_USE_ICC_AUTH_WITH_DEVICE_IDENTIFIER);
+
+            mTelephonyManager.getIccAuthentication(
+                    TelephonyManager.APPTYPE_USIM, TelephonyManager.AUTHTYPE_GBA_BOOTSTRAP, "");
+        } finally {
+            setAppOpsPermissionAllowed(false, OPSTR_USE_ICC_AUTH_WITH_DEVICE_IDENTIFIER);
+        }
+
+        // Verify getIccAuthentication:
+        // With app ops permission USE_ICC_AUTH_WITH_DEVICE_IDENTIFIER, should not throw
+        // SecurityException.
+        try {
+            setAppOpsPermissionAllowed(true, OPSTR_USE_ICC_AUTH_WITH_DEVICE_IDENTIFIER);
+
+            mTelephonyManager.getIccAuthentication(
+                    TelephonyManager.APPTYPE_USIM, TelephonyManager.AUTHTYPE_GBA_NAF_KEY_EXTERNAL,
+                    "");
+        } finally {
+            setAppOpsPermissionAllowed(false, OPSTR_USE_ICC_AUTH_WITH_DEVICE_IDENTIFIER);
+        }
     }
 
     @Test
