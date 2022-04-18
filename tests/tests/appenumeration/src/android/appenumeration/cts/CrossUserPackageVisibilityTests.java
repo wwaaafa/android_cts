@@ -94,10 +94,75 @@ public class CrossUserPackageVisibilityTests {
                 () -> mPackageManager.isPackageSuspended(TARGET_STUB));
     }
 
+    @Test
+    public void testGetTargetSdkVersion_cannotDetectStubPkg() {
+        assertThrows(PackageManager.NameNotFoundException.class,
+                () -> mPackageManager.getTargetSdkVersion(TARGET_STUB));
+
+        installPackageForUser(TARGET_STUB_APK, mOtherUser);
+
+        assertThrows(PackageManager.NameNotFoundException.class,
+                () -> mPackageManager.getTargetSdkVersion(TARGET_STUB));
+    }
+
+    @Test
+    public void testCheckSignatures_cannotDetectStubPkg() {
+        final String selfPackageName = mContext.getPackageName();
+        assertThat(mPackageManager.checkSignatures(selfPackageName, TARGET_STUB))
+                .isEqualTo(PackageManager.SIGNATURE_UNKNOWN_PACKAGE);
+        assertThat(mPackageManager.checkSignatures(TARGET_STUB, selfPackageName))
+                .isEqualTo(PackageManager.SIGNATURE_UNKNOWN_PACKAGE);
+
+        installPackageForUser(TARGET_STUB_APK, mOtherUser);
+
+        assertThat(mPackageManager.checkSignatures(selfPackageName, TARGET_STUB))
+                .isEqualTo(PackageManager.SIGNATURE_UNKNOWN_PACKAGE);
+        assertThat(mPackageManager.checkSignatures(TARGET_STUB, selfPackageName))
+                .isEqualTo(PackageManager.SIGNATURE_UNKNOWN_PACKAGE);
+    }
+
+    @Test
+    public void testGetAllIntentFilters_cannotDetectStubPkg() {
+        assertThat(mPackageManager.getAllIntentFilters(TARGET_STUB)).isEmpty();
+
+        installPackageForUser(TARGET_STUB_APK, mOtherUser);
+
+        assertThat(mPackageManager.getAllIntentFilters(TARGET_STUB)).isEmpty();
+    }
+
+    @Test
+    public void testGetInstallerPackageName_cannotDetectStubPkg() {
+        assertThrows(IllegalArgumentException.class,
+                () -> mPackageManager.getInstallerPackageName(TARGET_STUB));
+
+        installPackageForUser(TARGET_STUB_APK, mOtherUser);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> mPackageManager.getInstallerPackageName(TARGET_STUB));
+    }
+
+    @Test
+    public void testGetInstallSourceInfo_cannotDetectStubPkg() {
+        assertThrows(PackageManager.NameNotFoundException.class,
+                () -> mPackageManager.getInstallSourceInfo(TARGET_STUB));
+
+        installPackageForUser(TARGET_STUB_APK, mOtherUser);
+
+        assertThrows(PackageManager.NameNotFoundException.class,
+                () -> mPackageManager.getInstallSourceInfo(TARGET_STUB));
+    }
+
     private static void installPackageForUser(String apkPath, UserReference user) {
+        installPackageForUser(apkPath, user,
+                InstrumentationRegistry.getInstrumentation().getContext().getPackageName());
+    }
+
+    private static void installPackageForUser(String apkPath, UserReference user,
+            String installerPackageName) {
         assertThat(new File(apkPath).exists()).isTrue();
         final StringBuilder cmd = new StringBuilder("pm install --user ");
         cmd.append(user.id()).append(" ");
+        cmd.append("-i ").append(installerPackageName).append(" ");
         cmd.append(apkPath);
         final String result = runShellCommand(cmd.toString());
         assertThat(result.trim()).contains("Success");
