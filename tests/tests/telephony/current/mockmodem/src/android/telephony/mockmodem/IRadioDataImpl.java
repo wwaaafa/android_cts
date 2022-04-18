@@ -43,7 +43,7 @@ public class IRadioDataImpl extends IRadioData.Stub {
     private final MockDataService mMockDataService;
     private IRadioDataResponse mRadioDataResponse;
     private IRadioDataIndication mRadioDataIndication;
-    private MockModemConfigInterface[] mMockModemConfigInterfaces;
+    private MockModemConfigInterface mMockModemConfigInterface;
     private static Object sCacheUpdateMutex = new Object();
     private final Handler mHandler;
     private int mSubId;
@@ -57,7 +57,7 @@ public class IRadioDataImpl extends IRadioData.Stub {
     public IRadioDataImpl(
             MockModemService service,
             Context context,
-            MockModemConfigInterface[] interfaces,
+            MockModemConfigInterface configInterface,
             int instanceId) {
         mTag = TAG + "-" + instanceId;
         Log.d(mTag, "Instantiated");
@@ -65,14 +65,14 @@ public class IRadioDataImpl extends IRadioData.Stub {
         mMockDataService = new MockDataService(context);
         this.mService = service;
 
-        mMockModemConfigInterfaces = interfaces;
+        mMockModemConfigInterface = configInterface;
         mSubId = instanceId;
 
         mHandler = new IRadioDataHandler();
 
         // Register event
-        mMockModemConfigInterfaces[mSubId].registerForServiceStateChanged(
-                mHandler, EVENT_NETWORK_STATUS_CHANGED, null);
+        mMockModemConfigInterface.registerForServiceStateChanged(
+                mSubId, mHandler, EVENT_NETWORK_STATUS_CHANGED, null);
     }
 
     // Implementation of IRadioData functions

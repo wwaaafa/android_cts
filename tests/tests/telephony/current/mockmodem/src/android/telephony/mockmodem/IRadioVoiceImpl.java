@@ -31,17 +31,17 @@ public class IRadioVoiceImpl extends IRadioVoice.Stub {
     private final MockModemService mService;
     private IRadioVoiceResponse mRadioVoiceResponse;
     private IRadioVoiceIndication mRadioVoiceIndication;
-    private MockModemConfigInterface[] mMockModemConfigInterfaces;
+    private MockModemConfigInterface mMockModemConfigInterface;
     private int mSubId;
     private String mTag;
 
     public IRadioVoiceImpl(
-            MockModemService service, MockModemConfigInterface[] interfaces, int instanceId) {
+            MockModemService service, MockModemConfigInterface configInterface, int instanceId) {
         mTag = TAG + "-" + instanceId;
         Log.d(mTag, "Instantiated");
 
         this.mService = service;
-        mMockModemConfigInterfaces = interfaces;
+        mMockModemConfigInterface = configInterface;
         mSubId = instanceId;
     }
 

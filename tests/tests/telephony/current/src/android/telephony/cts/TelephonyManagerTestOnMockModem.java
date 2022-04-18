@@ -167,7 +167,6 @@ public class TelephonyManagerTestOnMockModem {
     @Test
     public void testSimStateChange() throws Throwable {
         Log.d(TAG, "TelephonyManagerTestOnMockModem#testSimStateChange");
-        TimeUnit.SECONDS.sleep(2);
 
         int slotId = 0;
         int simCardState = sTelephonyManager.getSimCardState();
@@ -179,7 +178,6 @@ public class TelephonyManagerTestOnMockModem {
 
         // Insert a SIM
         assertTrue(sMockModemManager.insertSimCard(slotId, MOCK_SIM_PROFILE_ID_TWN_CHT));
-        TimeUnit.SECONDS.sleep(2);
         simCardState = sTelephonyManager.getSimCardState();
         assertEquals(TelephonyManager.SIM_STATE_PRESENT, simCardState);
 
@@ -189,7 +187,6 @@ public class TelephonyManagerTestOnMockModem {
 
         // Remove the SIM
         assertTrue(sMockModemManager.removeSimCard(slotId));
-        TimeUnit.SECONDS.sleep(2);
         simCardState = sTelephonyManager.getSimCardState();
         assertEquals(TelephonyManager.SIM_STATE_ABSENT, simCardState);
     }

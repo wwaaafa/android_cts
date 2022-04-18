@@ -42,17 +42,17 @@ public class IRadioMessagingImpl extends IRadioMessaging.Stub {
     @GuardedBy("mCdmaBroadcastConfigSet")
     private final Set<Integer> mCdmaBroadcastConfigSet = new ArraySet<Integer>();
 
-    private MockModemConfigInterface[] mMockModemConfigInterfaces;
+    private MockModemConfigInterface mMockModemConfigInterface;
     private int mSubId;
     private String mTag;
 
     public IRadioMessagingImpl(
-            MockModemService service, MockModemConfigInterface[] interfaces, int instanceId) {
+            MockModemService service, MockModemConfigInterface configInterface, int instanceId) {
         mTag = TAG + "-" + instanceId;
         Log.d(mTag, "Instantiated");
 
         this.mService = service;
-        mMockModemConfigInterfaces = interfaces;
+        mMockModemConfigInterface = configInterface;
         mSubId = instanceId;
     }
 
