@@ -16,6 +16,8 @@
 
 package android.telephony.mockmodem;
 
+import static android.telephony.mockmodem.MockSimService.MOCK_SIM_PROFILE_ID_DEFAULT;
+
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -48,8 +50,7 @@ public class MockModemService extends Service {
     public static final String IRADIOVOICE_INTERFACE = "android.telephony.mockmodem.iradiovoice";
     public static final String PHONE_ID = "phone_id";
 
-    private static Context sContext;
-    private static MockModemConfigInterface[] sMockModemConfigInterfaces;
+    private static MockModemConfigInterface sMockModemConfigInterface;
     private static IRadioConfigImpl sIRadioConfigImpl;
     private static IRadioModemImpl[] sIRadioModemImpl;
     private static IRadioSimImpl[] sIRadioSimImpl;
@@ -68,6 +69,7 @@ public class MockModemService extends Service {
     private static final int IRADIO_CONFIG_INTERFACE_NUMBER = 1;
     private static final int IRADIO_INTERFACE_NUMBER = 6;
 
+    private Context mContext;
     private TelephonyManager mTelephonyManager;
     private int mNumOfSim;
     private int mNumOfPhone;
@@ -88,8 +90,8 @@ public class MockModemService extends Service {
     public void onCreate() {
         Log.d(TAG, "Mock Modem Service Created");
 
-        sContext = InstrumentationRegistry.getInstrumentation().getContext();
-        mTelephonyManager = sContext.getSystemService(TelephonyManager.class);
+        mContext = InstrumentationRegistry.getInstrumentation().getContext();
+        mTelephonyManager = mContext.getSystemService(TelephonyManager.class);
         mNumOfSim = getNumPhysicalSlots();
         mNumOfPhone = mTelephonyManager.getActiveModemCount();
         Log.d(TAG, "Support number of phone = " + mNumOfPhone + ", number of SIM = " + mNumOfSim);
@@ -108,13 +110,8 @@ public class MockModemService extends Service {
             }
         }
 
-        sMockModemConfigInterfaces = new MockModemConfigBase[mNumOfPhone];
-        for (int i = 0; i < mNumOfPhone; i++) {
-            sMockModemConfigInterfaces[i] =
-                    new MockModemConfigBase(sContext, i, mNumOfSim, mNumOfPhone);
-        }
-
-        sIRadioConfigImpl = new IRadioConfigImpl(this, sMockModemConfigInterfaces, PHONE_ID_0);
+        sMockModemConfigInterface = new MockModemConfigBase(mContext, mNumOfSim, mNumOfPhone);
+        sIRadioConfigImpl = new IRadioConfigImpl(this, sMockModemConfigInterface, PHONE_ID_0);
         sIRadioModemImpl = new IRadioModemImpl[mNumOfPhone];
         sIRadioSimImpl = new IRadioSimImpl[mNumOfPhone];
         sIRadioNetworkImpl = new IRadioNetworkImpl[mNumOfPhone];
@@ -122,12 +119,12 @@ public class MockModemService extends Service {
         sIRadioMessagingImpl = new IRadioMessagingImpl[mNumOfPhone];
         sIRadioVoiceImpl = new IRadioVoiceImpl[mNumOfPhone];
         for (int i = 0; i < mNumOfPhone; i++) {
-            sIRadioModemImpl[i] = new IRadioModemImpl(this, sMockModemConfigInterfaces, i);
-            sIRadioSimImpl[i] = new IRadioSimImpl(this, sMockModemConfigInterfaces, i);
-            sIRadioNetworkImpl[i] = new IRadioNetworkImpl(this, sMockModemConfigInterfaces, i);
-            sIRadioDataImpl[i] = new IRadioDataImpl(this, sContext, sMockModemConfigInterfaces, i);
-            sIRadioMessagingImpl[i] = new IRadioMessagingImpl(this, sMockModemConfigInterfaces, i);
-            sIRadioVoiceImpl[i] = new IRadioVoiceImpl(this, sMockModemConfigInterfaces, i);
+            sIRadioModemImpl[i] = new IRadioModemImpl(this, sMockModemConfigInterface, i);
+            sIRadioSimImpl[i] = new IRadioSimImpl(this, sMockModemConfigInterface, i);
+            sIRadioNetworkImpl[i] = new IRadioNetworkImpl(this, sMockModemConfigInterface, i);
+            sIRadioDataImpl[i] = new IRadioDataImpl(this, mContext, sMockModemConfigInterface, i);
+            sIRadioMessagingImpl[i] = new IRadioMessagingImpl(this, sMockModemConfigInterface, i);
+            sIRadioVoiceImpl[i] = new IRadioVoiceImpl(this, sMockModemConfigInterface, i);
         }
 
         mBinder = new LocalBinder();
@@ -217,12 +214,12 @@ public class MockModemService extends Service {
     public int getNumPhysicalSlots() {
         int numPhysicalSlots = MockSimService.MOCK_SIM_SLOT_MIN;
         int resourceId =
-                sContext.getResources()
+                mContext.getResources()
                         .getIdentifier(
                                 "config_num_physical_slots", "integer", RESOURCE_PACKAGE_NAME);
 
         if (resourceId > 0) {
-            numPhysicalSlots = sContext.getResources().getInteger(resourceId);
+            numPhysicalSlots = mContext.getResources().getInteger(resourceId);
         } else {
             Log.d(TAG, "Fail to get the resource Id, using default: " + numPhysicalSlots);
         }
@@ -268,17 +265,23 @@ public class MockModemService extends Service {
         return rspInfo;
     }
 
-    public boolean initialize(int simprofile) {
-        Log.d(TAG, "initialize simprofile = " + simprofile);
+    public boolean initialize(int[] simprofiles) {
+        Log.d(TAG, "initialize for num of Sim = " + simprofiles.length);
         boolean result = true;
 
         // Sync mock modem status between modules
         for (int i = 0; i < mNumOfPhone; i++) {
-            // Set initial SIM profile
-            sMockModemConfigInterfaces[i].changeSimProfile(simprofile, TAG);
+            // Set initial SIM profiles
+            if (simprofiles != null && i < simprofiles.length) {
+                result = sMockModemConfigInterface.changeSimProfile(i, simprofiles[i], TAG);
+            } else {
+                result =
+                        sMockModemConfigInterface.changeSimProfile(
+                                i, MOCK_SIM_PROFILE_ID_DEFAULT, TAG);
+            }
 
             // Sync modem configurations to radio modules
-            sMockModemConfigInterfaces[i].notifyAllRegistrantNotifications();
+            sMockModemConfigInterface.notifyAllRegistrantNotifications();
 
             // Connect to telephony framework
             sIRadioModemImpl[i].rilConnected();
@@ -287,8 +290,8 @@ public class MockModemService extends Service {
         return result;
     }
 
-    public MockModemConfigInterface[] getMockModemConfigInterfaces() {
-        return sMockModemConfigInterfaces;
+    public MockModemConfigInterface getMockModemConfigInterface() {
+        return sMockModemConfigInterface;
     }
 
     public IRadioConfigImpl getIRadioConfig() {

@@ -40,7 +40,7 @@ public class IRadioModemImpl extends IRadioModem.Stub {
 
     private int mForceRadioPowerError = -1;
 
-    private static MockModemConfigInterface[] sMockModemConfigInterfaces;
+    private MockModemConfigInterface mMockModemConfigInterface;
     private Object mCacheUpdateMutex;
     private final Handler mHandler;
     private int mSubId;
@@ -60,23 +60,23 @@ public class IRadioModemImpl extends IRadioModem.Stub {
     private int mRadioState;
 
     public IRadioModemImpl(
-            MockModemService service, MockModemConfigInterface[] interfaces, int instanceId) {
+            MockModemService service, MockModemConfigInterface configInterface, int instanceId) {
         mTag = TAG + "-" + instanceId;
         Log.d(mTag, "Instantiated");
 
         this.mService = service;
-        sMockModemConfigInterfaces = interfaces;
+        mMockModemConfigInterface = configInterface;
         mCacheUpdateMutex = new Object();
         mHandler = new IRadioModemHandler();
         mSubId = instanceId;
 
         // Register events
-        sMockModemConfigInterfaces[mSubId].registerForBasebandVersionChanged(
-                mHandler, EVENT_BASEBAND_VERSION_CHANGED, null);
-        sMockModemConfigInterfaces[mSubId].registerForDeviceIdentityChanged(
-                mHandler, EVENT_DEVICE_IDENTITY_CHANGED, null);
-        sMockModemConfigInterfaces[mSubId].registerForRadioStateChanged(
-                mHandler, EVENT_RADIO_STATE_CHANGED, null);
+        mMockModemConfigInterface.registerForBasebandVersionChanged(
+                mSubId, mHandler, EVENT_BASEBAND_VERSION_CHANGED, null);
+        mMockModemConfigInterface.registerForDeviceIdentityChanged(
+                mSubId, mHandler, EVENT_DEVICE_IDENTITY_CHANGED, null);
+        mMockModemConfigInterface.registerForRadioStateChanged(
+                mSubId, mHandler, EVENT_RADIO_STATE_CHANGED, null);
     }
 
     /** Handler class to handle callbacks */
@@ -385,7 +385,7 @@ public class IRadioModemImpl extends IRadioModem.Stub {
                 } else {
                     mRadioState = MockModemConfigInterface.RADIO_STATE_OFF;
                 }
-                sMockModemConfigInterfaces[mSubId].setRadioState(mRadioState, mTag);
+                mMockModemConfigInterface.setRadioState(mSubId, mRadioState, mTag);
             }
             rsp = mService.makeSolRsp(serial);
         }

@@ -37,7 +37,7 @@ public class IRadioConfigImpl extends IRadioConfig.Stub {
     private final MockModemService mService;
     private IRadioConfigResponse mRadioConfigResponse;
     private IRadioConfigIndication mRadioConfigIndication;
-    private static MockModemConfigInterface[] sMockModemConfigInterfaces;
+    private MockModemConfigInterface mMockModemConfigInterface;
     private Object mCacheUpdateMutex;
     private final Handler mHandler;
     private int mSubId;
@@ -55,12 +55,12 @@ public class IRadioConfigImpl extends IRadioConfig.Stub {
     private SimSlotStatus[] mSimSlotStatus;
 
     public IRadioConfigImpl(
-            MockModemService service, MockModemConfigInterface[] interfaces, int instanceId) {
+            MockModemService service, MockModemConfigInterface configInterface, int instanceId) {
         mTag = TAG + "-" + instanceId;
         Log.d(mTag, "Instantiated");
 
         this.mService = service;
-        sMockModemConfigInterfaces = interfaces;
+        mMockModemConfigInterface = configInterface;
         mSlotNum = mService.getNumPhysicalSlots();
         mSimSlotStatus = new SimSlotStatus[mSlotNum];
         mCacheUpdateMutex = new Object();
@@ -68,12 +68,12 @@ public class IRadioConfigImpl extends IRadioConfig.Stub {
         mSubId = instanceId;
 
         // Register events
-        sMockModemConfigInterfaces[mSubId].registerForNumOfLiveModemChanged(
-                mHandler, EVENT_NUM_OF_LIVE_MODEM_CHANGED, null);
-        sMockModemConfigInterfaces[mSubId].registerForPhoneCapabilityChanged(
-                mHandler, EVENT_PHONE_CAPABILITY_CHANGED, null);
-        sMockModemConfigInterfaces[mSubId].registerForSimSlotStatusChanged(
-                mHandler, EVENT_SIM_SLOT_STATUS_CHANGED, null);
+        mMockModemConfigInterface.registerForNumOfLiveModemChanged(
+                mSubId, mHandler, EVENT_NUM_OF_LIVE_MODEM_CHANGED, null);
+        mMockModemConfigInterface.registerForPhoneCapabilityChanged(
+                mSubId, mHandler, EVENT_PHONE_CAPABILITY_CHANGED, null);
+        mMockModemConfigInterface.registerForSimSlotStatusChanged(
+                mSubId, mHandler, EVENT_SIM_SLOT_STATUS_CHANGED, null);
     }
 
     /** Handler class to handle callbacks */

@@ -43,7 +43,7 @@ public class IRadioSimImpl extends IRadioSim.Stub {
     private final MockModemService mService;
     private IRadioSimResponse mRadioSimResponse;
     private IRadioSimIndication mRadioSimIndication;
-    private static MockModemConfigInterface[] sMockModemConfigInterfaces;
+    private MockModemConfigInterface mMockModemConfigInterface;
     private Object mCacheUpdateMutex;
     private final Handler mHandler;
     private int mSubId;
@@ -55,34 +55,32 @@ public class IRadioSimImpl extends IRadioSim.Stub {
     static final int EVENT_SIM_INFO_CHANGED = 3;
 
     // ***** Cache of modem attributes/status
-    private int mNumOfLogicalSim;
     private CardStatus mCardStatus;
     private ArrayList<SimAppData> mSimAppList;
 
     public IRadioSimImpl(
-            MockModemService service, MockModemConfigInterface[] interfaces, int instanceId) {
+            MockModemService service, MockModemConfigInterface configInterface, int instanceId) {
         mTag = TAG + "-" + instanceId;
         Log.d(mTag, "Instantiated");
 
         this.mService = service;
-        sMockModemConfigInterfaces = interfaces;
+        mMockModemConfigInterface = configInterface;
         mSubId = instanceId;
         mCardStatus = new CardStatus();
         mCacheUpdateMutex = new Object();
         mHandler = new IRadioSimHandler();
-        mNumOfLogicalSim = sMockModemConfigInterfaces.length;
 
         // Register events
-        sMockModemConfigInterfaces[mSubId].registerForCardStatusChanged(
-                mHandler, EVENT_SIM_CARD_STATUS_CHANGED, null);
+        mMockModemConfigInterface.registerForCardStatusChanged(
+                mSubId, mHandler, EVENT_SIM_CARD_STATUS_CHANGED, null);
 
         // Register events
-        sMockModemConfigInterfaces[mSubId].registerForSimAppDataChanged(
-                mHandler, EVENT_SIM_APP_DATA_CHANGED, null);
+        mMockModemConfigInterface.registerForSimAppDataChanged(
+                mSubId, mHandler, EVENT_SIM_APP_DATA_CHANGED, null);
 
         // Register events
-        sMockModemConfigInterfaces[mSubId].registerForSimInfoChanged(
-                mHandler, EVENT_SIM_INFO_CHANGED, null);
+        mMockModemConfigInterface.registerForSimInfoChanged(
+                mSubId, mHandler, EVENT_SIM_INFO_CHANGED, null);
     }
 
     /** Handler class to handle callbacks */

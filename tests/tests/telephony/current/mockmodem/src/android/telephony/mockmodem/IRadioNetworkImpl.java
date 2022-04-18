@@ -39,7 +39,7 @@ public class IRadioNetworkImpl extends IRadioNetwork.Stub {
     private final MockModemService mService;
     private IRadioNetworkResponse mRadioNetworkResponse;
     private IRadioNetworkIndication mRadioNetworkIndication;
-    private static MockModemConfigInterface[] sMockModemConfigInterfaces;
+    private MockModemConfigInterface mMockModemConfigInterface;
     private Object mCacheUpdateMutex;
     private final Handler mHandler;
     private int mSubId;
@@ -61,12 +61,12 @@ public class IRadioNetworkImpl extends IRadioNetwork.Stub {
     private MockNetworkService mServiceState;
 
     public IRadioNetworkImpl(
-            MockModemService service, MockModemConfigInterface[] interfaces, int instanceId) {
+            MockModemService service, MockModemConfigInterface configInterface, int instanceId) {
         mTag = TAG + "-" + instanceId;
         Log.d(mTag, "Instantiated");
 
         this.mService = service;
-        sMockModemConfigInterfaces = interfaces;
+        mMockModemConfigInterface = configInterface;
         mCacheUpdateMutex = new Object();
         mHandler = new IRadioNetworkHandler();
         mSubId = instanceId;
@@ -80,10 +80,10 @@ public class IRadioNetworkImpl extends IRadioNetwork.Stub {
                         | MockNetworkService.NR;
         mServiceState.updateHighestRegisteredRat(mNetworkTypeBitmap);
 
-        sMockModemConfigInterfaces[mSubId].registerForRadioStateChanged(
-                mHandler, EVENT_RADIO_STATE_CHANGED, null);
-        sMockModemConfigInterfaces[mSubId].registerForCardStatusChanged(
-                mHandler, EVENT_SIM_STATUS_CHANGED, null);
+        mMockModemConfigInterface.registerForRadioStateChanged(
+                mSubId, mHandler, EVENT_RADIO_STATE_CHANGED, null);
+        mMockModemConfigInterface.registerForCardStatusChanged(
+                mSubId, mHandler, EVENT_SIM_STATUS_CHANGED, null);
     }
 
     /** Handler class to handle callbacks */
@@ -138,7 +138,7 @@ public class IRadioNetworkImpl extends IRadioNetwork.Stub {
     private void notifyServiceStateChange() {
         Log.d(mTag, "notifyServiceStateChange");
 
-        Handler handler = sMockModemConfigInterfaces[mSubId].getMockModemConfigHandler();
+        Handler handler = mMockModemConfigInterface.getMockModemConfigHandler(mSubId);
         Message msg =
                 handler.obtainMessage(
                         MockModemConfigBase.EVENT_SERVICE_STATE_CHANGE, mServiceState);
