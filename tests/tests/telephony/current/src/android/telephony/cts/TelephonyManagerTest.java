@@ -68,8 +68,12 @@ import android.telephony.CallForwardingInfo;
 import android.telephony.CallQuality;
 import android.telephony.CarrierConfigManager;
 import android.telephony.CellIdentity;
+import android.telephony.CellIdentityCdma;
+import android.telephony.CellIdentityGsm;
 import android.telephony.CellIdentityLte;
 import android.telephony.CellIdentityNr;
+import android.telephony.CellIdentityTdscdma;
+import android.telephony.CellIdentityWcdma;
 import android.telephony.CellInfo;
 import android.telephony.CellLocation;
 import android.telephony.DataThrottlingRequest;
@@ -98,6 +102,8 @@ import android.telephony.data.ApnSetting;
 import android.telephony.data.NetworkSlicingConfig;
 import android.telephony.emergency.EmergencyNumber;
 import android.text.TextUtils;
+import android.util.ArrayMap;
+import android.util.ArraySet;
 import android.util.Log;
 import android.util.Pair;
 
@@ -301,6 +307,41 @@ public class TelephonyManagerTest {
         EMERGENCY_SERVICE_CATEGORY_SET.add(EmergencyNumber.EMERGENCY_SERVICE_CATEGORY_MIEC);
         EMERGENCY_SERVICE_CATEGORY_SET.add(EmergencyNumber.EMERGENCY_SERVICE_CATEGORY_AIEC);
     }
+
+    private static final Map<Class<? extends CellIdentity>, List<Integer>> sNetworkTypes;
+    static {
+        sNetworkTypes = new ArrayMap<>();
+        sNetworkTypes.put(CellIdentityGsm.class,
+                Arrays.asList(new Integer[]{
+                    TelephonyManager.NETWORK_TYPE_GSM,
+                    TelephonyManager.NETWORK_TYPE_GPRS,
+                    TelephonyManager.NETWORK_TYPE_EDGE}));
+        sNetworkTypes.put(CellIdentityWcdma.class,
+                Arrays.asList(new Integer[]{
+                    TelephonyManager.NETWORK_TYPE_UMTS,
+                    TelephonyManager.NETWORK_TYPE_HSDPA,
+                    TelephonyManager.NETWORK_TYPE_HSUPA,
+                    TelephonyManager.NETWORK_TYPE_HSPA,
+                    TelephonyManager.NETWORK_TYPE_HSPAP}));
+        sNetworkTypes.put(CellIdentityCdma.class,
+                Arrays.asList(new Integer[]{
+                    TelephonyManager.NETWORK_TYPE_CDMA,
+                    TelephonyManager.NETWORK_TYPE_1xRTT,
+                    TelephonyManager.NETWORK_TYPE_EVDO_0,
+                    TelephonyManager.NETWORK_TYPE_EVDO_A,
+                    TelephonyManager.NETWORK_TYPE_EVDO_B,
+                    TelephonyManager.NETWORK_TYPE_EHRPD}));
+        sNetworkTypes.put(CellIdentityLte.class,
+                Arrays.asList(new Integer[]{
+                    TelephonyManager.NETWORK_TYPE_LTE}));
+        sNetworkTypes.put(CellIdentityNr.class,
+                Arrays.asList(new Integer[]{
+                    TelephonyManager.NETWORK_TYPE_NR}));
+        sNetworkTypes.put(CellIdentityTdscdma.class,
+                Arrays.asList(new Integer[]{
+                    TelephonyManager.NETWORK_TYPE_TD_SCDMA}));
+    }
+
 
     private int mTestSub;
     private TelephonyManagerTest.CarrierConfigReceiver mReceiver;
@@ -1348,6 +1389,43 @@ public class TelephonyManagerTest {
     }
 
     @Test
+    public void testNetworkTypeMatchesDataNetworkType() throws Exception {
+        assertEquals(mTelephonyManager.getDataNetworkType(),
+                mTelephonyManager.getNetworkType());
+    }
+
+    @Test
+    public void testNetworkTypeMatchesCellIdentity() throws Exception {
+        assumeTrue(hasFeature(PackageManager.FEATURE_TELEPHONY_RADIO_ACCESS));
+        ServiceState ss = mTelephonyManager.getServiceState();
+        assertNotNull(ss);
+        for (NetworkRegistrationInfo nri : ss.getNetworkRegistrationInfoList()) {
+            final int networkType = nri.getAccessNetworkTechnology();
+            final CellIdentity cid = nri.getCellIdentity();
+            if (!nri.isRegistered() && !nri.isEmergencyEnabled()) {
+                assertEquals(networkType, TelephonyManager.NETWORK_TYPE_UNKNOWN);
+                assertNull(cid);
+                continue;
+            }
+            if (nri.getTransportType() == AccessNetworkConstants.TRANSPORT_TYPE_WLAN) {
+                assertTrue(networkType == TelephonyManager.NETWORK_TYPE_UNKNOWN
+                        || networkType == TelephonyManager.NETWORK_TYPE_IWLAN);
+                assertNull(cid);
+                continue;
+            }
+
+            assertEquals(nri.getTransportType(), AccessNetworkConstants.TRANSPORT_TYPE_WWAN);
+            if (nri.isRegistered() || (nri.isEmergencyEnabled() && !nri.isSearching())) {
+                assertNotEquals(networkType, TelephonyManager.NETWORK_TYPE_UNKNOWN);
+                assertNotNull(cid);
+                // The network type must roughly match the CellIdentity type
+                assertTrue(sNetworkTypes.get(cid.getClass())
+                        .contains(networkType));
+            }
+        }
+    }
+
+    @Test
     public void testGetServiceState() throws InterruptedException {
         assumeTrue(hasFeature(PackageManager.FEATURE_TELEPHONY_RADIO_ACCESS));
 
@@ -1909,7 +1987,7 @@ public class TelephonyManagerTest {
     public void testGetMeidForSlot() {
         assumeTrue(hasFeature(PackageManager.FEATURE_TELEPHONY_CDMA));
 
-        SubscriptionManager sm = getContext().getSystemService(SubscriptionManager.class);
+        SubscriptionManager sm = SubscriptionManager.from(getContext());
         List<SubscriptionInfo> subInfos = sm.getActiveSubscriptionInfoList();
 
         if (subInfos != null) {
@@ -4363,49 +4441,82 @@ public class TelephonyManagerTest {
         assertFalse(mTelephonyManager.isRadioInterfaceCapabilitySupported(""));
     }
 
-    @Test
-    public void testGetAllCellInfo() {
-        assumeTrue(hasFeature(PackageManager.FEATURE_TELEPHONY_RADIO_ACCESS));
+    private Set<CellIdentity> getRegisteredCellIdentities() {
+        ServiceState ss = mTelephonyManager.getServiceState();
+        Set<CellIdentity> cidSet = new ArraySet<CellIdentity>(2);
+        for (NetworkRegistrationInfo nri : ss.getNetworkRegistrationInfoListForTransportType(
+                AccessNetworkConstants.TRANSPORT_TYPE_WWAN)) {
+            if (nri.isRegistered()) cidSet.add(nri.getCellIdentity());
+        }
+        return cidSet;
+    }
 
+    private boolean hasMultipleRegisteredSubscriptions() {
+        final int[] activeSubIds = mSubscriptionManager.getActiveSubscriptionIdList();
+        int registeredSubscriptions = 0;
+        for (int subId : activeSubIds) {
+            ServiceState ss = mTelephonyManager.createForSubscriptionId(subId).getServiceState();
+            for (NetworkRegistrationInfo nri : ss.getNetworkRegistrationInfoListForTransportType(
+                    AccessNetworkConstants.TRANSPORT_TYPE_WWAN)) {
+                if (nri.isRegistered()) {
+                    registeredSubscriptions++;
+                    break;
+                }
+            }
+        }
+        return registeredSubscriptions > 1;
+    }
+
+    @Test
+    public void testGetAllCellInfo() throws Throwable {
+        assumeTrue(hasFeature(PackageManager.FEATURE_TELEPHONY_RADIO_ACCESS));
         // For IRadio <1.5, just verify that calling the method doesn't throw an error.
         if (mRadioVersion < RADIO_HAL_VERSION_1_5) {
             mTelephonyManager.getAllCellInfo();
             return;
         }
 
-        boolean connectedToNrCell = false;
         for (CellInfo cellInfo : mTelephonyManager.getAllCellInfo()) {
             CellIdentity cellIdentity = cellInfo.getCellIdentity();
             int[] bands;
             if (cellIdentity instanceof CellIdentityLte) {
                 bands = ((CellIdentityLte) cellIdentity).getBands();
+                if (cellInfo.isRegistered()) assertTrue(bands.length > 0);
                 for (int band : bands) {
                     assertTrue(band >= AccessNetworkConstants.EutranBand.BAND_1
                             && band <= AccessNetworkConstants.EutranBand.BAND_88);
                 }
             } else if (cellIdentity instanceof CellIdentityNr) {
                 bands = ((CellIdentityNr) cellIdentity).getBands();
+                if (cellInfo.isRegistered()) assertTrue(bands.length > 0);
                 for (int band : bands) {
                     assertTrue((band >= AccessNetworkConstants.NgranBands.BAND_1
                             && band <= AccessNetworkConstants.NgranBands.BAND_95)
                             || (band >= AccessNetworkConstants.NgranBands.BAND_257
                             && band <= AccessNetworkConstants.NgranBands.BAND_261));
                 }
-                if (cellInfo.isRegistered()) {
-                    connectedToNrCell = true;
-                }
-            } else {
-                continue;
             }
-            assertTrue(bands.length > 0);
+
+            // TODO(229311863): This can theoretically break on a DSDS device where both SIMs are
+            // registered because CellInfo returns data for both modems and this code only cross
+            // checks against the default subscription.
+            if (hasMultipleRegisteredSubscriptions()) continue;
+
+            boolean isSameCell = false;
+            if (cellInfo.isRegistered()) {
+                for (CellIdentity cid : getRegisteredCellIdentities()) {
+                    if (cellIdentity.isSameCell(cid)) isSameCell = true;
+                }
+                assertTrue(sNetworkTypes.get(cellIdentity.getClass()).contains(
+                            mTelephonyManager.getDataNetworkType())
+                                    || sNetworkTypes.get(cellIdentity.getClass()).contains(
+                                            mTelephonyManager.getVoiceNetworkType()));
+                assertTrue(
+                        "Registered CellInfo#CellIdentity not found in ServiceState",
+                        isSameCell);
+            }
         }
 
-        if (connectedToNrCell) {
-            assertEquals(TelephonyManager.NETWORK_TYPE_NR, mTelephonyManager.getDataNetworkType());
-        } else {
-            assertNotEquals(TelephonyManager.NETWORK_TYPE_NR,
-                    mTelephonyManager.getDataNetworkType());
-        }
     }
 
     /**
