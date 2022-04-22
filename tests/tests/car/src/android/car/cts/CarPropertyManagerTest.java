@@ -37,6 +37,7 @@ import android.car.hardware.CarPropertyConfig;
 import android.car.hardware.CarPropertyValue;
 import android.car.hardware.property.CarPropertyManager;
 import android.car.hardware.property.CarPropertyManager.CarPropertyEventCallback;
+import android.car.hardware.property.EvChargeState;
 import android.car.hardware.property.VehicleElectronicTollCollectionCardStatus;
 import android.car.hardware.property.VehicleElectronicTollCollectionCardType;
 import android.platform.test.annotations.AppModeFull;
@@ -885,9 +886,9 @@ public class CarPropertyManagerTest extends CarApiTestBase {
                     Integer evChargeState = (Integer) carPropertyValue.getValue();
                     assertWithMessage("EV_CHARGE_STATE must be a defined charge state: "
                             + evChargeState).that(evChargeState).isIn(
-                            ImmutableSet.of(/*EvChargeState.UNKNOWN=*/0,
-                                    /*EvChargeState.CHARGING=*/1, /*EvChargeState.FULLY_CHARGED=*/2,
-                                    /*EvChargeState.NOT_CHARGING=*/3, /*EvChargeState.ERROR=*/4));
+                            ImmutableSet.of(EvChargeState.STATE_UNKNOWN,
+                                    EvChargeState.STATE_CHARGING, EvChargeState.STATE_FULLY_CHARGED,
+                                    EvChargeState.STATE_NOT_CHARGING, EvChargeState.STATE_ERROR));
                 }).build().verify(mCarPropertyManager);
     }
 
