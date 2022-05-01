@@ -38,6 +38,7 @@ import android.util.Pair;
 import com.android.compatibility.common.util.ApiTest;
 import com.android.compatibility.common.util.CddTest;
 
+import org.junit.After;
 import org.junit.Assume;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -78,6 +79,14 @@ public class EncoderProfileLevelTest extends CodecEncoderTestBase {
     private final MediaFormat mConfigFormat;
 
     private MediaMuxer mMuxer;
+
+    @After
+    public void tearDown() {
+        if (mMuxer != null) {
+            mMuxer.release();
+            mMuxer = null;
+        }
+    }
 
     public EncoderProfileLevelTest(String encoder, String mime, int bitrate, int encoderInfo1,
             int encoderInfo2, int frameRate, boolean useHighBitDepth, String allTestParams) {
