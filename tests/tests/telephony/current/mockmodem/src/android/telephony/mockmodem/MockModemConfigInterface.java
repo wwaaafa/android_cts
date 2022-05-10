@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package android.telephony.cts;
+package android.telephony.mockmodem;
 
 import android.os.Handler;
 
@@ -42,6 +42,7 @@ public interface MockModemConfigInterface {
     int DEFAULT_LOGICAL_MODEM2_ID = 1;
 
     // ***** Methods
+    Handler getMockModemConfigHandler();
 
     /** Broadcast all notifications */
     void notifyAllRegistrantNotifications();
@@ -89,6 +90,17 @@ public interface MockModemConfigInterface {
 
     void unregisterForSimAppDataChanged(Handler h);
 
+    /** Register/unregister notification handler for sim info changed */
+    void registerForSimInfoChanged(Handler h, int what, Object obj);
+
+    void unregisterForSimInfoChanged(Handler h);
+
+    // ***** IRadioNetwork
+    /** Register/unregister notification handler for service status changed */
+    void registerForServiceStateChanged(Handler h, int what, Object obj);
+
+    void unregisterForServiceStateChanged(Handler h);
+
     /**
      * Sets the latest radio power state of modem
      *
@@ -112,4 +124,22 @@ public interface MockModemConfigInterface {
      * @param client for tracking calling client
      */
     void changeSimProfile(int simProfileId, String client);
+
+    /**
+     * Modify SIM info of the SIM such as MCC/MNC, IMSI, etc.
+     *
+     * @param type the type of SIM info to modify.
+     * @param data to modify for the type of SIM info.
+     * @param client for tracking calling client
+     */
+    void setSimInfo(int type, String[] data, String client);
+
+    /**
+     * Get SIM info of the SIM slot, e.g. MCC/MNC, IMSI.
+     *
+     * @param type the type of SIM info.
+     * @param client for tracking calling client
+     * @return String the SIM info of the queried type.
+     */
+    String getSimInfo(int type, String client);
 }
