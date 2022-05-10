@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package android.telephony.cts;
+package android.telephony.mockmodem;
 
 import android.content.Context;
 import android.hardware.radio.sim.AppStatus;
@@ -26,6 +26,7 @@ import org.xmlpull.v1.XmlPullParser;
 
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class MockSimService {
     private static final String TAG = "MockSimService";
@@ -33,7 +34,16 @@ public class MockSimService {
     /* Support SIM card identify */
     public static final int MOCK_SIM_PROFILE_ID_DEFAULT = 0; // SIM Absent
     public static final int MOCK_SIM_PROFILE_ID_TWN_CHT = 1;
-    public static final int MOCK_SIM_PROFILE_ID_MAX = 2;
+    public static final int MOCK_SIM_PROFILE_ID_TWN_FET = 2;
+    public static final int MOCK_SIM_PROFILE_ID_MAX = 3;
+
+    /* Type of SIM IO command */
+    public static final int COMMAND_READ_BINARY = 0xb0;
+    public static final int COMMAND_GET_RESPONSE = 0xc0;
+
+    /* EF Id definition */
+    public static final int EF_ICCID = 0x2FE2;
+    public static final int EF_IMSI = 0x6F07;
 
     /* SIM profile XML TAG definition */
     private static final String MOCK_SIM_TAG = "MockSim";
@@ -111,7 +121,6 @@ public class MockSimService {
 
     // SIM card data
     private int mSimProfileId;
-    private String mICCID;
     private String mEID;
     private String mATR;
     private int mUniversalPinState;
@@ -120,6 +129,9 @@ public class MockSimService {
     private ArrayList<SimAppData> mSimAppList;
 
     public class SimAppData {
+        private static final int EF_INFO_DATA = 0;
+        private static final int EF_BINARY_DATA = 1;
+
         private int mSimAppId;
         private String mAid;
         private boolean mIsCurrentActive;
@@ -127,12 +139,25 @@ public class MockSimService {
         private int mFdnStatus;
         private int mPin1State;
         private String mImsi;
+        private String mMcc;
+        private String mMnc;
+        private String mMsin;
+        private String[] mIccid;
 
-        public SimAppData(int simappid, String aid, String path) {
+        private void initSimAppData(int simappid, String aid, String path, boolean status) {
             mSimAppId = simappid;
             mAid = aid;
-            mIsCurrentActive = false;
+            mIsCurrentActive = status;
             mPath = path;
+            mIccid = new String[2];
+        }
+
+        public SimAppData(int simappid, String aid, String path) {
+            initSimAppData(simappid, aid, path, false);
+        }
+
+        public SimAppData(int simappid, String aid, String path, boolean status) {
+            initSimAppData(simappid, aid, path, status);
         }
 
         public int getSimAppId() {
@@ -168,11 +193,53 @@ public class MockSimService {
         }
 
         public String getImsi() {
-            return mImsi;
+            return mMcc + mMnc + mMsin;
         }
 
-        public void setImsi(String imsi) {
-            mImsi = imsi;
+        public void setImsi(String mcc, String mnc, String msin) {
+            setMcc(mcc);
+            setMnc(mnc);
+            setMsin(msin);
+        }
+
+        public String getMcc() {
+            return mMcc;
+        }
+
+        public void setMcc(String mcc) {
+            mMcc = mcc;
+        }
+
+        public String getMnc() {
+            return mMnc;
+        }
+
+        public void setMnc(String mnc) {
+            mMnc = mnc;
+        }
+
+        public String getMsin() {
+            return mMsin;
+        }
+
+        public void setMsin(String msin) {
+            mMsin = msin;
+        }
+
+        public String getIccidInfo() {
+            return mIccid[EF_INFO_DATA];
+        }
+
+        public void setIccidInfo(String info) {
+            mIccid[EF_INFO_DATA] = info;
+        }
+
+        public String getIccid() {
+            return mIccid[EF_BINARY_DATA];
+        }
+
+        public void setIccid(String iccid) {
+            mIccid[EF_BINARY_DATA] = iccid;
         }
     }
 
@@ -269,8 +336,10 @@ public class MockSimService {
             mSimProfileInfoList[idx] = new SimProfileInfo(idx);
             switch (idx) {
                 case MOCK_SIM_PROFILE_ID_TWN_CHT:
-                    String filename = "mock_sim_tw_cht.xml";
-                    mSimProfileInfoList[idx].setXmlFile(filename);
+                    mSimProfileInfoList[idx].setXmlFile("mock_sim_tw_cht.xml");
+                    break;
+                case MOCK_SIM_PROFILE_ID_TWN_FET:
+                    mSimProfileInfoList[idx].setXmlFile("mock_sim_tw_fet.xml");
                     break;
                 default:
                     break;
@@ -443,11 +512,69 @@ public class MockSimService {
         return idx;
     }
 
-    private boolean storeEfData(String aid, String name, String id, String value) {
+    private String[] extractImsi(String imsi, int mncDigit) {
+        String[] result = null;
+
+        Log.d(TAG, "IMSI = " + imsi + ", mnc-digit = " + mncDigit);
+
+        if (imsi.length() > 15 && imsi.length() < 5) {
+            Log.d(TAG, "Invalid IMSI length.");
+            return result;
+        }
+
+        if (mncDigit != 2 && mncDigit != 3) {
+            Log.d(TAG, "Invalid mnc length.");
+            return result;
+        }
+
+        result = new String[3];
+        result[0] = imsi.substring(0, 3); // MCC
+        result[1] = imsi.substring(3, 3 + mncDigit); // MNC
+        result[2] = imsi.substring(3 + mncDigit, imsi.length()); // MSIN
+
+        Log.d(TAG, "MCC = " + result[0] + " MNC = " + result[1] + " MSIN = " + result[2]);
+
+        return result;
+    }
+
+    private boolean storeEfData(
+            String aid, String name, String id, String command, String[] value) {
         boolean result = true;
+
+        if (value == null) {
+            Log.e(TAG, "Invalid value of EF field - " + name + "(" + id + ")");
+            return false;
+        }
+
         switch (name) {
             case "EF_IMSI":
-                mSimAppList.get(getSimAppDataIndexByAid(aid)).setImsi(value);
+                if (value.length == 3
+                        && value[0] != null
+                        && value[0].length() == 3
+                        && value[1] != null
+                        && (value[1].length() == 2 || value[1].length() == 3)
+                        && value[2] != null
+                        && value[2].length() > 0
+                        && (value[0].length() + value[1].length() + value[2].length() <= 15)) {
+                    mSimAppList
+                            .get(getSimAppDataIndexByAid(aid))
+                            .setImsi(value[0], value[1], value[2]);
+                } else {
+                    result = false;
+                    Log.e(TAG, "Invalid value for EF field - " + name + "(" + id + ")");
+                }
+                break;
+            case "EF_ICCID":
+                if (command.length() > 2
+                        && Integer.parseInt(command.substring(2), 16) == COMMAND_READ_BINARY) {
+                    mSimAppList.get(getSimAppDataIndexByAid(aid)).setIccid(value[0]);
+                } else if (command.length() > 2
+                        && Integer.parseInt(command.substring(2), 16) == COMMAND_GET_RESPONSE) {
+                    mSimAppList.get(getSimAppDataIndexByAid(aid)).setIccidInfo(value[0]);
+                } else {
+                    Log.e(TAG, "No valid Iccid data found");
+                    result = false;
+                }
                 break;
             default:
                 result = false;
@@ -471,6 +598,7 @@ public class MockSimService {
             XmlPullParser parser = Xml.newPullParser();
             InputStream input;
             boolean mocksim_validation = false;
+            boolean mocksim_pf_validatiion = false;
             boolean mocksim_mf_validation = false;
             int appidx = 0;
             int fd_lock = 0;
@@ -484,16 +612,15 @@ public class MockSimService {
                     case XmlPullParser.START_TAG:
                         if (MOCK_SIM_TAG.equals(parser.getName())) {
                             int numofapp = Integer.parseInt(parser.getAttributeValue(0));
-                            String iccid = parser.getAttributeValue(1);
+                            mATR = parser.getAttributeValue(1);
                             Log.d(
                                     TAG,
                                     "Found "
                                             + MOCK_SIM_TAG
                                             + ": numofapp = "
                                             + numofapp
-                                            + " iccid = "
-                                            + iccid);
-                            mICCID = iccid;
+                                            + " atr = "
+                                            + mATR);
                             mSimApp = new AppStatus[numofapp];
                             if (mSimApp == null) {
                                 Log.e(TAG, "Create SIM app failed!");
@@ -502,7 +629,8 @@ public class MockSimService {
                             }
                             mocksim_validation = true;
                         } else if (mocksim_validation
-                                && MOCK_SIM_PROFILE_TAG.equals(parser.getName())) {
+                                && MOCK_SIM_PROFILE_TAG.equals(parser.getName())
+                                && appidx < mSimApp.length) {
                             int id = Integer.parseInt(parser.getAttributeValue(0));
                             int type = convertMockSimAppType(parser.getAttributeValue(1));
                             mSimApp[appidx] = new AppStatus();
@@ -531,7 +659,9 @@ public class MockSimService {
                                             + " ("
                                             + type
                                             + ")========");
+                            mocksim_pf_validatiion = true;
                         } else if (mocksim_validation
+                                && mocksim_pf_validatiion
                                 && MOCK_PIN_PROFILE_TAG.equals(parser.getName())) {
                             int appstate = convertMockSimAppState(parser.getAttributeValue(0));
                             mSimApp[appidx].appState = appstate;
@@ -545,6 +675,7 @@ public class MockSimService {
                                             + appstate
                                             + ")");
                         } else if (mocksim_validation
+                                && mocksim_pf_validatiion
                                 && MOCK_PIN1_STATE_TAG.equals(parser.getName())) {
                             String state = parser.nextText();
                             int pin1state = convertMockSimPinState(state);
@@ -559,6 +690,7 @@ public class MockSimService {
                                             + pin1state
                                             + ")");
                         } else if (mocksim_validation
+                                && mocksim_pf_validatiion
                                 && MOCK_PIN2_STATE_TAG.equals(parser.getName())) {
                             String state = parser.nextText();
                             int pin2state = convertMockSimPinState(state);
@@ -571,7 +703,9 @@ public class MockSimService {
                                             + " ("
                                             + pin2state
                                             + ")");
+                            mSimApp[appidx].pin2 = pin2state;
                         } else if (mocksim_validation
+                                && mocksim_pf_validatiion
                                 && MOCK_FACILITY_LOCK_FD_TAG.equals(parser.getName())) {
                             fd_lock = convertMockSimFacilityLock(parser.nextText());
                             Log.d(
@@ -581,6 +715,7 @@ public class MockSimService {
                                             + ": fd lock = "
                                             + fd_lock);
                         } else if (mocksim_validation
+                                && mocksim_pf_validatiion
                                 && MOCK_FACILITY_LOCK_SC_TAG.equals(parser.getName())) {
                             sc_lock = convertMockSimFacilityLock(parser.nextText());
                             Log.d(
@@ -589,7 +724,9 @@ public class MockSimService {
                                             + MOCK_FACILITY_LOCK_SC_TAG
                                             + ": sc lock = "
                                             + sc_lock);
-                        } else if (mocksim_validation && MOCK_MF_TAG.equals(parser.getName())) {
+                        } else if (mocksim_validation
+                                && mocksim_pf_validatiion
+                                && MOCK_MF_TAG.equals(parser.getName())) {
                             SimAppData simAppData;
                             String name = parser.getAttributeValue(0);
                             String path = parser.getAttributeValue(1);
@@ -609,13 +746,14 @@ public class MockSimService {
                                             + " path = "
                                             + path);
                         } else if (mocksim_validation
+                                && mocksim_pf_validatiion
                                 && !mocksim_mf_validation
                                 && MOCK_EF_DIR_TAG.equals(parser.getName())) {
                             SimAppData simAppData;
                             String name = parser.getAttributeValue(0);
                             boolean curr_active = Boolean.parseBoolean(parser.getAttributeValue(1));
                             String aid = parser.nextText();
-                            simAppData = new SimAppData(appidx, aid, name);
+                            simAppData = new SimAppData(appidx, aid, name, curr_active);
                             if (simAppData == null) {
                                 Log.e(TAG, "Create SIM app data failed!");
                                 result = false;
@@ -639,33 +777,71 @@ public class MockSimService {
                                             + aid);
                             mocksim_mf_validation = true;
                         } else if (mocksim_validation
+                                && mocksim_pf_validatiion
                                 && mocksim_mf_validation
                                 && MOCK_ADF_TAG.equals(parser.getName())) {
                             String aid = parser.getAttributeValue(0);
                             Log.d(TAG, "Found " + MOCK_ADF_TAG + ": aid = " + aid);
                             adf_aid = aid;
                         } else if (mocksim_validation
+                                && mocksim_pf_validatiion
                                 && mocksim_mf_validation
                                 && (adf_aid.length() > 0)
                                 && MOCK_EF_TAG.equals(parser.getName())) {
                             String name = parser.getAttributeValue(0);
                             String id = parser.getAttributeValue(1);
-                            String value = parser.nextText();
-                            if (storeEfData(adf_aid, name, id, value)) {
-                                Log.d(
-                                        TAG,
-                                        "Found "
-                                                + MOCK_EF_TAG
-                                                + ": name = "
-                                                + name
-                                                + " id = "
-                                                + id);
+                            String command = parser.getAttributeValue(2);
+                            String[] value;
+                            switch (id) {
+                                case "6F07": // EF_IMSI
+                                    int mncDigit = Integer.parseInt(parser.getAttributeValue(3));
+                                    String imsi = parser.nextText();
+                                    value = extractImsi(imsi, mncDigit);
+                                    if (value != null
+                                            && storeEfData(adf_aid, name, id, command, value)) {
+                                        Log.d(
+                                                TAG,
+                                                "Found "
+                                                        + MOCK_EF_TAG
+                                                        + ": name = "
+                                                        + name
+                                                        + " id = "
+                                                        + id
+                                                        + " command = "
+                                                        + command
+                                                        + " value = "
+                                                        + imsi
+                                                        + " with mnc-digit = "
+                                                        + mncDigit);
+                                    }
+                                    break;
+                                default:
+                                    value = new String[1];
+                                    if (value != null) {
+                                        value[0] = parser.nextText();
+                                        if (storeEfData(adf_aid, name, id, command, value)) {
+                                            Log.d(
+                                                    TAG,
+                                                    "Found "
+                                                            + MOCK_EF_TAG
+                                                            + ": name = "
+                                                            + name
+                                                            + " id = "
+                                                            + id
+                                                            + " command = "
+                                                            + command
+                                                            + " value = "
+                                                            + value[0]);
+                                        }
+                                    }
+                                    break;
                             }
                         }
                         break;
                     case XmlPullParser.END_TAG:
                         if (mocksim_validation && MOCK_SIM_PROFILE_TAG.equals(parser.getName())) {
                             appidx++;
+                            mocksim_pf_validatiion = false;
                             mocksim_mf_validation = false;
                         } else if (mocksim_validation && MOCK_ADF_TAG.equals(parser.getName())) {
                             adf_aid = "";
@@ -673,7 +849,7 @@ public class MockSimService {
                         break;
                 }
             }
-            Log.d(TAG, "Totally create " + appidx + " SIM profiles");
+            Log.d(TAG, "Totally create " + Math.min(mSimApp.length, appidx) + " SIM profiles");
             mSimProfileInfoList[mSimProfileId].setNumOfSimApp(appidx);
             input.close();
         } catch (Exception e) {
@@ -712,7 +888,6 @@ public class MockSimService {
         if (mSimProfileId != MOCK_SIM_PROFILE_ID_DEFAULT) {
             switch (mPhysicalSlotId) {
                 case MOCK_SIM_SLOT_1:
-                    mATR = "3B9F96801FC78031E073FE2111634082918307900099";
                     mEID = DEFAULT_SIM1_EID;
                     break;
                 case MOCK_SIM_SLOT_2:
@@ -731,19 +906,16 @@ public class MockSimService {
                 case MOCK_SIM_SLOT_1:
                     mATR = DEFAULT_SIM1_ATR;
                     mEID = DEFAULT_SIM1_EID;
-                    mICCID = DEFAULT_SIM1_ICCID;
                     mUniversalPinState = DEFAULT_SIM1_UNIVERSAL_PIN_STATE;
                     break;
                 case MOCK_SIM_SLOT_2:
                     mATR = DEFAULT_SIM2_ATR;
                     mEID = DEFAULT_SIM2_EID;
-                    mICCID = DEFAULT_SIM2_ICCID;
                     mUniversalPinState = DEFAULT_SIM2_UNIVERSAL_PIN_STATE;
                     break;
                 case MOCK_SIM_SLOT_3:
                     mATR = DEFAULT_SIM3_ATR;
                     mEID = DEFAULT_SIM3_EID;
-                    mICCID = DEFAULT_SIM3_ICCID;
                     mUniversalPinState = DEFAULT_SIM3_UNIVERSAL_PIN_STATE;
                     break;
             }
@@ -789,12 +961,54 @@ public class MockSimService {
         return mEID;
     }
 
+    public boolean setATR(String atr) {
+        // TODO: add any ATR format check
+        mATR = atr;
+        return true;
+    }
+
     public String getATR() {
         return mATR;
     }
 
+    public boolean setICCID(String iccid) {
+        boolean result = false;
+        SimAppData activeSimAppData = getActiveSimAppData();
+
+        // TODO: add iccid format check
+        if (activeSimAppData != null) {
+            String iccidInfo = activeSimAppData.getIccidInfo();
+            int dataFileSize = iccid.length() / 2;
+            String dataFileSizeStr = Integer.toString(dataFileSize, 16);
+
+            Log.d(TAG, "Data file size = " + dataFileSizeStr);
+            if (dataFileSizeStr.length() <= 4) {
+                dataFileSizeStr = String.format("%04x", dataFileSize).toUpperCase(Locale.ROOT);
+                // Data file size index is 2 and 3 in byte array of iccid info data.
+                iccidInfo = iccidInfo.substring(0, 4) + dataFileSizeStr + iccidInfo.substring(8);
+                Log.d(TAG, "Update iccid info = " + iccidInfo);
+                activeSimAppData.setIccidInfo(iccidInfo);
+                activeSimAppData.setIccid(iccid);
+                result = true;
+            } else {
+                Log.e(TAG, "Data file size(" + iccidInfo.length() + ") is too large.");
+            }
+        } else {
+            Log.e(TAG, "activeSimAppData = null");
+        }
+
+        return result;
+    }
+
     public String getICCID() {
-        return mICCID;
+        String iccid = "";
+        SimAppData activeSimAppData = getActiveSimAppData();
+
+        if (activeSimAppData != null) {
+            iccid = activeSimAppData.getIccid();
+        }
+
+        return iccid;
     }
 
     public int getUniversalPinState() {
@@ -823,5 +1037,133 @@ public class MockSimService {
 
     public ArrayList<SimAppData> getSimAppList() {
         return mSimAppList;
+    }
+
+    public SimAppData getActiveSimAppData() {
+        SimAppData activeSimAppData = null;
+
+        for (int simAppIdx = 0; simAppIdx < mSimAppList.size(); simAppIdx++) {
+            if (mSimAppList.get(simAppIdx).isCurrentActive()) {
+                activeSimAppData = mSimAppList.get(simAppIdx);
+                break;
+            }
+        }
+
+        return activeSimAppData;
+    }
+
+    public String getActiveSimAppId() {
+        String aid = "";
+        SimAppData activeSimAppData = getActiveSimAppData();
+
+        if (activeSimAppData != null) {
+            aid = activeSimAppData.getAid();
+        }
+
+        return aid;
+    }
+
+    private boolean setMcc(String mcc) {
+        boolean result = false;
+
+        if (mcc.length() == 3) {
+            SimAppData activeSimAppData = getActiveSimAppData();
+            if (activeSimAppData != null) {
+                activeSimAppData.setMcc(mcc);
+                result = true;
+            }
+        }
+
+        return result;
+    }
+
+    private boolean setMnc(String mnc) {
+        boolean result = false;
+
+        if (mnc.length() == 2 || mnc.length() == 3) {
+            SimAppData activeSimAppData = getActiveSimAppData();
+            if (activeSimAppData != null) {
+                activeSimAppData.setMnc(mnc);
+                result = true;
+            }
+        }
+
+        return result;
+    }
+
+    public String getMccMnc() {
+        String mcc;
+        String mnc;
+        String result = "";
+        SimAppData activeSimAppData = getActiveSimAppData();
+
+        if (activeSimAppData != null) {
+            mcc = activeSimAppData.getMcc();
+            mnc = activeSimAppData.getMnc();
+            if (mcc != null
+                    && mcc.length() == 3
+                    && mnc != null
+                    && (mnc.length() == 2 || mnc.length() == 3)) {
+                result = mcc + mnc;
+            } else {
+                Log.e(TAG, "Invalid Mcc or Mnc.");
+            }
+        }
+        return result;
+    }
+
+    public String getMsin() {
+        String result = "";
+        SimAppData activeSimAppData = getActiveSimAppData();
+
+        if (activeSimAppData != null) {
+            result = activeSimAppData.getMsin();
+            if (result.length() <= 0 || result.length() > 10) {
+                Log.e(TAG, "Invalid Msin.");
+            }
+        }
+
+        return result;
+    }
+
+    public boolean setImsi(String mcc, String mnc, String msin) {
+        boolean result = false;
+
+        if (msin.length() > 0 && (mcc.length() + mnc.length() + msin.length()) <= 15) {
+            SimAppData activeSimAppData = getActiveSimAppData();
+            if (activeSimAppData != null) {
+                setMcc(mcc);
+                setMnc(mnc);
+                activeSimAppData.setMsin(msin);
+                result = true;
+            } else {
+                Log.e(TAG, "activeSimAppData = null");
+            }
+        } else {
+            Log.e(TAG, "Invalid IMSI");
+        }
+
+        return result;
+    }
+
+    public String getImsi() {
+        String imsi = "";
+        String mccmnc;
+        String msin;
+        SimAppData activeSimAppData = getActiveSimAppData();
+
+        if (activeSimAppData != null) {
+            mccmnc = getMccMnc();
+            msin = activeSimAppData.getMsin();
+            if (mccmnc.length() > 0
+                    && msin != null
+                    && msin.length() > 0
+                    && (mccmnc.length() + msin.length()) <= 15) {
+                imsi = mccmnc + msin;
+            } else {
+                Log.e(TAG, "Invalid Imsi.");
+            }
+        }
+        return imsi;
     }
 }
