@@ -3621,6 +3621,9 @@ public class TelephonyManagerTest {
             return;
         }
 
+        // Perform this test on default data subscription.
+        mTelephonyManager = getContext().getSystemService(TelephonyManager.class)
+                .createForSubscriptionId(SubscriptionManager.getDefaultDataSubscriptionId());
         ShellIdentityUtils.invokeMethodWithShellPermissionsNoReturn(
                 mTelephonyManager,
                 (tm) -> tm.setDataEnabledForReason(TelephonyManager.DATA_ENABLED_REASON_THERMAL,
@@ -3658,6 +3661,9 @@ public class TelephonyManagerTest {
             return;
         }
 
+        // Perform this test on default data subscription.
+        mTelephonyManager = getContext().getSystemService(TelephonyManager.class)
+                .createForSubscriptionId(SubscriptionManager.getDefaultDataSubscriptionId());
         ShellIdentityUtils.invokeMethodWithShellPermissionsNoReturn(
                 mTelephonyManager,
                 (tm) -> tm.setDataEnabledForReason(TelephonyManager.DATA_ENABLED_REASON_POLICY,
@@ -3695,6 +3701,9 @@ public class TelephonyManagerTest {
             return;
         }
 
+        // Perform this test on default data subscription.
+        mTelephonyManager = getContext().getSystemService(TelephonyManager.class)
+                .createForSubscriptionId(SubscriptionManager.getDefaultDataSubscriptionId());
         ShellIdentityUtils.invokeMethodWithShellPermissionsNoReturn(
                 mTelephonyManager,
                 (tm) -> tm.setDataEnabledForReason(TelephonyManager.DATA_ENABLED_REASON_CARRIER,
