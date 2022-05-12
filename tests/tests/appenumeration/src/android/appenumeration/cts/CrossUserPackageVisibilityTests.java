@@ -34,6 +34,7 @@ import static org.junit.Assert.assertThrows;
 
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.PackageInfoFlags;
@@ -66,6 +67,10 @@ import java.util.List;
 @RunWith(BedsteadJUnit4.class)
 public class CrossUserPackageVisibilityTests {
     private static final String CTS_SHIM_PACKAGE_NAME = "com.android.cts.ctsshim";
+    private static final String PROPERTY_BOOLEAN = "android.cts.PROPERTY_BOOLEAN";
+
+    private static final ComponentName TEST_ACTIVITY_COMPONENT_NAME = ComponentName.createRelative(
+            TARGET_STUB, "android.appenumeration.cts.TestActivity");
 
     @ClassRule
     @Rule
@@ -203,15 +208,13 @@ public class CrossUserPackageVisibilityTests {
 
     @Test
     public void testGetComponentEnabledSetting_cannotDetectStubPkg() {
-        final ComponentName componentName = ComponentName.createRelative(
-                TARGET_STUB, "android.appenumeration.cts.TestActivity");
         final IllegalArgumentException e1 = assertThrows(IllegalArgumentException.class,
-                () -> mPackageManager.getComponentEnabledSetting(componentName));
+                () -> mPackageManager.getComponentEnabledSetting(TEST_ACTIVITY_COMPONENT_NAME));
 
         installPackageForUser(TARGET_STUB_APK, mOtherUser);
 
         final IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class,
-                () -> mPackageManager.getComponentEnabledSetting(componentName));
+                () -> mPackageManager.getComponentEnabledSetting(TEST_ACTIVITY_COMPONENT_NAME));
         assertThat(e1.getMessage()).isEqualTo(e2.getMessage());
     }
 
@@ -321,6 +324,55 @@ public class CrossUserPackageVisibilityTests {
                 mPackageManager.getNamesForUids(new int[] {uidStub, uidStubSharedUser}));
         assertThat(names).hasSize(2);
         names.forEach(name -> assertThat(name).isNull());
+    }
+
+    @Test
+    public void testGetPackageProperty_cannotDetectStubPkg() {
+        assertThrows(PackageManager.NameNotFoundException.class,
+                () -> mPackageManager.getProperty(PROPERTY_BOOLEAN, TARGET_STUB));
+
+        installPackageForUser(TARGET_STUB_APK, mOtherUser);
+
+        assertThrows(PackageManager.NameNotFoundException.class,
+                () -> mPackageManager.getProperty(PROPERTY_BOOLEAN, TARGET_STUB));
+    }
+
+    @Test
+    public void testGetComponentProperty_cannotDetectStubPkg() {
+        assertThrows(PackageManager.NameNotFoundException.class,
+                () -> mPackageManager.getProperty(PROPERTY_BOOLEAN, TEST_ACTIVITY_COMPONENT_NAME));
+
+        installPackageForUser(TARGET_STUB_APK, mOtherUser);
+
+        assertThrows(PackageManager.NameNotFoundException.class,
+                () -> mPackageManager.getProperty(PROPERTY_BOOLEAN, TEST_ACTIVITY_COMPONENT_NAME));
+    }
+
+    @Test
+    public void testSetApplicationCategoryHint_cannotDetectStubPkg() {
+        assertThrows(IllegalArgumentException.class,
+                () -> mPackageManager.setApplicationCategoryHint(
+                        TARGET_STUB, ApplicationInfo.CATEGORY_PRODUCTIVITY));
+
+        installPackageForUser(TARGET_STUB_APK, mOtherUser);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> mPackageManager.setApplicationCategoryHint(
+                        TARGET_STUB, ApplicationInfo.CATEGORY_PRODUCTIVITY));
+    }
+
+    @Test
+    public void testGetUnsuspendablePackages_cannotDetectStubPkg() {
+        InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                .adoptShellPermissionIdentity(SUSPEND_APPS);
+        String [] unsuspendable =
+                mPackageManager.getUnsuspendablePackages(new String[] {TARGET_STUB});
+        assertThat(unsuspendable).asList().contains(TARGET_STUB);
+
+        installPackageForUser(TARGET_STUB_APK, mOtherUser);
+
+        unsuspendable = mPackageManager.getUnsuspendablePackages(new String[] {TARGET_STUB});
+        assertThat(unsuspendable).asList().contains(TARGET_STUB);
     }
 
     private static void installPackage(String apkPath) {
