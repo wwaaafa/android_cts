@@ -19,8 +19,10 @@
           package="android.appenumeration.stub">
     <application>
         <uses-library android:name="android.test.runner" />
+        <property android:name="android.cts.PROPERTY_BOOLEAN" android:value="true" />
         <activity android:name="android.appenumeration.cts.TestActivity"
                   android:exported="true">
+            <property android:name="android.cts.PROPERTY_BOOLEAN" android:value="true" />
             <intent-filter>
                 <action android:name="android.appenumeration.action.CrossUserTest"/>
             </intent-filter>
