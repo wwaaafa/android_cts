@@ -47,14 +47,16 @@ android_test {
     test_suites: [
         "cts",
         "general-tests",
-        "sts"
+        "sts",
     ],
     instrumentation_for: "CtsAppTestStubs",
     sdk_version: "test_current",
     min_sdk_version: "14",
     // Disable coverage since it pushes us over the dex limit and we don't
     // actually need to measure the tests themselves.
-    jacoco: { exclude_filter: ["**"] }
+    jacoco: {
+        exclude_filter: ["**"],
+    },
 }
 
 android_test {
@@ -90,7 +92,7 @@ android_test {
     manifest: "DownloadManagerApi28Test/AndroidManifest.xml",
     test_config: "DownloadManagerApi28Test/AndroidTest.xml",
     lint: {
-    	baseline_filename: "lint-baseline-api-28.xml",
+        baseline_filename: "lint-baseline-api-28.xml",
     },
 }
 
@@ -127,7 +129,7 @@ android_test {
     manifest: "DownloadManagerInstallerTest/AndroidManifest.xml",
     test_config: "DownloadManagerInstallerTest/AndroidTest.xml",
     lint: {
-    	baseline_filename: "lint-baseline-installer.xml",
+        baseline_filename: "lint-baseline-installer.xml",
     },
 }
 
