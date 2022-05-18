@@ -286,6 +286,35 @@ class AutoRevokeTest {
 
     @AppModeFull(reason = "Uses separate apps for testing")
     @Test
+    fun testPermissionEventCleanupService_scrubsEvents() {
+        val unusedThreshold = 15_000L
+        withUnusedThresholdMs(unusedThreshold) {
+            withDummyApp {
+                // Setup
+                // Ensure app is considered unused
+                Thread.sleep(unusedThreshold)
+                goToPermissions()
+                click("Calendar")
+                click("Allow")
+                goBack()
+                goBack()
+                goBack()
+                // Run with threshold where events would be cleaned up
+                withUnusedThresholdMs(0) {
+                    runPermissionEventCleanupJob(context)
+                    Thread.sleep(3000L)
+                }
+
+                runAppHibernationJob(context, LOG_TAG)
+
+                // Verify that permission is revoked because there are no recent permission changes
+                assertPermission(PERMISSION_DENIED)
+            }
+        }
+    }
+
+    @AppModeFull(reason = "Uses separate apps for testing")
+    @Test
     fun testPreMinAutoRevokeVersionUnusedApp_doesntGetPermissionRevoked() {
         withUnusedThresholdMs(3L) {
             withDummyApp(preMinVersionApkPath, preMinVersionAppPackageName) {
