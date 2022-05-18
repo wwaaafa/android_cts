@@ -38,6 +38,8 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.PackageInfoFlags;
+import android.content.pm.SuspendDialogInfo;
+import android.os.Process;
 import android.os.UserHandle;
 
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -57,6 +59,7 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Verify that app without holding the {@link android.Manifest.permission.INTERACT_ACROSS_USERS}
@@ -373,6 +376,121 @@ public class CrossUserPackageVisibilityTests {
 
         unsuspendable = mPackageManager.getUnsuspendablePackages(new String[] {TARGET_STUB});
         assertThat(unsuspendable).asList().contains(TARGET_STUB);
+    }
+
+    @Test
+    public void testGetInstallReason_cannotDetectStubPkg() {
+        assertThat(mPackageManager.getInstallReason(TARGET_STUB, Process.myUserHandle()))
+                .isEqualTo(PackageManager.INSTALL_REASON_UNKNOWN);
+
+        installPackageForUser(TARGET_STUB_APK, mOtherUser);
+
+        assertThat(mPackageManager.getInstallReason(TARGET_STUB, Process.myUserHandle()))
+                .isEqualTo(PackageManager.INSTALL_REASON_UNKNOWN);
+    }
+
+    @Test
+    public void testSetDistractingPackageRestrictions_cannotDetectStubPkg() {
+        InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                .adoptShellPermissionIdentity(SUSPEND_APPS);
+        String [] distractedPkg = mPackageManager.setDistractingPackageRestrictions(
+                new String[] {TARGET_STUB}, PackageManager.RESTRICTION_NONE);
+        assertThat(distractedPkg).asList().contains(TARGET_STUB);
+
+        installPackageForUser(TARGET_STUB_APK, mOtherUser);
+
+        distractedPkg = mPackageManager.setDistractingPackageRestrictions(
+                new String[] {TARGET_STUB}, PackageManager.RESTRICTION_NONE);
+        assertThat(distractedPkg).asList().contains(TARGET_STUB);
+    }
+
+    @Test
+    public void testQueryApplicationProperty_cannotDetectStubPkg() {
+        installPackageForUser(TARGET_STUB_APK, mOtherUser);
+
+        List<PackageManager.Property> properties =
+                mPackageManager.queryApplicationProperty(PROPERTY_BOOLEAN).stream()
+                        .filter(property -> property.getPackageName().equals(TARGET_STUB))
+                        .collect(Collectors.toList());
+        assertThat(properties).isEmpty();
+    }
+
+    @Test
+    public void testQueryActivityProperty_cannotDetectStubPkg() {
+        installPackageForUser(TARGET_STUB_APK, mOtherUser);
+
+        List<PackageManager.Property> properties =
+                mPackageManager.queryActivityProperty(PROPERTY_BOOLEAN).stream()
+                        .filter(property -> property.getPackageName().equals(TARGET_STUB))
+                        .collect(Collectors.toList());
+        assertThat(properties).isEmpty();
+    }
+
+    @Test
+    public void testQueryProviderProperty_cannotDetectStubPkg() {
+        installPackageForUser(TARGET_STUB_APK, mOtherUser);
+
+        List<PackageManager.Property> properties =
+                mPackageManager.queryProviderProperty(PROPERTY_BOOLEAN).stream()
+                        .filter(property -> property.getPackageName().equals(TARGET_STUB))
+                        .collect(Collectors.toList());
+        assertThat(properties).isEmpty();
+    }
+
+    @Test
+    public void testQueryReceiverProperty_cannotDetectStubPkg() {
+        installPackageForUser(TARGET_STUB_APK, mOtherUser);
+
+        List<PackageManager.Property> properties =
+                mPackageManager.queryReceiverProperty(PROPERTY_BOOLEAN).stream()
+                        .filter(property -> property.getPackageName().equals(TARGET_STUB))
+                        .collect(Collectors.toList());
+        assertThat(properties).isEmpty();
+    }
+
+    @Test
+    public void testQueryServiceProperty_cannotDetectStubPkg() {
+        installPackageForUser(TARGET_STUB_APK, mOtherUser);
+
+        List<PackageManager.Property> properties =
+                mPackageManager.queryServiceProperty(PROPERTY_BOOLEAN).stream()
+                        .filter(property -> property.getPackageName().equals(TARGET_STUB))
+                        .collect(Collectors.toList());
+        assertThat(properties).isEmpty();
+    }
+
+    @Test
+    public void testSetInstallerPackageName_cannotDetectStubPkg() {
+        final Exception ex1 = assertThrows(IllegalArgumentException.class,
+                () -> mPackageManager.setInstallerPackageName(
+                        TARGET_STUB, null /* installerPackageName */));
+
+        installPackageForUser(TARGET_STUB_APK, mOtherUser);
+
+        final Exception ex2 = assertThrows(IllegalArgumentException.class,
+                () -> mPackageManager.setInstallerPackageName(
+                        TARGET_STUB, null /* installerPackageName */));
+        assertThat(ex1.getMessage()).isEqualTo(ex2.getMessage());
+    }
+
+    @Test
+    public void testSetPackagesSuspended_cannotDetectStubPkg() {
+        InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                .adoptShellPermissionIdentity(SUSPEND_APPS);
+        final SuspendDialogInfo dialogInfo = new SuspendDialogInfo.Builder()
+                .setMessage("Test message")
+                .build();
+        String [] suspendedPkg = mPackageManager.setPackagesSuspended(
+                new String[] {TARGET_STUB}, true /* suspended */, null /* appExtras */,
+                null /* launcherExtras */, dialogInfo);
+        assertThat(suspendedPkg).asList().contains(TARGET_STUB);
+
+        installPackageForUser(TARGET_STUB_APK, mOtherUser);
+
+        suspendedPkg = mPackageManager.setPackagesSuspended(
+                new String[] {TARGET_STUB}, true /* suspended */, null /* appExtras */,
+                null /* launcherExtras */, dialogInfo);
+        assertThat(suspendedPkg).asList().contains(TARGET_STUB);
     }
 
     private static void installPackage(String apkPath) {
