@@ -34,6 +34,7 @@ public abstract class RequiredMeasurement<T> {
     private static final String TAG = RequiredMeasurement.class.getSimpleName();
 
     private T measuredValue;  // Note this is not part of the equals calculations
+    private boolean measuredValueSet = false;
 
     public static <T> Builder<T> builder() {
         return new AutoValue_RequiredMeasurement.Builder<T>();
@@ -53,6 +54,7 @@ public abstract class RequiredMeasurement<T> {
     public abstract ImmutableMap<Integer, T> expectedValues();
 
     public void setMeasuredValue(T measuredValue) {
+        this.measuredValueSet = true;
         this.measuredValue = measuredValue;
     }
 
@@ -73,7 +75,14 @@ public abstract class RequiredMeasurement<T> {
         public abstract RequiredMeasurement<T> build();
     }
 
-    public final RequirementConstants.Result meetsPerformanceClass(int mediaPerformanceClass) {
+    public final RequirementConstants.Result meetsPerformanceClass(int mediaPerformanceClass)
+            throws IllegalStateException {
+
+        if (!this.measuredValueSet) {
+            throw new IllegalStateException("measured value not set for required measurement "
+                + this.id());
+        }
+
         if (!this.expectedValues().containsKey(mediaPerformanceClass)) {
             return RequirementConstants.Result.NA;
         } else if (this.measuredValue == null || !this.predicate().test(this.measuredValue,
@@ -104,8 +113,16 @@ public abstract class RequiredMeasurement<T> {
             + "\n\tExpected Values: " + this.expectedValues();
     }
 
-    public void writeValue(DeviceReportLog log) {
-        if (this.measuredValue instanceof Integer) {
+    public void writeValue(DeviceReportLog log) throws IllegalStateException {
+
+        if (!this.measuredValueSet) {
+            throw new IllegalStateException("measured value not set for required measurement "
+                + this.id());
+        }
+
+        if (this.measuredValue == null) {
+            log.addValue(this.id(), "<nullptr>", ResultType.NEUTRAL, ResultUnit.NONE);
+        } else if (this.measuredValue instanceof Integer) {
             log.addValue(this.id(), (int)this.measuredValue, ResultType.NEUTRAL, ResultUnit.NONE);
         } else if (this.measuredValue instanceof Long) {
             log.addValue(this.id(), (long)this.measuredValue, ResultType.NEUTRAL, ResultUnit.NONE);
