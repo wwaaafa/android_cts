@@ -582,7 +582,8 @@ public final class CarAudioFocusTest extends CarApiTestBase {
                 // Since ducking and concurrent can exist together
                 // this needs to be skipped as the focus lost is not sent
                 if (!(interaction == INTERACTION_CONCURRENT
-                        && gainType == AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)) {
+                        && gainType == AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
+                        && !pauseForDucking)) {
                     message = "Focus change was not dispatched for 1st "
                             + usageToString(attributes1.getSystemUsage());
 
