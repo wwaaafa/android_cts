@@ -16,6 +16,7 @@
 
 package android.media.bettertogether.cts;
 
+import static android.media.MediaRoute2Info.PLAYBACK_VOLUME_FIXED;
 import static android.media.MediaRoute2Info.PLAYBACK_VOLUME_VARIABLE;
 
 import static org.junit.Assert.assertEquals;
@@ -24,6 +25,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
+import android.content.res.Resources;
 import android.media.RoutingSessionInfo;
 import android.media.cts.NonMediaMainlineTest;
 import android.os.Bundle;
@@ -184,7 +186,6 @@ public class RoutingSessionInfoTest {
                 .addDeselectableRoute(TEST_ROUTE_ID_5)
                 .addTransferableRoute(TEST_ROUTE_ID_6)
                 .addTransferableRoute(TEST_ROUTE_ID_7)
-                .setVolumeHandling(TEST_VOLUME_HANDLING)
                 .setVolumeMax(TEST_VOLUME_MAX)
                 .setVolume(TEST_VOLUME)
                 .setControlHints(controlHints)
@@ -210,7 +211,8 @@ public class RoutingSessionInfoTest {
         assertEquals(TEST_ROUTE_ID_6, sessionInfo.getTransferableRoutes().get(0));
         assertEquals(TEST_ROUTE_ID_7, sessionInfo.getTransferableRoutes().get(1));
 
-        assertEquals(TEST_VOLUME_HANDLING, sessionInfo.getVolumeHandling());
+        //Note: Individual tests for volume handling were added below, as its value depends on
+        // config_volumeAdjustmentForRemoteGroupSessions. See b/228021646 for more details.
         assertEquals(TEST_VOLUME_MAX, sessionInfo.getVolumeMax());
         assertEquals(TEST_VOLUME, sessionInfo.getVolume());
 
@@ -524,8 +526,19 @@ public class RoutingSessionInfoTest {
                 .clearTransferableRoutes()
                 .build());
 
-        assertNotEquals(sessionInfo, new RoutingSessionInfo.Builder(sessionInfo)
-                .setVolumeHandling(TEST_VOLUME_HANDLING + 1).build());
+        /*
+        Note: Using session with only one selected route, as volume handling of group sessions
+        depends config_volumeAdjustmentForRemoteGroupSessions. See b/228021646.
+        */
+        RoutingSessionInfo.Builder oneRouteSession = new RoutingSessionInfo.Builder(sessionInfo)
+                .clearSelectedRoutes()
+                .setVolumeHandling(PLAYBACK_VOLUME_FIXED)
+                .addSelectedRoute(TEST_ROUTE_ID_0);
+
+        assertNotEquals(oneRouteSession.build(), oneRouteSession
+                .setVolumeHandling(PLAYBACK_VOLUME_VARIABLE)
+                .build());
+
         assertNotEquals(sessionInfo, new RoutingSessionInfo.Builder(sessionInfo)
                 .setVolumeMax(TEST_VOLUME_MAX + 1).build());
         assertNotEquals(sessionInfo, new RoutingSessionInfo.Builder(sessionInfo)
@@ -588,5 +601,39 @@ public class RoutingSessionInfoTest {
                 .addTransferableRoute(TEST_ROUTE_ID_6)
                 .build();
         assertEquals(0, sessionInfo.describeContents());
+    }
+
+    @Test
+    public void testGroupVolumeHandling() {
+        //Note: Volume handling for group sessions depends on
+        // config_volumeAdjustmentForRemoteGroupSessions. See b/228021646 for details.
+
+        RoutingSessionInfo sessionInfo = new RoutingSessionInfo.Builder(
+                TEST_ID, TEST_CLIENT_PACKAGE_NAME)
+                .setName(TEST_NAME)
+                .addSelectedRoute(TEST_ROUTE_ID_0)
+                .addSelectedRoute(TEST_ROUTE_ID_1)
+                .setVolumeHandling(PLAYBACK_VOLUME_VARIABLE)
+                .build();
+
+        boolean volumeAdjustmentForRemoteGroupSessions = Resources.getSystem().getBoolean(
+                com.android.internal.R.bool.config_volumeAdjustmentForRemoteGroupSessions);
+
+        int expectedVolumeHandling = volumeAdjustmentForRemoteGroupSessions
+                ? PLAYBACK_VOLUME_VARIABLE : PLAYBACK_VOLUME_FIXED;
+
+        assertEquals(expectedVolumeHandling, sessionInfo.getVolumeHandling());
+    }
+
+    @Test
+    public void testSingleRouteVolumeHandling() {
+        RoutingSessionInfo sessionInfo = new RoutingSessionInfo.Builder(
+                TEST_ID, TEST_CLIENT_PACKAGE_NAME)
+                .setName(TEST_NAME)
+                .addSelectedRoute(TEST_ROUTE_ID_0)
+                .setVolumeHandling(PLAYBACK_VOLUME_VARIABLE)
+                .build();
+
+        assertEquals(PLAYBACK_VOLUME_VARIABLE, sessionInfo.getVolumeHandling());
     }
 }
