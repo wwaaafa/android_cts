@@ -533,6 +533,18 @@ public class CrossUserPackageVisibilityTests {
                 PackageManager.CERT_INPUT_RAW_X509)).isFalse();
     }
 
+    @Test
+    public void testCanPackageQuery_cannotDetectStubPkg() throws Exception {
+        assertThrows(PackageManager.NameNotFoundException.class,
+                () -> mPackageManager.canPackageQuery(TARGET_STUB, TARGET_STUB_SHARED_USER));
+
+        installPackageForUser(TARGET_STUB_APK, mOtherUser);
+        installPackageForUser(TARGET_STUB_SHARED_USER_APK, mOtherUser);
+
+        assertThrows(PackageManager.NameNotFoundException.class,
+                () -> mPackageManager.canPackageQuery(TARGET_STUB, TARGET_STUB_SHARED_USER));
+    }
+
     private static void installPackage(String apkPath) {
         installPackageForUser(apkPath, null);
     }
