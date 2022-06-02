@@ -29,6 +29,7 @@ import static android.server.wm.StateLogger.logE;
 import static android.server.wm.TestTaskOrganizer.INVALID_TASK_ID;
 import static android.util.DisplayMetrics.DENSITY_DEFAULT;
 import static android.view.Display.DEFAULT_DISPLAY;
+import static android.window.DisplayAreaOrganizer.FEATURE_UNDEFINED;
 
 import static androidx.test.InstrumentationRegistry.getInstrumentation;
 
@@ -494,6 +495,15 @@ public class WindowManagerState {
                 .that(result.size()).isAtMost(1);
 
         return result.stream().findFirst().orElse(null);
+    }
+
+    public int getTaskDisplayAreaFeatureId(ComponentName activityName) {
+        final DisplayArea taskDisplayArea = getTaskDisplayArea(activityName);
+        if (taskDisplayArea != null) {
+            return taskDisplayArea.getFeatureId();
+        }
+
+        return FEATURE_UNDEFINED;
     }
 
     @Nullable
