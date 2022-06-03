@@ -1020,6 +1020,11 @@ public abstract class ActivityManagerTestBase {
      * task.
      */
     protected void moveActivityToRootTaskOrOnTop(ComponentName activityName, int rootTaskId) {
+        moveActivityToRootTaskOrOnTop(activityName, rootTaskId, FEATURE_UNDEFINED);
+    }
+
+    protected void moveActivityToRootTaskOrOnTop(ComponentName activityName, int rootTaskId,
+                                                 int taskDisplayAreaFeatureId) {
         mWmState.computeState(activityName);
         Task rootTask = getRootTask(rootTaskId);
         if (rootTask.getActivities().size() != 0) {
@@ -1028,6 +1033,7 @@ public abstract class ActivityManagerTestBase {
                     .setDisplayId(rootTask.mDisplayId)
                     .setWindowingMode(rootTask.getWindowingMode())
                     .setActivityType(rootTask.getActivityType())
+                    .setLaunchTaskDisplayAreaFeatureId(taskDisplayAreaFeatureId)
                     .setTargetActivity(activityName)
                     .allowMultipleInstances(false)
                     .setUseInstrumentation()
