@@ -61,7 +61,6 @@ public class RoutingSessionInfoTest {
     public static final String TEST_KEY = "test_key";
     public static final String TEST_VALUE = "test_value";
 
-    public static final int TEST_VOLUME_HANDLING = PLAYBACK_VOLUME_VARIABLE;
     public static final int TEST_VOLUME_MAX = 100;
     public static final int TEST_VOLUME = 65;
     @Test
@@ -404,7 +403,7 @@ public class RoutingSessionInfoTest {
                 .addDeselectableRoute(TEST_ROUTE_ID_5)
                 .addTransferableRoute(TEST_ROUTE_ID_6)
                 .addTransferableRoute(TEST_ROUTE_ID_7)
-                .setVolumeHandling(TEST_VOLUME_HANDLING)
+                .setVolumeHandling(PLAYBACK_VOLUME_VARIABLE)
                 .setVolumeMax(TEST_VOLUME_MAX)
                 .setVolume(TEST_VOLUME)
                 .setControlHints(controlHints)
@@ -421,7 +420,7 @@ public class RoutingSessionInfoTest {
                 .addDeselectableRoute(TEST_ROUTE_ID_5)
                 .addTransferableRoute(TEST_ROUTE_ID_6)
                 .addTransferableRoute(TEST_ROUTE_ID_7)
-                .setVolumeHandling(TEST_VOLUME_HANDLING)
+                .setVolumeHandling(PLAYBACK_VOLUME_VARIABLE)
                 .setVolumeMax(TEST_VOLUME_MAX)
                 .setVolume(TEST_VOLUME)
                 .setControlHints(controlHints)
@@ -447,7 +446,7 @@ public class RoutingSessionInfoTest {
                 .addDeselectableRoute(TEST_ROUTE_ID_5)
                 .addTransferableRoute(TEST_ROUTE_ID_6)
                 .addTransferableRoute(TEST_ROUTE_ID_7)
-                .setVolumeHandling(TEST_VOLUME_HANDLING)
+                .setVolumeHandling(PLAYBACK_VOLUME_VARIABLE)
                 .setVolumeMax(TEST_VOLUME_MAX)
                 .setVolume(TEST_VOLUME)
                 .setControlHints(controlHints)
@@ -475,7 +474,7 @@ public class RoutingSessionInfoTest {
                 .addDeselectableRoute(TEST_ROUTE_ID_5)
                 .addTransferableRoute(TEST_ROUTE_ID_6)
                 .addTransferableRoute(TEST_ROUTE_ID_7)
-                .setVolumeHandling(TEST_VOLUME_HANDLING)
+                .setVolumeHandling(PLAYBACK_VOLUME_VARIABLE)
                 .setVolumeMax(TEST_VOLUME_MAX)
                 .setVolume(TEST_VOLUME)
                 .setControlHints(controlHints)
@@ -563,7 +562,7 @@ public class RoutingSessionInfoTest {
                 .addDeselectableRoute(TEST_ROUTE_ID_5)
                 .addTransferableRoute(TEST_ROUTE_ID_6)
                 .addTransferableRoute(TEST_ROUTE_ID_7)
-                .setVolumeHandling(TEST_VOLUME_HANDLING)
+                .setVolumeHandling(PLAYBACK_VOLUME_VARIABLE)
                 .setVolumeMax(TEST_VOLUME_MAX)
                 .setVolume(TEST_VOLUME)
                 .setControlHints(controlHints)
