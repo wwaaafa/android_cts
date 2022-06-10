@@ -89,6 +89,7 @@ public class RequirementConstants {
     public static final String SECURE_REQ_SATISFIED = "secure_requirement_satisfied_boolean";
     public static final String NUM_CRYPTO_HW_SECURE_ALL_SUPPORT =
         "number_crypto_hw_secure_all_support";
+    public static final String FILESYSTEM_IO_RATE = "filesystem_io_rate_mbps";
 
     public enum Result {
         NA, MET, UNMET
