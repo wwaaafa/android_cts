@@ -19,6 +19,9 @@ package com.android.bedstead.harrier;
 import static android.Manifest.permission.INTERACT_ACROSS_USERS_FULL;
 import static android.app.ActivityManager.STOP_USER_ON_SWITCH_DEFAULT;
 import static android.app.ActivityManager.STOP_USER_ON_SWITCH_FALSE;
+import static android.content.Intent.ACTION_MAIN;
+import static android.content.Intent.CATEGORY_HOME;
+import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 import static android.os.Build.VERSION.SDK_INT;
 
 import static com.android.bedstead.harrier.Defaults.DEFAULT_PASSWORD;
@@ -53,6 +56,7 @@ import com.android.bedstead.harrier.annotations.EnsureDoesNotHavePermission;
 import com.android.bedstead.harrier.annotations.EnsureGlobalSettingSet;
 import com.android.bedstead.harrier.annotations.EnsureHasAppOp;
 import com.android.bedstead.harrier.annotations.EnsureHasPermission;
+import com.android.bedstead.harrier.annotations.EnsureOnLauncher;
 import com.android.bedstead.harrier.annotations.EnsurePackageNotInstalled;
 import com.android.bedstead.harrier.annotations.EnsurePasswordNotSet;
 import com.android.bedstead.harrier.annotations.EnsurePasswordSet;
@@ -161,7 +165,6 @@ import java.util.function.Function;
  * {@code assumeTrue} will be used, so tests which do not meet preconditions will be skipped.
  */
 public final class DeviceState extends HarrierRule {
-
     private static final ComponentName REMOTE_DPC_COMPONENT_NAME = RemoteDpc.DPC_COMPONENT_NAME;
 
     private static final String SWITCHED_TO_USER = "switchedToUser";
@@ -797,6 +800,12 @@ public final class DeviceState extends HarrierRule {
                 ensureGlobalSettingSet(
                         ensureGlobalSettingSetAnnotation.key(),
                         ensureGlobalSettingSetAnnotation.value());
+                continue;
+            }
+
+            if (annotation instanceof EnsureOnLauncher) {
+                ensureOnLauncher();
+                continue;
             }
         }
 
@@ -2589,10 +2598,18 @@ public final class DeviceState extends HarrierRule {
         }
     }
 
-    private void ensureGlobalSettingSet(String key, String value) {
-        if (!mOriginalGlobalSettings.containsKey(key)) {
-            mOriginalGlobalSettings.put(key, TestApis.settings().global().getString(value));
-        }
-        TestApis.settings().global().putString(key, value);
+    private void ensureGlobalSettingSet(String key, String value){
+            if (!mOriginalGlobalSettings.containsKey(key)) {
+                mOriginalGlobalSettings.put(key, TestApis.settings().global().getString(value));
+            }
+            TestApis.settings().global().putString(key, value);
+    }
+
+    private void ensureOnLauncher() {
+        Intent intent = new Intent();
+        intent.setAction(ACTION_MAIN);
+        intent.addCategory(CATEGORY_HOME);
+        intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
+        TestApis.context().instrumentedContext().startActivity(intent);
     }
 }
