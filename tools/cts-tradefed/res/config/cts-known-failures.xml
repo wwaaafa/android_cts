@@ -273,4 +273,7 @@
     <!-- b/205492302 -->
     <option name="compatibility:exclude-filter" value="CtsDevicePolicyManagerTestCases com.android.cts.devicepolicy.OrgOwnedProfileOwnerTest#testSetCameraDisabled" />
 
+    <!-- b/198682652 -->
+    <option name="compatibility:exclude-filter" value="CtsTelephonyTestCases android.telephony.cts.TelephonyCallbackTest#testOnLinkCapacityEstimateChangedByRegisterPhoneStateListener" />
+
 </configuration>
