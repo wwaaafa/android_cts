@@ -33,6 +33,7 @@ import static com.android.compatibility.common.util.AppOpsUtils.setOpMode;
 
 import android.annotation.Nullable;
 import android.annotation.RawRes;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.AssetFileDescriptor;
 import android.media.AudioAttributes;
@@ -382,33 +383,9 @@ public class AudioPlaybackConfigurationTest extends CtsAndroidTestCase {
                 .setContentType(TEST_CONTENT)
                 .setAllowedCapturePolicy(ALLOW_CAPTURE_BY_SYSTEM)
                 .build();
+        mSp = createSoundPool(aa);
+        playSoundPool(mSp, getContext());
 
-        mSp = new SoundPool.Builder()
-                .setAudioAttributes(aa)
-                .setMaxStreams(1)
-                .build();
-        final Object loadLock = new Object();
-        final SoundPool zepool = mSp;
-        // load a sound and play it once load completion is reported
-        mSp.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
-            @Override
-            public void onLoadComplete(SoundPool soundPool, int sampleId, int status) {
-                assertEquals("Receiving load completion for wrong SoundPool", zepool, mSp);
-                assertEquals("Load completion error", 0 /*success expected*/, status);
-                synchronized (loadLock) {
-                    loadLock.notify();
-                }
-            }
-        });
-        final int loadId = mSp.load(getContext(), R.raw.sine1320hz5sec, 1/*priority*/);
-        synchronized (loadLock) {
-            loadLock.wait(TEST_TIMEOUT_SOUNDPOOL_LOAD_MS);
-        }
-        int res = mSp.play(loadId, 1.0f /*leftVolume*/, 1.0f /*rightVolume*/, 1 /*priority*/,
-                0 /*loop*/, 1.0f/*rate*/);
-        // FIXME SoundPool activity is not reported yet, but exercise creation/release with
-        //       an AudioPlaybackCallback registered
-        assertTrue("Error playing sound through SoundPool", res > 0);
         Thread.sleep(TEST_TIMING_TOLERANCE_MS);
 
         mSp.autoPause();
@@ -423,6 +400,44 @@ public class AudioPlaybackConfigurationTest extends CtsAndroidTestCase {
         }
         assertEquals("Number of active players changed after pausing SoundPool",
                 nbActivePlayersBeforeStart, nbActivePlayersAfterPause);
+    }
+
+    @ApiTest(apis = {"android.media.AudioManager#getActivePlaybackConfigurations",
+            "android.media.AudioManager.AudioPlaybackCallback#onPlaybackConfigChanged"})
+    public void testGetterAndCallbackConsistency() throws Exception {
+        if (!isValidPlatform("testGetterAndCallbackConsistency")) return;
+
+        AudioManager am = new AudioManager(getContext());
+        assertNotNull("Could not create AudioManager", am);
+
+        MyAudioPlaybackCallback callback = new MyAudioPlaybackCallback();
+        am.registerAudioPlaybackCallback(callback, null /*handler*/);
+
+        final AudioAttributes aa = (new AudioAttributes.Builder())
+                .setUsage(TEST_USAGE)
+                .setContentType(TEST_CONTENT)
+                .setAllowedCapturePolicy(ALLOW_CAPTURE_BY_SYSTEM)
+                .build();
+        mSp = createSoundPool(aa);
+        mMp = createPreparedMediaPlayer(R.raw.sine1khzs40dblong, aa,
+                am.generateAudioSessionId());
+
+        try {
+            playSoundPool(mSp, getContext());
+
+            callback.reset();
+            mMp.start();
+
+            assertTrue("onPlaybackConfigChanged should have been called for start and new device",
+                    callback.waitForCallbacks(2,
+                            TEST_TIMING_TOLERANCE_MS + PLAY_ROUTING_TIMING_TOLERANCE_MS));
+            assertListsAreConsistent(am.getActivePlaybackConfigurations(), callback.getConfigs());
+
+            mSp.autoPause();
+            mMp.stop();
+        } finally {
+            am.unregisterAudioPlaybackCallback(callback);
+        }
     }
 
     public void testGetAudioDeviceInfoMediaPlayerStart() throws Exception {
@@ -734,6 +749,48 @@ public class AudioPlaybackConfigurationTest extends CtsAndroidTestCase {
             afd.close();
         }
         return mp;
+    }
+
+    private static SoundPool createSoundPool(AudioAttributes aa) {
+        return new SoundPool.Builder()
+                .setAudioAttributes(aa)
+                .setMaxStreams(1)
+                .build();
+    }
+
+    /** Loads a track and plays it with the passed {@link SoundPool}. */
+    private static void playSoundPool(SoundPool sp, Context context) throws InterruptedException {
+        final Object loadLock = new Object();
+        final SoundPool zepool = sp;
+        // load a sound and play it once load completion is reported
+        sp.setOnLoadCompleteListener(new SoundPool.OnLoadCompleteListener() {
+            @Override
+            public void onLoadComplete(SoundPool soundPool, int sampleId, int status) {
+                assertEquals("Receiving load completion for wrong SoundPool", zepool, sp);
+                assertEquals("Load completion error", 0 /*success expected*/, status);
+                synchronized (loadLock) {
+                    loadLock.notify();
+                }
+            }
+        });
+        final int loadId = sp.load(context, R.raw.sine1320hz5sec, 1/*priority*/);
+        synchronized (loadLock) {
+            loadLock.wait(TEST_TIMEOUT_SOUNDPOOL_LOAD_MS);
+        }
+
+        int res = sp.play(loadId, 1.0f /*leftVolume*/, 1.0f /*rightVolume*/, 1 /*priority*/,
+                0 /*loop*/, 1.0f/*rate*/);
+        // FIXME SoundPool activity is not reported yet, but exercise creation/release with
+        //       an AudioPlaybackCallback registered
+        assertTrue("Error playing sound through SoundPool", res > 0);
+    }
+
+    private static void assertListsAreConsistent(List<AudioPlaybackConfiguration> config1,
+            List<AudioPlaybackConfiguration> config2) {
+        assertEquals("Different size of audio playback configurations reported", config1.size(),
+                config2.size());
+        assertTrue("Reported audio playback configurations are inconsistent",
+                config1.containsAll(config2) && config2.containsAll(config1));
     }
 
     private void assertPlayerStartAndCallbackWithPlayerAttributes(
