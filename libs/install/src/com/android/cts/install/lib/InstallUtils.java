@@ -138,9 +138,9 @@ public class InstallUtils {
     public static void assertStatusSuccess(Intent result) {
         int status = result.getIntExtra(PackageInstaller.EXTRA_STATUS,
                 PackageInstaller.STATUS_FAILURE);
-        if (status == -1) {
+        if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
             throw new AssertionError("PENDING USER ACTION");
-        } else if (status > 0) {
+        } else if (status != PackageInstaller.STATUS_SUCCESS) {
             String message = result.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE);
             throw new AssertionError(message == null ? "UNKNOWN FAILURE" : message);
         }
