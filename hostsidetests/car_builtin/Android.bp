@@ -32,6 +32,7 @@ java_test_host {
     test_suites: [
         "cts",
         "general-tests",
+        "automotive-tests",
     ],
     static_libs: [
         "cts-statsd-atom-host-test-utils",
