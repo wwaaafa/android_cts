@@ -42,6 +42,11 @@ import android.speech.SpeechRecognizer
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.compatibility.common.util.SystemUtil
 import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.locks.ReentrantLock
+import java.util.function.Consumer
 import org.junit.After
 import org.junit.Assume.assumeFalse
 import org.junit.Before
@@ -52,11 +57,6 @@ import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.intThat
 import org.mockito.Mockito.isNull
 import org.mockito.Mockito.mock
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.locks.ReentrantLock
-import java.util.function.Consumer
 
 @AppModeFull(reason = "Instant apps cannot hold READ_CONTACTS/READ_CALENDAR/READ_SMS/READ_CALL_LOG")
 class RuntimePermissionsAppOpTrackingTest {
@@ -357,6 +357,15 @@ class RuntimePermissionsAppOpTrackingTest {
                 /*accessorTrusted*/ true, /*accessorAccessCount*/ 1,
                 /*receiverAccessCount*/ 1, /*checkAccessor*/ false,
                 /*fromDatasource*/ false)
+    }
+
+    @Test
+    fun testGetAllPackagesForAllAppOps() {
+        val appOpsManager = Companion.context.getSystemService(AppOpsManager::class.java)!!
+        val result = SystemUtil.runWithShellPermissionIdentity<List<AppOpsManager.PackageOps>> {
+            appOpsManager.getPackagesForOps(null as Array<String>?)
+        }
+        assertThat(result.size).isAtLeast(1)
     }
 
     @Test
