@@ -284,4 +284,7 @@
     <!-- b/198682652 -->
     <option name="compatibility:exclude-filter" value="CtsTelephonyTestCases android.telephony.cts.TelephonyCallbackTest#testOnLinkCapacityEstimateChangedByRegisterPhoneStateListener" />
 
+    <!-- b/235453601 -->
+    <option name="compatibility:exclude-filter" value="CtsMediaPerformanceClassTestCases android.mediapc.cts.MultiDecoderPerfTest" />
+
 </configuration>
