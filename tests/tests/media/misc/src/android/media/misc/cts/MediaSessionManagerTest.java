@@ -40,6 +40,7 @@ import android.platform.test.annotations.AppModeFull;
 import android.provider.Settings;
 import android.test.InstrumentationTestCase;
 import android.test.UiThreadTest;
+import android.text.TextUtils;
 import android.view.KeyEvent;
 
 import com.android.compatibility.common.util.ApiLevelUtil;
@@ -581,6 +582,7 @@ public class MediaSessionManagerTest extends InstrumentationTestCase {
         }
     }
 
+    @NonMediaMainlineTest
     public void testIsTrustedForMediaControl_withInvalidUid() throws Exception {
         List<String> packageNames = getEnabledNotificationListenerPackages();
         for (String packageName : packageNames) {
@@ -629,7 +631,7 @@ public class MediaSessionManagerTest extends InstrumentationTestCase {
                 Settings.Secure.getString(
                         mContext.getContentResolver(),
                         ENABLED_NOTIFICATION_LISTENERS);
-        if (enabledNotificationListeners != null) {
+        if (!TextUtils.isEmpty(enabledNotificationListeners)) {
             String[] components = enabledNotificationListeners.split(":");
             for (String componentString : components) {
                 ComponentName component = ComponentName.unflattenFromString(componentString);

@@ -17,6 +17,7 @@
 package android.server.wm;
 
 import static android.app.WindowConfiguration.WINDOWING_MODE_FREEFORM;
+import static android.server.wm.ActivityManagerTestBase.isTablet;
 import static android.view.WindowInsets.Type.displayCutout;
 import static android.view.WindowInsets.Type.navigationBars;
 import static android.view.WindowInsets.Type.statusBars;
@@ -43,12 +44,12 @@ public class WindowMetricsTestHelper {
     public static void assertMetricsMatchesLayout(WindowMetrics currentMetrics,
             WindowMetrics maxMetrics, Rect layoutBounds, WindowInsets layoutInsets) {
         assertMetricsMatchesLayout(currentMetrics, maxMetrics, layoutBounds, layoutInsets,
-                false /* isFreeformActivity */);
+                false /* isFreeform */, false /* isFloating */);
     }
 
     public static void assertMetricsMatchesLayout(WindowMetrics currentMetrics,
             WindowMetrics maxMetrics, Rect layoutBounds, WindowInsets layoutInsets,
-            boolean isFreeformActivity) {
+            boolean isFreeform, boolean isFloating) {
         // Only validate the size portion of the bounds, regardless of the position on the screen to
         // take into consideration multiple screen devices (e.g. the dialog is on another screen)
         final Rect currentMetricsBounds = currentMetrics.getBounds();
@@ -57,11 +58,16 @@ public class WindowMetricsTestHelper {
         // Freeform activities doesn't guarantee max window metrics bounds is larger than current
         // window metrics bounds. The bounds of a freeform activity is unlimited except that
         // it must be contained in display bounds.
-        if (!isFreeformActivity) {
+        if (!isFreeform) {
             assertTrue(maxMetrics.getBounds().width()
                     >= currentMetrics.getBounds().width());
             assertTrue(maxMetrics.getBounds().height()
                     >= currentMetrics.getBounds().height());
+        }
+        // Don't verify insets for floating Activity since a floating window won't have any insets,
+        // while WindowMetrics reports insets regardless of windowing mode.
+        if (isFloating) {
+            return;
         }
         final int insetsType = statusBars() | navigationBars() | displayCutout();
         assertEquals(layoutInsets.getInsets(insetsType),
@@ -123,6 +129,11 @@ public class WindowMetricsTestHelper {
      * @param display the display to compare bounds against
      */
     static void assertBoundsMatchDisplay(Rect maxBounds, Rect currentBounds, Display display) {
+        // TODO(b/224404595): remove the logic after we can revert ag/17076728 back.
+        if (isTablet()) {
+            return;
+        }
+
         // Check window bounds
         final Point displaySize = new Point();
         display.getSize(displaySize);

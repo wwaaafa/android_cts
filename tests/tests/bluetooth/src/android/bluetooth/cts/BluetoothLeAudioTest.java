@@ -24,18 +24,15 @@ import static org.junit.Assert.assertThrows;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeAudio;
-import android.bluetooth.BluetoothLeAudioCodecStatus;
 import android.bluetooth.BluetoothLeAudioCodecConfig;
+import android.bluetooth.BluetoothLeAudioCodecStatus;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothStatusCodes;
 import android.content.pm.PackageManager;
-import android.content.res.Resources;
 import android.os.Build;
 import android.test.AndroidTestCase;
 import android.util.Log;
-
-import androidx.test.InstrumentationRegistry;
 
 import com.android.compatibility.common.util.ApiLevelUtil;
 
@@ -70,20 +67,20 @@ public class BluetoothLeAudioTest extends AndroidTestCase {
     private int mTestGroupStatus;
 
     private static final BluetoothLeAudioCodecConfig LC3_16KHZ_CONFIG =
-        new BluetoothLeAudioCodecConfig.Builder()
-            .setCodecType(BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_LC3)
-            .setSampleRate(BluetoothLeAudioCodecConfig.SAMPLE_RATE_16000)
-            .build();
+            new BluetoothLeAudioCodecConfig.Builder()
+                    .setCodecType(BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_LC3)
+                    .setSampleRate(BluetoothLeAudioCodecConfig.SAMPLE_RATE_16000)
+                    .build();
 
-    private static final List<BluetoothLeAudioCodecConfig> mCapabilitiesConfig =
-        new ArrayList() {{
-                add(LC3_16KHZ_CONFIG);
-        }};
+    private static final List<BluetoothLeAudioCodecConfig> TEST_CODEC_CAPA_CONFIG =
+            new ArrayList() {{
+                    add(LC3_16KHZ_CONFIG);
+            }};
 
-    private static final BluetoothLeAudioCodecStatus mTestStatus =
-        new BluetoothLeAudioCodecStatus(LC3_16KHZ_CONFIG, LC3_16KHZ_CONFIG,
-                mCapabilitiesConfig, mCapabilitiesConfig,
-                mCapabilitiesConfig, mCapabilitiesConfig);
+    private static final BluetoothLeAudioCodecStatus TEST_CODEC_STATUS =
+            new BluetoothLeAudioCodecStatus(LC3_16KHZ_CONFIG, LC3_16KHZ_CONFIG,
+                    TEST_CODEC_CAPA_CONFIG, TEST_CODEC_CAPA_CONFIG,
+                    TEST_CODEC_CAPA_CONFIG, TEST_CODEC_CAPA_CONFIG);
 
     class TestCallback implements BluetoothLeAudio.Callback {
         @Override
@@ -91,7 +88,7 @@ public class BluetoothLeAudioTest extends AndroidTestCase {
                                          BluetoothLeAudioCodecStatus status) {
             mCodecConfigChangedCalled = true;
             assertTrue(groupId == mTestGroupId);
-            assertTrue(status == mTestStatus);
+            assertTrue(status == TEST_CODEC_STATUS);
         }
         @Override
         public void onGroupNodeAdded(BluetoothDevice device, int groupId) {
@@ -112,7 +109,6 @@ public class BluetoothLeAudioTest extends AndroidTestCase {
             assertTrue(groupStatus == mTestGroupStatus);
         }
     };
-
 
     @Override
     public void setUp() throws Exception {
@@ -163,7 +159,7 @@ public class BluetoothLeAudioTest extends AndroidTestCase {
         mAdapter = null;
     }
 
-    public void testGetConnectedDevices() {
+    public void test_getConnectedDevices() {
         if (!(mHasBluetooth && mIsLeAudioSupported)) return;
 
         assertTrue(waitForProfileConnect());
@@ -176,7 +172,7 @@ public class BluetoothLeAudioTest extends AndroidTestCase {
         assertTrue(connectedDevices.isEmpty());
     }
 
-    public void testGetDevicesMatchingConnectionStates() {
+    public void test_getDevicesMatchingConnectionStates() {
         if (!(mHasBluetooth && mIsLeAudioSupported)) return;
 
         assertTrue(waitForProfileConnect());
@@ -190,7 +186,7 @@ public class BluetoothLeAudioTest extends AndroidTestCase {
         assertTrue(connectedDevices.isEmpty());
     }
 
-    public void testGetConnectionState() {
+    public void test_getConnectionState() {
         if (!(mHasBluetooth && mIsLeAudioSupported)) return;
 
         assertTrue(waitForProfileConnect());
@@ -209,7 +205,7 @@ public class BluetoothLeAudioTest extends AndroidTestCase {
                 mBluetoothLeAudio.getConnectionState(mTestDevice));
     }
 
-    public void testGetAudioLocation() {
+    public void test_getAudioLocation() {
         if (!(mHasBluetooth && mIsLeAudioSupported)) return;
 
         assertTrue(waitForProfileConnect());
@@ -235,7 +231,7 @@ public class BluetoothLeAudioTest extends AndroidTestCase {
                 mBluetoothLeAudio.getConnectionPolicy(null));
     }
 
-    public void testRegisterCallbackNoPermission() {
+    public void test_registerCallbackNoPermission() {
         if (!(mHasBluetooth && mIsLeAudioSupported)) return;
 
         TestUtils.dropPermissionAsShellUid();
@@ -244,12 +240,12 @@ public class BluetoothLeAudioTest extends AndroidTestCase {
 
         // Verify throws SecurityException without permission.BLUETOOTH_PRIVILEGED
         assertThrows(SecurityException.class,
-            () -> mBluetoothLeAudio.registerCallback(mTestExecutor, mTestCallback));
+                () -> mBluetoothLeAudio.registerCallback(mTestExecutor, mTestCallback));
 
         TestUtils.adoptPermissionAsShellUid(BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED);
     }
 
-    public void testRegisterUnregisterCallback() {
+    public void test_registerUnregisterCallback() {
         if (!(mHasBluetooth && mIsLeAudioSupported)) return;
 
         assertTrue(waitForProfileConnect());
@@ -277,7 +273,7 @@ public class BluetoothLeAudioTest extends AndroidTestCase {
         }
     }
 
-    public void testCallback() {
+    public void test_callback() {
         if (!(mHasBluetooth && mIsLeAudioSupported)) return;
 
         assertTrue(waitForProfileConnect());
@@ -292,7 +288,7 @@ public class BluetoothLeAudioTest extends AndroidTestCase {
         mGroupStatusChangedCalled = false;
         mGroupNodeRemovedCalled = false;
 
-        mTestCallback.onCodecConfigChanged(mTestGroupId, mTestStatus);
+        mTestCallback.onCodecConfigChanged(mTestGroupId, TEST_CODEC_STATUS);
         mTestCallback.onGroupNodeAdded(mTestDevice, mTestGroupId);
         mTestCallback.onGroupNodeRemoved(mTestDevice, mTestGroupId);
         mTestCallback.onGroupStatusChanged(mTestGroupId, mTestGroupStatus);
@@ -303,7 +299,7 @@ public class BluetoothLeAudioTest extends AndroidTestCase {
         assertTrue(mGroupStatusChangedCalled);
     }
 
-    public void testGetConnectedGroupLeadDevice() {
+    public void test_getConnectedGroupLeadDevice() {
         if (!(mHasBluetooth && mIsLeAudioSupported)) return;
 
         assertTrue(waitForProfileConnect());
@@ -315,6 +311,52 @@ public class BluetoothLeAudioTest extends AndroidTestCase {
 
         // Verify returns null for unknown group id
         assertEquals(null, mBluetoothLeAudio.getConnectedGroupLeadDevice(groupId));
+    }
+
+    public void test_setVolume() {
+        if (!(mHasBluetooth && mIsLeAudioSupported)) return;
+        assertTrue(waitForProfileConnect());
+        assertNotNull(mBluetoothLeAudio);
+
+        try {
+            mBluetoothLeAudio.setVolume(42);
+        } catch (Exception e) {
+            fail("Exception caught from setVolume(): " + e.toString());
+        }
+    }
+
+    public void test_getCodecStatus() {
+        if (!(mHasBluetooth && mIsLeAudioSupported)) return;
+
+        assertTrue(waitForProfileConnect());
+        assertNotNull(mBluetoothLeAudio);
+
+        assertNull(mBluetoothLeAudio.getCodecStatus(0));
+    }
+
+    public void test_setCodecConfigPreference() {
+        if (!(mHasBluetooth && mIsLeAudioSupported)) return;
+
+        assertTrue(waitForProfileConnect());
+        assertNotNull(mBluetoothLeAudio);
+
+        BluetoothLeAudioCodecConfig codecConfig =
+                new BluetoothLeAudioCodecConfig.Builder()
+                        .setCodecType(BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_LC3)
+                        .setCodecPriority(0)
+                        .build();
+
+        assertThrows(
+                NullPointerException.class,
+                () -> {
+                    mBluetoothLeAudio.setCodecConfigPreference(0, null, null);
+                });
+
+        try {
+            mBluetoothLeAudio.setCodecConfigPreference(0, codecConfig, codecConfig);
+        } catch (Exception e) {
+            fail("Exception caught from setCodecConfigPreference(): " + e.toString());
+        }
     }
 
     private boolean waitForProfileConnect() {

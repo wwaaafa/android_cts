@@ -16,6 +16,9 @@
 
 package android.assist.service;
 
+import static android.view.WindowInsets.Type.displayCutout;
+import static android.view.WindowInsets.Type.statusBars;
+
 import android.app.assist.AssistContent;
 import android.app.assist.AssistStructure;
 import android.assist.common.Utils;
@@ -27,6 +30,7 @@ import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.RemoteCallback;
 import android.service.voice.VoiceInteractionSession;
@@ -36,6 +40,9 @@ import android.view.DisplayCutout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewTreeObserver;
+import android.view.WindowInsets;
+import android.view.WindowManager;
+import android.view.WindowMetrics;
 
 public class MainInteractionSession extends VoiceInteractionSession {
     static final String TAG = "MainInteractionSession";
@@ -125,7 +132,26 @@ public class MainInteractionSession extends VoiceInteractionSession {
                     mContentView.getViewTreeObserver().removeOnPreDrawListener(this);
                     Display d = mContentView.getDisplay();
                     Point displayPoint = new Point();
-                    d.getRealSize(displayPoint);
+                    // The voice interaction window layer is higher than keyguard, status bar,
+                    // nav bar now. So we should take both status bar, nav bar into consideration.
+                    // The voice interaction hide the nav bar, so the height only need to consider
+                    // status bar. The status bar may contain display cutout but the display cutout
+                    // is device specific, we need to check it.
+                    WindowManager wm = mContext.getSystemService(WindowManager.class);
+                    WindowMetrics windowMetrics = wm.getCurrentWindowMetrics();
+                    Rect bound = windowMetrics.getBounds();
+                    WindowInsets windowInsets = windowMetrics.getWindowInsets();
+                    android.graphics.Insets statusBarInsets =
+                            windowInsets.getInsets(statusBars());
+                    android.graphics.Insets displayCutoutInsets =
+                            windowInsets.getInsets(displayCutout());
+                    android.graphics.Insets min =
+                            android.graphics.Insets.min(statusBarInsets, displayCutoutInsets);
+                    boolean statusBarContainsCutout = !android.graphics.Insets.NONE.equals(min);
+                    Log.d(TAG, "statusBarContainsCutout=" + statusBarContainsCutout);
+                    displayPoint.y = statusBarContainsCutout
+                            ? bound.height() - min.top - min.bottom : bound.height();
+                    displayPoint.x = bound.width();
                     DisplayCutout dc = d.getCutout();
                     if (dc != null) {
                         // Means the device has a cutout area
@@ -138,7 +164,8 @@ public class MainInteractionSession extends VoiceInteractionSession {
                         }
                     }
                     Bundle bundle = new Bundle();
-                    bundle.putString(Utils.EXTRA_REMOTE_CALLBACK_ACTION, Utils.BROADCAST_CONTENT_VIEW_HEIGHT);
+                    bundle.putString(Utils.EXTRA_REMOTE_CALLBACK_ACTION,
+                            Utils.BROADCAST_CONTENT_VIEW_HEIGHT);
                     bundle.putInt(Utils.EXTRA_CONTENT_VIEW_HEIGHT, mContentView.getHeight());
                     bundle.putInt(Utils.EXTRA_CONTENT_VIEW_WIDTH, mContentView.getWidth());
                     bundle.putParcelable(Utils.EXTRA_DISPLAY_POINT, displayPoint);

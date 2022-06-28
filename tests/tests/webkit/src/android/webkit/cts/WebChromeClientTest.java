@@ -46,7 +46,6 @@ import java.util.concurrent.TimeUnit;
 
 @AppModeFull
 public class WebChromeClientTest extends ActivityInstrumentationTestCase2<WebViewCtsActivity> {
-    private static final long TEST_TIMEOUT = 5000L;
     private static final String JAVASCRIPT_UNLOAD = "javascript unload";
     private static final String LISTENER_ADDED = "listener added";
     private static final String TOUCH_RECEIVED = "touch received";
@@ -97,7 +96,7 @@ public class WebChromeClientTest extends ActivityInstrumentationTestCase2<WebVie
         String url = mWebServer.getAssetUrl(TestHtmlConstants.HELLO_WORLD_URL);
         mOnUiThread.loadUrlAndWaitForCompletion(url);
 
-        new PollingCheck(TEST_TIMEOUT) {
+        new PollingCheck(WebkitUtils.TEST_TIMEOUT_MS) {
             @Override
             protected boolean check() {
                 return webChromeClient.hadOnProgressChanged();
@@ -116,7 +115,7 @@ public class WebChromeClientTest extends ActivityInstrumentationTestCase2<WebVie
         String url = mWebServer.getAssetUrl(TestHtmlConstants.HELLO_WORLD_URL);
         mOnUiThread.loadUrlAndWaitForCompletion(url);
 
-        new PollingCheck(TEST_TIMEOUT) {
+        new PollingCheck(WebkitUtils.TEST_TIMEOUT_MS) {
             @Override
             protected boolean check() {
                 return webChromeClient.hadOnReceivedTitle();
@@ -148,7 +147,7 @@ public class WebChromeClientTest extends ActivityInstrumentationTestCase2<WebVie
         String url = mWebServer.getAssetUrl(TestHtmlConstants.HELLO_WORLD_URL);
         mOnUiThread.loadUrlAndWaitForCompletion(url);
 
-        new PollingCheck(TEST_TIMEOUT) {
+        new PollingCheck(WebkitUtils.TEST_TIMEOUT_MS) {
             @Override
             protected boolean check() {
                 return webChromeClient.hadOnReceivedIcon();
@@ -173,7 +172,7 @@ public class WebChromeClientTest extends ActivityInstrumentationTestCase2<WebVie
         mOnUiThread.loadUrlAndWaitForCompletion(mWebServer.
                 getAssetUrl(TestHtmlConstants.JS_WINDOW_URL));
 
-        new PollingCheck(TEST_TIMEOUT) {
+        new PollingCheck(WebkitUtils.TEST_TIMEOUT_MS) {
             @Override
             protected boolean check() {
                 return webChromeClient.hadOnCreateWindow();
@@ -181,7 +180,7 @@ public class WebChromeClientTest extends ActivityInstrumentationTestCase2<WebVie
         }.run();
 
         if (expectWindowClose) {
-            new PollingCheck(TEST_TIMEOUT) {
+            new PollingCheck(WebkitUtils.TEST_TIMEOUT_MS) {
                 @Override
                 protected boolean check() {
                     return webChromeClient.hadOnCloseWindow();
@@ -275,7 +274,7 @@ public class WebChromeClientTest extends ActivityInstrumentationTestCase2<WebVie
         String url = mWebServer.getAssetUrl(TestHtmlConstants.JS_ALERT_URL);
         mOnUiThread.loadUrlAndWaitForCompletion(url);
 
-        new PollingCheck(TEST_TIMEOUT) {
+        new PollingCheck(WebkitUtils.TEST_TIMEOUT_MS) {
             @Override
             protected boolean check() {
                 return webChromeClient.hadOnJsAlert();
@@ -300,7 +299,7 @@ public class WebChromeClientTest extends ActivityInstrumentationTestCase2<WebVie
         String url = mWebServer.getAssetUrl(TestHtmlConstants.JS_CONFIRM_URL);
         mOnUiThread.loadUrlAndWaitForCompletion(url);
 
-        new PollingCheck(TEST_TIMEOUT) {
+        new PollingCheck(WebkitUtils.TEST_TIMEOUT_MS) {
             @Override
             protected boolean check() {
                 return webChromeClient.hadOnJsConfirm();
@@ -327,14 +326,14 @@ public class WebChromeClientTest extends ActivityInstrumentationTestCase2<WebVie
         String url = mWebServer.getAssetUrl(TestHtmlConstants.JS_PROMPT_URL);
         mOnUiThread.loadUrlAndWaitForCompletion(url);
 
-        new PollingCheck(TEST_TIMEOUT) {
+        new PollingCheck(WebkitUtils.TEST_TIMEOUT_MS) {
             @Override
             protected boolean check() {
                 return webChromeClient.hadOnJsPrompt();
             }
         }.run();
         // the result returned by the client gets set as the page title
-        new PollingCheck(TEST_TIMEOUT) {
+        new PollingCheck(WebkitUtils.TEST_TIMEOUT_MS) {
             @Override
             protected boolean check() {
                 return mOnUiThread.getTitle().equals(promptResult);

@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,6 +50,8 @@ public class BaseHdmiCecCtsTest extends BaseHostJUnit4Test {
     private static final String POWER_CONTROL_MODE = "power_control_mode";
     private static final String POWER_STATE_CHANGE_ON_ACTIVE_SOURCE_LOST =
             "power_state_change_on_active_source_lost";
+    private static final String SET_MENU_LANGUAGE = "set_menu_language";
+    private static final String SET_MENU_LANGUAGE_ENABLED = "1";
 
     /** Enum contains the list of possible address types. */
     private enum AddressType {
@@ -164,10 +167,10 @@ public class BaseHdmiCecCtsTest extends BaseHostJUnit4Test {
         String line;
         String pattern =
                 "(.*?)"
-                        + "(mAddress: )"
+                        + "(mDeviceInfo:)(.*)(logical_address: )"
                         + "(?<"
                         + "logicalAddress"
-                        + ">\\p{Digit}{1,2})"
+                        + ">0x\\p{XDigit}{2})"
                         + "(.*?)";
         Pattern p = Pattern.compile(pattern);
         try {
@@ -369,9 +372,7 @@ public class BaseHdmiCecCtsTest extends BaseHostJUnit4Test {
     }
 
     public boolean isLanguageEditable() throws Exception {
-        String val = getDevice().executeShellCommand(
-                "getprop ro.hdmi.set_menu_language");
-        return val.trim().equals("true") ? true : false;
+        return getSettingsValue(SET_MENU_LANGUAGE).equals(SET_MENU_LANGUAGE_ENABLED);
     }
 
     public static String getSettingsValue(ITestDevice device, String setting) throws Exception {
@@ -383,14 +384,16 @@ public class BaseHdmiCecCtsTest extends BaseHostJUnit4Test {
         return getSettingsValue(getDevice(), setting);
     }
 
-    public static void setSettingsValue(ITestDevice device, String setting, String value)
+    public static String setSettingsValue(ITestDevice device, String setting, String value)
             throws Exception {
+        String val = getSettingsValue(device, setting);
         device.executeShellCommand("cmd hdmi_control cec_setting set " + setting + " " +
                 value);
+        return val;
     }
 
-    public void setSettingsValue(String setting, String value) throws Exception {
-        setSettingsValue(getDevice(), setting, value);
+    public String setSettingsValue(String setting, String value) throws Exception {
+        return setSettingsValue(getDevice(), setting, value);
     }
 
     public String getDeviceList() throws Exception {
@@ -501,22 +504,36 @@ public class BaseHdmiCecCtsTest extends BaseHostJUnit4Test {
                 .isEqualTo(wakefulness);
     }
 
+    /**
+     * Checks a given condition once every {@link HdmiCecConstants.SLEEP_TIMESTEP_SECONDS} seconds
+     * until it is true, or {@link HdmiCecConstants.MAX_SLEEP_TIME_SECONDS} seconds have passed.
+     * Triggers an assertion failure if the condition remains false after the time limit.
+     * @param condition Callable that returns whether the condition is met
+     * @param errorMessage The message to print if the condition is false
+     */
+    public void waitForCondition(Callable<Boolean> condition, String errorMessage)
+            throws Exception {
+        int waitTimeSeconds = 0;
+        boolean conditionState;
+        do {
+            TimeUnit.SECONDS.sleep(HdmiCecConstants.SLEEP_TIMESTEP_SECONDS);
+            waitTimeSeconds += HdmiCecConstants.SLEEP_TIMESTEP_SECONDS;
+            conditionState = condition.call();
+        } while (!conditionState && waitTimeSeconds <= HdmiCecConstants.MAX_SLEEP_TIME_SECONDS);
+        assertWithMessage(errorMessage).that(conditionState).isTrue();
+    }
+
     public void sendOtp() throws Exception {
         ITestDevice device = getDevice();
         device.executeShellCommand("cmd hdmi_control onetouchplay");
     }
 
     public String setPowerControlMode(String valToSet) throws Exception {
-        String val = getSettingsValue(POWER_CONTROL_MODE);
-        setSettingsValue(POWER_CONTROL_MODE, valToSet);
-        return val;
+        return setSettingsValue(POWER_CONTROL_MODE, valToSet);
     }
 
     public String setPowerStateChangeOnActiveSourceLost(String valToSet) throws Exception {
-        String previousPowerStateChange =
-                getSettingsValue(POWER_STATE_CHANGE_ON_ACTIVE_SOURCE_LOST);
-        setSettingsValue(POWER_STATE_CHANGE_ON_ACTIVE_SOURCE_LOST, valToSet);
-        return previousPowerStateChange;
+        return setSettingsValue(POWER_STATE_CHANGE_ON_ACTIVE_SOURCE_LOST, valToSet);
     }
 
     public boolean isDeviceActiveSource(ITestDevice device) throws DumpsysParseException {
@@ -554,6 +571,7 @@ public class BaseHdmiCecCtsTest extends BaseHostJUnit4Test {
             throws Exception {
         hdmiCecClient.clearClientOutput();
         device.executeShellCommand("cmd hdmi_control cec_setting set hdmi_cec_enabled 0");
+        waitForCondition(() -> !isCecAvailable(device), "Could not disable CEC");
         device.executeShellCommand("cmd hdmi_control cec_setting set hdmi_cec_enabled 1");
         // When a CEC device has just become available, the CEC adapter isn't able to send it
         // messages right away. Therefore we let the first <Give Power Status> message time-out, and
@@ -563,20 +581,36 @@ public class BaseHdmiCecCtsTest extends BaseHostJUnit4Test {
         hdmiCecClient.checkExpectedOutput(LogicalAddress.TV, CecOperand.GIVE_POWER_STATUS);
         hdmiCecClient.sendCecMessage(LogicalAddress.TV, source, CecOperand.REPORT_POWER_STATUS,
                 CecMessage.formatParams(HdmiCecConstants.CEC_POWER_STATUS_STANDBY));
-        checkIsCecAvailable(device);
+        waitForCondition(() -> isCecAvailable(device),
+                "Simulating that a sink is connected, failed.");
     }
 
-    private void checkIsCecAvailable(ITestDevice device) throws Exception {
-        boolean isCecAvailable;
-        int waitTimeSeconds = 0;
-        do {
-            TimeUnit.SECONDS.sleep(HdmiCecConstants.SLEEP_TIMESTEP_SECONDS);
-            waitTimeSeconds += HdmiCecConstants.SLEEP_TIMESTEP_SECONDS;
-            isCecAvailable =
-                    device.executeShellCommand("dumpsys hdmi_control | grep mIsCecAvailable:")
-                            .replace("mIsCecAvailable:", "").trim().equals("true");
-        } while (!isCecAvailable && waitTimeSeconds <= HdmiCecConstants.MAX_SLEEP_TIME_SECONDS);
-        assertWithMessage("Simulating that a sink is connected, failed.")
-                .that(isCecAvailable).isTrue();
+    boolean isCecAvailable(ITestDevice device) throws Exception {
+        return device.executeShellCommand("dumpsys hdmi_control | grep mIsCecAvailable:")
+                .replace("mIsCecAvailable:", "").trim().equals("true");
+    }
+
+    /**
+     * Returns whether an audio output device is using full volume behavior by checking if it is in
+     * the "mFullVolumeDevices" line in audio dumpsys. Example: "mFullVolumeDevices=0x400,0x40001".
+     */
+    public boolean isFullVolumeDevice(int audioOutputDevice) throws Exception {
+        String[] splitLine = getDevice().executeShellCommand(
+                "dumpsys audio | grep mFullVolumeDevices").split("=");
+        if (splitLine.length < 2) {
+            // No full volume devices
+            return false;
+        }
+        String[] deviceStrings = splitLine[1].trim().split(",");
+        for (String deviceString : deviceStrings) {
+            try {
+                if (Integer.decode(deviceString) == audioOutputDevice) {
+                    return true;
+                }
+            } catch (NumberFormatException e) {
+                // Ignore this device and continue
+            }
+        }
+        return false;
     }
 }

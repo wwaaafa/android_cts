@@ -20,12 +20,15 @@ import static android.app.admin.DevicePolicyManager.LOCK_TASK_FEATURE_HOME;
 import static android.app.admin.DevicePolicyManager.MAKE_USER_EPHEMERAL;
 import static android.app.admin.DevicePolicyManager.SKIP_SETUP_WIZARD;
 
+import static com.android.cts.verifier.Utils.flattenToShortString;
+
 import android.Manifest;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.KeyguardManager;
 import android.app.PendingIntent;
 import android.app.admin.DevicePolicyManager;
+import android.app.admin.WifiSsidPolicy;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -36,6 +39,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.BitmapFactory;
 import android.net.ProxyInfo;
+import android.net.wifi.WifiSsid;
 import android.os.Bundle;
 import android.os.PersistableBundle;
 import android.os.UserHandle;
@@ -43,6 +47,7 @@ import android.os.UserManager;
 import android.provider.ContactsContract;
 import android.provider.MediaStore;
 import android.provider.Settings;
+import android.util.ArraySet;
 import android.util.Log;
 import android.view.inputmethod.InputMethodInfo;
 import android.view.inputmethod.InputMethodManager;
@@ -55,9 +60,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -126,6 +134,9 @@ public class CommandReceiverActivity extends Activity {
     public static final String COMMAND_ENABLE_USB_DATA_SIGNALING = "enable-usb-data-signaling";
     public static final String COMMAND_SET_REQUIRED_PASSWORD_COMPLEXITY =
             "set-required-password-complexity";
+    public static final String COMMAND_SET_WIFI_SECURITY_LEVEL = "set-wifi-security-level";
+    public static final String COMMAND_SET_SSID_ALLOWLIST = "set-ssid-allowlist";
+    public static final String COMMAND_SET_SSID_DENYLIST = "set-ssid-denylist";
     public static final String COMMAND_CHECK_NEW_USER_DISCLAIMER = "check-new-user-disclaimer";
 
     public static final String EXTRA_USER_RESTRICTION =
@@ -253,9 +264,9 @@ public class CommandReceiverActivity extends Activity {
                 } break;
                 case COMMAND_SET_STATUSBAR_DISABLED: {
                     boolean enforced = intent.getBooleanExtra(EXTRA_ENFORCED, false);
-                    Log.d(TAG, "calling setStatusBarDisabled("
-                            + ComponentName.flattenToShortString(mAdmin) + ", " + enforced
-                            + ") using " + mDpm + " on user " + UserHandle.myUserId());
+                    Log.d(TAG, "calling setStatusBarDisabled(" + flattenToShortString(mAdmin)
+                            + ", " + enforced + ") using " + mDpm + " on user "
+                            + UserHandle.myUserId());
                     mDpm.setStatusBarDisabled(mAdmin, enforced);
                 } break;
                 case COMMAND_SET_LOCK_TASK_FEATURES: {
@@ -383,11 +394,29 @@ public class CommandReceiverActivity extends Activity {
                     uninstallHelperPackage();
                 } break;
                 case COMMAND_SET_PERMISSION_GRANT_STATE: {
-                    Log.d(TAG, "Granting permission using " + mDpm);
-                    mDpm.setPermissionGrantState(mAdmin, getPackageName(),
-                            intent.getStringExtra(EXTRA_PERMISSION),
-                            intent.getIntExtra(EXTRA_GRANT_STATE,
-                                    DevicePolicyManager.PERMISSION_GRANT_STATE_DEFAULT));
+                    String pkgName = getPackageName();
+                    String permission = intent.getStringExtra(EXTRA_PERMISSION);
+                    int grantState = intent.getIntExtra(EXTRA_GRANT_STATE,
+                            DevicePolicyManager.PERMISSION_GRANT_STATE_DEFAULT);
+                    String action;
+                    switch (grantState) {
+                        case DevicePolicyManager.PERMISSION_GRANT_STATE_GRANTED:
+                            action = "Granting " + permission;
+                            break;
+                        case DevicePolicyManager.PERMISSION_GRANT_STATE_DENIED:
+                            action = "Denying " + permission;
+                            break;
+                        case DevicePolicyManager.PERMISSION_GRANT_STATE_DEFAULT:
+                            action = "Setting " + permission + " to default state";
+                            break;
+                        default:
+                            action = "Setting grantState of " + permission + " to " + grantState;
+                    }
+                    Log.d(TAG, action + " to " + pkgName + " using " + mDpm);
+                    int stateBefore = mDpm.getPermissionGrantState(mAdmin, pkgName, permission);
+                    mDpm.setPermissionGrantState(mAdmin, pkgName, permission, grantState);
+                    int stateAfter = mDpm.getPermissionGrantState(mAdmin, pkgName, permission);
+                    Log.d(TAG, "Grant state: before=" + stateBefore + ", after=" + stateAfter);
                 } break;
                 case COMMAND_ADD_PERSISTENT_PREFERRED_ACTIVITIES: {
                     final ComponentName componentName =
@@ -563,7 +592,39 @@ public class CommandReceiverActivity extends Activity {
                             DevicePolicyManager.PASSWORD_COMPLEXITY_NONE);
                     Log.d(TAG, "calling setRequiredPasswordComplexity(" + complexity + ")");
                     mDpm.setRequiredPasswordComplexity(complexity);
-                }
+                } break;
+                case COMMAND_SET_WIFI_SECURITY_LEVEL: {
+                    int level = intent.getIntExtra(EXTRA_VALUE,
+                            DevicePolicyManager.WIFI_SECURITY_OPEN);
+                    Log.d(TAG, "calling setWifiSecurityLevel(" + level + ")");
+                    mDpm.setMinimumRequiredWifiSecurityLevel(level);
+                } break;
+                case COMMAND_SET_SSID_ALLOWLIST: {
+                    String ssid = intent.getStringExtra(EXTRA_VALUE);
+                    WifiSsidPolicy policy;
+                    if (ssid.isEmpty()) {
+                        policy = null;
+                    } else {
+                        Set<WifiSsid> ssids = new ArraySet<>(Arrays.asList(
+                                WifiSsid.fromBytes(ssid.getBytes(StandardCharsets.UTF_8))));
+                        policy = new WifiSsidPolicy(
+                                WifiSsidPolicy.WIFI_SSID_POLICY_TYPE_ALLOWLIST, ssids);
+                    }
+                    mDpm.setWifiSsidPolicy(policy);
+                } break;
+                case COMMAND_SET_SSID_DENYLIST: {
+                    String ssid = intent.getStringExtra(EXTRA_VALUE);
+                    WifiSsidPolicy policy;
+                    if (ssid.isEmpty()) {
+                        policy = null;
+                    } else {
+                        Set<WifiSsid> ssids = new ArraySet<>(Arrays.asList(
+                                WifiSsid.fromBytes(ssid.getBytes(StandardCharsets.UTF_8))));
+                        policy = new WifiSsidPolicy(
+                                WifiSsidPolicy.WIFI_SSID_POLICY_TYPE_DENYLIST, ssids);
+                    }
+                    mDpm.setWifiSsidPolicy(policy);
+                } break;
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to execute command: " + intent, e);
