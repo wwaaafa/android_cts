@@ -15,13 +15,8 @@
   -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          xmlns:tools="http://schemas.android.com/tools"
-          package="com.android.cts.packagemanager.verify.domain.device.standalone"
-          >
-
-    <uses-sdk android:minSdkVersion="14" android:targetSdkVersion="17"
-              tools:overrideLibrary="com.android.cts.packagemanager.verify.domain.constants.android"
-              />
+    package="com.android.cts.packagemanager.verify.domain.device.standalone"
+    >
 
     <application android:label="Device Test App" android:testOnly="true">
         <uses-library android:name="android.test.runner" />

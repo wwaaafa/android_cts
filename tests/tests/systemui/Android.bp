@@ -19,10 +19,8 @@ package {
 android_test {
     name: "CtsSystemUiTestCases",
     defaults: ["cts_defaults"],
-    min_sdk_version: "27",
     test_suites: [
         "cts",
-        "gts",
         "general-tests",
     ],
 
@@ -48,4 +46,12 @@ android_test {
         "src/**/*.kt",
     ],
     platform_apis: true,
+    data: [
+        ":CtsVpnFirewallApp",
+        ":PipTestApp",
+        ":CtsMockInputMethod",
+        ":AudioRecorderTestApp_AudioRecord",
+        ":AudioRecorderTestApp_MediaRecorder",
+    ],
+    per_testcase_directory: true,
 }

@@ -52,8 +52,8 @@ import androidx.test.InstrumentationRegistry;
 import androidx.test.rule.ActivityTestRule;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.compatibility.common.util.PollingCheck;
 import com.android.compatibility.common.util.WidgetTestUtils;
+import com.android.compatibility.common.util.WindowUtil;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -92,7 +92,7 @@ public class MagnifierTest {
     @Before
     public void setup() throws Throwable {
         mActivity = mActivityRule.getActivity();
-        PollingCheck.waitFor(mActivity::hasWindowFocus);
+        WindowUtil.waitForFocus(mActivity);
 
         mDisplayMetrics = mActivity.getResources().getDisplayMetrics();
         // Do not run the tests, unless the device screen is big enough to fit a magnifier

@@ -42,6 +42,7 @@
     <uses-permission android:name="android.permission.WRITE_CALENDAR"/>
     <uses-permission android:name="android.permission.REQUEST_PASSWORD_COMPLEXITY"/>
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application android:largeHeap="true"
                  android:testOnly="true">
@@ -205,6 +206,7 @@
             <intent-filter>
                 <action android:name="com.android.cts.managedprofile.WIPE_DATA"/>
                 <action android:name="com.android.cts.managedprofile.WIPE_DATA_WITH_REASON"/>
+                <action android:name="com.android.cts.managedprofile.WIPE_DATA_WITHOUT_REASON"/>
             </intent-filter>
         </receiver>
 

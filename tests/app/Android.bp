@@ -60,6 +60,26 @@ android_test {
     },
     // Even with coverage disabled, we're close to the single dex limit, so allow use of multi-dex.
     dxflags: ["--multi-dex"],
+    data: [
+        ":CtsSimpleApp",
+        ":CtsAppTestStubs",
+        ":CtsAppTestStubsApp1",
+        ":CtsAppTestStubsApp3",
+        ":CtsAppTestStubsApp2",
+        ":CtsAppTestStubsApi30",
+        ":CtsBadProviderStubs",
+        ":CtsCantSaveState1",
+        ":CtsCantSaveState2",
+        ":NotificationApp",
+        ":NotificationProvider",
+        ":NotificationListener",
+        ":StorageDelegator",
+        ":CtsActivityManagerApi29",
+        ":NotificationTrampoline",
+        ":NotificationTrampolineApi30",
+        ":NotificationTrampolineApi32",
+    ],
+    per_testcase_directory: true,
 }
 
 android_test {
@@ -152,9 +172,13 @@ android_test {
         "cts-wm-util",
         "libprotobuf-java-lite",
     ],
+    aidl: {
+        local_include_dirs: ["app/src"],
+    },
     srcs: [
         ":libtombstone_proto-src",
         "AppExitTest/src/**/*.java",
+        "app/src/**/*.aidl",
         "src/android/app/cts/android/app/cts/tools/WatchUidRunner.java",
     ],
     jarjar_rules: "AppExitTest/jarjar-rules.txt",
@@ -165,4 +189,10 @@ android_test {
     manifest: "AppExitTest/AndroidManifest.xml",
     test_config: "AppExitTest/AndroidTest.xml",
     platform_apis: true,
+    data: [
+        ":CtsSimpleApp",
+        ":CtsExternalServiceService",
+        ":CtsAppTestStubs",
+    ],
+    per_testcase_directory: true,
 }

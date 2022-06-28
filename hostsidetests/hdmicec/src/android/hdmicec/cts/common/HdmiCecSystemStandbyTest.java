@@ -36,7 +36,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-/** HDMI CEC test to verify the device handles standby correctly (Section 11.1.3, 11.2.3) */
+/**
+ * HDMI CEC test to verify the device handles standby correctly (Section 11.1.3, 11.2.3)
+ */
 @RunWith(DeviceJUnit4ClassRunner.class)
 public final class HdmiCecSystemStandbyTest extends BaseHdmiCecCtsTest {
 
@@ -50,7 +52,8 @@ public final class HdmiCecSystemStandbyTest extends BaseHdmiCecCtsTest {
 
     @Rule
     public RuleChain ruleChain =
-            RuleChain.outerRule(CecRules.requiresCec(this))
+            RuleChain
+                    .outerRule(CecRules.requiresCec(this))
                     .around(CecRules.requiresLeanback(this))
                     .around(hdmiCecClient);
 
@@ -83,7 +86,7 @@ public final class HdmiCecSystemStandbyTest extends BaseHdmiCecCtsTest {
                 WakeLockHelper.acquirePartialWakeLock(device);
                 hdmiCecClient.sendCecMessage(source, LogicalAddress.BROADCAST, CecOperand.STANDBY);
                 checkStandbyAndWakeUp();
-    }
+            }
         }
     }
 
@@ -100,7 +103,7 @@ public final class HdmiCecSystemStandbyTest extends BaseHdmiCecCtsTest {
                 WakeLockHelper.acquirePartialWakeLock(device);
                 hdmiCecClient.sendCecMessage(source, CecOperand.STANDBY);
                 checkStandbyAndWakeUp();
-    }
+            }
         }
     }
 
@@ -132,7 +135,7 @@ public final class HdmiCecSystemStandbyTest extends BaseHdmiCecCtsTest {
         mLogicalAddresses.add(LogicalAddress.AUDIO_SYSTEM);
 
         if (hasDeviceType(HdmiCecConstants.CEC_DEVICE_TYPE_TV)) {
-            // Add logical addresses 13, 14 only for TV panel tests.
+            //Add logical addresses 13, 14 only for TV panel tests.
             mLogicalAddresses.add(LogicalAddress.RESERVED_2);
             mLogicalAddresses.add(LogicalAddress.SPECIFIC_USE);
         }

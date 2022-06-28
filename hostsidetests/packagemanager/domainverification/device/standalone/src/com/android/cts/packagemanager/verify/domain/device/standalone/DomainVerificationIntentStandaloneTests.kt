@@ -17,9 +17,6 @@
 package com.android.cts.packagemanager.verify.domain.device.standalone
 
 import android.content.pm.verify.domain.DomainVerificationUserState
-import android.os.Build
-import com.android.compatibility.common.util.ApiLevelUtil
-import com.android.compatibility.common.util.CtsDownstreamingTest
 import com.android.compatibility.common.util.SystemUtil
 import com.android.cts.packagemanager.verify.domain.android.DomainUtils.DECLARING_PKG_1_COMPONENT
 import com.android.cts.packagemanager.verify.domain.android.DomainUtils.DECLARING_PKG_2_COMPONENT
@@ -29,22 +26,12 @@ import com.android.cts.packagemanager.verify.domain.java.DomainUtils.DECLARING_P
 import com.android.cts.packagemanager.verify.domain.java.DomainUtils.DOMAIN_1
 import com.android.cts.packagemanager.verify.domain.java.DomainUtils.DOMAIN_2
 import com.google.common.truth.Truth.assertThat
-import org.junit.Assume.assumeTrue
-import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
 class DomainVerificationIntentStandaloneTests : DomainVerificationIntentTestBase(DOMAIN_1) {
-
-    companion object {
-        @JvmStatic
-        @BeforeClass
-        fun assumeAtLeastS() {
-            assumeTrue(ApiLevelUtil.isAtLeast(Build.VERSION_CODES.S))
-        }
-    }
 
     @Test
     fun launchVerified() {
@@ -87,7 +74,6 @@ class DomainVerificationIntentStandaloneTests : DomainVerificationIntentTestBase
         assertResolvesTo(browsers)
     }
 
-    @CtsDownstreamingTest
     @Test
     fun launchSelectedPreservedOnUpdate() {
         setAppLinks(DECLARING_PKG_NAME_1, false, DOMAIN_1, DOMAIN_2)
@@ -176,7 +162,6 @@ class DomainVerificationIntentStandaloneTests : DomainVerificationIntentTestBase
         assertResolvesTo(browsers)
     }
 
-    @CtsDownstreamingTest
     @Test
     fun disableHandlingWhenVerifiedPreservedOnUpdate() {
         setAppLinks(DECLARING_PKG_NAME_1, true, DOMAIN_1, DOMAIN_2)
@@ -207,7 +192,6 @@ class DomainVerificationIntentStandaloneTests : DomainVerificationIntentTestBase
         assertResolvesTo(browsers)
     }
 
-    @CtsDownstreamingTest
     @Test
     fun disableHandlingWhenSelectedPreservedOnUpdate() {
         setAppLinksUserSelection(DECLARING_PKG_NAME_1, userId, true, DOMAIN_1, DOMAIN_2)
@@ -225,5 +209,50 @@ class DomainVerificationIntentStandaloneTests : DomainVerificationIntentTestBase
         ).isEqualTo("Success")
 
         assertResolvesTo(browsers)
+    }
+
+    @Test
+    fun newVerifyTakesOverSelected() {
+        setAppLinksUserSelection(DECLARING_PKG_NAME_2, userId, true, DOMAIN_1, DOMAIN_2)
+        assertResolvesTo(DECLARING_PKG_2_COMPONENT, DOMAIN_1)
+        assertResolvesTo(DECLARING_PKG_2_COMPONENT, DOMAIN_2)
+
+        setAppLinks(DECLARING_PKG_NAME_1, true, DOMAIN_1)
+        assertResolvesTo(DECLARING_PKG_1_COMPONENT, DOMAIN_1)
+        assertResolvesTo(DECLARING_PKG_2_COMPONENT, DOMAIN_2)
+
+        setAppLinksAllowed(DECLARING_PKG_NAME_1, userId, false)
+        assertResolvesTo(browsers, DOMAIN_1)
+        assertResolvesTo(DECLARING_PKG_2_COMPONENT, DOMAIN_2)
+
+        // Re-select package 2 and re-verify the disabled package 1, should maintain package 2
+        setAppLinksUserSelection(DECLARING_PKG_NAME_2, userId, true, DOMAIN_1)
+        assertResolvesTo(DECLARING_PKG_2_COMPONENT, DOMAIN_1)
+        assertResolvesTo(DECLARING_PKG_2_COMPONENT, DOMAIN_2)
+
+        setAppLinks(DECLARING_PKG_NAME_1, true, DOMAIN_1)
+        assertResolvesTo(DECLARING_PKG_2_COMPONENT, DOMAIN_1)
+        assertResolvesTo(DECLARING_PKG_2_COMPONENT, DOMAIN_2)
+    }
+
+    @Test
+    fun newVerifyDoesNotTakesOverSelectedWhenLinkHandlingDisabled() {
+        setAppLinksUserSelection(DECLARING_PKG_NAME_2, userId, true, DOMAIN_1, DOMAIN_2)
+        assertResolvesTo(DECLARING_PKG_2_COMPONENT, DOMAIN_1)
+        assertResolvesTo(DECLARING_PKG_2_COMPONENT, DOMAIN_2)
+
+        setAppLinksAllowed(DECLARING_PKG_NAME_1, userId, false)
+        setAppLinks(DECLARING_PKG_NAME_1, true, DOMAIN_1)
+        assertResolvesTo(DECLARING_PKG_2_COMPONENT, DOMAIN_1)
+        assertResolvesTo(DECLARING_PKG_2_COMPONENT, DOMAIN_2)
+
+        // Re-select package 2 and re-verify the disabled package 1, should maintain package 2
+        setAppLinksUserSelection(DECLARING_PKG_NAME_2, userId, true, DOMAIN_1)
+        assertResolvesTo(DECLARING_PKG_2_COMPONENT, DOMAIN_1)
+        assertResolvesTo(DECLARING_PKG_2_COMPONENT, DOMAIN_2)
+
+        setAppLinks(DECLARING_PKG_NAME_1, true, DOMAIN_1)
+        assertResolvesTo(DECLARING_PKG_2_COMPONENT, DOMAIN_1)
+        assertResolvesTo(DECLARING_PKG_2_COMPONENT, DOMAIN_2)
     }
 }
