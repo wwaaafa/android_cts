@@ -18,7 +18,7 @@ package android.photopicker.cts;
 
 import static android.photopicker.cts.util.PhotoPickerAssertionsUtils.assertPickerUriFormat;
 import static android.photopicker.cts.util.PhotoPickerAssertionsUtils.assertRedactedReadOnlyAccess;
-import static android.photopicker.cts.util.PhotoPickerFilesUtils.createImagesAndGetUris;
+import static android.photopicker.cts.util.PhotoPickerFilesUtils.createImages;
 import static android.photopicker.cts.util.PhotoPickerFilesUtils.deleteMedia;
 import static android.photopicker.cts.util.PhotoPickerUiUtils.SHORT_TIMEOUT;
 import static android.photopicker.cts.util.PhotoPickerUiUtils.findAddButton;
@@ -81,7 +81,7 @@ public class PhotoPickerCrossProfileTest extends PhotoPickerBaseTest {
     @SdkSuppress(minSdkVersion = 32, codeName = "T")
     public void testWorkApp_canAccessPersonalProfileContents() throws Exception {
         final int imageCount = 2;
-        mUriList.addAll(createImagesAndGetUris(imageCount, sDeviceState.primaryUser().id()));
+        createImages(imageCount, sDeviceState.primaryUser().id(), mUriList);
 
         Intent intent = new Intent(MediaStore.ACTION_PICK_IMAGES);
         intent.putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, imageCount);

@@ -26,7 +26,6 @@ import android.photopicker.cts.R;
 import android.provider.MediaStore;
 import android.provider.cts.ProviderTestUtils;
 import android.provider.cts.media.MediaStoreUtils;
-import android.util.Pair;
 
 import androidx.test.InstrumentationRegistry;
 
@@ -35,7 +34,6 @@ import com.android.compatibility.common.util.ShellUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -44,55 +42,24 @@ import java.util.List;
 public class PhotoPickerFilesUtils {
     public static final String DISPLAY_NAME_PREFIX = "ctsPhotoPicker";
 
-    public static List<Uri> createImagesAndGetUris(int count, int userId)
+    public static void createImages(int count, int userId, List<Uri> uriList)
             throws Exception {
-        return createImagesAndGetUris(count, userId, /* isFavorite */ false);
+        createImages(count, userId, uriList, false);
     }
 
-    public static List<Uri> createImagesAndGetUris(int count, int userId, boolean isFavorite)
+    public static void createImages(int count, int userId, List<Uri> uriList, boolean isFavorite)
             throws Exception {
-        List<Pair<Uri, String>> createdImagesData = createImagesAndGetUriAndPath(count, userId,
-                isFavorite);
-
-        List<Uri> uriList = new ArrayList<>();
-        for (Pair<Uri, String> createdImageData: createdImagesData) {
-            uriList.add(createdImageData.first);
-        }
-
-        return uriList;
-    }
-
-    /**
-     * Create multiple images according to the given parameters and returns the uris and filenames
-     * of the images created.
-     *
-     * @param count number of images to create
-     * @param userId user id to create images in
-     *
-     * @return list of data (uri and filename pair) about the images created
-     */
-    public static List<Pair<Uri, String>> createImagesAndGetUriAndPath(int count, int userId,
-            boolean isFavorite) throws Exception {
-        List<Pair<Uri, String>> createdImagesData = new ArrayList<>();
-
         for (int i = 0; i < count; i++) {
-            Pair<Uri, String> createdImageData = createImage(userId, isFavorite);
-            createdImagesData.add(createdImageData);
-            clearMediaOwner(createdImageData.first, userId);
+            final Uri uri = createImage(userId, isFavorite);
+            uriList.add(uri);
+            clearMediaOwner(uri, userId);
         }
         // Wait for Picker db sync to complete
         MediaStore.waitForIdle(InstrumentationRegistry.getContext().getContentResolver());
-
-        return createdImagesData;
     }
 
-    public static Pair<Uri, String> createImage(int userId, boolean isFavorite) throws Exception {
-        return getPermissionAndStageMedia(R.raw.lg_g4_iso_800_jpg,
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/jpeg", userId, isFavorite);
-    }
-
-    public static List<Uri> createDNGVideosAndGetUris(int count, int userId) throws Exception {
-        List<Uri> uriList = new ArrayList<>();
+    public static void createDNGVideos(int count, int userId, List<Uri> uriList)
+            throws Exception {
         for (int i = 0; i < count; i++) {
             final Uri uri = createDNGVideo(userId);
             uriList.add(uri);
@@ -100,12 +67,10 @@ public class PhotoPickerFilesUtils {
         }
         // Wait for Picker db sync to complete
         MediaStore.waitForIdle(InstrumentationRegistry.getContext().getContentResolver());
-
-        return uriList;
     }
 
-    public static List<Uri> createVideosAndGetUris(int count, int userId) throws Exception {
-        List<Uri> uriList = new ArrayList<>();
+    public static void createVideos(int count, int userId, List<Uri> uriList)
+            throws Exception {
         for (int i = 0; i < count; i++) {
             final Uri uri = createVideo(userId);
             uriList.add(uri);
@@ -113,8 +78,6 @@ public class PhotoPickerFilesUtils {
         }
         // Wait for Picker db sync to complete
         MediaStore.waitForIdle(InstrumentationRegistry.getContext().getContentResolver());
-
-        return uriList;
     }
 
     public static void deleteMedia(Uri uri, Context context) throws Exception {
@@ -132,19 +95,26 @@ public class PhotoPickerFilesUtils {
     }
 
     private static Uri createDNGVideo(int userId) throws Exception {
-        return getPermissionAndStageMedia(R.raw.test_video_dng,
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI, "video/mp4", userId,
-                /* isFavorite */ false).first;
+        final Uri uri = stageMedia(R.raw.test_video_dng,
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI, "video/mp4", userId);
+        return uri;
     }
 
     private static Uri createVideo(int userId) throws Exception {
-        return getPermissionAndStageMedia(R.raw.test_video,
-                MediaStore.Video.Media.EXTERNAL_CONTENT_URI, "video/mp4", userId,
-                /* isFavorite */ false).first;
+        final Uri uri = stageMedia(R.raw.test_video,
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI, "video/mp4", userId);
+        return uri;
     }
 
-    private static Pair<Uri, String> getPermissionAndStageMedia(int resId, Uri collectionUri,
-            String mimeType, int userId, boolean isFavorite) throws Exception {
+    private static Uri createImage(int userId, boolean isFavorite) throws Exception {
+        final Uri uri = stageMedia(R.raw.lg_g4_iso_800_jpg,
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/jpeg", userId, isFavorite);
+        return uri;
+    }
+
+    private static Uri stageMedia(int resId, Uri collectionUri, String mimeType, int userId,
+            boolean isFavorite) throws
+            Exception {
         UiAutomation uiAutomation = InstrumentationRegistry.getInstrumentation().getUiAutomation();
         uiAutomation.adoptShellPermissionIdentity(
                 android.Manifest.permission.INTERACT_ACROSS_USERS,
@@ -160,8 +130,14 @@ public class PhotoPickerFilesUtils {
         }
     }
 
-    private static Pair<Uri, String> stageMedia(int resId, Uri collectionUri, String mimeType,
-            Context context, boolean isFavorite) throws IOException {
+    private static Uri stageMedia(int resId, Uri collectionUri, String mimeType, int userId) throws
+            Exception {
+        return stageMedia(resId, collectionUri, mimeType, userId, false);
+    }
+
+    private static Uri stageMedia(int resId, Uri collectionUri, String mimeType, Context context,
+            boolean isFavorite)
+            throws IOException {
         final String displayName = DISPLAY_NAME_PREFIX + System.nanoTime();
         final MediaStoreUtils.PendingParams params = new MediaStoreUtils.PendingParams(
                 collectionUri, displayName, mimeType);
@@ -173,7 +149,7 @@ public class PhotoPickerFilesUtils {
                  OutputStream target = session.openOutputStream()) {
                 FileUtils.copy(source, target);
             }
-            return new Pair(session.publish(), displayName);
+            return session.publish();
         }
     }
 }
