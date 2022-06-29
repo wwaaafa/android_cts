@@ -21,13 +21,14 @@ import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
+import static android.provider.Settings.Secure.IMMERSIVE_MODE_CONFIRMATIONS;
 import static android.server.wm.DisplayCutoutTests.TestActivity.EXTRA_CUTOUT_MODE;
 import static android.server.wm.DisplayCutoutTests.TestActivity.EXTRA_ORIENTATION;
 import static android.server.wm.DisplayCutoutTests.TestDef.Which.DISPATCHED;
 import static android.server.wm.DisplayCutoutTests.TestDef.Which.ROOT;
+import static android.util.DisplayMetrics.DENSITY_DEFAULT;
 import static android.view.Display.DEFAULT_DISPLAY;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
-import static android.util.DisplayMetrics.DENSITY_DEFAULT;
 import static android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS;
 import static android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT;
 import static android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER;
@@ -57,12 +58,11 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Insets;
 import android.graphics.Path;
-import android.graphics.Point;
 import android.graphics.Rect;
-import android.hardware.display.DisplayManager;
 import android.os.Bundle;
 import android.platform.test.annotations.Presubmit;
-import android.view.Display;
+import android.provider.Settings;
+import android.server.wm.settings.SettingsSession;
 import android.view.DisplayCutout;
 import android.view.View;
 import android.view.ViewGroup;
@@ -72,13 +72,15 @@ import android.view.WindowInsets.Type;
 
 import androidx.test.rule.ActivityTestRule;
 
-import com.android.compatibility.common.util.PollingCheck;
+import com.android.compatibility.common.util.WindowUtil;
 
 import org.hamcrest.CustomTypeSafeMatcher;
 import org.hamcrest.FeatureMatcher;
 import org.hamcrest.Matcher;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
@@ -100,6 +102,8 @@ import java.util.stream.Collectors;
 @android.server.wm.annotation.Group3
 @RunWith(Parameterized.class)
 public class DisplayCutoutTests {
+    private static SettingsSession<String> sImmersiveModeConfirmationSetting;
+
     static final String LEFT = "left";
     static final String TOP = "top";
     static final String RIGHT = "right";
@@ -138,6 +142,21 @@ public class DisplayCutoutTests {
     // OEMs can have an option not to letterbox, if the cutout overlaps at most
     // 16 dp with app windows/contents for the apps using DEFAULT and SHORT_EDGES.
     private int mMaximumSizeForNoLetterbox;
+
+    @BeforeClass
+    public static void setUpClass() {
+        sImmersiveModeConfirmationSetting = new SettingsSession<>(
+                Settings.Secure.getUriFor(IMMERSIVE_MODE_CONFIRMATIONS),
+                Settings.Secure::getString, Settings.Secure::putString);
+        sImmersiveModeConfirmationSetting.set("confirmed");
+    }
+
+    @AfterClass
+    public static void tearDownClass() {
+        if (sImmersiveModeConfirmationSetting != null) {
+            sImmersiveModeConfirmationSetting.close();
+        }
+    }
 
     @Before
     public void setUp() throws Exception {
@@ -195,6 +214,38 @@ public class DisplayCutoutTests {
         assertTrue(boundBottom.equals(displayCutout.getBoundingRectBottom()));
 
         assertEquals(waterfallInsets, displayCutout.getWaterfallInsets());
+    }
+
+    @Test
+    public void testBuilder() {
+        final Insets safeInsets = Insets.of(1, 2, 1, 0);
+        final Insets waterfallInsets = Insets.of(1, 0, 1, 0);
+        final Rect boundingLeft = new Rect(5, 6, 7, 8);
+        final Rect boundingRectTop = new Rect(9, 0, 10, 1);
+        final Rect boundingRight = new Rect(2, 3, 4, 5);
+        final Rect boundingBottom = new Rect(6, 7, 8, 9);
+        final Path cutoutPath = new Path();
+
+        final DisplayCutout displayCutout = new DisplayCutout.Builder()
+                .setSafeInsets(safeInsets)
+                .setWaterfallInsets(waterfallInsets)
+                .setBoundingRectLeft(boundingLeft)
+                .setBoundingRectTop(boundingRectTop)
+                .setBoundingRectRight(boundingRight)
+                .setBoundingRectBottom(boundingBottom)
+                .setCutoutPath(cutoutPath)
+                .build();
+
+        assertEquals(safeInsets.left, displayCutout.getSafeInsetLeft());
+        assertEquals(safeInsets.top, displayCutout.getSafeInsetTop());
+        assertEquals(safeInsets.right, displayCutout.getSafeInsetRight());
+        assertEquals(safeInsets.bottom, displayCutout.getSafeInsetBottom());
+        assertEquals(waterfallInsets, displayCutout.getWaterfallInsets());
+        assertEquals(boundingLeft, displayCutout.getBoundingRectLeft());
+        assertEquals(boundingRectTop, displayCutout.getBoundingRectTop());
+        assertEquals(boundingRight, displayCutout.getBoundingRectRight());
+        assertEquals(boundingBottom, displayCutout.getBoundingRectBottom());
+        assertEquals(cutoutPath, displayCutout.getCutoutPath());
     }
 
     @Test
@@ -464,7 +515,7 @@ public class DisplayCutoutTests {
 
     private boolean canLayoutInDisplayCutoutWithoutLetterbox(int cutoutMode) {
         return cutoutMode == LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
-                ||cutoutMode == LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+                || cutoutMode == LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
     }
 
     private boolean hasBound(String position, DisplayCutout cutout, Rect appBound) {
@@ -584,7 +635,7 @@ public class DisplayCutoutTests {
         final T activity = rule.launchActivity(
                 new Intent().putExtra(EXTRA_CUTOUT_MODE, cutoutMode)
                         .putExtra(EXTRA_ORIENTATION, orientation));
-        PollingCheck.waitFor(activity::hasWindowFocus);
+        WindowUtil.waitForFocus(activity);
         final WindowManagerStateHelper wmState = new WindowManagerStateHelper();
         wmState.waitForAppTransitionIdleOnDisplay(DEFAULT_DISPLAY);
         wmState.waitForDisplayUnfrozen();

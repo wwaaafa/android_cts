@@ -31,6 +31,7 @@ import android.Manifest.permission.CAMERA
 import android.Manifest.permission.GET_ACCOUNTS
 import android.Manifest.permission.NEARBY_WIFI_DEVICES
 import android.Manifest.permission.PACKAGE_USAGE_STATS
+import android.Manifest.permission.POST_NOTIFICATIONS
 import android.Manifest.permission.PROCESS_OUTGOING_CALLS
 import android.Manifest.permission.READ_CALENDAR
 import android.Manifest.permission.READ_CALL_LOG
@@ -157,6 +158,7 @@ class RuntimePermissionProperties {
 
         // Add runtime permissions added in T which were _not_ split from a previously existing
         // runtime permission
+        expectedPerms.add(POST_NOTIFICATIONS)
         expectedPerms.add(NEARBY_WIFI_DEVICES)
 
         assertThat(expectedPerms).containsExactlyElementsIn(platformRuntimePerms.map { it.name })

@@ -16,6 +16,8 @@
 
 package com.android.cts.deviceowner;
 
+import static android.os.UserManager.USER_OPERATION_SUCCESS;
+
 import static com.google.common.truth.Truth.assertWithMessage;
 
 import static org.testng.Assert.expectThrows;
@@ -29,6 +31,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.IBinder;
 import android.os.PersistableBundle;
 import android.os.RemoteException;
@@ -170,7 +173,7 @@ public class CreateAndManageUserTest extends BaseDeviceOwnerTest {
                 BasicAdminReceiver.ACTION_USER_STOPPED, BasicAdminReceiver.ACTION_USER_REMOVED);
 
         callback.runAndUnregisterSelf(
-                () -> stopUserAndCheckResult(userHandle, UserManager.USER_OPERATION_SUCCESS));
+                () -> stopUserAndCheckResult(userHandle, USER_OPERATION_SUCCESS));
 
         // It's running just one operation (which issues a ACTION_USER_STOPPED), but as the
         // user is ephemeral, it will be automatically removed (which issues a
@@ -182,13 +185,28 @@ public class CreateAndManageUserTest extends BaseDeviceOwnerTest {
     @SuppressWarnings("unused")
     private static void logoutUser(Context context, DevicePolicyManager devicePolicyManager,
             ComponentName componentName) {
-        Log.d(TAG, "calling logutUser() on user " + context.getUserId());
+        Log.d(TAG, "calling logoutUser() on user " + context.getUserId());
         int result = devicePolicyManager.logoutUser(componentName);
-        Log.d(TAG, "result: " + result);
-        assertUserOperationResult(result, UserManager.USER_OPERATION_SUCCESS, "cannot logout user");
+        Log.d(TAG, "result: " + userOperationResultToString(result));
+        assertUserOperationResult(result, USER_OPERATION_SUCCESS, "cannot logout user");
+    }
+
+    private void clearLogoutUserIfNecessary() throws Exception {
+        UserHandle userHandle = mDevicePolicyManager.getLogoutUser();
+        Log.d(TAG, "clearLogoutUserIfNecessary(): logoutUser=" + userHandle);
+        if (userHandle == null) {
+            Log.d(TAG, "clearLogoutUserIfNecessary(): Saul Goodman!");
+            return;
+        }
+        Log.w(TAG, "test started with a logout user (" + userHandle + "); logging out");
+        int result = SystemUtil
+                .callWithShellPermissionIdentity(() -> mDevicePolicyManager.logoutUser());
+        Log.d(TAG, "Result: " + userOperationResultToString(result));
     }
 
     public void testCreateAndManageUser_LogoutUser() throws Exception {
+        clearLogoutUserIfNecessary();
+
         UserActionCallback callback = UserActionCallback.getCallbackForBroadcastActions(
                 getContext(),
                 BasicAdminReceiver.ACTION_USER_STARTED, BasicAdminReceiver.ACTION_USER_STOPPED);
@@ -196,11 +214,39 @@ public class CreateAndManageUserTest extends BaseDeviceOwnerTest {
         UserHandle userHandle = runCrossUserVerification(callback,
                 /* createAndManageUserFlags= */ 0, "logoutUser", /* currentUserPackages= */ null);
 
-        assertWithMessage("user on broadcasts").that(callback.getUsersOnReceivedBroadcasts())
-                .containsExactly(userHandle, userHandle);
+        List<UserHandle> users = callback.getUsersOnReceivedBroadcasts();
+        Log.d(TAG, "users on brodcast: " + users);
+        assertWithMessage("users on broadcast").that(users).containsExactly(userHandle, userHandle);
+        assertWithMessage("final logout user").that(mDevicePolicyManager.getLogoutUser())
+                .isNull();
+    }
+
+    public void testCreateAndManageUser_LogoutUser_systemApi() throws Exception {
+        clearLogoutUserIfNecessary();
+
+        UserHandle currentUser = getCurrentUser();
+        UserHandle newUser = createAndManageUser();
+        List<UserHandle> usersOnBroadcasts = switchUserAndWaitForBroadcasts(newUser);
+        Log.d(TAG, "users on switch broadcast: " + usersOnBroadcasts);
+        assertWithMessage("user on broadcasts").that(usersOnBroadcasts).containsExactly(newUser,
+                newUser);
+        assertWithMessage("logout user after switch").that(mDevicePolicyManager.getLogoutUser())
+                .isEqualTo(currentUser);
+
+        List<UserHandle> users = logoutUserUsingSystemApiAndWaitForBroadcasts();
+        Log.d(TAG, "users on logout broadcast: " + users);
+        assertWithMessage("users on broadcast").that(users).containsExactly(currentUser);
+        assertWithMessage("final logout user").that(mDevicePolicyManager.getLogoutUser())
+                .isNull();
     }
 
     public void testCreateAndManageUser_newUserDisclaimer() throws Exception {
+        if (Build.IS_USER) {
+            Log.i(TAG, "Skipping testCreateAndManageUser_newUserDisclaimer on user build");
+            // TODO(b/220386262): STOPSHIP re-enable once fixed and/or migrated to new testing infra
+            return;
+        }
+
         // First check that the current user doesn't need it
         UserHandle currentUser = getCurrentUser();
         Log.d(TAG, "Checking if current user (" + currentUser + ") is acked");
@@ -352,6 +398,7 @@ public class CreateAndManageUserTest extends BaseDeviceOwnerTest {
         return runCrossUserVerification(callback, createAndManageUserFlags, methodName,
                 /* switchUser= */ false, currentUserPackages);
     }
+
     private UserHandle runCrossUserVerificationSwitchingUser(String methodName) throws Exception {
         return runCrossUserVerification(/* callback= */ null, /* createAndManageUserFlags= */ 0,
                 methodName, /* switchUser= */ true, /* currentUserPackages= */ null);
@@ -460,8 +507,31 @@ public class CreateAndManageUserTest extends BaseDeviceOwnerTest {
                 BasicAdminReceiver.ACTION_USER_STARTED, BasicAdminReceiver.ACTION_USER_SWITCHED);
 
         callback.runAndUnregisterSelf(() -> {
+            Log.d(TAG, "Calling switchUser() on callback");
             boolean switched = mDevicePolicyManager.switchUser(getWho(), userHandle);
+            Log.d(TAG, "Switched: " + switched);
             assertWithMessage("switched to user %s", userHandle).that(switched).isTrue();
+        });
+        return callback.getUsersOnReceivedBroadcasts();
+    }
+
+    /**
+     * Logouts the current user using {@link DevicePolicyManager#logoutUser()}, or fails if the
+     * user could not be logged out or if the expected broadcasts were not received in time.
+     *
+     * @return users received in the broadcasts
+     */
+    private List<UserHandle> logoutUserUsingSystemApiAndWaitForBroadcasts()
+            throws Exception {
+        UserActionCallback callback = UserActionCallback.getCallbackForBroadcastActions(
+                getContext(), BasicAdminReceiver.ACTION_USER_SWITCHED);
+        Log.d(TAG, "Logging out current user (" + getCurrentUser() + ") using system API");
+
+        callback.runAndUnregisterSelf(() -> {
+            int result = SystemUtil
+                    .callWithShellPermissionIdentity(() -> mDevicePolicyManager.logoutUser());
+            Log.d(TAG, "Result: " + userOperationResultToString(result));
+            assertUserOperationResult(result, USER_OPERATION_SUCCESS, "logout user");
         });
         return callback.getUsersOnReceivedBroadcasts();
     }
@@ -519,8 +589,8 @@ public class CreateAndManageUserTest extends BaseDeviceOwnerTest {
 
     private List<UserHandle> startUserInBackgroundAndWaitForBroadcasts(UserActionCallback callback,
             UserHandle userHandle) throws Exception {
-        callback.runAndUnregisterSelf(() -> startUserInBackgroundAndCheckResult(userHandle,
-                UserManager.USER_OPERATION_SUCCESS));
+        callback.runAndUnregisterSelf(
+                () -> startUserInBackgroundAndCheckResult(userHandle, USER_OPERATION_SUCCESS));
         return callback.getUsersOnReceivedBroadcasts();
     }
 
@@ -539,7 +609,7 @@ public class CreateAndManageUserTest extends BaseDeviceOwnerTest {
         UserActionCallback callback = UserActionCallback.getCallbackForBroadcastActions(
                 getContext(), BasicAdminReceiver.ACTION_USER_STOPPED);
         callback.runAndUnregisterSelf(
-                () -> stopUserAndCheckResult(userHandle, UserManager.USER_OPERATION_SUCCESS));
+                () -> stopUserAndCheckResult(userHandle, USER_OPERATION_SUCCESS));
         return callback.getUsersOnReceivedBroadcasts();
     }
 

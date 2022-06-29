@@ -57,7 +57,7 @@ public class ResumeOnRebootHostTest extends BaseHostJUnit4Test {
     private static final String CLASS = PKG + ".EncryptionAppTest";
     private static final String APK = "CtsEncryptionApp.apk";
 
-    private static final String OTHER_APK = "CtsSplitApp29.apk";
+    private static final String OTHER_APK = "CtsSplitApp.apk";
     private static final String OTHER_PKG = "com.android.cts.splitapp";
 
     private static final String FEATURE_REBOOT_ESCROW = "feature:android.hardware.reboot_escrow";
@@ -356,8 +356,8 @@ public class ResumeOnRebootHostTest extends BaseHostJUnit4Test {
 
     private void deviceDisableDeviceConfigSync() throws Exception {
         getDevice().executeShellCommand("device_config set_sync_disabled_for_tests persistent");
-        String res = getDevice().executeShellCommand("device_config is_sync_disabled_for_tests");
-        if (res == null || !res.contains("true")) {
+        String res = getDevice().executeShellCommand("device_config get_sync_disabled_for_tests");
+        if (res == null || !res.contains("persistent")) {
             CLog.w(TAG, "Could not disable device config for test");
         }
     }

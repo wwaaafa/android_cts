@@ -19,7 +19,6 @@ package android.media.misc.cts;
 import static android.content.Context.AUDIO_SERVICE;
 import static android.media.MediaRoute2Info.FEATURE_LIVE_AUDIO;
 import static android.media.MediaRoute2Info.PLAYBACK_VOLUME_VARIABLE;
-import static android.media.misc.cts.StubMediaRoute2ProviderService.FEATURES_ALL;
 import static android.media.misc.cts.StubMediaRoute2ProviderService.FEATURES_SPECIAL;
 import static android.media.misc.cts.StubMediaRoute2ProviderService.FEATURE_SAMPLE;
 import static android.media.misc.cts.StubMediaRoute2ProviderService.ROUTE_ID1;
@@ -555,10 +554,10 @@ public class MediaRouter2Test {
 
         try {
             mRouter2.registerTransferCallback(mExecutor, transferCallback);
-            mRouter2.transferTo(route);
-
             // Unregisters transfer callback
             mRouter2.unregisterTransferCallback(transferCallback);
+
+            mRouter2.transferTo(route);
 
             // No transfer callback methods should be called.
             assertFalse(successLatch.await(WAIT_MS, TimeUnit.MILLISECONDS));
@@ -1096,6 +1095,11 @@ public class MediaRouter2Test {
 
     private Map<String, MediaRoute2Info> waitAndGetRoutes(List<String> routeTypes)
             throws Exception {
+        return waitAndGetRoutes(new RouteDiscoveryPreference.Builder(routeTypes, true).build());
+    }
+
+    private Map<String, MediaRoute2Info> waitAndGetRoutes(RouteDiscoveryPreference preference)
+            throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
 
         RouteCallback routeCallback = new RouteCallback() {
@@ -1109,8 +1113,7 @@ public class MediaRouter2Test {
             }
         };
 
-        mRouter2.registerRouteCallback(mExecutor, routeCallback,
-                new RouteDiscoveryPreference.Builder(routeTypes, true).build());
+        mRouter2.registerRouteCallback(mExecutor, routeCallback, preference);
         try {
             latch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS);
             return createRouteMap(mRouter2.getRoutes());
