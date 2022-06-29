@@ -20,9 +20,9 @@ import static android.photopicker.cts.util.PhotoPickerAssertionsUtils.assertMime
 import static android.photopicker.cts.util.PhotoPickerAssertionsUtils.assertPersistedGrant;
 import static android.photopicker.cts.util.PhotoPickerAssertionsUtils.assertPickerUriFormat;
 import static android.photopicker.cts.util.PhotoPickerAssertionsUtils.assertRedactedReadOnlyAccess;
-import static android.photopicker.cts.util.PhotoPickerFilesUtils.createDNGVideosAndGetUris;
-import static android.photopicker.cts.util.PhotoPickerFilesUtils.createImagesAndGetUris;
-import static android.photopicker.cts.util.PhotoPickerFilesUtils.createVideosAndGetUris;
+import static android.photopicker.cts.util.PhotoPickerFilesUtils.createDNGVideos;
+import static android.photopicker.cts.util.PhotoPickerFilesUtils.createImages;
+import static android.photopicker.cts.util.PhotoPickerFilesUtils.createVideos;
 import static android.photopicker.cts.util.PhotoPickerFilesUtils.deleteMedia;
 import static android.photopicker.cts.util.PhotoPickerUiUtils.REGEX_PACKAGE_NAME;
 import static android.photopicker.cts.util.PhotoPickerUiUtils.SHORT_TIMEOUT;
@@ -78,7 +78,7 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
     @Test
     public void testSingleSelect() throws Exception {
         final int itemCount = 1;
-        mUriList.addAll(createImagesAndGetUris(itemCount, mContext.getUserId()));
+        createImages(itemCount, mContext.getUserId(), mUriList);
 
         final Intent intent = new Intent(MediaStore.ACTION_PICK_IMAGES);
         mActivity.startActivityForResult(intent, REQUEST_CODE);
@@ -95,8 +95,7 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
     @Test
     public void testSingleSelectForFavoritesAlbum() throws Exception {
         final int itemCount = 1;
-        mUriList.addAll(createImagesAndGetUris(itemCount, mContext.getUserId(),
-                /* isFavorite */ true));
+        createImages(itemCount, mContext.getUserId(), mUriList, true);
 
         final Intent intent = new Intent(MediaStore.ACTION_PICK_IMAGES);
         mActivity.startActivityForResult(intent, REQUEST_CODE);
@@ -118,7 +117,7 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
     @Test
     public void testLaunchPreviewMultipleForVideoAlbum() throws Exception {
         final int videoCount = 2;
-        mUriList.addAll(createVideosAndGetUris(videoCount, mContext.getUserId()));
+        createVideos(videoCount, mContext.getUserId(), mUriList);
 
         final Intent intent = new Intent(MediaStore.ACTION_PICK_IMAGES);
         intent.setType("video/*");
@@ -151,7 +150,7 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
     @Test
     public void testSingleSelectWithPreview() throws Exception {
         final int itemCount = 1;
-        mUriList.addAll(createImagesAndGetUris(itemCount, mContext.getUserId()));
+        createImages(itemCount, mContext.getUserId(), mUriList);
 
         final Intent intent = new Intent(MediaStore.ACTION_PICK_IMAGES);
         mActivity.startActivityForResult(intent, REQUEST_CODE);
@@ -191,8 +190,7 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
     public void testMultiSelect_returnsNotMoreThanMax() throws Exception {
         final int maxCount = 2;
         final int imageCount = maxCount + 1;
-        mUriList.addAll(createImagesAndGetUris(imageCount, mContext.getUserId()));
-
+        createImages(imageCount, mContext.getUserId(), mUriList);
         final Intent intent = new Intent(MediaStore.ACTION_PICK_IMAGES);
         intent.putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, maxCount);
         mActivity.startActivityForResult(intent, REQUEST_CODE);
@@ -223,8 +221,7 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
     @Test
     public void testDoesNotRespectExtraAllowMultiple() throws Exception {
         final int imageCount = 2;
-        mUriList.addAll(createImagesAndGetUris(imageCount, mContext.getUserId()));
-
+        createImages(imageCount, mContext.getUserId(), mUriList);
         final Intent intent = new Intent(MediaStore.ACTION_PICK_IMAGES);
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
         mActivity.startActivityForResult(intent, REQUEST_CODE);
@@ -244,8 +241,7 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
     @Test
     public void testMultiSelect() throws Exception {
         final int imageCount = 4;
-        mUriList.addAll(createImagesAndGetUris(imageCount, mContext.getUserId()));
-
+        createImages(imageCount, mContext.getUserId(), mUriList);
         final Intent intent = new Intent(MediaStore.ACTION_PICK_IMAGES);
         intent.putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, MediaStore.getPickImagesMaxLimit());
         mActivity.startActivityForResult(intent, REQUEST_CODE);
@@ -273,8 +269,7 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
     @Test
     public void testMultiSelect_longPress() throws Exception {
         final int videoCount = 3;
-        mUriList.addAll(createDNGVideosAndGetUris(videoCount, mContext.getUserId()));
-
+        createDNGVideos(videoCount, mContext.getUserId(), mUriList);
         final Intent intent = new Intent(MediaStore.ACTION_PICK_IMAGES);
         intent.putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, MediaStore.getPickImagesMaxLimit());
         intent.setType("video/*");
@@ -321,8 +316,7 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
     @Test
     public void testMultiSelect_preview() throws Exception {
         final int imageCount = 4;
-        mUriList.addAll(createImagesAndGetUris(imageCount, mContext.getUserId()));
-
+        createImages(imageCount, mContext.getUserId(), mUriList);
         final Intent intent = new Intent(MediaStore.ACTION_PICK_IMAGES);
         intent.putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, MediaStore.getPickImagesMaxLimit());
         mActivity.startActivityForResult(intent, REQUEST_CODE);
@@ -586,9 +580,9 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
     @Test
     public void testMimeTypeFilter() throws Exception {
         final int videoCount = 2;
-        mUriList.addAll(createDNGVideosAndGetUris(videoCount, mContext.getUserId()));
+        createDNGVideos(videoCount, mContext.getUserId(), mUriList);
         final int imageCount = 1;
-        mUriList.addAll(createImagesAndGetUris(imageCount, mContext.getUserId()));
+        createImages(imageCount, mContext.getUserId(), mUriList);
 
         final String mimeType = "video/dng";
 
@@ -653,8 +647,7 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
     }
 
     private void launchPreviewMultipleWithVideos(int videoCount) throws  Exception {
-        mUriList.addAll(createVideosAndGetUris(videoCount, mContext.getUserId()));
-
+        createVideos(videoCount, mContext.getUserId(), mUriList);
         final Intent intent = new Intent(MediaStore.ACTION_PICK_IMAGES);
         intent.putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, MediaStore.getPickImagesMaxLimit());
         intent.setType("video/*");
