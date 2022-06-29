@@ -183,10 +183,11 @@ public class SimpleObjectsTest {
     public void deviceStateSensorOrientationMapConstructionTest() {
         DeviceStateSensorOrientationMap.Builder builder =
                 new DeviceStateSensorOrientationMap.Builder();
-        builder.addOrientationForState(/*deviceState*/ 0, /*angle*/ 90);
-        builder.addOrientationForState(/*deviceState*/ 1, /*angle*/ 180);
-        builder.addOrientationForState(/*deviceState*/ 2, /*angle*/ 270);
-        DeviceStateSensorOrientationMap deviceStateSensorOrientationMap = builder.build();
+        DeviceStateSensorOrientationMap deviceStateSensorOrientationMap =
+                builder.addOrientationForState(/*deviceState*/ 0, /*angle*/ 90)
+                       .addOrientationForState(/*deviceState*/ 1, /*angle*/ 180)
+                       .addOrientationForState(/*deviceState*/ 2, /*angle*/ 270)
+                       .build();
 
         try {
             builder = new DeviceStateSensorOrientationMap.Builder();
@@ -199,8 +200,8 @@ public class SimpleObjectsTest {
 
         try {
             builder = new DeviceStateSensorOrientationMap.Builder();
-            builder.addOrientationForState(/*deviceState*/ 0, 55);
-            deviceStateSensorOrientationMap = builder.build();
+            deviceStateSensorOrientationMap = builder.addOrientationForState(/*deviceState*/ 0, 55)
+                                                     .build();
             Assert.fail("DeviceStateSensorOrientationMap did not throw an IllegalArgumentException "
                     + "for incorrect elements values");
         } catch (IllegalArgumentException e) {
