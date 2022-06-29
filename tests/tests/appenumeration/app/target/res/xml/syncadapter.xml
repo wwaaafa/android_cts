@@ -14,6 +14,6 @@
      limitations under the License.
 -->
 <sync-adapter xmlns:android="http://schemas.android.com/apk/res/android"
-    android:contentAuthority="android.appenumeration.syncadapter.authority"
-    android:accountType="android.appenumeration.account.type"
-/>
+        android:contentAuthority="android.appenumeration.syncadapter.authority"
+        android:accountType="android.appenumeration.account.type"
+        android:isAlwaysSyncable="true" />
