@@ -21,7 +21,7 @@ import static android.photopicker.cts.PickerProviderMediaGenerator.MediaGenerato
 import static android.photopicker.cts.PickerProviderMediaGenerator.setCloudProvider;
 import static android.photopicker.cts.PickerProviderMediaGenerator.syncCloudProvider;
 import static android.photopicker.cts.util.PhotoPickerAssertionsUtils.assertRedactedReadOnlyAccess;
-import static android.photopicker.cts.util.PhotoPickerFilesUtils.createImagesAndGetUris;
+import static android.photopicker.cts.util.PhotoPickerFilesUtils.createImages;
 import static android.photopicker.cts.util.PhotoPickerFilesUtils.deleteMedia;
 import static android.photopicker.cts.util.PhotoPickerUiUtils.findAddButton;
 import static android.photopicker.cts.util.PhotoPickerUiUtils.findItemList;
@@ -120,7 +120,7 @@ public class CloudPhotoPickerTest extends PhotoPickerBaseTest {
 
     @Test
     public void testCloudPlusLocalSyncWithoutDedupe() throws Exception {
-        mUriList.addAll(createImagesAndGetUris(1, mContext.getUserId()));
+        createImages(1, mContext.getUserId(), mUriList);
         initPrimaryCloudProviderWithImage(Pair.create(null, CLOUD_ID1));
 
         final ClipData clipData = fetchPickerMedia(2);
@@ -131,7 +131,7 @@ public class CloudPhotoPickerTest extends PhotoPickerBaseTest {
 
     @Test
     public void testCloudPlusLocalSyncWithDedupe() throws Exception {
-        mUriList.addAll(createImagesAndGetUris(1, mContext.getUserId()));
+        createImages(1, mContext.getUserId(), mUriList);
         initPrimaryCloudProviderWithImage(Pair.create(mUriList.get(0).getLastPathSegment(),
                         CLOUD_ID1));
 
@@ -295,7 +295,7 @@ public class CloudPhotoPickerTest extends PhotoPickerBaseTest {
         // Create a placeholder local image to ensure that the picker UI is never empty.
         // The PhotoPickerUiUtils#findItemList needs to select an item and it times out if the
         // Picker UI is empty.
-        mUriList.addAll(createImagesAndGetUris(1, mContext.getUserId()));
+        createImages(1, mContext.getUserId(), mUriList);
 
         // Cloud provider isn't set
         assertThat(MediaStore.isCurrentCloudMediaProviderAuthority(mContext.getContentResolver(),
