@@ -133,7 +133,6 @@ class FlipMirrorTest(its_base_test.ItsBaseTest):
       props = cam.get_camera_properties()
       props = cam.override_with_hidden_physical_camera_props(props)
       debug = self.debug_mode
-      chart_loc_arg = self.chart_loc_arg
 
       # check SKIP conditions
       camera_properties_utils.skip_unless(
@@ -144,8 +143,7 @@ class FlipMirrorTest(its_base_test.ItsBaseTest):
           cam, props, self.scene, self.tablet, self.chart_distance)
 
       # initialize chart class and locate chart in scene
-      chart = opencv_processing_utils.Chart(
-          cam, props, self.log_path, chart_loc=chart_loc_arg)
+      chart = opencv_processing_utils.Chart(cam, props, self.log_path)
       fmt = {'format': 'yuv', 'width': VGA_W, 'height': VGA_H}
 
       # test that image is not flipped, mirrored, or rotated

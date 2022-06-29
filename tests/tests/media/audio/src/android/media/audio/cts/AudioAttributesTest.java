@@ -90,6 +90,15 @@ public class AudioAttributesTest extends CtsAndroidTestCase {
         }
     }
 
+    // Test case 4: verify the Ultrasound content APIs for AudioAttributes
+    public void testSetUltrasoundContentType() throws Exception {
+        final AudioAttributes internalContentApiAttr = new AudioAttributes.Builder()
+                .setInternalContentType(AudioAttributes.CONTENT_TYPE_ULTRASOUND)
+                .build();
+
+        assertEquals("Ultrasound by setInternalContentType doesn't match",
+                internalContentApiAttr.getContentType(), AudioAttributes.CONTENT_TYPE_ULTRASOUND);
+    }
     // -----------------------------------------------------------------
     // Builder tests
     // ----------------------------------
@@ -205,6 +214,34 @@ public class AudioAttributesTest extends CtsAndroidTestCase {
         final AudioAttributes aa = new AudioAttributes.Builder().build();
         final int policy = aa.getAllowedCapturePolicy();
         assertEquals("Wrong default capture policy", AudioAttributes.ALLOW_CAPTURE_BY_ALL, policy);
+    }
+
+    // -----------------------------------------------------------------
+    // Deprecation tests
+    // ----------------------------------
+    private int[] DEPRECATED_USAGES = { AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_REQUEST,
+            AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_DELAYED,
+            AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_INSTANT };
+
+    public void testDeprecationNotificationUsagesBuilder() throws Exception {
+        for (int deprecatedNotifUsage : DEPRECATED_USAGES) {
+            final AudioAttributes aa = new AudioAttributes.Builder()
+                    .setUsage(deprecatedNotifUsage)
+                    .build();
+            assertEquals("Deprecated notification usage value not remapped",
+                    AudioAttributes.USAGE_NOTIFICATION, aa.getUsage());
+        }
+    }
+
+    public void testDeprecationNotificationUsagesCopyBuilder() throws Exception {
+        for (int deprecatedNotifUsage : DEPRECATED_USAGES) {
+            final AudioAttributes aa = new AudioAttributes.Builder()
+                    .setUsage(deprecatedNotifUsage)
+                    .build();
+            final AudioAttributes copy = new AudioAttributes.Builder(aa).build();
+            assertEquals("Deprecated notification usage value not remapped",
+                    AudioAttributes.USAGE_NOTIFICATION, copy.getUsage());
+        }
     }
 
     // -----------------------------------------------------------------

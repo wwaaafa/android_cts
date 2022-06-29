@@ -28,6 +28,7 @@ android_test_helper_app {
     defaults: ["CtsVpnAppDefaults"],
     manifest: "api23/AndroidManifest.xml",
     test_suites: [
+        "arcts",
         "cts",
         "general-tests",
     ],
@@ -38,6 +39,7 @@ android_test_helper_app {
     defaults: ["CtsVpnAppDefaults"],
     manifest: "api24/AndroidManifest.xml",
     test_suites: [
+        "arcts",
         "cts",
         "general-tests",
     ],
@@ -48,8 +50,8 @@ android_test_helper_app {
     defaults: ["CtsVpnAppDefaults"],
     manifest: "latest/AndroidManifest.xml",
     test_suites: [
+        "arcts",
         "cts",
-        "gts",
         "general-tests",
     ],
 }
@@ -59,6 +61,7 @@ android_test_helper_app {
     defaults: ["CtsVpnAppDefaults"],
     manifest: "notalwayson/AndroidManifest.xml",
     test_suites: [
+        "arcts",
         "cts",
         "general-tests",
     ],

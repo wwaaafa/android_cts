@@ -21,7 +21,6 @@ java_test_host {
     srcs: ["src/**/*.java"],
     // tag this module as a cts test artifact
     test_suites: [
-        "arcts",
         "cts",
         "general-tests",
         "mts",
@@ -35,4 +34,8 @@ java_test_host {
         "truth-prebuilt",
         "platformprotos",
     ],
+    data: [
+        ":CtsHostsideTestsFullBackupApp",
+    ],
+    per_testcase_directory: true,
 }

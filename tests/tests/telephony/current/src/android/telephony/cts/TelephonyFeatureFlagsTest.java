@@ -18,9 +18,13 @@ package android.telephony.cts;
 
 import static androidx.test.InstrumentationRegistry.getContext;
 
+import static com.android.compatibility.common.util.PropertyUtil.getVendorApiLevel;
+
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 import android.content.pm.PackageManager;
+import android.os.Build;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -34,6 +38,7 @@ public final class TelephonyFeatureFlagsTest {
 
     @Before
     public void setUp() {
+        assumeTrue(getVendorApiLevel() > Build.VERSION_CODES.S);
         mPackageManager = getContext().getPackageManager();
     }
 
@@ -53,6 +58,8 @@ public final class TelephonyFeatureFlagsTest {
                 PackageManager.FEATURE_TELEPHONY_DATA);
         boolean hasFeatureEuicc = mPackageManager.hasSystemFeature(
                 PackageManager.FEATURE_TELEPHONY_EUICC);
+        boolean hasFeatureEuiccMep = mPackageManager.hasSystemFeature(
+                PackageManager.FEATURE_TELEPHONY_EUICC_MEP);
         boolean hasFeatureGsm = mPackageManager.hasSystemFeature(
                 PackageManager.FEATURE_TELEPHONY_GSM);
         boolean hasFeatureIms = mPackageManager.hasSystemFeature(
@@ -86,6 +93,10 @@ public final class TelephonyFeatureFlagsTest {
 
         if (hasFeatureEuicc) {
             assertTrue(hasFeatureSubscription);
+        }
+
+        if (hasFeatureEuiccMep) {
+            assertTrue(hasFeatureEuicc);
         }
 
         if (hasFeatureGsm) {

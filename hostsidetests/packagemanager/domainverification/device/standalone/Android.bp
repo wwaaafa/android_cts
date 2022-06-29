@@ -21,11 +21,10 @@ android_test {
     srcs: [ "src/**/*.kt" ],
     test_suites: [
         "cts",
-        "gts",
         "device-tests",
     ],
     defaults: ["cts_defaults"],
-    min_sdk_version: "4",
+    sdk_version: "test_current",
     static_libs: [
         "androidx.test.ext.junit",
         "androidx.test.rules",

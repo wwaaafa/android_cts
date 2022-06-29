@@ -164,7 +164,7 @@ public class WindowUntrustedTouchTest {
 
     @Rule
     public ActivityScenarioRule<TestActivity> activityRule =
-            new ActivityScenarioRule<>(TestActivity.class);
+            new ActivityScenarioRule<>(TestActivity.class, createLaunchActivityOptionsBundle());
 
     @BeforeClass
     public static void setUpClass() {
@@ -183,13 +183,7 @@ public class WindowUntrustedTouchTest {
 
     @Before
     public void setUp() throws Exception {
-        ActivityOptions options = ActivityOptions.makeBasic();
-        // Launch test in the fullscreen mode with navigation bar hidden,
-        // in order to ensure text toast is tappable and overlays above the test app
-        // on ARC++ and cf_pc devices. b/191075641.
-        options.setLaunchWindowingMode(WindowConfiguration.WINDOWING_MODE_FULLSCREEN);
-        activityRule.getScenario().launch(TestActivity.class, options.toBundle())
-                .onActivity(activity -> {
+        activityRule.getScenario().onActivity(activity -> {
             mActivity = activity;
             mContainer = mActivity.view;
             // On ARC++, text toast is fixed on the screen. Its position may overlays the navigation
@@ -695,6 +689,13 @@ public class WindowUntrustedTouchTest {
         assertThat(durationSet).isGreaterThan(
                 MAX_ANIMATION_DURATION_MS + ANIMATION_DURATION_TOLERANCE_MS);
         addExitAnimationActivity(APP_A);
+
+        // Wait for ExitAnimationActivity open transition to complete to avoid counting this
+        // transition in the duration of the exit animation below. Otherwise
+        // waitForAppTransitionRunningOnDisplay might return immediately if this transition is not
+        // done by then instead of waiting for the exit animation to start running.
+        assertTrue(mWmState.waitForAppTransitionIdleOnDisplay(Display.DEFAULT_DISPLAY));
+
         sendFinishToExitAnimationActivity(APP_A,
                 Components.ExitAnimationActivityReceiver.EXTRA_VALUE_LONG_ANIMATION_0_7);
         assertTrue(mWmState.waitForAppTransitionRunningOnDisplay(Display.DEFAULT_DISPLAY));
@@ -741,6 +742,12 @@ public class WindowUntrustedTouchTest {
     @Test
     public void testWhenExitAnimationBelowThreshold_allowsTouch() {
         addExitAnimationActivity(APP_A);
+
+        // Wait for ExitAnimationActivity open transition to complete to avoid
+        // waitForAppTransitionRunningOnDisplay returning immediately if this transition is not
+        // done by then instead of waiting for the exit animation to start running.
+        assertTrue(mWmState.waitForAppTransitionIdleOnDisplay(Display.DEFAULT_DISPLAY));
+
         sendFinishToExitAnimationActivity(APP_A,
                 Components.ExitAnimationActivityReceiver.EXTRA_VALUE_ANIMATION_0_7);
         assertTrue(mWmState.waitForAppTransitionRunningOnDisplay(Display.DEFAULT_DISPLAY));
@@ -980,7 +987,7 @@ public class WindowUntrustedTouchTest {
             @AnimRes int enterAnim, @AnimRes int exitAnim) {
         ConditionVariable animationsStarted = new ConditionVariable(false);
         ActivityOptions options = ActivityOptions.makeCustomAnimation(mContext, enterAnim, exitAnim,
-                mMainHandler, animationsStarted::open, /* finishedListener */ null);
+                0, mMainHandler, (t) -> animationsStarted.open(), /* finishedListener */ null);
         // We're testing the opacity coming from the animation here, not the one declared in the
         // activity, so we set its opacity to 1
         addActivityOverlay(packageName, /* opacity */ 1, touchable, options.toBundle());
@@ -1135,6 +1142,15 @@ public class WindowUntrustedTouchTest {
 
     private static ComponentName repackage(String packageName, ComponentName baseComponent) {
         return new ComponentName(packageName, baseComponent.getClassName());
+    }
+
+    private static Bundle createLaunchActivityOptionsBundle() {
+        final ActivityOptions options = ActivityOptions.makeBasic();
+        // Launch test in the fullscreen mode with navigation bar hidden,
+        // in order to ensure text toast is tappable and overlays above the test app
+        // on freeform first devices. b/191075641.
+        options.setLaunchWindowingMode(WindowConfiguration.WINDOWING_MODE_FULLSCREEN);
+        return options.toBundle();
     }
 
     public static class TestActivity extends Activity {

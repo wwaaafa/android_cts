@@ -25,15 +25,15 @@ final class GenericManagerImpl implements GenericManager {
 
     private static final String TAG = GenericManagerImpl.class.getSimpleName();
 
-    private String mUserIdentifier;
+    private String mUser;
     private final ContentResolver mContentResolver;
 
     GenericManagerImpl(Context context) {
         try  {
-            mUserIdentifier = String.valueOf(context.getUser().getIdentifier());
+            mUser = String.valueOf(context.getUser().getIdentifier());
         } catch (Throwable e) {
             Log.w(TAG, "Error while extracting User data from " + context + " : " + e);
-            mUserIdentifier = "N/A";
+            mUser = "N/A";
         }
         mContentResolver = context.getContentResolver();
     }
@@ -41,8 +41,7 @@ final class GenericManagerImpl implements GenericManager {
     @Override
     public int getSecureIntSettings(String setting) throws SettingNotFoundException {
         int value = Settings.Secure.getInt(mContentResolver, setting);
-        Log.d(TAG,
-                "getSecureIntSettings(" + setting + ") for user " + mUserIdentifier + ": " + value);
+        Log.d(TAG, "getSecureIntSettings(" + setting + ") for user " + mUser + ": " + value);
         return value;
     }
 }
