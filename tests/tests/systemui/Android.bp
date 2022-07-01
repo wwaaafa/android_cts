@@ -19,10 +19,8 @@ package {
 android_test {
     name: "CtsSystemUiTestCases",
     defaults: ["cts_defaults"],
-    min_sdk_version: "27",
     test_suites: [
         "cts",
-        "gts",
         "general-tests",
     ],
 
