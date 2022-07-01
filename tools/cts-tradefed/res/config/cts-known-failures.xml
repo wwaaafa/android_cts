@@ -287,4 +287,7 @@
     <!-- b/235453601 -->
     <option name="compatibility:exclude-filter" value="CtsMediaPerformanceClassTestCases android.mediapc.cts.MultiDecoderPerfTest" />
 
+    <!-- b/237035040 -->
+    <option name="compatibility:exclude-filter" value="CtsGraphicsTestCases android.graphics.cts.ImageDecoderTest#testDecode10BitHeifWithLowRam" />
+
 </configuration>
