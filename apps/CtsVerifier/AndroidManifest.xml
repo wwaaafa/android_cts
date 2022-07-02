@@ -6313,6 +6313,30 @@
                        android:value="android.hardware.type.watch" />
         </activity>
 
+        <activity android:name=".telecom.CallSwitchingAudioTestActivity"
+                  android:exported="true"
+                  android:label="@string/telecom_audio_call_test">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.cts.intent.category.MANUAL_TEST"/>
+            </intent-filter>
+            <meta-data android:name="ApiTest"
+                       android:value="android.telecom.Connection#setAudioModeIsVoip"/>
+            <meta-data
+                android:name="test_category"
+                android:value="@string/test_category_telecom"/>
+            <meta-data
+                android:name="test_required_features"
+                android:value="android.hardware.telephony"/>
+            <meta-data
+                android:name="test_required_configs"
+                android:value="config_voice_capable"/>
+            <meta-data android:name="display_mode"
+                       android:value="multi_display_mode"/>
+            <meta-data android:name="test_excluded_features"
+                       android:value="android.hardware.type.watch"/>
+        </activity>
+
         <activity android:name=".telecom.TelecomDefaultDialerTestActivity"
                 android:exported="true"
                   android:label="@string/telecom_default_dialer_test_title">
@@ -6341,6 +6365,28 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.cts.intent.category.MANUAL_TEST" />
             </intent-filter>
+            <meta-data
+                android:name="test_category"
+                android:value="@string/test_category_telecom"/>
+            <meta-data
+                android:name="test_required_features"
+                android:value="android.hardware.telephony"/>
+            <meta-data
+                android:name="test_required_configs"
+                android:value="config_voice_capable"/>
+            <meta-data android:name="display_mode"
+                       android:value="multi_display_mode" />
+        </activity>
+
+        <activity android:name=".telecom.CallSwitchingInCallUi"
+                  android:exported="true"
+                  android:label="@string/tel_audio_call_test_in_call_ui_label">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.cts.intent.category.MANUAL_TEST" />
+            </intent-filter>
+            <meta-data android:name="ApiTest"
+                       android:value="android.telecom.Connection#setAudioModeIsVoip"/>
             <meta-data
                 android:name="test_category"
                 android:value="@string/test_category_telecom"/>
