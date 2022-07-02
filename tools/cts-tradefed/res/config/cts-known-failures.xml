@@ -282,9 +282,6 @@
     <!-- b/208909067 -->
     <option name="compatibility:exclude-filter" value="CtsDisplayTestCases android.display.cts.DisplayTest#testActivityContextGetMetrics" />
 
-    <!-- b/198682652 -->
-    <option name="compatibility:exclude-filter" value="CtsTelephonyTestCases android.telephony.cts.TelephonyCallbackTest#testOnLinkCapacityEstimateChangedByRegisterPhoneStateListener" />
-
     <!-- b/235453601 -->
     <option name="compatibility:exclude-filter" value="CtsMediaPerformanceClassTestCases android.mediapc.cts.MultiDecoderPerfTest" />
 
