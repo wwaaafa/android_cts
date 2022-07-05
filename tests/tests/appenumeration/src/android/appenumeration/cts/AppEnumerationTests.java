@@ -17,6 +17,10 @@
 package android.appenumeration.cts;
 
 import static android.Manifest.permission.SET_PREFERRED_APPLICATIONS;
+import static android.appenumeration.cts.Constants.ACCOUNT_NAME;
+import static android.appenumeration.cts.Constants.ACCOUNT_TYPE;
+import static android.appenumeration.cts.Constants.ACCOUNT_TYPE_SHARED_USER;
+import static android.appenumeration.cts.Constants.ACTION_APP_ENUMERATION_PREFERRED_ACTIVITY;
 import static android.appenumeration.cts.Constants.ACTION_AWAIT_LAUNCHER_APPS_CALLBACK;
 import static android.appenumeration.cts.Constants.ACTION_AWAIT_LAUNCHER_APPS_SESSION_CALLBACK;
 import static android.appenumeration.cts.Constants.ACTION_BIND_SERVICE;
@@ -58,6 +62,7 @@ import static android.appenumeration.cts.Constants.ACTION_QUERY_RESOLVER;
 import static android.appenumeration.cts.Constants.ACTION_QUERY_SERVICES;
 import static android.appenumeration.cts.Constants.ACTION_REQUEST_SYNC_AND_AWAIT_STATUS;
 import static android.appenumeration.cts.Constants.ACTION_REVOKE_URI_PERMISSION;
+import static android.appenumeration.cts.Constants.ACTION_SEND_RESULT;
 import static android.appenumeration.cts.Constants.ACTION_SET_INSTALLER_PACKAGE_NAME;
 import static android.appenumeration.cts.Constants.ACTION_START_DIRECTLY;
 import static android.appenumeration.cts.Constants.ACTION_START_FOR_RESULT;
@@ -65,6 +70,7 @@ import static android.appenumeration.cts.Constants.ACTION_TAKE_PERSISTABLE_URI_P
 import static android.appenumeration.cts.Constants.ACTIVITY_CLASS_DUMMY_ACTIVITY;
 import static android.appenumeration.cts.Constants.ACTIVITY_CLASS_NOT_EXPORTED;
 import static android.appenumeration.cts.Constants.ACTIVITY_CLASS_TEST;
+import static android.appenumeration.cts.Constants.AUTHORITY_SUFFIX;
 import static android.appenumeration.cts.Constants.CALLBACK_EVENT_INVALID;
 import static android.appenumeration.cts.Constants.CALLBACK_EVENT_PACKAGES_SUSPENDED;
 import static android.appenumeration.cts.Constants.CALLBACK_EVENT_PACKAGES_UNSUSPENDED;
@@ -113,6 +119,7 @@ import static android.appenumeration.cts.Constants.QUERIES_WILDCARD_CONTACTS;
 import static android.appenumeration.cts.Constants.QUERIES_WILDCARD_EDITOR;
 import static android.appenumeration.cts.Constants.QUERIES_WILDCARD_SHARE;
 import static android.appenumeration.cts.Constants.QUERIES_WILDCARD_WEB;
+import static android.appenumeration.cts.Constants.SERVICE_CLASS_SYNC_ADAPTER;
 import static android.appenumeration.cts.Constants.TARGET_APPWIDGETPROVIDER;
 import static android.appenumeration.cts.Constants.TARGET_APPWIDGETPROVIDER_SHARED_USER;
 import static android.appenumeration.cts.Constants.TARGET_BROWSER;
@@ -134,6 +141,19 @@ import static android.appenumeration.cts.Constants.TARGET_STUB_APK;
 import static android.appenumeration.cts.Constants.TARGET_SYNCADAPTER;
 import static android.appenumeration.cts.Constants.TARGET_SYNCADAPTER_SHARED_USER;
 import static android.appenumeration.cts.Constants.TARGET_WEB;
+import static android.appenumeration.cts.Constants.TEST_NONEXISTENT_PACKAGE_NAME_1;
+import static android.appenumeration.cts.Constants.TEST_NONEXISTENT_PACKAGE_NAME_2;
+import static android.appenumeration.cts.Constants.TEST_SHARED_LIB_NAME;
+import static android.appenumeration.cts.Utils.Result;
+import static android.appenumeration.cts.Utils.ThrowingBiFunction;
+import static android.appenumeration.cts.Utils.ThrowingFunction;
+import static android.appenumeration.cts.Utils.clearAppDataForUser;
+import static android.appenumeration.cts.Utils.ensurePackageIsInstalled;
+import static android.appenumeration.cts.Utils.ensurePackageIsNotInstalled;
+import static android.appenumeration.cts.Utils.forceStopPackage;
+import static android.appenumeration.cts.Utils.installPackage;
+import static android.appenumeration.cts.Utils.suspendPackagesForUser;
+import static android.appenumeration.cts.Utils.uninstallPackage;
 import static android.content.Intent.EXTRA_COMPONENT_NAME;
 import static android.content.Intent.EXTRA_PACKAGES;
 import static android.content.Intent.EXTRA_UID;
@@ -143,8 +163,6 @@ import static android.content.pm.PackageManager.SIGNATURE_MATCH;
 import static android.content.pm.PackageManager.SIGNATURE_UNKNOWN_PACKAGE;
 import static android.os.Process.INVALID_UID;
 import static android.os.Process.ROOT_UID;
-
-import static com.android.compatibility.common.util.ShellUtils.runShellCommand;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
@@ -196,6 +214,7 @@ import androidx.annotation.Nullable;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import com.android.bedstead.nene.users.UserReference;
 import com.android.compatibility.common.util.AmUtils;
 import com.android.compatibility.common.util.SystemUtil;
 import com.android.cts.install.lib.Install;
@@ -234,46 +253,26 @@ public class AppEnumerationTests {
     private static Handler sResponseHandler;
     private static HandlerThread sResponseThread;
 
-    private static boolean sGlobalFeatureEnabled;
-
+    private static Context sContext;
     private static PackageManager sPm;
     private static AccountManager sAccountManager;
 
-    // The shared library for getting dependent packages
-    private static final String TEST_SHARED_LIB_NAME = "android.test.runner";
-    private static final String TEST_NONEXISTENT_PACKAGE_NAME_1 = "com.android.cts.nonexistent1";
-    private static final String TEST_NONEXISTENT_PACKAGE_NAME_2 = "com.android.cts.nonexistent2";
-
-    private static final Account ACCOUNT_SYNCADAPTER = new Account(
-            TARGET_SYNCADAPTER, "android.appenumeration.account.type");
-    private static final Account ACCOUNT_SYNCADAPTER_SHARED_USER = new Account(
-            TARGET_SYNCADAPTER_SHARED_USER, "android.appenumeration.shareduid.account.type");
+    private static final Account ACCOUNT_SYNCADAPTER = new Account(ACCOUNT_NAME, ACCOUNT_TYPE);
+    private static final Account ACCOUNT_SYNCADAPTER_SHARED_USER = new Account(ACCOUNT_NAME,
+            ACCOUNT_TYPE_SHARED_USER);
 
     @Rule
     public TestName name = new TestName();
 
     @BeforeClass
     public static void setup() {
-        final String deviceConfigResponse =
-                SystemUtil.runShellCommand(
-                        "device_config get package_manager_service "
-                                + "package_query_filtering_enabled")
-                        .trim();
-        if ("null".equalsIgnoreCase(deviceConfigResponse) || deviceConfigResponse.isEmpty()) {
-            sGlobalFeatureEnabled = true;
-        } else {
-            sGlobalFeatureEnabled = Boolean.parseBoolean(deviceConfigResponse);
-        }
-        System.out.println("Feature enabled: " + sGlobalFeatureEnabled);
-        if (!sGlobalFeatureEnabled) return;
-
         sResponseThread = new HandlerThread("response");
         sResponseThread.start();
         sResponseHandler = new Handler(sResponseThread.getLooper());
 
-        sPm = InstrumentationRegistry.getInstrumentation().getContext().getPackageManager();
-        sAccountManager = AccountManager.get(
-                InstrumentationRegistry.getInstrumentation().getContext());
+        sContext = InstrumentationRegistry.getInstrumentation().getContext();
+        sPm = sContext.getPackageManager();
+        sAccountManager = AccountManager.get(sContext);
 
         assertThat(sAccountManager.addAccountExplicitly(ACCOUNT_SYNCADAPTER,
                 null /* password */, null /* userdata */), is(true));
@@ -283,7 +282,6 @@ public class AppEnumerationTests {
 
     @AfterClass
     public static void tearDown() {
-        if (!sGlobalFeatureEnabled) return;
         sResponseThread.quit();
 
         assertThat(sAccountManager.removeAccountExplicitly(ACCOUNT_SYNCADAPTER),
@@ -300,7 +298,7 @@ public class AppEnumerationTests {
                 resources.getBoolean(resources.getIdentifier(
                         "config_forceSystemPackagesQueryable", "bool", "android")));
 
-        // now let's assert that that the actual set of system apps is limited
+        // now let's assert that the actual set of system apps is limited
         assertThat("Not all system apps should be visible.",
                 getInstalledPackages(QUERIES_NOTHING_PERM, MATCH_SYSTEM_ONLY).length,
                 greaterThan(getInstalledPackages(QUERIES_NOTHING, MATCH_SYSTEM_ONLY).length));
@@ -411,7 +409,7 @@ public class AppEnumerationTests {
         assertVisible(QUERIES_NOTHING_RECEIVES_NON_PERSISTABLE_URI, QUERIES_NOTHING_PERM);
 
         // update the package; shouldn't be visible
-        runShellCommand("pm install " + QUERIES_NOTHING_RECEIVES_NON_PERSISTABLE_URI_APK);
+        installPackage(QUERIES_NOTHING_RECEIVES_NON_PERSISTABLE_URI_APK);
         // Wait until the updating is done
         AmUtils.waitForBroadcastIdle();
         assertNotVisible(QUERIES_NOTHING_RECEIVES_NON_PERSISTABLE_URI, QUERIES_NOTHING_PERM);
@@ -431,7 +429,7 @@ public class AppEnumerationTests {
         assertVisible(QUERIES_NOTHING_RECEIVES_PERSISTABLE_URI, QUERIES_NOTHING_PERM);
 
         // update the package; should be still visible
-        runShellCommand("pm install " + QUERIES_NOTHING_RECEIVES_PERSISTABLE_URI_APK);
+        installPackage(QUERIES_NOTHING_RECEIVES_PERSISTABLE_URI_APK);
         // Wait until the updating is done
         AmUtils.waitForBroadcastIdle();
         assertVisible(QUERIES_NOTHING_RECEIVES_PERSISTABLE_URI, QUERIES_NOTHING_PERM);
@@ -556,18 +554,14 @@ public class AppEnumerationTests {
 
     @Test
     public void queriesNothing_canSeeInstaller() throws Exception {
-        runShellCommand("pm uninstall " + QUERIES_NOTHING_SEES_INSTALLER);
-        runShellCommand("pm install"
-                + " -i " + TARGET_NO_API
-                + " --pkg " + QUERIES_NOTHING_SEES_INSTALLER
-                + " " + QUERIES_NOTHING_SEES_INSTALLER_APK);
+        uninstallPackage(QUERIES_NOTHING_SEES_INSTALLER);
+        installPackage(QUERIES_NOTHING_SEES_INSTALLER_APK, TARGET_NO_API);
         try {
             assertVisible(QUERIES_NOTHING_SEES_INSTALLER, TARGET_NO_API);
         } finally {
-            runShellCommand("pm uninstall " + QUERIES_NOTHING_SEES_INSTALLER);
+            uninstallPackage(QUERIES_NOTHING_SEES_INSTALLER);
         }
     }
-
 
     @Test
     public void whenStarted_canSeeCaller() throws Exception {
@@ -772,7 +766,7 @@ public class AppEnumerationTests {
     }
 
     @Test
-    public void queriesWildcardBrowser_cannotseePrefixWildcardWeb() throws Exception {
+    public void queriesWildcardBrowser_cannotSeePrefixWildcardWeb() throws Exception {
         assertNotVisible(QUERIES_NOTHING, TARGET_PREFIX_WILDCARD_WEB);
         assertNotVisible(QUERIES_WILDCARD_BROWSER, TARGET_PREFIX_WILDCARD_WEB);
     }
@@ -791,14 +785,12 @@ public class AppEnumerationTests {
 
     @Test
     public void queriesNothing_cannotSeeA11yService() throws Exception {
-        if (!sGlobalFeatureEnabled) return;
         final String[] result = getInstalledAccessibilityServices(QUERIES_NOTHING);
         assertThat(result, not(hasItemInArray(TARGET_FILTERS)));
     }
 
     @Test
     public void queriesNothingHasPermission_canSeeA11yService() throws Exception {
-        if (!sGlobalFeatureEnabled) return;
         final String[] result = getInstalledAccessibilityServices(QUERIES_NOTHING_PERM);
         assertThat(QUERIES_NOTHING_PERM + " should be able to see " + TARGET_FILTERS,
                 result, hasItemInArray(TARGET_FILTERS));
@@ -806,7 +798,6 @@ public class AppEnumerationTests {
 
     private void assertVisible(String sourcePackageName, String targetPackageName)
             throws Exception {
-        if (!sGlobalFeatureEnabled) return;
         Assert.assertNotNull(sourcePackageName + " should be able to see " + targetPackageName,
                 getPackageInfo(sourcePackageName, targetPackageName));
     }
@@ -816,7 +807,7 @@ public class AppEnumerationTests {
         final Result result = sendCommand(QUERIES_NOTHING, TARGET_FILTERS,
                 /* targetUid */ INVALID_UID, /* intentExtra */ null,
                 Constants.ACTION_AWAIT_PACKAGE_ADDED, /* waitForReady */ true);
-        runShellCommand("pm install " + TARGET_FILTERS_APK);
+        installPackage(TARGET_FILTERS_APK);
         try {
             result.await();
             fail();
@@ -830,7 +821,7 @@ public class AppEnumerationTests {
         final Result result = sendCommand(QUERIES_ACTIVITY_ACTION, TARGET_FILTERS,
                 /* targetUid */ INVALID_UID, /* intentExtra */ null,
                 Constants.ACTION_AWAIT_PACKAGE_ADDED, /* waitForReady */ true);
-        runShellCommand("pm install " + TARGET_FILTERS_APK);
+        installPackage(TARGET_FILTERS_APK);
         try {
             Assert.assertEquals(TARGET_FILTERS,
                     Uri.parse(result.await().getString(EXTRA_DATA)).getSchemeSpecificPart());
@@ -844,7 +835,7 @@ public class AppEnumerationTests {
         final Result result = sendCommand(QUERIES_NOTHING, TARGET_FILTERS,
                 /* targetUid */ INVALID_UID, /* intentExtra */ null,
                 Constants.ACTION_AWAIT_PACKAGE_REMOVED, /* waitForReady */ true);
-        runShellCommand("pm install " + TARGET_FILTERS_APK);
+        installPackage(TARGET_FILTERS_APK);
         try {
             result.await();
             fail();
@@ -858,7 +849,7 @@ public class AppEnumerationTests {
         final Result result = sendCommand(QUERIES_ACTIVITY_ACTION, TARGET_FILTERS,
                 /* targetUid */ INVALID_UID, /* intentExtra */ null,
                 Constants.ACTION_AWAIT_PACKAGE_REMOVED, /* waitForReady */ true);
-        runShellCommand("pm install " + TARGET_FILTERS_APK);
+        installPackage(TARGET_FILTERS_APK);
         try {
             Assert.assertEquals(TARGET_FILTERS,
                     Uri.parse(result.await().getString(EXTRA_DATA)).getSchemeSpecificPart());
@@ -873,7 +864,7 @@ public class AppEnumerationTests {
         final Result result = sendCommand(QUERIES_NOTHING, TARGET_STUB,
                 /* targetUid */ INVALID_UID, /* intentExtra */ null,
                 Constants.ACTION_AWAIT_PACKAGE_REMOVED, /* waitForReady */ true);
-        runShellCommand("pm uninstall " + TARGET_STUB);
+        uninstallPackage(TARGET_STUB);
         try {
             result.await();
             fail();
@@ -888,7 +879,7 @@ public class AppEnumerationTests {
         final Result result = sendCommand(QUERIES_NOTHING_PERM, TARGET_STUB,
                 /* targetUid */ INVALID_UID, /* intentExtra */ null,
                 Constants.ACTION_AWAIT_PACKAGE_REMOVED, /* waitForReady */ true);
-        runShellCommand("pm uninstall " + TARGET_STUB);
+        uninstallPackage(TARGET_STUB);
         try {
             Assert.assertEquals(TARGET_STUB,
                     Uri.parse(result.await().getString(EXTRA_DATA)).getSchemeSpecificPart());
@@ -903,7 +894,7 @@ public class AppEnumerationTests {
         final Result result = sendCommand(QUERIES_NOTHING, TARGET_STUB,
                 /* targetUid */ INVALID_UID, /* intentExtra */ null,
                 Constants.ACTION_AWAIT_PACKAGE_FULLY_REMOVED, /* waitForReady */ true);
-        runShellCommand("pm uninstall " + TARGET_STUB);
+        uninstallPackage(TARGET_STUB);
         try {
             result.await();
             fail();
@@ -918,7 +909,7 @@ public class AppEnumerationTests {
         final Result result = sendCommand(QUERIES_NOTHING_PERM, TARGET_STUB,
                 /* targetUid */ INVALID_UID, /* intentExtra */ null,
                 Constants.ACTION_AWAIT_PACKAGE_FULLY_REMOVED, /* waitForReady */ true);
-        runShellCommand("pm uninstall " + TARGET_STUB);
+        uninstallPackage(TARGET_STUB);
         try {
             Assert.assertEquals(TARGET_STUB,
                     Uri.parse(result.await().getString(EXTRA_DATA)).getSchemeSpecificPart());
@@ -933,7 +924,7 @@ public class AppEnumerationTests {
         final Result result = sendCommand(QUERIES_NOTHING, TARGET_STUB,
                 /* targetUid */ INVALID_UID, /* intentExtra */ null,
                 Constants.ACTION_AWAIT_PACKAGE_DATA_CLEARED, /* waitForReady */ true);
-        runShellCommand("pm clear --user cur " + TARGET_STUB);
+        clearAppDataForUser(TARGET_STUB, UserReference.of(sContext.getUser()));
         try {
             result.await();
             fail();
@@ -948,7 +939,7 @@ public class AppEnumerationTests {
         final Result result = sendCommand(QUERIES_NOTHING_PERM, TARGET_STUB,
                 /* targetUid */ INVALID_UID, /* intentExtra */ null,
                 Constants.ACTION_AWAIT_PACKAGE_DATA_CLEARED, /* waitForReady */ true);
-        runShellCommand("pm clear --user cur " + TARGET_STUB);
+        clearAppDataForUser(TARGET_STUB, UserReference.of(sContext.getUser()));
         try {
             Assert.assertEquals(TARGET_STUB,
                     Uri.parse(result.await().getString(EXTRA_DATA)).getSchemeSpecificPart());
@@ -994,7 +985,7 @@ public class AppEnumerationTests {
         final Result result = sendCommandAndWaitForLauncherAppsCallback(QUERIES_NOTHING,
                 CALLBACK_EVENT_PACKAGE_ADDED);
 
-        runShellCommand("pm install " + TARGET_STUB_APK);
+        installPackage(TARGET_STUB_APK);
         final Bundle response = result.await();
 
         assertThat(response.getInt(EXTRA_FLAGS), equalTo(CALLBACK_EVENT_INVALID));
@@ -1007,7 +998,7 @@ public class AppEnumerationTests {
         final Result result = sendCommandAndWaitForLauncherAppsCallback(QUERIES_NOTHING_PERM,
                 CALLBACK_EVENT_PACKAGE_ADDED);
 
-        runShellCommand("pm install " + TARGET_STUB_APK);
+        installPackage(TARGET_STUB_APK);
         final Bundle response = result.await();
 
         assertThat(response.getInt(EXTRA_FLAGS), equalTo(CALLBACK_EVENT_PACKAGE_ADDED));
@@ -1021,7 +1012,7 @@ public class AppEnumerationTests {
         final Result result = sendCommandAndWaitForLauncherAppsCallback(QUERIES_NOTHING,
                 CALLBACK_EVENT_PACKAGE_REMOVED);
 
-        runShellCommand("pm uninstall " + TARGET_STUB);
+        uninstallPackage(TARGET_STUB);
         final Bundle response = result.await();
 
         assertThat(response.getInt(EXTRA_FLAGS), equalTo(CALLBACK_EVENT_INVALID));
@@ -1034,7 +1025,7 @@ public class AppEnumerationTests {
         final Result result = sendCommandAndWaitForLauncherAppsCallback(QUERIES_NOTHING_PERM,
                 CALLBACK_EVENT_PACKAGE_REMOVED);
 
-        runShellCommand("pm uninstall " + TARGET_STUB);
+        uninstallPackage(TARGET_STUB);
         final Bundle response = result.await();
 
         assertThat(response.getInt(EXTRA_FLAGS), equalTo(CALLBACK_EVENT_PACKAGE_REMOVED));
@@ -1047,7 +1038,7 @@ public class AppEnumerationTests {
         final Result result = sendCommandAndWaitForLauncherAppsCallback(QUERIES_NOTHING,
                 CALLBACK_EVENT_PACKAGE_CHANGED);
 
-        runShellCommand("pm install " + TARGET_FILTERS_APK);
+        installPackage(TARGET_FILTERS_APK);
         final Bundle response = result.await();
 
         assertThat(response.getInt(EXTRA_FLAGS), equalTo(CALLBACK_EVENT_INVALID));
@@ -1059,7 +1050,7 @@ public class AppEnumerationTests {
         final Result result = sendCommandAndWaitForLauncherAppsCallback(QUERIES_NOTHING_PERM,
                 CALLBACK_EVENT_PACKAGE_CHANGED);
 
-        runShellCommand("pm install " + TARGET_FILTERS_APK);
+        installPackage(TARGET_FILTERS_APK);
         final Bundle response = result.await();
 
         assertThat(response.getInt(EXTRA_FLAGS), equalTo(CALLBACK_EVENT_PACKAGE_CHANGED));
@@ -1141,7 +1132,7 @@ public class AppEnumerationTests {
             final Bundle response = result.await();
             assertThat(response.getInt(EXTRA_ID), equalTo(SessionInfo.INVALID_ID));
         } finally {
-            runShellCommand("pm uninstall " + TestApp.A);
+            uninstallPackage(TestApp.A);
             dropShellPermissions();
         }
     }
@@ -1159,7 +1150,7 @@ public class AppEnumerationTests {
             final Bundle response = result.await();
             assertThat(response.getInt(EXTRA_ID), equalTo(sessionId));
         } finally {
-            runShellCommand("pm uninstall " + TestApp.A);
+            uninstallPackage(TestApp.A);
             dropShellPermissions();
         }
     }
@@ -1177,7 +1168,7 @@ public class AppEnumerationTests {
             final Bundle response = result.await();
             assertThat(response.getInt(EXTRA_ID), equalTo(sessionId));
         } finally {
-            runShellCommand("pm uninstall " + TestApp.A);
+            uninstallPackage(TestApp.A);
             dropShellPermissions();
         }
     }
@@ -1195,7 +1186,7 @@ public class AppEnumerationTests {
             final Bundle response = result.await();
             assertThat(response.getInt(EXTRA_ID), equalTo(sessionId));
         } finally {
-            runShellCommand("pm uninstall " + TestApp.A);
+            uninstallPackage(TestApp.A);
             dropShellPermissions();
         }
     }
@@ -1207,10 +1198,7 @@ public class AppEnumerationTests {
             final CountDownLatch countDownLatch = new CountDownLatch(1);
             final int expectedSessionId = Install.single(TestApp.A1).setPackageName(TestApp.A)
                     .createSession();
-            final Context context = InstrumentationRegistry
-                    .getInstrumentation()
-                    .getContext();
-            final LauncherApps launcherApps = context.getSystemService(LauncherApps.class);
+            final LauncherApps launcherApps = sContext.getSystemService(LauncherApps.class);
             final PackageInstaller.SessionCallback
                     sessionCallback = new PackageInstaller.SessionCallback() {
 
@@ -1245,13 +1233,13 @@ public class AppEnumerationTests {
                 }
             };
 
-            launcherApps.registerPackageInstallerSessionCallback(context.getMainExecutor(),
+            launcherApps.registerPackageInstallerSessionCallback(sContext.getMainExecutor(),
                     sessionCallback);
 
             commitSession(expectedSessionId);
             assertTrue(countDownLatch.await(5, TimeUnit.SECONDS));
         } finally {
-            runShellCommand("pm uninstall " + TestApp.A);
+            uninstallPackage(TestApp.A);
             dropShellPermissions();
         }
     }
@@ -1337,10 +1325,7 @@ public class AppEnumerationTests {
             adoptShellPermissions();
             final int sessionId = Install.single(TestApp.A1).setPackageName(TestApp.A)
                     .createSession();
-            final LauncherApps launcherApps = InstrumentationRegistry
-                    .getInstrumentation()
-                    .getContext()
-                    .getSystemService(LauncherApps.class);
+            final LauncherApps launcherApps = sContext.getSystemService(LauncherApps.class);
             final Integer[] sessionIds = launcherApps.getAllPackageInstallerSessions().stream()
                     .map(i -> i.getSessionId())
                     .distinct()
@@ -1423,11 +1408,7 @@ public class AppEnumerationTests {
             adoptShellPermissions();
             final int sessionId = Install.single(TestApp.A1).setPackageName(TestApp.A)
                     .createSession();
-            final PackageInstaller installer = InstrumentationRegistry
-                    .getInstrumentation()
-                    .getContext()
-                    .getPackageManager()
-                    .getPackageInstaller();
+            final PackageInstaller installer = sPm.getPackageInstaller();
             final SessionInfo info = installer.getSessionInfo(sessionId);
             assertThat(info, IsNull.notNullValue());
         } finally {
@@ -1507,11 +1488,7 @@ public class AppEnumerationTests {
             adoptShellPermissions();
             final int sessionId = Install.single(TestApp.A1).setPackageName(TestApp.A).setStaged()
                     .createSession();
-            final PackageInstaller installer = InstrumentationRegistry
-                    .getInstrumentation()
-                    .getContext()
-                    .getPackageManager()
-                    .getPackageInstaller();
+            final PackageInstaller installer = sPm.getPackageInstaller();
             final Integer[] sessionIds = installer.getStagedSessions().stream()
                     .map(i -> i.getSessionId())
                     .distinct()
@@ -1594,11 +1571,7 @@ public class AppEnumerationTests {
             adoptShellPermissions();
             final int sessionId = Install.single(TestApp.A1).setPackageName(TestApp.A)
                     .createSession();
-            final PackageInstaller installer = InstrumentationRegistry
-                    .getInstrumentation()
-                    .getContext()
-                    .getPackageManager()
-                    .getPackageInstaller();
+            final PackageInstaller installer = sPm.getPackageInstaller();
             final Integer[] sessionIds = installer.getAllSessions().stream()
                     .map(i -> i.getSessionId())
                     .distinct()
@@ -1625,16 +1598,10 @@ public class AppEnumerationTests {
     }
 
     private void assertSessionVisible(Integer[] sessionIds, int sessionId) {
-        if (!sGlobalFeatureEnabled) {
-            return;
-        }
         assertThat(sessionIds, hasItemInArray(sessionId));
     }
 
     private void assertSessionNotVisible(Integer[] sessionIds, int sessionId) {
-        if (!sGlobalFeatureEnabled) {
-            return;
-        }
         assertThat(sessionIds, not(hasItemInArray(sessionId)));
     }
 
@@ -1802,8 +1769,8 @@ public class AppEnumerationTests {
     public void launcherAppsGetSuspendedPackageLauncherExtras_queriesNothingHasPerm_canGetExtras()
             throws Exception {
         try {
-            setPackagesSuspendedWithLauncherExtras(/* suspend */ true,
-                    Arrays.asList(TARGET_NO_API), /* extras */ true);
+            suspendPackagesForUser(true /* suspend */, Arrays.asList(TARGET_NO_API),
+                    UserReference.of(sContext.getUser()), true /* extraPersistableBundle */);
             Assert.assertNotNull(launcherAppsGetSuspendedPackageLauncherExtras(QUERIES_NOTHING_PERM,
                             TARGET_NO_API));
         } finally {
@@ -1815,8 +1782,8 @@ public class AppEnumerationTests {
     public void launcherAppsGetSuspendedPackageLauncherExtras_queriesNothing_cannotGetExtras()
             throws Exception {
         try {
-            setPackagesSuspendedWithLauncherExtras(/* suspend */ true,
-                    Arrays.asList(TARGET_NO_API), /* extras */ true);
+            suspendPackagesForUser(true /* suspend */, Arrays.asList(TARGET_NO_API),
+                    UserReference.of(sContext.getUser()), true /* extraPersistableBundle */);
             Assert.assertNull(launcherAppsGetSuspendedPackageLauncherExtras(QUERIES_NOTHING,
                     TARGET_NO_API));
         } finally {
@@ -1858,8 +1825,7 @@ public class AppEnumerationTests {
 
     @Test
     public void queriesPackage_canSeeAppWidgetProviderTarget() throws Exception {
-        assumeTrue(InstrumentationRegistry.getInstrumentation().getContext().getPackageManager()
-                .hasSystemFeature(PackageManager.FEATURE_APP_WIDGETS));
+        assumeTrue(sPm.hasSystemFeature(PackageManager.FEATURE_APP_WIDGETS));
 
         assertVisible(QUERIES_PACKAGE, TARGET_APPWIDGETPROVIDER,
                 this::getInstalledAppWidgetProviders);
@@ -1867,8 +1833,7 @@ public class AppEnumerationTests {
 
     @Test
     public void queriesNothing_cannotSeeAppWidgetProviderTarget() throws Exception {
-        assumeTrue(InstrumentationRegistry.getInstrumentation().getContext().getPackageManager()
-                .hasSystemFeature(PackageManager.FEATURE_APP_WIDGETS));
+        assumeTrue(sPm.hasSystemFeature(PackageManager.FEATURE_APP_WIDGETS));
 
         assertNotVisible(QUERIES_NOTHING, TARGET_APPWIDGETPROVIDER,
                 this::getInstalledAppWidgetProviders);
@@ -1879,8 +1844,7 @@ public class AppEnumerationTests {
     @Test
     public void queriesNothingSharedUser_canSeeAppWidgetProviderSharedUserTarget()
             throws Exception {
-        assumeTrue(InstrumentationRegistry.getInstrumentation().getContext().getPackageManager()
-                .hasSystemFeature(PackageManager.FEATURE_APP_WIDGETS));
+        assumeTrue(sPm.hasSystemFeature(PackageManager.FEATURE_APP_WIDGETS));
 
         assertVisible(QUERIES_NOTHING_SHARED_USER, TARGET_APPWIDGETPROVIDER_SHARED_USER,
                 this::getInstalledAppWidgetProviders);
@@ -1960,8 +1924,7 @@ public class AppEnumerationTests {
     public void queriesPackageHasProvider_grantUriPermission_canSeeNoApi() throws Exception {
         try {
             grantUriPermission(QUERIES_PACKAGE_PROVIDER, TARGET_NO_API);
-            assertThat(InstrumentationRegistry.getInstrumentation().getContext()
-                    .checkUriPermission(
+            assertThat(sContext.checkUriPermission(
                             Uri.parse("content://" + QUERIES_PACKAGE_PROVIDER),
                             0 /* pid */,
                             sPm.getPackageUid(TARGET_NO_API, 0 /* flags */),
@@ -1976,8 +1939,7 @@ public class AppEnumerationTests {
     public void queriesPackageHasProvider_grantUriPermission_cannotSeeFilters() throws Exception {
         try {
             grantUriPermission(QUERIES_PACKAGE_PROVIDER, TARGET_FILTERS);
-            assertThat(InstrumentationRegistry.getInstrumentation().getContext()
-                            .checkUriPermission(
+            assertThat(sContext.checkUriPermission(
                                     Uri.parse("content://" + QUERIES_PACKAGE_PROVIDER),
                                     0 /* pid */,
                                     sPm.getPackageUid(TARGET_FILTERS, 0 /* flags */),
@@ -2162,7 +2124,6 @@ public class AppEnumerationTests {
 
     private void assertNotVisible(String sourcePackageName, String targetPackageName)
             throws Exception {
-        if (!sGlobalFeatureEnabled) return;
         try {
             getPackageInfo(sourcePackageName, targetPackageName);
             fail(sourcePackageName + " should not be able to see " + targetPackageName);
@@ -2172,28 +2133,17 @@ public class AppEnumerationTests {
 
     private void assertServiceVisible(String sourcePackageName, String targetPackageName)
             throws Exception {
-        if (!sGlobalFeatureEnabled) return;
         assertTrue(bindService(sourcePackageName, targetPackageName));
     }
 
     private void assertServiceNotVisible(String sourcePackageName, String targetPackageName)
             throws Exception {
-        if (!sGlobalFeatureEnabled) return;
         assertFalse(bindService(sourcePackageName, targetPackageName));
-    }
-
-    interface ThrowingBiFunction<T, U, R> {
-        R apply(T arg1, U arg2) throws Exception;
-    }
-
-    interface ThrowingFunction<T, R> {
-        R apply(T arg1) throws Exception;
     }
 
     private void assertNotQueryable(String sourcePackageName, String targetPackageName,
             String intentAction, ThrowingBiFunction<String, Intent, String[]> commandMethod)
             throws Exception {
-        if (!sGlobalFeatureEnabled) return;
         Intent intent = new Intent(intentAction);
         String[] queryablePackageNames = commandMethod.apply(sourcePackageName, intent);
         for (String packageName : queryablePackageNames) {
@@ -2207,7 +2157,6 @@ public class AppEnumerationTests {
     private void assertQueryable(String sourcePackageName, String targetPackageName,
             String intentAction, ThrowingBiFunction<String, Intent, String[]> commandMethod)
             throws Exception {
-        if (!sGlobalFeatureEnabled) return;
         Intent intent = new Intent(intentAction);
         String[] queryablePackageNames = commandMethod.apply(sourcePackageName, intent);
         for (String packageName : queryablePackageNames) {
@@ -2221,7 +2170,6 @@ public class AppEnumerationTests {
 
     private void assertVisible(String sourcePackageName, String targetPackageName,
             ThrowingFunction<String, String[]> commandMethod) throws Exception {
-        if (!sGlobalFeatureEnabled) return;
         final String[] packageNames = commandMethod.apply(sourcePackageName);
         assertThat("The list of package names should not be null",
                 packageNames, notNullValue());
@@ -2231,7 +2179,6 @@ public class AppEnumerationTests {
 
     private void assertNotVisible(String sourcePackageName, String targetPackageName,
             ThrowingFunction<String, String[]> commandMethod) throws Exception {
-        if (!sGlobalFeatureEnabled) return;
         final String[] packageNames = commandMethod.apply(sourcePackageName);
         assertThat("The list of package names should not be null",
                 packageNames, notNullValue());
@@ -2241,7 +2188,6 @@ public class AppEnumerationTests {
 
     private void assertVisible(String sourcePackageName, String targetPackageName,
             ThrowingBiFunction<String, String, String[]> commandMethod) throws Exception {
-        if (!sGlobalFeatureEnabled) return;
         final String[] packageNames = commandMethod.apply(sourcePackageName, targetPackageName);
         assertThat(sourcePackageName + " should be able to see " + targetPackageName,
                 packageNames, hasItemInArray(targetPackageName));
@@ -2249,7 +2195,6 @@ public class AppEnumerationTests {
 
     private void assertNotVisible(String sourcePackageName, String targetPackageName,
             ThrowingBiFunction<String, String, String[]> commandMethod) throws Exception {
-        if (!sGlobalFeatureEnabled) return;
         final String[] packageNames = commandMethod.apply(sourcePackageName, targetPackageName);
         assertThat(sourcePackageName + " should not be able to see " + targetPackageName,
                 packageNames, not(hasItemInArray(targetPackageName)));
@@ -2365,18 +2310,15 @@ public class AppEnumerationTests {
 
     private PackageInfo startSenderForResult(String sourcePackageName, String targetPackageName)
             throws Exception {
-        PendingIntent pendingIntent = PendingIntent.getActivity(
-                InstrumentationRegistry.getInstrumentation().getContext(), 100,
-                new Intent("android.appenumeration.cts.action.SEND_RESULT").setComponent(
-                        new ComponentName(targetPackageName,
-                                "android.appenumeration.cts.TestActivity")),
+        PendingIntent pendingIntent = PendingIntent.getActivity(sContext, 100 /* requestCode */,
+                new Intent(ACTION_SEND_RESULT).setComponent(
+                        new ComponentName(targetPackageName, ACTIVITY_CLASS_TEST)),
                 PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
 
         Bundle response = sendCommandBlocking(sourcePackageName, targetPackageName,
                 pendingIntent /*queryIntent*/, Constants.ACTION_START_SENDER_FOR_RESULT);
         return response.getParcelable(Intent.EXTRA_RETURN_RESULT);
     }
-
 
     private String[] queryIntentActivities(String sourcePackageName, Intent queryIntent)
             throws Exception {
@@ -2463,7 +2405,7 @@ public class AppEnumerationTests {
     private String[] getSyncAdapterPackagesForAuthorityAsUser(String sourcePackageName,
             String targetPackageName) throws Exception {
         final Bundle extraData = new Bundle();
-        extraData.putString(EXTRA_AUTHORITY, targetPackageName + ".authority");
+        extraData.putString(EXTRA_AUTHORITY, targetPackageName + AUTHORITY_SUFFIX);
         extraData.putInt(Intent.EXTRA_USER, Process.myUserHandle().getIdentifier());
         final Bundle response = sendCommandBlocking(sourcePackageName, /* targetPackageName */ null,
                 extraData, ACTION_GET_SYNCADAPTER_PACKAGES_FOR_AUTHORITY);
@@ -2474,7 +2416,7 @@ public class AppEnumerationTests {
             String targetPackageName) throws Exception {
         final Bundle extraData = new Bundle();
         extraData.putParcelable(EXTRA_ACCOUNT, account);
-        extraData.putString(EXTRA_AUTHORITY, targetPackageName + ".authority");
+        extraData.putString(EXTRA_AUTHORITY, targetPackageName + AUTHORITY_SUFFIX);
         final Bundle response = sendCommandBlocking(sourcePackageName, /* targetPackageName */ null,
                 extraData, ACTION_REQUEST_SYNC_AND_AWAIT_STATUS);
         return response.getBoolean(Intent.EXTRA_RETURN_RESULT);
@@ -2483,38 +2425,19 @@ public class AppEnumerationTests {
     private PendingIntent getSyncAdapterControlPanel(String sourcePackageName, Account account,
             String targetPackageName) throws Exception {
         final ComponentName componentName = new ComponentName(
-                targetPackageName, "android.appenumeration.testapp.MockSyncAdapterService");
+                targetPackageName, SERVICE_CLASS_SYNC_ADAPTER);
         final Bundle extraData = new Bundle();
         extraData.putParcelable(EXTRA_ACCOUNT, account);
-        extraData.putString(EXTRA_AUTHORITY, targetPackageName + ".authority");
+        extraData.putString(EXTRA_AUTHORITY, targetPackageName + AUTHORITY_SUFFIX);
         extraData.putParcelable(EXTRA_COMPONENT_NAME, componentName);
         final Bundle response = sendCommandBlocking(sourcePackageName, /* targetPackageName */ null,
                 extraData, ACTION_GET_SYNCADAPTER_CONTROL_PANEL);
         return response.getParcelable(Intent.EXTRA_RETURN_RESULT);
     }
 
-    private void forceStopPackage(String packageName) {
-        runShellCommand("am force-stop --user cur " + packageName);
-    }
-
     private void setPackagesSuspended(boolean suspend, List<String> packages) {
-        setPackagesSuspendedWithLauncherExtras(suspend, packages, /* persistableBundle */ false);
-    }
-
-    private void setPackagesSuspendedWithLauncherExtras(boolean suspend, List<String> packages,
-            boolean extras) {
-        final StringBuilder cmd = new StringBuilder("pm ");
-        if (suspend) {
-            cmd.append("suspend");
-        } else {
-            cmd.append("unsuspend");
-        }
-        cmd.append(" --user cur");
-        if (extras) {
-            cmd.append(" --les foo bar");
-        }
-        packages.stream().forEach(p -> cmd.append(" ").append(p));
-        runShellCommand(cmd.toString());
+        suspendPackagesForUser(suspend, packages, UserReference.of(sContext.getUser()),
+                false /* extraPersistableBundle */);
     }
 
     private boolean launcherAppsIsActivityEnabled(String sourcePackageName,
@@ -2600,7 +2523,7 @@ public class AppEnumerationTests {
     private String getContentProviderMimeType(String sourcePackageName, String targetPackageName)
             throws Exception {
         final Bundle extraData = new Bundle();
-        extraData.putString(EXTRA_AUTHORITY, targetPackageName + ".authority");
+        extraData.putString(EXTRA_AUTHORITY, targetPackageName + AUTHORITY_SUFFIX);
         final Bundle response = sendCommandBlocking(sourcePackageName, /* targetPackageName */ null,
                 extraData, ACTION_GET_CONTENT_PROVIDER_MIME_TYPE);
         return response.getString(Intent.EXTRA_RETURN_RESULT);
@@ -2626,10 +2549,6 @@ public class AppEnumerationTests {
         final Bundle bundle = sendCommandBlocking(sourcePackageName, null /* targetPackageName */,
                 pendingIntent, ACTION_PENDING_INTENT_GET_CREATOR_PACKAGE);
         return bundle.getString(Intent.EXTRA_PACKAGE_NAME);
-    }
-
-    interface Result {
-        Bundle await() throws Exception;
     }
 
     private Result sendCommand(String sourcePackageName, @Nullable String targetPackageName,
@@ -2670,12 +2589,12 @@ public class AppEnumerationTests {
             AmUtils.waitForBroadcastIdle();
             startAndWaitForCommandReady(intent);
         } else {
-            InstrumentationRegistry.getInstrumentation().getContext().startActivity(intent);
+            sContext.startActivity(intent);
         }
         return () -> {
             if (!latch.block(TimeUnit.SECONDS.toMillis(10))) {
                 throw new TimeoutException(
-                        "Latch timed out while awiating a response from " + sourcePackageName);
+                        "Latch timed out while awaiting a response from " + sourcePackageName);
             }
             final Bundle bundle = resultReference.get();
             if (bundle != null && bundle.containsKey(EXTRA_ERROR)) {
@@ -2690,10 +2609,10 @@ public class AppEnumerationTests {
         final RemoteCallback readyCallback = new RemoteCallback(bundle -> latchForReady.open(),
                 sResponseHandler);
         intent.putExtra(EXTRA_REMOTE_READY_CALLBACK, readyCallback);
-        InstrumentationRegistry.getInstrumentation().getContext().startActivity(intent);
+        sContext.startActivity(intent);
         if (!latchForReady.block(TimeUnit.SECONDS.toMillis(10))) {
             throw new TimeoutException(
-                    "Latch timed out while awiating a response from command " + intent.getAction());
+                    "Latch timed out while awaiting a response from command " + intent.getAction());
         }
     }
 
@@ -2723,31 +2642,9 @@ public class AppEnumerationTests {
         return result;
     }
 
-    private void ensurePackageIsInstalled(String packageName, String apkPath) {
-        runShellCommand("pm install -R " + apkPath);
-        PackageInfo info = null;
-        try {
-            info = sPm.getPackageInfo(packageName, /* flags */ 0);
-        } catch (PackageManager.NameNotFoundException e) {
-            // Ignore
-        }
-        Assert.assertNotNull(packageName + " should be installed", info);
-    }
-
-    private void ensurePackageIsNotInstalled(String packageName) {
-        runShellCommand("pm uninstall " + packageName);
-        PackageInfo info = null;
-        try {
-            info = sPm.getPackageInfo(packageName, /* flags */ 0);
-        } catch (PackageManager.NameNotFoundException e) {
-            // Expected
-        }
-        Assert.assertNull(packageName + " shouldn't be installed", info);
-    }
-
     private void addPreferredActivity() {
         final IntentFilter filter = new IntentFilter(
-                "android.intent.action.APP_ENUMERATION_PREFERRED_ACTIVITY");
+                ACTION_APP_ENUMERATION_PREFERRED_ACTIVITY);
         final ComponentName[] candidates = {new ComponentName(TARGET_PREFERRED_ACTIVITY,
                 ACTIVITY_CLASS_DUMMY_ACTIVITY)};
         SystemUtil.runWithShellPermissionIdentity(() -> {
