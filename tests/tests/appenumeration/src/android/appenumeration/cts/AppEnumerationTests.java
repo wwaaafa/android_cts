@@ -199,6 +199,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageInstaller;
 import android.content.pm.PackageInstaller.SessionInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.PackageInfoFlags;
 import android.content.pm.Signature;
 import android.content.res.Resources;
 import android.net.Uri;
@@ -613,8 +614,8 @@ public class AppEnumerationTests {
     @Test
     public void queriesNothing_getPackagesForUid_consistentVisibility()
             throws Exception {
-        final int targetSharedUid = sPm.getPackageUid(TARGET_SHARED_USER, /* flags */ 0);
-        final int targetUid = sPm.getPackageUid(TARGET_FILTERS, /* flags */ 0);
+        final int targetSharedUid = sPm.getPackageUid(TARGET_SHARED_USER, PackageInfoFlags.of(0));
+        final int targetUid = sPm.getPackageUid(TARGET_FILTERS, PackageInfoFlags.of(0));
         Assert.assertNull(getPackagesForUid(QUERIES_NOTHING, targetSharedUid));
         Assert.assertNull(getPackagesForUid(QUERIES_NOTHING, targetUid));
     }
@@ -622,8 +623,8 @@ public class AppEnumerationTests {
     @Test
     public void queriesNothingHasPermission_getPackagesForUid_consistentVisibility()
             throws Exception {
-        final int targetSharedUid = sPm.getPackageUid(TARGET_SHARED_USER, /* flags */ 0);
-        final int targetUid = sPm.getPackageUid(TARGET_FILTERS, /* flags */ 0);
+        final int targetSharedUid = sPm.getPackageUid(TARGET_SHARED_USER, PackageInfoFlags.of(0));
+        final int targetUid = sPm.getPackageUid(TARGET_FILTERS, PackageInfoFlags.of(0));
         Assert.assertNotNull(getPackagesForUid(QUERIES_NOTHING_PERM, targetSharedUid));
         Assert.assertNotNull(getPackagesForUid(QUERIES_NOTHING_PERM, targetUid));
     }
@@ -631,8 +632,8 @@ public class AppEnumerationTests {
     @Test
     public void queriesNothing_getNameForUid_consistentVisibility()
             throws Exception {
-        final int targetSharedUid = sPm.getPackageUid(TARGET_SHARED_USER, /* flags */ 0);
-        final int targetUid = sPm.getPackageUid(TARGET_FILTERS, /* flags */ 0);
+        final int targetSharedUid = sPm.getPackageUid(TARGET_SHARED_USER, PackageInfoFlags.of(0));
+        final int targetUid = sPm.getPackageUid(TARGET_FILTERS, PackageInfoFlags.of(0));
         Assert.assertNull(getNameForUid(QUERIES_NOTHING, targetSharedUid));
         Assert.assertNull(getNameForUid(QUERIES_NOTHING, targetUid));
     }
@@ -640,8 +641,8 @@ public class AppEnumerationTests {
     @Test
     public void queriesNothingHasPermission_getNameForUid_consistentVisibility()
             throws Exception {
-        final int targetSharedUid = sPm.getPackageUid(TARGET_SHARED_USER, /* flags */ 0);
-        final int targetUid = sPm.getPackageUid(TARGET_FILTERS, /* flags */ 0);
+        final int targetSharedUid = sPm.getPackageUid(TARGET_SHARED_USER, PackageInfoFlags.of(0));
+        final int targetUid = sPm.getPackageUid(TARGET_FILTERS, PackageInfoFlags.of(0));
         Assert.assertNotNull(getNameForUid(QUERIES_NOTHING_PERM, targetSharedUid));
         Assert.assertNotNull(getNameForUid(QUERIES_NOTHING_PERM, targetUid));
     }
@@ -649,8 +650,8 @@ public class AppEnumerationTests {
     @Test
     public void queriesNothing_getNamesForUids_consistentVisibility()
             throws Exception {
-        final int targetSharedUid = sPm.getPackageUid(TARGET_SHARED_USER, /* flags */ 0);
-        final int targetUid = sPm.getPackageUid(TARGET_FILTERS, /* flags */ 0);
+        final int targetSharedUid = sPm.getPackageUid(TARGET_SHARED_USER, PackageInfoFlags.of(0));
+        final int targetUid = sPm.getPackageUid(TARGET_FILTERS, PackageInfoFlags.of(0));
         Assert.assertNull(getNamesForUids(QUERIES_NOTHING, targetSharedUid)[0]);
         Assert.assertNull(getNamesForUids(QUERIES_NOTHING, targetUid)[0]);
     }
@@ -658,8 +659,8 @@ public class AppEnumerationTests {
     @Test
     public void queriesNothingHasPermission_getNamesForUids_consistentVisibility()
             throws Exception {
-        final int targetSharedUid = sPm.getPackageUid(TARGET_SHARED_USER, /* flags */ 0);
-        final int targetUid = sPm.getPackageUid(TARGET_FILTERS, /* flags */ 0);
+        final int targetSharedUid = sPm.getPackageUid(TARGET_SHARED_USER, PackageInfoFlags.of(0));
+        final int targetUid = sPm.getPackageUid(TARGET_FILTERS, PackageInfoFlags.of(0));
         Assert.assertNotNull(getNamesForUids(QUERIES_NOTHING_PERM, targetSharedUid)[0]);
         Assert.assertNotNull(getNamesForUids(QUERIES_NOTHING_PERM, targetUid)[0]);
     }
@@ -667,8 +668,8 @@ public class AppEnumerationTests {
     @Test
     public void queriesNothing_checkSignatures_consistentVisibility()
             throws Exception {
-        final int targetSharedUid = sPm.getPackageUid(TARGET_SHARED_USER, /* flags */ 0);
-        final int targetUid = sPm.getPackageUid(TARGET_FILTERS, /* flags */ 0);
+        final int targetSharedUid = sPm.getPackageUid(TARGET_SHARED_USER, PackageInfoFlags.of(0));
+        final int targetUid = sPm.getPackageUid(TARGET_FILTERS, PackageInfoFlags.of(0));
         Assert.assertEquals(SIGNATURE_UNKNOWN_PACKAGE,
                 checkSignatures(QUERIES_NOTHING, targetSharedUid));
         Assert.assertEquals(SIGNATURE_UNKNOWN_PACKAGE,
@@ -678,8 +679,8 @@ public class AppEnumerationTests {
     @Test
     public void queriesNothingHasPermission_checkSignatures_consistentVisibility()
             throws Exception {
-        final int targetSharedUid = sPm.getPackageUid(TARGET_SHARED_USER, /* flags */ 0);
-        final int targetUid = sPm.getPackageUid(TARGET_FILTERS, /* flags */ 0);
+        final int targetSharedUid = sPm.getPackageUid(TARGET_SHARED_USER, PackageInfoFlags.of(0));
+        final int targetUid = sPm.getPackageUid(TARGET_FILTERS, PackageInfoFlags.of(0));
         Assert.assertEquals(SIGNATURE_MATCH,
                 checkSignatures(QUERIES_NOTHING_PERM, targetSharedUid));
         Assert.assertEquals(SIGNATURE_MATCH, checkSignatures(QUERIES_NOTHING_PERM, targetUid));
@@ -688,9 +689,9 @@ public class AppEnumerationTests {
     @Test
     public void queriesNothing_hasSigningCertificate_consistentVisibility() throws Exception {
         final PackageInfo targetSharedUidInfo = sPm.getPackageInfo(TARGET_SHARED_USER,
-                GET_SIGNING_CERTIFICATES);
+                PackageInfoFlags.of(GET_SIGNING_CERTIFICATES));
         final PackageInfo targetUidInfo = sPm.getPackageInfo(TARGET_FILTERS,
-                GET_SIGNING_CERTIFICATES);
+                PackageInfoFlags.of(GET_SIGNING_CERTIFICATES));
         final byte[] targetSharedCert = convertSignaturesToCertificates(
                 targetSharedUidInfo.signingInfo.getApkContentsSigners()).get(0).getEncoded();
         final byte[] targetCert = convertSignaturesToCertificates(
@@ -708,9 +709,9 @@ public class AppEnumerationTests {
     public void queriesNothingHasPermission_hasSigningCertificate_consistentVisibility()
             throws Exception {
         final PackageInfo targetSharedUidInfo = sPm.getPackageInfo(TARGET_SHARED_USER,
-                GET_SIGNING_CERTIFICATES);
+                PackageInfoFlags.of(GET_SIGNING_CERTIFICATES));
         final PackageInfo targetUidInfo = sPm.getPackageInfo(TARGET_FILTERS,
-                GET_SIGNING_CERTIFICATES);
+                PackageInfoFlags.of(GET_SIGNING_CERTIFICATES));
         final byte[] targetSharedCert = convertSignaturesToCertificates(
                 targetSharedUidInfo.signingInfo.getApkContentsSigners()).get(0).getEncoded();
         final byte[] targetCert = convertSignaturesToCertificates(
@@ -1589,10 +1590,10 @@ public class AppEnumerationTests {
         extraData.putInt(EXTRA_ID, sessionId);
         final Bundle response = sendCommandBlocking(sourcePackageName, /* targetPackageName */ null,
                 extraData, action);
-        final List<Parcelable> parcelables = response.getParcelableArrayList(
-                Intent.EXTRA_RETURN_RESULT);
-        return parcelables.stream()
-                .map(i -> (i == null ? SessionInfo.INVALID_ID : ((SessionInfo) i).getSessionId()))
+        final List<SessionInfo> infos = response.getParcelableArrayList(
+                Intent.EXTRA_RETURN_RESULT, SessionInfo.class);
+        return infos.stream()
+                .map(i -> (i == null ? SessionInfo.INVALID_ID : i.getSessionId()))
                 .distinct()
                 .toArray(Integer[]::new);
     }
@@ -1927,7 +1928,7 @@ public class AppEnumerationTests {
             assertThat(sContext.checkUriPermission(
                             Uri.parse("content://" + QUERIES_PACKAGE_PROVIDER),
                             0 /* pid */,
-                            sPm.getPackageUid(TARGET_NO_API, 0 /* flags */),
+                            sPm.getPackageUid(TARGET_NO_API, PackageInfoFlags.of(0)),
                             Intent.FLAG_GRANT_READ_URI_PERMISSION),
                     is(PackageManager.PERMISSION_GRANTED));
         } finally {
@@ -1942,7 +1943,7 @@ public class AppEnumerationTests {
             assertThat(sContext.checkUriPermission(
                                     Uri.parse("content://" + QUERIES_PACKAGE_PROVIDER),
                                     0 /* pid */,
-                                    sPm.getPackageUid(TARGET_FILTERS, 0 /* flags */),
+                                    sPm.getPackageUid(TARGET_FILTERS, PackageInfoFlags.of(0)),
                                     Intent.FLAG_GRANT_READ_URI_PERMISSION),
                     is(PackageManager.PERMISSION_DENIED));
         } finally {
@@ -2243,7 +2244,7 @@ public class AppEnumerationTests {
             throws Exception {
         Bundle response = sendCommandBlocking(sourcePackageName, targetPackageName,
                 null /*queryIntent*/, ACTION_GET_PACKAGE_INFO);
-        return response.getParcelable(Intent.EXTRA_RETURN_RESULT);
+        return response.getParcelable(Intent.EXTRA_RETURN_RESULT, PackageInfo.class);
     }
 
     private String[] getPackagesForUid(String sourcePackageName, int targetUid)
@@ -2305,7 +2306,7 @@ public class AppEnumerationTests {
             throws Exception {
         Bundle response = sendCommandBlocking(sourcePackageName, targetPackageName,
                 null /*queryIntent*/, ACTION_START_FOR_RESULT);
-        return response.getParcelable(Intent.EXTRA_RETURN_RESULT);
+        return response.getParcelable(Intent.EXTRA_RETURN_RESULT, PackageInfo.class);
     }
 
     private PackageInfo startSenderForResult(String sourcePackageName, String targetPackageName)
@@ -2317,7 +2318,7 @@ public class AppEnumerationTests {
 
         Bundle response = sendCommandBlocking(sourcePackageName, targetPackageName,
                 pendingIntent /*queryIntent*/, Constants.ACTION_START_SENDER_FOR_RESULT);
-        return response.getParcelable(Intent.EXTRA_RETURN_RESULT);
+        return response.getParcelable(Intent.EXTRA_RETURN_RESULT, PackageInfo.class);
     }
 
     private String[] queryIntentActivities(String sourcePackageName, Intent queryIntent)
@@ -2383,10 +2384,10 @@ public class AppEnumerationTests {
     private String[] getSyncAdapterTypes(String sourcePackageName) throws Exception {
         final Bundle response = sendCommandBlocking(sourcePackageName, /* targetPackageName */ null,
                 /* intentExtra */ null, ACTION_GET_SYNCADAPTER_TYPES);
-        final List<Parcelable> parcelables = response.getParcelableArrayList(
-                Intent.EXTRA_RETURN_RESULT);
-        return parcelables.stream()
-                .map(parcelable -> ((SyncAdapterType) parcelable).getPackageName())
+        final List<SyncAdapterType> types = response.getParcelableArrayList(
+                Intent.EXTRA_RETURN_RESULT, SyncAdapterType.class);
+        return types.stream()
+                .map(type -> type.getPackageName())
                 .distinct()
                 .toArray(String[]::new);
     }
@@ -2394,10 +2395,10 @@ public class AppEnumerationTests {
     private String[] getInstalledAppWidgetProviders(String sourcePackageName) throws Exception {
         final Bundle response = sendCommandBlocking(sourcePackageName, /* targetPackageName */ null,
                 /* intentExtra */ null, ACTION_GET_INSTALLED_APPWIDGET_PROVIDERS);
-        final List<Parcelable> parcelables = response.getParcelableArrayList(
-                Intent.EXTRA_RETURN_RESULT);
-        return parcelables.stream()
-                .map(parcelable -> ((AppWidgetProviderInfo) parcelable).provider.getPackageName())
+        final List<AppWidgetProviderInfo> infos = response.getParcelableArrayList(
+                Intent.EXTRA_RETURN_RESULT, AppWidgetProviderInfo.class);
+        return infos.stream()
+                .map(info -> info.provider.getPackageName())
                 .distinct()
                 .toArray(String[]::new);
     }
@@ -2432,7 +2433,7 @@ public class AppEnumerationTests {
         extraData.putParcelable(EXTRA_COMPONENT_NAME, componentName);
         final Bundle response = sendCommandBlocking(sourcePackageName, /* targetPackageName */ null,
                 extraData, ACTION_GET_SYNCADAPTER_CONTROL_PANEL);
-        return response.getParcelable(Intent.EXTRA_RETURN_RESULT);
+        return response.getParcelable(Intent.EXTRA_RETURN_RESULT, PendingIntent.class);
     }
 
     private void setPackagesSuspended(boolean suspend, List<String> packages) {
@@ -2496,7 +2497,7 @@ public class AppEnumerationTests {
 
     private int checkUriPermission(String sourcePackageName, String targetPackageName)
             throws Exception {
-        final int targetUid = sPm.getPackageUid(targetPackageName, /* flags */ 0);
+        final int targetUid = sPm.getPackageUid(targetPackageName, PackageInfoFlags.of(0));
         final Bundle extraData = new Bundle();
         extraData.putString(EXTRA_AUTHORITY, sourcePackageName);
         final Result result = sendCommand(sourcePackageName, targetPackageName, targetUid,
@@ -2541,7 +2542,7 @@ public class AppEnumerationTests {
     private PendingIntent getPendingIntentActivity(String sourcePackageName) throws Exception  {
         final Bundle bundle = sendCommandBlocking(sourcePackageName, null /* targetPackageName */,
                 null /* intentExtra */, ACTION_PENDING_INTENT_GET_ACTIVITY);
-        return bundle.getParcelable(EXTRA_PENDING_INTENT);
+        return bundle.getParcelable(EXTRA_PENDING_INTENT, PendingIntent.class);
     }
 
     private String getPendingIntentCreatorPackage(String sourcePackageName,
@@ -2598,7 +2599,7 @@ public class AppEnumerationTests {
             }
             final Bundle bundle = resultReference.get();
             if (bundle != null && bundle.containsKey(EXTRA_ERROR)) {
-                throw (Exception) Objects.requireNonNull(bundle.getSerializable(EXTRA_ERROR));
+                throw Objects.requireNonNull(bundle.getSerializable(EXTRA_ERROR, Exception.class));
             }
             return bundle;
         };

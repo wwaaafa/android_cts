@@ -233,13 +233,13 @@ public class CrossUserPackageVisibilityTests {
                 .adoptShellPermissionIdentity(CHANGE_COMPONENT_ENABLED_STATE);
         final IllegalArgumentException e1 = assertThrows(IllegalArgumentException.class,
                 () -> mPackageManager.setApplicationEnabledSetting(
-                        TARGET_STUB, COMPONENT_ENABLED_STATE_ENABLED, 0));
+                        TARGET_STUB, COMPONENT_ENABLED_STATE_ENABLED, 0 /* flags */));
 
         installPackageForUser(TARGET_STUB_APK, mOtherUser);
 
         final IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class,
                 () -> mPackageManager.setApplicationEnabledSetting(
-                        TARGET_STUB, COMPONENT_ENABLED_STATE_ENABLED, 0));
+                        TARGET_STUB, COMPONENT_ENABLED_STATE_ENABLED, 0 /* flags */));
         assertThat(e1.getMessage()).isEqualTo(e2.getMessage());
     }
 
@@ -251,13 +251,13 @@ public class CrossUserPackageVisibilityTests {
                 .adoptShellPermissionIdentity(CHANGE_COMPONENT_ENABLED_STATE);
         final IllegalArgumentException e1 = assertThrows(IllegalArgumentException.class,
                 () -> mPackageManager.setComponentEnabledSetting(
-                        componentName, COMPONENT_ENABLED_STATE_ENABLED, 0));
+                        componentName, COMPONENT_ENABLED_STATE_ENABLED, 0 /* flags */));
 
         installPackageForUser(TARGET_STUB_APK, mOtherUser);
 
         final IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class,
                 () -> mPackageManager.setComponentEnabledSetting(
-                        componentName, COMPONENT_ENABLED_STATE_ENABLED, 0));
+                        componentName, COMPONENT_ENABLED_STATE_ENABLED, 0 /* flags */));
         assertThat(e1.getMessage()).isEqualTo(e2.getMessage());
     }
 
