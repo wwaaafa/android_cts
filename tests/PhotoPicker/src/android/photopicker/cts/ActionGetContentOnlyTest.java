@@ -16,6 +16,8 @@
 
 package android.photopicker.cts;
 
+import static android.photopicker.cts.util.GetContentActivityAliasUtils.clearPackageData;
+import static android.photopicker.cts.util.GetContentActivityAliasUtils.getDocumentsUiPackageName;
 import static android.photopicker.cts.util.PhotoPickerAssertionsUtils.assertReadOnlyAccess;
 import static android.photopicker.cts.util.PhotoPickerFilesUtils.createImagesAndGetUriAndPath;
 import static android.photopicker.cts.util.PhotoPickerFilesUtils.deleteMedia;
@@ -27,19 +29,12 @@ import static android.photopicker.cts.util.PhotoPickerUiUtils.findAndClickBrowse
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
-import android.Manifest;
-import android.app.Instrumentation;
 import android.content.ClipData;
-import android.content.ComponentName;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.content.pm.ProviderInfo;
-import android.content.pm.ResolveInfo;
 import android.net.Uri;
-import android.provider.MediaStore;
+import android.photopicker.cts.util.GetContentActivityAliasUtils;
 import android.util.Pair;
 
-import androidx.test.InstrumentationRegistry;
 import androidx.test.uiautomator.UiObject;
 import androidx.test.uiautomator.UiObjectNotFoundException;
 import androidx.test.uiautomator.UiSelector;
@@ -51,19 +46,14 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Supplier;
 
-public class PhotoPickerGetContentTest extends PhotoPickerBaseTest {
-    private static final long POLLING_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(5);
-    private static final long POLLING_SLEEP_MILLIS = 100;
+/**
+ * Photo Picker tests for PhotoPicker launched via {@link Intent#ACTION_GET_CONTENT} intent
+ * exclusively.
+ */
+public class ActionGetContentOnlyTest extends PhotoPickerBaseTest {
     private static String sDocumentsUiPackageName;
     private static int sGetContentTakeOverActivityAliasState;
-    private static ComponentName sComponentName = new ComponentName(
-            getMediaProviderPackageName(),
-            "com.android.providers.media.photopicker.PhotoPickerGetContentActivity");
-    private static PackageManager sPackageManager;
 
     private List<Uri> mUriList = new ArrayList<>();
 
@@ -81,16 +71,14 @@ public class PhotoPickerGetContentTest extends PhotoPickerBaseTest {
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
-        final Instrumentation inst = InstrumentationRegistry.getInstrumentation();
-        sPackageManager = inst.getContext().getPackageManager();
         sDocumentsUiPackageName = getDocumentsUiPackageName();
-        enableGetContentTakeOverActivityAlias();
-        clearDocumentsUiPackageData();
+        sGetContentTakeOverActivityAliasState = GetContentActivityAliasUtils.enableAndGetOldState();
+        clearPackageData(sDocumentsUiPackageName);
     }
 
     @AfterClass
     public static void tearDownAfterClass() throws Exception {
-        restoreState();
+        GetContentActivityAliasUtils.restoreState(sGetContentTakeOverActivityAliasState);
     }
 
     @Test
@@ -145,53 +133,6 @@ public class PhotoPickerGetContentTest extends PhotoPickerBaseTest {
         for (int i = 0; i < count; i++) {
             assertReadOnlyAccess(clipData.getItemAt(i).getUri(), mContext.getContentResolver());
         }
-    }
-
-    private static void updateComponentEnabledSetting(int state) throws Exception {
-        final Instrumentation inst = InstrumentationRegistry.getInstrumentation();
-        inst.getUiAutomation().adoptShellPermissionIdentity(
-                Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE);
-        try {
-            sPackageManager.setComponentEnabledSetting(sComponentName, state,
-                    PackageManager.DONT_KILL_APP);
-        } finally {
-            inst.getUiAutomation().dropShellPermissionIdentity();
-        }
-        waitForComponentToBeEnabled(state);
-    }
-
-    private static void waitForComponentToBeEnabled(int state) throws Exception {
-        pollForCondition(() -> isComponentEnabled(state), "Timed out while"
-                + " waiting for component to be enabled");
-    }
-
-    private static void pollForCondition(Supplier<Boolean> condition, String errorMessage)
-            throws Exception {
-        for (int i = 0; i < POLLING_TIMEOUT_MILLIS / POLLING_SLEEP_MILLIS; i++) {
-            if (condition.get()) {
-                return;
-            }
-            Thread.sleep(POLLING_SLEEP_MILLIS);
-        }
-        throw new TimeoutException(errorMessage);
-    }
-
-    private static void restoreState() throws Exception {
-        updateComponentEnabledSetting(sGetContentTakeOverActivityAliasState);
-    }
-
-    private static void enableGetContentTakeOverActivityAlias() throws Exception {
-        if (isComponentEnabled(PackageManager.COMPONENT_ENABLED_STATE_ENABLED)) {
-            return;
-        }
-        sGetContentTakeOverActivityAliasState =
-                sPackageManager.getComponentEnabledSetting(sComponentName);
-
-        updateComponentEnabledSetting(PackageManager.COMPONENT_ENABLED_STATE_ENABLED);
-    }
-
-    private static boolean isComponentEnabled(int state) {
-        return sPackageManager.getComponentEnabledSetting(sComponentName) == state;
     }
 
     private UiObject findSaveButton() {
@@ -256,29 +197,5 @@ public class PhotoPickerGetContentTest extends PhotoPickerBaseTest {
         }
 
         targetObject.longClick();
-    }
-
-
-    /**
-     * Clears the DocumentsUI package data.
-     */
-    private static void clearDocumentsUiPackageData() throws Exception {
-        InstrumentationRegistry.getInstrumentation().getUiAutomation()
-                .executeShellCommand("pm clear " + sDocumentsUiPackageName);
-    }
-
-    private static String getDocumentsUiPackageName() {
-        final Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        intent.setType("*/*");
-        final ResolveInfo ri = sPackageManager.resolveActivity(intent, 0);
-        return ri.activityInfo.packageName;
-    }
-
-    private static String getMediaProviderPackageName() {
-        final Instrumentation inst = androidx.test.InstrumentationRegistry.getInstrumentation();
-        final PackageManager packageManager = inst.getContext().getPackageManager();
-        final ProviderInfo providerInfo = packageManager.resolveContentProvider(
-                MediaStore.AUTHORITY, PackageManager.MATCH_ALL);
-        return providerInfo.packageName;
     }
 }
