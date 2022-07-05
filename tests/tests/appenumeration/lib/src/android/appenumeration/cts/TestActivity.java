@@ -49,6 +49,7 @@ import static android.appenumeration.cts.Constants.EXTRA_ID;
 import static android.appenumeration.cts.Constants.EXTRA_PENDING_INTENT;
 import static android.appenumeration.cts.Constants.EXTRA_REMOTE_CALLBACK;
 import static android.appenumeration.cts.Constants.EXTRA_REMOTE_READY_CALLBACK;
+import static android.appenumeration.cts.Constants.SERVICE_CLASS_DUMMY_SERVICE;
 import static android.content.Intent.EXTRA_COMPONENT_NAME;
 import static android.content.Intent.EXTRA_PACKAGES;
 import static android.content.Intent.EXTRA_RETURN_RESULT;
@@ -991,9 +992,8 @@ public class TestActivity extends Activity {
     }
 
     private void bindService(RemoteCallback remoteCallback, String packageName) {
-        final String SERVICE_NAME = "android.appenumeration.testapp.DummyService";
         final Intent intent = new Intent();
-        intent.setClassName(packageName, SERVICE_NAME);
+        intent.setClassName(packageName, SERVICE_CLASS_DUMMY_SERVICE);
         final ServiceConnection serviceConnection = new ServiceConnection() {
             @Override
             public void onServiceConnected(ComponentName className, IBinder service) {
@@ -1028,7 +1028,7 @@ public class TestActivity extends Activity {
         result.putBoolean(EXTRA_RETURN_RESULT, bound);
         remoteCallback.sendResult(result);
         // Don't invoke finish() right here if service is bound successfully to keep the service
-        // connection alive since the ServiceRecord would be remove from the ServiceMap once no
+        // connection alive since the ServiceRecord would be removed from the ServiceMap once no
         // client is binding the service.
         if (!bound) finish();
     }
