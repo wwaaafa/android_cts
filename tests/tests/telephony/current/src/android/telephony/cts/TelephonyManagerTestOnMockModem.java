@@ -74,12 +74,6 @@ public class TelephonyManagerTestOnMockModem {
 
         sIsMultiSimDevice = isMultiSim(sTelephonyManager);
 
-        //TODO: Support DSDS b/210073692
-        if (sIsMultiSimDevice) {
-            Log.d(TAG, "Not support MultiSIM");
-            return;
-        }
-
         sMockModemManager = new MockModemManager();
         assertNotNull(sMockModemManager);
         assertTrue(sMockModemManager.connectMockModemService());
@@ -93,11 +87,6 @@ public class TelephonyManagerTestOnMockModem {
             return;
         }
 
-        //TODO: Support DSDS b/210073692
-        if (sIsMultiSimDevice) {
-            return;
-        }
-
         // Rebind all interfaces which is binding to MockModemService to default.
         assertNotNull(sMockModemManager);
         assertTrue(sMockModemManager.disconnectMockModemService());
@@ -107,8 +96,6 @@ public class TelephonyManagerTestOnMockModem {
     @Before
     public void beforeTest() {
         assumeTrue(hasTelephonyFeature());
-        //TODO: Support DSDS b/210073692
-        assumeTrue(!sIsMultiSimDevice);
     }
 
     private static Context getContext() {
