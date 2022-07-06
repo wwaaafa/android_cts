@@ -17,10 +17,12 @@
 package android.graphics.cts;
 
 import static android.opengl.EGL14.*;
+import static android.system.OsConstants.EINVAL;
 
 import static org.junit.Assert.assertEquals;
 
 import android.graphics.SurfaceTexture;
+import android.media.ImageReader;
 import android.opengl.EGL14;
 import android.opengl.EGLConfig;
 import android.opengl.EGLContext;
@@ -219,6 +221,24 @@ public class ANativeWindowTest {
         assertEquals(nGetBuffersDataSpace(surface), DATASPACE_SRGB);
     }
 
+    @Test
+    public void testGetBuffersDefaultDataspace() {
+        assertEquals(nGetBuffersDefaultDataSpace(null), -EINVAL);
+
+        ImageReader reader1 = new ImageReader.Builder(32, 32)
+                .setDefaultDataSpace(DataSpace.ADATASPACE_BT709)
+                .build();
+        assertEquals(nGetBuffersDefaultDataSpace(reader1.getSurface()), DataSpace.ADATASPACE_BT709);
+        reader1.close();
+
+        ImageReader reader2 = new ImageReader.Builder(32, 32)
+                .setDefaultDataSpace(DataSpace.ADATASPACE_BT2020)
+                .build();
+        assertEquals(nGetBuffersDefaultDataSpace(reader2.getSurface()),
+                DataSpace.ADATASPACE_BT2020);
+        reader2.close();
+    }
+
     // Multiply 4x4 matrices result = a*b. result can be the same as either a or b,
     // allowing for result *= b. Another 4x4 matrix tmp must be provided as scratch space.
     private void matrixMultiply(float[] result, float[] a, float[] b, float[] tmp) {
@@ -261,5 +281,6 @@ public class ANativeWindowTest {
     private static native void nPushBufferWithTransform(Surface surface, int transform);
     private static native int nSetBuffersDataSpace(Surface surface, int dataSpace);
     private static native int nGetBuffersDataSpace(Surface surface);
+    private static native int nGetBuffersDefaultDataSpace(Surface surface);
     private static native void nTryAllocateBuffers(Surface surface);
 }
