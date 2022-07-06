@@ -33,6 +33,7 @@ import android.os.SystemProperties;
 import android.telephony.AccessNetworkConstants;
 import android.telephony.NetworkRegistrationInfo;
 import android.telephony.ServiceState;
+import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.telephony.mockmodem.MockModemManager;
 import android.util.Log;
@@ -134,19 +135,36 @@ public class TelephonyManagerTestOnMockModem {
         // Check for developer settings for user build. Always allow for debug builds
         if (!(isAllowed || isAllowedForBoot) && !DEBUG) {
             throw new IllegalStateException(
-                "!! Enable Mock Modem before running this test !! "
-                    + "Developer options => Allow Mock Modem");
+                    "!! Enable Mock Modem before running this test !! "
+                            + "Developer options => Allow Mock Modem");
         }
     }
 
-    private int getRegState(int domain) {
+    private int getActiveSubId(int phoneId) {
+        InstrumentationRegistry.getInstrumentation()
+                .getUiAutomation()
+                .adoptShellPermissionIdentity("android.permission.READ_PRIVILEGED_PHONE_STATE");
+
+        int[] allSubs =
+                getContext()
+                        .getSystemService(SubscriptionManager.class)
+                        .getActiveSubscriptionIdList();
+        int subsLength = allSubs.length;
+        Log.d(TAG, " Active Sub length is " + subsLength);
+
+        assertTrue(phoneId <= (subsLength - 1));
+
+        return allSubs[phoneId];
+    }
+
+    private int getRegState(int domain, int subId) {
         int reg;
 
         InstrumentationRegistry.getInstrumentation()
                 .getUiAutomation()
                 .adoptShellPermissionIdentity("android.permission.READ_PHONE_STATE");
 
-        ServiceState ss = sTelephonyManager.getServiceState();
+        ServiceState ss = sTelephonyManager.createForSubscriptionId(subId).getServiceState();
         assertNotNull(ss);
 
         NetworkRegistrationInfo nri =
@@ -162,6 +180,7 @@ public class TelephonyManagerTestOnMockModem {
     @Test
     public void testSimStateChange() throws Throwable {
         Log.d(TAG, "TelephonyManagerTestOnMockModem#testSimStateChange");
+        TimeUnit.SECONDS.sleep(2);
 
         int slotId = 0;
         int simCardState = sTelephonyManager.getSimCardState();
@@ -173,6 +192,7 @@ public class TelephonyManagerTestOnMockModem {
 
         // Insert a SIM
         assertTrue(sMockModemManager.insertSimCard(slotId, MOCK_SIM_PROFILE_ID_TWN_CHT));
+        TimeUnit.SECONDS.sleep(2);
         simCardState = sTelephonyManager.getSimCardState();
         assertEquals(TelephonyManager.SIM_STATE_PRESENT, simCardState);
 
@@ -290,14 +310,16 @@ public class TelephonyManagerTestOnMockModem {
         Log.d(TAG, "TelephonyManagerTestOnMockModem#testServiceStateChange");
 
         int slotId = 0;
+        int subId;
 
         // Insert a SIM
         sMockModemManager.insertSimCard(slotId, MOCK_SIM_PROFILE_ID_TWN_CHT);
 
         // Expect: Seaching State
         TimeUnit.SECONDS.sleep(2);
+        subId = getActiveSubId(slotId);
         assertEquals(
-                getRegState(NetworkRegistrationInfo.DOMAIN_CS),
+                getRegState(NetworkRegistrationInfo.DOMAIN_CS, subId),
                 NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_SEARCHING);
 
         // Enter Service
@@ -307,7 +329,7 @@ public class TelephonyManagerTestOnMockModem {
         // Expect: Home State
         TimeUnit.SECONDS.sleep(2);
         assertEquals(
-                getRegState(NetworkRegistrationInfo.DOMAIN_CS),
+                getRegState(NetworkRegistrationInfo.DOMAIN_CS, subId),
                 NetworkRegistrationInfo.REGISTRATION_STATE_HOME);
 
         // Leave Service
@@ -317,7 +339,7 @@ public class TelephonyManagerTestOnMockModem {
         // Expect: Seaching State
         TimeUnit.SECONDS.sleep(2);
         assertEquals(
-                getRegState(NetworkRegistrationInfo.DOMAIN_CS),
+                getRegState(NetworkRegistrationInfo.DOMAIN_CS, subId),
                 NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_SEARCHING);
 
         // Remove the SIM

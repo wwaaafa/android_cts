@@ -51,12 +51,12 @@ public class MockModemService extends Service {
     private static Context sContext;
     private static MockModemConfigInterface[] sMockModemConfigInterfaces;
     private static IRadioConfigImpl sIRadioConfigImpl;
-    private static IRadioModemImpl sIRadioModemImpl;
-    private static IRadioSimImpl sIRadioSimImpl;
-    private static IRadioNetworkImpl sIRadioNetworkImpl;
-    private static IRadioDataImpl sIRadioDataImpl;
-    private static IRadioMessagingImpl sIRadioMessagingImpl;
-    private static IRadioVoiceImpl sIRadioVoiceImpl;
+    private static IRadioModemImpl[] sIRadioModemImpl;
+    private static IRadioSimImpl[] sIRadioSimImpl;
+    private static IRadioNetworkImpl[] sIRadioNetworkImpl;
+    private static IRadioDataImpl[] sIRadioDataImpl;
+    private static IRadioMessagingImpl[] sIRadioMessagingImpl;
+    private static IRadioVoiceImpl[] sIRadioVoiceImpl;
 
     public static final byte PHONE_ID_0 = 0x00;
     public static final byte PHONE_ID_1 = 0x01;
@@ -114,86 +114,66 @@ public class MockModemService extends Service {
                     new MockModemConfigBase(sContext, i, mNumOfSim, mNumOfPhone);
         }
 
-        sIRadioConfigImpl = new IRadioConfigImpl(this, sMockModemConfigInterfaces, DEFAULT_SUB_ID);
-        // TODO: Support DSDS
-        sIRadioModemImpl = new IRadioModemImpl(this, sMockModemConfigInterfaces, DEFAULT_SUB_ID);
-        sIRadioSimImpl = new IRadioSimImpl(this, sMockModemConfigInterfaces, DEFAULT_SUB_ID);
-        sIRadioNetworkImpl =
-                new IRadioNetworkImpl(this, sMockModemConfigInterfaces, DEFAULT_SUB_ID);
-        sIRadioDataImpl =
-                new IRadioDataImpl(this, sContext, sMockModemConfigInterfaces, DEFAULT_SUB_ID);
-        sIRadioMessagingImpl = new IRadioMessagingImpl(this);
-        sIRadioVoiceImpl = new IRadioVoiceImpl(this);
+        sIRadioConfigImpl = new IRadioConfigImpl(this, sMockModemConfigInterfaces, PHONE_ID_0);
+        sIRadioModemImpl = new IRadioModemImpl[mNumOfPhone];
+        sIRadioSimImpl = new IRadioSimImpl[mNumOfPhone];
+        sIRadioNetworkImpl = new IRadioNetworkImpl[mNumOfPhone];
+        sIRadioDataImpl = new IRadioDataImpl[mNumOfPhone];
+        sIRadioMessagingImpl = new IRadioMessagingImpl[mNumOfPhone];
+        sIRadioVoiceImpl = new IRadioVoiceImpl[mNumOfPhone];
+        for (int i = 0; i < mNumOfPhone; i++) {
+            sIRadioModemImpl[i] = new IRadioModemImpl(this, sMockModemConfigInterfaces, i);
+            sIRadioSimImpl[i] = new IRadioSimImpl(this, sMockModemConfigInterfaces, i);
+            sIRadioNetworkImpl[i] = new IRadioNetworkImpl(this, sMockModemConfigInterfaces, i);
+            sIRadioDataImpl[i] = new IRadioDataImpl(this, sContext, sMockModemConfigInterfaces, i);
+            sIRadioMessagingImpl[i] = new IRadioMessagingImpl(this, sMockModemConfigInterfaces, i);
+            sIRadioVoiceImpl[i] = new IRadioVoiceImpl(this, sMockModemConfigInterfaces, i);
+        }
 
         mBinder = new LocalBinder();
     }
 
     @Override
     public IBinder onBind(Intent intent) {
-        byte phoneId = intent.getByteExtra(PHONE_ID, PHONE_ID_0);
 
-        if (IRADIOCONFIG_INTERFACE.equals(intent.getAction())) {
-            Log.i(TAG, "onBind-IRadioConfig " + phoneId);
-            return sIRadioConfigImpl;
-        } else if (IRADIOMODEM_INTERFACE.equals(intent.getAction())) {
-            Log.i(TAG, "onBind-IRadioModem " + phoneId);
-            if (phoneId == PHONE_ID_0) {
-                return sIRadioModemImpl;
-            } else if (phoneId == PHONE_ID_1) {
-                // TODO
-            } else {
-                return null;
-            }
-        } else if (IRADIOSIM_INTERFACE.equals(intent.getAction())) {
-            Log.i(TAG, "onBind-IRadioSim " + phoneId);
-            if (phoneId == PHONE_ID_0) {
-                return sIRadioSimImpl;
-            } else if (phoneId == PHONE_ID_1) {
-                // TODO
-            } else {
-                return null;
-            }
-        } else if (IRADIONETWORK_INTERFACE.equals(intent.getAction())) {
-            Log.i(TAG, "onBind-IRadioNetwork " + phoneId);
-            if (phoneId == PHONE_ID_0) {
-                return sIRadioNetworkImpl;
-            } else if (phoneId == PHONE_ID_1) {
-                // TODO
-            } else {
-                return null;
-            }
-        } else if (IRADIODATA_INTERFACE.equals(intent.getAction())) {
-            Log.i(TAG, "onBind-IRadioData " + phoneId);
-            if (phoneId == PHONE_ID_0) {
-                return sIRadioDataImpl;
-            } else if (phoneId == PHONE_ID_1) {
-                // TODO
-            } else {
-                return null;
-            }
-        } else if (IRADIOMESSAGING_INTERFACE.equals(intent.getAction())) {
-            Log.i(TAG, "onBind-IRadioMessaging " + phoneId);
-            if (phoneId == PHONE_ID_0) {
-                return sIRadioMessagingImpl;
-            } else if (phoneId == PHONE_ID_1) {
-                // TODO
-            } else {
-                return null;
-            }
-        } else if (IRADIOVOICE_INTERFACE.equals(intent.getAction())) {
-            Log.i(TAG, "onBind-IRadioVoice " + phoneId);
-            if (phoneId == PHONE_ID_0) {
-                return sIRadioVoiceImpl;
-            } else if (phoneId == PHONE_ID_1) {
-                // TODO
-            } else {
-                return null;
-            }
+        String action = intent.getAction();
+        if (action == null) {
+            countDownLatch(LATCH_MOCK_MODEM_SERVICE_READY);
+            Log.i(TAG, "onBind-Local");
+            return mBinder;
         }
 
-        countDownLatch(LATCH_MOCK_MODEM_SERVICE_READY);
-        Log.i(TAG, "onBind-Local");
-        return mBinder;
+        byte phoneId = intent.getByteExtra(PHONE_ID, PHONE_ID_0);
+
+        if (phoneId > PHONE_ID_1) {
+            Log.e(TAG, "Not suuport for phone " + phoneId);
+            return null;
+        }
+
+        if (action.startsWith(IRADIOCONFIG_INTERFACE)) {
+            Log.i(TAG, "onBind-IRadioConfig " + phoneId);
+            return sIRadioConfigImpl;
+        } else if (action.startsWith(IRADIOMODEM_INTERFACE)) {
+            Log.i(TAG, "onBind-IRadioModem " + phoneId);
+            return sIRadioModemImpl[phoneId];
+        } else if (action.startsWith(IRADIOSIM_INTERFACE)) {
+            Log.i(TAG, "onBind-IRadioSim " + phoneId);
+            return sIRadioSimImpl[phoneId];
+        } else if (action.startsWith(IRADIONETWORK_INTERFACE)) {
+            Log.i(TAG, "onBind-IRadioNetwork " + phoneId);
+            return sIRadioNetworkImpl[phoneId];
+        } else if (action.startsWith(IRADIODATA_INTERFACE)) {
+            Log.i(TAG, "onBind-IRadioData " + phoneId);
+            return sIRadioDataImpl[phoneId];
+        } else if (action.startsWith(IRADIOMESSAGING_INTERFACE)) {
+            Log.i(TAG, "onBind-IRadioMessaging " + phoneId);
+            return sIRadioMessagingImpl[phoneId];
+        } else if (action.startsWith(IRADIOVOICE_INTERFACE)) {
+            Log.i(TAG, "onBind-IRadioVoice " + phoneId);
+            return sIRadioVoiceImpl[phoneId];
+        }
+
+        return null;
     }
 
     public boolean waitForLatchCountdown(int latchIndex) {
@@ -299,10 +279,10 @@ public class MockModemService extends Service {
 
             // Sync modem configurations to radio modules
             sMockModemConfigInterfaces[i].notifyAllRegistrantNotifications();
-        }
 
-        // Connect to telephony framework
-        sIRadioModemImpl.rilConnected();
+            // Connect to telephony framework
+            sIRadioModemImpl[i].rilConnected();
+        }
 
         return result;
     }
@@ -311,32 +291,55 @@ public class MockModemService extends Service {
         return sMockModemConfigInterfaces;
     }
 
-    // TODO: Support DSDS
     public IRadioConfigImpl getIRadioConfig() {
         return sIRadioConfigImpl;
     }
 
     public IRadioModemImpl getIRadioModem() {
-        return sIRadioModemImpl;
+        return getIRadioModem(PHONE_ID_0);
+    }
+
+    public IRadioModemImpl getIRadioModem(byte phoneId) {
+        return sIRadioModemImpl[phoneId];
     }
 
     public IRadioSimImpl getIRadioSim() {
-        return sIRadioSimImpl;
+        return getIRadioSim(PHONE_ID_0);
+    }
+
+    public IRadioSimImpl getIRadioSim(byte phoneId) {
+        return sIRadioSimImpl[phoneId];
     }
 
     public IRadioNetworkImpl getIRadioNetwork() {
-        return sIRadioNetworkImpl;
+        return getIRadioNetwork(PHONE_ID_0);
+    }
+
+    public IRadioNetworkImpl getIRadioNetwork(byte phoneId) {
+        return sIRadioNetworkImpl[phoneId];
     }
 
     public IRadioVoiceImpl getIRadioVoice() {
-        return sIRadioVoiceImpl;
+        return getIRadioVoice(PHONE_ID_0);
+    }
+
+    public IRadioVoiceImpl getIRadioVoice(byte phoneId) {
+        return sIRadioVoiceImpl[phoneId];
     }
 
     public IRadioMessagingImpl getIRadioMessaging() {
-        return sIRadioMessagingImpl;
+        return getIRadioMessaging(PHONE_ID_0);
+    }
+
+    public IRadioMessagingImpl getIRadioMessaging(byte phoneId) {
+        return sIRadioMessagingImpl[phoneId];
     }
 
     public IRadioDataImpl getIRadioData() {
-        return sIRadioDataImpl;
+        return getIRadioData(PHONE_ID_0);
+    }
+
+    public IRadioDataImpl getIRadioData(byte phoneId) {
+        return sIRadioDataImpl[phoneId];
     }
 }
