@@ -197,9 +197,6 @@ public class ANativeWindowTest {
 
     @Test
     public void testSetBuffersDataSpace() {
-        final int DATASPACE_SRGB = 142671872;
-        final int DATASPACE_UNKNOWN = 123;
-
         int[] texId = new int[1];
         GLES20.glGenTextures(1, texId, 0);
 
@@ -208,17 +205,18 @@ public class ANativeWindowTest {
         Surface surface = new Surface(consumer);
 
         assertEquals(nGetBuffersDataSpace(surface), 0);
-        assertEquals(nSetBuffersDataSpace(surface, DATASPACE_SRGB), 0);
-        assertEquals(nGetBuffersDataSpace(surface), DATASPACE_SRGB);
+        assertEquals(nSetBuffersDataSpace(surface, DataSpace.ADATASPACE_SRGB), 0);
+        assertEquals(nGetBuffersDataSpace(surface), DataSpace.ADATASPACE_SRGB);
 
-        assertEquals(nSetBuffersDataSpace(null, DATASPACE_SRGB), -22);
+        assertEquals(nSetBuffersDataSpace(null, DataSpace.ADATASPACE_SRGB), -22);
         assertEquals(nGetBuffersDataSpace(null), -22);
-        assertEquals(nGetBuffersDataSpace(surface), DATASPACE_SRGB);
+        assertEquals(nGetBuffersDataSpace(surface), DataSpace.ADATASPACE_SRGB);
 
         // set an unsupported data space should return a error code,
         // the original data space shouldn't change.
-        assertEquals(nSetBuffersDataSpace(surface, DATASPACE_UNKNOWN), -22);
-        assertEquals(nGetBuffersDataSpace(surface), DATASPACE_SRGB);
+        final int invalidDataSpace = 123;
+        assertEquals(nSetBuffersDataSpace(surface, invalidDataSpace), -22);
+        assertEquals(nGetBuffersDataSpace(surface), DataSpace.ADATASPACE_SRGB);
     }
 
     @Test
