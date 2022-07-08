@@ -18,6 +18,7 @@ android_test {
         "androidx.slice_slice-core",
         "androidx.slice_slice-view",
         "androidx.window_window",
+        "compatibility-common-util-devicesidelib",
         "ctstestrunner-axt",
         "junit",
         "truth-prebuilt",
