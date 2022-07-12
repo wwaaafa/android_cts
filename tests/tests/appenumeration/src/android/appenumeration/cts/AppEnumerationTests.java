@@ -30,18 +30,15 @@ import static android.appenumeration.cts.Constants.ACTION_GET_CONTENT_PROVIDER_M
 import static android.appenumeration.cts.Constants.ACTION_GET_INSTALLED_ACCESSIBILITYSERVICES_PACKAGES;
 import static android.appenumeration.cts.Constants.ACTION_GET_INSTALLED_APPWIDGET_PROVIDERS;
 import static android.appenumeration.cts.Constants.ACTION_GET_INSTALLED_PACKAGES;
-import static android.appenumeration.cts.Constants.ACTION_GET_IS_SYNCABLE;
 import static android.appenumeration.cts.Constants.ACTION_GET_NAMES_FOR_UIDS;
 import static android.appenumeration.cts.Constants.ACTION_GET_NAME_FOR_UID;
 import static android.appenumeration.cts.Constants.ACTION_GET_PACKAGES_FOR_UID;
 import static android.appenumeration.cts.Constants.ACTION_GET_PACKAGE_INFO;
-import static android.appenumeration.cts.Constants.ACTION_GET_PERIODIC_SYNCS;
 import static android.appenumeration.cts.Constants.ACTION_GET_PREFERRED_ACTIVITIES;
 import static android.appenumeration.cts.Constants.ACTION_GET_SHAREDLIBRARY_DEPENDENT_PACKAGES;
 import static android.appenumeration.cts.Constants.ACTION_GET_SYNCADAPTER_CONTROL_PANEL;
 import static android.appenumeration.cts.Constants.ACTION_GET_SYNCADAPTER_PACKAGES_FOR_AUTHORITY;
 import static android.appenumeration.cts.Constants.ACTION_GET_SYNCADAPTER_TYPES;
-import static android.appenumeration.cts.Constants.ACTION_GET_SYNC_AUTOMATICALLY;
 import static android.appenumeration.cts.Constants.ACTION_GRANT_URI_PERMISSION;
 import static android.appenumeration.cts.Constants.ACTION_HAS_SIGNING_CERTIFICATE;
 import static android.appenumeration.cts.Constants.ACTION_JUST_FINISH;
@@ -54,12 +51,10 @@ import static android.appenumeration.cts.Constants.ACTION_QUERY_ACTIVITIES;
 import static android.appenumeration.cts.Constants.ACTION_QUERY_PROVIDERS;
 import static android.appenumeration.cts.Constants.ACTION_QUERY_RESOLVER;
 import static android.appenumeration.cts.Constants.ACTION_QUERY_SERVICES;
-import static android.appenumeration.cts.Constants.ACTION_REQUEST_PERIODIC_SYNC;
 import static android.appenumeration.cts.Constants.ACTION_REQUEST_SYNC_AND_AWAIT_STATUS;
 import static android.appenumeration.cts.Constants.ACTION_REVOKE_URI_PERMISSION;
 import static android.appenumeration.cts.Constants.ACTION_SEND_RESULT;
 import static android.appenumeration.cts.Constants.ACTION_SET_INSTALLER_PACKAGE_NAME;
-import static android.appenumeration.cts.Constants.ACTION_SET_SYNC_AUTOMATICALLY;
 import static android.appenumeration.cts.Constants.ACTION_START_DIRECTLY;
 import static android.appenumeration.cts.Constants.ACTION_START_FOR_RESULT;
 import static android.appenumeration.cts.Constants.ACTION_TAKE_PERSISTABLE_URI_PERMISSION;
@@ -125,7 +120,6 @@ import static android.appenumeration.cts.Constants.TARGET_SHARED_USER;
 import static android.appenumeration.cts.Constants.TARGET_STUB;
 import static android.appenumeration.cts.Constants.TARGET_STUB_APK;
 import static android.appenumeration.cts.Constants.TARGET_SYNCADAPTER;
-import static android.appenumeration.cts.Constants.TARGET_SYNCADAPTER_AUTHORITY;
 import static android.appenumeration.cts.Constants.TARGET_SYNCADAPTER_SHARED_USER;
 import static android.appenumeration.cts.Constants.TARGET_WEB;
 import static android.appenumeration.cts.Constants.TEST_NONEXISTENT_PACKAGE_NAME_1;
@@ -177,7 +171,6 @@ import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.PeriodicSync;
 import android.content.SyncAdapterType;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -1024,44 +1017,6 @@ public class AppEnumerationTests extends AppEnumerationTestsBase {
     }
 
     @Test
-    public void queriesNothing_getIsSyncable_cannotSeeSyncadapterTarget() throws Exception {
-        assertThat(getIsSyncable(QUERIES_NOTHING, ACCOUNT_SYNCADAPTER, TARGET_SYNCADAPTER),
-                is(0));
-    }
-
-    @Test
-    public void queriesPackage_getIsSyncable_canSeeSyncadapterTarget() throws Exception {
-        assertThat(getIsSyncable(QUERIES_PACKAGE, ACCOUNT_SYNCADAPTER, TARGET_SYNCADAPTER),
-                greaterThan(0));
-    }
-
-    @Test
-    public void queriesNothing_getSyncAutomatically_cannotSeeSyncadapterTarget() throws Exception {
-        setSyncAutomatically(TARGET_SYNCADAPTER, ACCOUNT_SYNCADAPTER);
-        assertThat(getSyncAutomatically(QUERIES_NOTHING, TARGET_SYNCADAPTER), is(false));
-    }
-
-    @Test
-    public void queriesPackage_getSyncAutomatically_canSeeSyncadapterTarget() throws Exception {
-        setSyncAutomatically(TARGET_SYNCADAPTER, ACCOUNT_SYNCADAPTER);
-        assertThat(getSyncAutomatically(QUERIES_PACKAGE, TARGET_SYNCADAPTER), is(true));
-    }
-
-    @Test
-    public void queriesNothing_getPeriodicSyncs_cannotSeeSyncadapterTarget() throws Exception {
-        requestPeriodicSync(TARGET_SYNCADAPTER, ACCOUNT_SYNCADAPTER);
-        assertThat(getPeriodicSyncs(QUERIES_NOTHING, ACCOUNT_SYNCADAPTER, TARGET_SYNCADAPTER),
-                not(hasItemInArray(TARGET_SYNCADAPTER_AUTHORITY)));
-    }
-
-    @Test
-    public void queriesPackage_getPeriodicSyncs_canSeeSyncadapterTarget() throws Exception {
-        requestPeriodicSync(TARGET_SYNCADAPTER, ACCOUNT_SYNCADAPTER);
-        assertThat(getPeriodicSyncs(QUERIES_PACKAGE, ACCOUNT_SYNCADAPTER, TARGET_SYNCADAPTER),
-                hasItemInArray(TARGET_SYNCADAPTER_AUTHORITY));
-    }
-
-    @Test
     public void queriesPackage_canSeeAppWidgetProviderTarget() throws Exception {
         assumeTrue(sPm.hasSystemFeature(PackageManager.FEATURE_APP_WIDGETS));
 
@@ -1691,62 +1646,6 @@ public class AppEnumerationTests extends AppEnumerationTestsBase {
         final Bundle response = sendCommandBlocking(sourcePackageName, /* targetPackageName */ null,
                 extraData, ACTION_GET_SYNCADAPTER_CONTROL_PANEL);
         return response.getParcelable(Intent.EXTRA_RETURN_RESULT, PendingIntent.class);
-    }
-
-    private void requestPeriodicSync(String providerPackageName, Account account) throws Exception {
-        final String authority = providerPackageName + AUTHORITY_SUFFIX;
-        final Bundle extraData = new Bundle();
-        extraData.putParcelable(EXTRA_ACCOUNT, account);
-        extraData.putString(EXTRA_AUTHORITY, authority);
-        sendCommandBlocking(providerPackageName, null /* targetPackageName */, extraData,
-                ACTION_REQUEST_PERIODIC_SYNC);
-    }
-
-    private void setSyncAutomatically(String providerPackageName, Account account)
-            throws Exception {
-        final String authority = providerPackageName + AUTHORITY_SUFFIX;
-        final Bundle extraData = new Bundle();
-        extraData.putParcelable(EXTRA_ACCOUNT, account);
-        extraData.putString(EXTRA_AUTHORITY, authority);
-        sendCommandBlocking(providerPackageName, null /* targetPackageName */, extraData,
-                ACTION_SET_SYNC_AUTOMATICALLY);
-    }
-
-    private boolean getSyncAutomatically(String sourcePackageName, String targetPackageName)
-            throws Exception {
-        final String authority = targetPackageName + AUTHORITY_SUFFIX;
-        final Bundle extraData = new Bundle();
-        extraData.putString(EXTRA_AUTHORITY, authority);
-        final Bundle response = sendCommandBlocking(sourcePackageName, null /* targetPackageName */,
-                extraData, ACTION_GET_SYNC_AUTOMATICALLY);
-        return response.getBoolean(Intent.EXTRA_RETURN_RESULT);
-    }
-
-    private int getIsSyncable(String sourcePackageName, Account account, String targetPackageName)
-            throws Exception {
-        final String authority = targetPackageName + AUTHORITY_SUFFIX;
-        final Bundle extraData = new Bundle();
-        extraData.putParcelable(EXTRA_ACCOUNT, account);
-        extraData.putString(EXTRA_AUTHORITY, authority);
-        final Bundle response = sendCommandBlocking(sourcePackageName, null /* targetPackageName */,
-                extraData, ACTION_GET_IS_SYNCABLE);
-        return response.getInt(Intent.EXTRA_RETURN_RESULT);
-    }
-
-    private String[] getPeriodicSyncs(String sourcePackageName, Account account,
-            String targetPackageName) throws Exception {
-        final String authority = targetPackageName + AUTHORITY_SUFFIX;
-        final Bundle extraData = new Bundle();
-        extraData.putParcelable(EXTRA_ACCOUNT, account);
-        extraData.putString(EXTRA_AUTHORITY, authority);
-        final Bundle response = sendCommandBlocking(sourcePackageName, null /* targetPackageName */,
-                extraData, ACTION_GET_PERIODIC_SYNCS);
-        final List<PeriodicSync> list = response.getParcelableArrayList(Intent.EXTRA_RETURN_RESULT,
-                PeriodicSync.class);
-        return list.stream()
-                .map(sync -> sync.authority)
-                .distinct()
-                .toArray(String[]::new);
     }
 
     private String[] getSharedLibraryDependentPackages(String sourcePackageName) throws Exception {
