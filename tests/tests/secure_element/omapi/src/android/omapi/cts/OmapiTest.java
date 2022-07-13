@@ -797,6 +797,73 @@ public class OmapiTest {
         }
     }
 
+    /** Tests Channel getSession API */
+    @Test
+    @ApiTest(apis = {"android.se.omapi.Channel#getSession", "android.se.omapi.Session#isClosed",
+            "android.se.omapi.Channel#isBasicChannel"})
+    public void testGetSession() {
+        assumeTrue(supportOMAPIReaders());
+        try {
+            waitForConnection();
+            Reader[] readers = seService.getReaders();
+
+            for (Reader reader : readers) {
+                Session session = null;
+                Channel channel = null;
+                try {
+                    session = reader.openSession();
+                    assertNotNull("Could not open session", session);
+                    channel = session.openLogicalChannel(SELECTABLE_AID, (byte) 0x00);
+                    assertFalse("channel is not LogicalChannel", channel.isBasicChannel());
+
+                    channel.getSession().close();
+                    assertTrue(session.isClosed());
+                } finally {
+                    if (channel != null) channel.close();
+                    if (session != null) session.close();
+                }
+            }
+        } catch (Exception e) {
+            fail("unexpected exception " + e);
+        }
+    }
+
+    /** Tests Channel selectNext API */
+    @Test
+    @ApiTest(apis = "android.se.omapi.Channel#selectNext")
+    public void testSelectNext() {
+        assumeTrue(supportOMAPIReaders());
+        try {
+            waitForConnection();
+            Reader[] readers = seService.getReaders();
+
+            for (Reader reader : readers) {
+                Session session = null;
+                Channel channel = null;
+                try {
+                    session = reader.openSession();
+                    assertNotNull("Could not open session", session);
+                    channel = session.openLogicalChannel(SELECTABLE_AID, (byte) 0x00);
+                    // no further Applet exists with this AID
+                    assertFalse(channel.selectNext());
+
+                    // send APDU to check selected applet stays selected on this channel
+                    for (byte[] apdu : NO_DATA_APDU) {
+                        byte[] response = channel.transmit(apdu);
+                        assertThat(response.length, is(2));
+                        assertThat(response[response.length - 1] & 0xFF, is(0x00));
+                        assertThat(response[response.length - 2] & 0xFF, is(0x90));
+                    }
+                } finally {
+                    if (channel != null) channel.close();
+                    if (session != null) session.close();
+                }
+            }
+        } catch (Exception e) {
+            fail("unexpected exception " + e);
+        }
+    }
+
     /**
      * Verifies TLV data
      * @param tlv
