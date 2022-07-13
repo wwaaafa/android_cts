@@ -740,6 +740,63 @@ public class OmapiTest {
         }
     }
 
+    /** Tests Reader closeSession API */
+    @Test
+    @ApiTest(apis = {"android.se.omapi.Reader#closeSessions", "android.se.omapi.Session#isClosed"})
+    public void testCloseSessions() {
+        assumeTrue(supportOMAPIReaders());
+        try {
+            waitForConnection();
+            Reader[] readers = seService.getReaders();
+
+            for (Reader reader : readers) {
+                Session sessionA = null;
+                Session sessionB = null;
+                try {
+                    assertTrue(reader.isSecureElementPresent());
+                    sessionA = reader.openSession();
+                    assertNotNull("null session", sessionA);
+                    assertFalse("session is closed", sessionA.isClosed());
+
+                    sessionB = reader.openSession();
+                    assertNotNull("null session", sessionB);
+                    assertFalse("session is closed", sessionB.isClosed());
+
+                    sessionA.getReader().closeSessions();
+                    assertTrue("session is still open", sessionA.isClosed());
+                    assertTrue("session is still open", sessionB.isClosed());
+                } finally {
+                    if (sessionA != null) sessionA.close();
+                    if (sessionB != null) sessionB.close();
+                }
+            }
+        } catch (Exception e) {
+            fail("unexpected exception " + e);
+        }
+    }
+
+    /** Tests Reader reset API */
+    @Test
+    @ApiTest(apis = "android.se.omapi.Reader#reset")
+    public void testOmapiReaderReset() {
+        assumeTrue(supportOMAPIReaders());
+        try {
+            waitForConnection();
+            Reader[] readers = seService.getReaders();
+
+            for (Reader reader : readers) {
+                try {
+                    reader.reset();
+                    fail("reset function is not blocked by permission ");
+                } catch (SecurityException e) {
+                    // Catch the expected exception here
+                }
+            }
+        } catch (Exception e) {
+            fail("unexpected exception " + e);
+        }
+    }
+
     /**
      * Verifies TLV data
      * @param tlv
