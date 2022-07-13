@@ -35,6 +35,11 @@ android_test {
         "general-tests",
     ],
     platform_apis: true,
+    data: [
+        ":CtsAppSearchTestHelperA",
+        ":CtsAppSearchTestHelperB",
+    ],
+    per_testcase_directory: true,
 }
 
 android_test_helper_app {
