@@ -33,6 +33,7 @@ import android.se.omapi.Session;
 
 import androidx.test.InstrumentationRegistry;
 
+import com.android.compatibility.common.util.ApiTest;
 import com.android.compatibility.common.util.PropertyUtil;
 
 import org.junit.After;
@@ -54,6 +55,7 @@ public class OmapiTest {
     private final static String UICC_READER_PREFIX = "SIM";
     private final static String ESE_READER_PREFIX = "eSE";
     private final static String SD_READER_PREFIX = "SD";
+    private final static String OMAPI_VERSION = "3.3";
     private final static byte[] SELECTABLE_AID =
             new byte[]{(byte) 0xA0, 0x00, 0x00, 0x04, 0x76, 0x41, 0x6E, 0x64,
                     0x72, 0x6F, 0x69, 0x64, 0x43, 0x54, 0x53, 0x31};
@@ -721,6 +723,18 @@ public class OmapiTest {
                     if (session != null) session.close();
                 }
             }
+        } catch (Exception e) {
+            fail("unexpected exception " + e);
+        }
+    }
+
+    /** Tests SEService getVersion API */
+    @Test
+    @ApiTest(apis = "android.se.omapi.SEService#getVersion")
+    public void testGetOmapiVersion() {
+        try {
+            waitForConnection();
+            assertTrue("Unexpected OMAPI version", seService.getVersion().equals(OMAPI_VERSION));
         } catch (Exception e) {
             fail("unexpected exception " + e);
         }
