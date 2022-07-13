@@ -537,7 +537,8 @@ public class OmapiTest {
         return transmitResponse;
     }
 
-    private byte[] internalTransmitApduWithoutP2(Reader reader, byte[] apdu) throws IOException {
+    private byte[] internalTransmitApduWithoutP2(Reader reader, byte[] apdu,
+            boolean testLogicalChannel) throws IOException {
         byte[] transmitResponse = null;
         Session session = null;
         Channel channel = null;
@@ -545,7 +546,11 @@ public class OmapiTest {
             assertTrue(reader.isSecureElementPresent());
             session = reader.openSession();
             assertNotNull("null session", session);
-            channel = session.openLogicalChannel(SELECTABLE_AID);
+            if (testLogicalChannel) {
+                channel = session.openLogicalChannel(SELECTABLE_AID);
+            } else {
+                channel = session.openBasicChannel(SELECTABLE_AID);
+            }
             assertNotNull("Null Channel", channel);
             byte[] selectResponse = channel.getSelectResponse();
             assertNotNull("Null Select Response", selectResponse);
@@ -678,6 +683,8 @@ public class OmapiTest {
      * Verifies that the default P2 value (0x00) is not modified by the underlying implementation.
      */
     @Test
+    @ApiTest(apis = {"android.se.omapi.Session#openBasicChannel",
+            "android.se.omapi.Session#openLogicalChannel"})
     public void testP2Value() {
         assumeTrue(supportOMAPIReaders());
         try {
@@ -685,11 +692,20 @@ public class OmapiTest {
             Reader[] readers = seService.getReaders();
 
             for (Reader reader : readers) {
-                byte[] response = internalTransmitApduWithoutP2(reader, CHECK_SELECT_P2_APDU);
+                byte[] response = internalTransmitApduWithoutP2(reader, CHECK_SELECT_P2_APDU, true);
                 assertGreaterOrEqual(response.length, 3);
                 assertThat(response[response.length - 1] & 0xFF, is(0x00));
                 assertThat(response[response.length - 2] & 0xFF, is(0x90));
                 assertThat(response[response.length - 3] & 0xFF, is(0x00));
+
+                // skip basic channel verification for UICC reader
+                if (reader.getName().startsWith(UICC_READER_PREFIX)) {
+                    continue;
+                }
+                response = internalTransmitApduWithoutP2(reader, CHECK_SELECT_P2_APDU, false);
+                assertGreaterOrEqual(response.length, 3);
+                assertThat(response[response.length - 1] & 0xFF, is(0x00));
+                assertThat(response[response.length - 2] & 0xFF, is(0x90));
             }
         } catch (Exception e) {
           fail("unexpected exception " + e);
