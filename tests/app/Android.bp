@@ -60,6 +60,25 @@ android_test {
     },
     // Even with coverage disabled, we're close to the single dex limit, so allow use of multi-dex.
     dxflags: ["--multi-dex"],
+    data: [
+        ":CtsSimpleApp",
+        ":CtsAppTestStubs",
+        ":CtsAppTestStubsApp1",
+        ":CtsAppTestStubsApp3",
+        ":CtsAppTestStubsApp2",
+        ":CtsAppTestStubsApi30",
+        ":CtsBadProviderStubs",
+        ":CtsCantSaveState1",
+        ":CtsCantSaveState2",
+        ":NotificationDelegator",
+        ":NotificationProvider",
+        ":NotificationListener",
+        ":StorageDelegator",
+        ":CtsActivityManagerApi29",
+        ":NotificationTrampoline",
+        ":NotificationTrampolineApi30",
+    ],
+    per_testcase_directory: true,
 }
 
 android_test {
