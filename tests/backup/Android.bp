@@ -45,4 +45,11 @@ android_test {
         "mts-permission",
     ],
     sdk_version: "test_current",
+    data: [
+        ":CtsPermissionBackupApp",
+        ":CtsPermissionBackupApp22",
+        ":CtsFullBackupApp",
+        ":CtsKeyValueBackupApp",
+    ],
+    per_testcase_directory: true,
 }
