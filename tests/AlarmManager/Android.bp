@@ -36,4 +36,9 @@ android_test {
         "mts-scheduling",
     ],
     platform_apis: true,
+    data: [
+        ":AlarmTestApp30",
+        ":AlarmTestApp",
+    ],
+    per_testcase_directory: true,
 }
