@@ -33,6 +33,7 @@ import com.google.common.collect.ImmutableSet;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
@@ -160,10 +161,52 @@ public class VehiclePropertyVerifier<T> {
         if (carPropertyConfig.getAccess() == CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ) {
             return;
         }
-        if (!mVerifySetterWithConfigArrayValues) {
-            return;
+        if (Boolean.class.equals(carPropertyConfig.getPropertyType())) {
+            verifyBooleanPropertySetter(carPropertyConfig, carPropertyManager);
+        } else if (Integer.class.equals(carPropertyConfig.getPropertyType())) {
+            verifyIntegerPropertySetter(carPropertyConfig, carPropertyManager);
         }
-        for (Integer valueToSet : carPropertyConfig.getConfigArray()) {
+    }
+
+    private void verifyBooleanPropertySetter(CarPropertyConfig<?> carPropertyConfig,
+            CarPropertyManager carPropertyManager) {
+        for (int areaId : carPropertyConfig.getAreaIds()) {
+            CarPropertyValue<Boolean> currentCarPropertyValue = carPropertyManager.getProperty(
+                    mPropertyId, areaId);
+            verifyCarPropertyValue(carPropertyConfig, currentCarPropertyValue, areaId,
+                    CAR_PROPERTY_VALUE_SOURCE_GETTER);
+            Boolean valueToSet = !currentCarPropertyValue.getValue();
+            verifySetProperty((CarPropertyConfig<Boolean>) carPropertyConfig, carPropertyManager,
+                    areaId, valueToSet);
+            verifySetProperty((CarPropertyConfig<Boolean>) carPropertyConfig, carPropertyManager,
+                    areaId, !valueToSet);
+        }
+    }
+
+    private void verifyIntegerPropertySetter(CarPropertyConfig<?> carPropertyConfig,
+            CarPropertyManager carPropertyManager) {
+        if (mVerifySetterWithConfigArrayValues) {
+            verifySetterWithConfigArrayValues(carPropertyConfig, carPropertyManager);
+        } else if (!mPossibleCarPropertyValues.isEmpty()) {
+            verifySetterWithPossibleCarPropertyValues(carPropertyConfig, carPropertyManager);
+        }
+    }
+
+    private void verifySetterWithConfigArrayValues(CarPropertyConfig<?> carPropertyConfig,
+            CarPropertyManager carPropertyManager) {
+        verifySetterWithIntegerValues(carPropertyConfig, carPropertyManager,
+                carPropertyConfig.getConfigArray());
+    }
+
+    private void verifySetterWithPossibleCarPropertyValues(CarPropertyConfig<?> carPropertyConfig,
+            CarPropertyManager carPropertyManager) {
+        verifySetterWithIntegerValues(carPropertyConfig, carPropertyManager,
+                mPossibleCarPropertyValues);
+    }
+
+    private void verifySetterWithIntegerValues(CarPropertyConfig<?> carPropertyConfig,
+            CarPropertyManager carPropertyManager, Collection<Integer> valuesToSet) {
+        for (Integer valueToSet : valuesToSet) {
             for (int areaId : carPropertyConfig.getAreaIds()) {
                 CarPropertyValue<Integer> currentCarPropertyValue = carPropertyManager.getProperty(
                         mPropertyId, areaId);
@@ -172,19 +215,26 @@ public class VehiclePropertyVerifier<T> {
                 if (currentCarPropertyValue.getValue().equals(valueToSet)) {
                     continue;
                 }
-                SetterCallback setterCallback = new SetterCallback(mPropertyId, mPropertyName,
-                        areaId, valueToSet);
-                assertWithMessage("Failed to register setter callback for " + mPropertyName).that(
-                        carPropertyManager.registerCallback(setterCallback, mPropertyId,
-                                CarPropertyManager.SENSOR_RATE_FASTEST)).isTrue();
-                carPropertyManager.setIntProperty(mPropertyId, areaId, valueToSet);
-                CarPropertyValue<?> updatedCarPropertyValue =
-                        setterCallback.waitForUpdatedCarPropertyValue();
-                verifyCarPropertyValue(carPropertyConfig, updatedCarPropertyValue, areaId,
-                        CAR_PROPERTY_VALUE_SOURCE_CALLBACK);
-                carPropertyManager.unregisterCallback(setterCallback, mPropertyId);
+                verifySetProperty((CarPropertyConfig<Integer>) carPropertyConfig,
+                        carPropertyManager, areaId, valueToSet);
             }
         }
+    }
+
+    private <T> void verifySetProperty(CarPropertyConfig<T> carPropertyConfig,
+            CarPropertyManager carPropertyManager, int areaId, T valueToSet) {
+        SetterCallback setterCallback = new SetterCallback(mPropertyId, mPropertyName, areaId,
+                valueToSet);
+        assertWithMessage("Failed to register setter callback for " + mPropertyName).that(
+                carPropertyManager.registerCallback(setterCallback, mPropertyId,
+                        CarPropertyManager.SENSOR_RATE_FASTEST)).isTrue();
+        carPropertyManager.setProperty(carPropertyConfig.getPropertyType(), mPropertyId, areaId,
+                valueToSet);
+        CarPropertyValue<?> updatedCarPropertyValue =
+                setterCallback.waitForUpdatedCarPropertyValue();
+        verifyCarPropertyValue(carPropertyConfig, updatedCarPropertyValue, areaId,
+                CAR_PROPERTY_VALUE_SOURCE_CALLBACK);
+        carPropertyManager.unregisterCallback(setterCallback, mPropertyId);
     }
 
     private void verifyCarPropertyValueCallback(CarPropertyConfig<?> carPropertyConfig,
@@ -272,6 +322,12 @@ public class VehiclePropertyVerifier<T> {
         assertWithMessage(mPropertyName + " must be " + mPropertyType + " type property")
                 .that(carPropertyConfig.getPropertyType()).isEqualTo(mPropertyType);
 
+        assertWithMessage(mPropertyName + "'s must have at least 1 area ID defined").that(
+                carPropertyConfig.getAreaIds().length).isAtLeast(1);
+        assertWithMessage(mPropertyName + "'s area IDs must all be unique: " + Arrays.toString(
+                carPropertyConfig.getAreaIds())).that(ImmutableSet.copyOf(Arrays.stream(
+                carPropertyConfig.getAreaIds()).boxed().collect(Collectors.toList())).size()
+                == carPropertyConfig.getAreaIds().length).isTrue();
         if (mAreaIdsVerifier.isPresent()) {
             mAreaIdsVerifier.get().verify(carPropertyConfig.getAreaIds());
         } else if (mAreaType == VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL) {
@@ -280,11 +336,6 @@ public class VehiclePropertyVerifier<T> {
                             + areaTypeToString(mAreaType))
                     .that(carPropertyConfig.getAreaIds()).isEqualTo(new int[]{0});
         } else if (mAreaType == VehicleAreaType.VEHICLE_AREA_TYPE_WHEEL) {
-            assertWithMessage(mPropertyName + "'s Area IDs must all be unique").that(
-                    ImmutableSet.copyOf(Arrays.stream(
-                            carPropertyConfig.getAreaIds()).boxed().collect(
-                            Collectors.toList())).size()
-                            == carPropertyConfig.getAreaIds().length).isTrue();
             for (int areaId : carPropertyConfig.getAreaIds()) {
                 assertWithMessage(mPropertyName + "'s area ID: " + areaId
                         + " must be a valid VehicleAreaWheel area ID").that(
