@@ -60,6 +60,7 @@ import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
 import android.telephony.TelephonyManager;
 import android.telephony.cdma.CdmaSmsCbProgramData;
+import android.telephony.cts.util.TelephonyUtils;
 import android.text.TextUtils;
 import android.util.Log;
 
