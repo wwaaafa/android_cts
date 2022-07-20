@@ -98,6 +98,17 @@ android_test {
         "cts",
         "general-tests",
     ],
+    data: [
+        ":ThirdPtyInCallServiceTestApp",
+        ":CarModeTestAppTwo",
+        ":Api29InCallServiceTestApp",
+        ":CallRedirectionServiceTestApp",
+        ":ThirdPtyDialerTestAppTwo",
+        ":ThirdPtyDialerTestApp",
+        ":CarModeTestApp",
+        ":CallScreeningServiceTestApp",
+    ],
+    per_testcase_directory: true,
 }
 
 java_library {
