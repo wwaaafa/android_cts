@@ -17,22 +17,24 @@
 package android.telephony.cts;
 
 import static android.telephony.SmsManager.SMS_CATEGORY_FREE_SHORT_CODE;
+import static android.telephony.SmsManager.SMS_CATEGORY_STANDARD_SHORT_CODE;
 import static android.telephony.SmsManager.SMS_CATEGORY_NOT_SHORT_CODE;
 import static android.telephony.SmsManager.SMS_CATEGORY_POSSIBLE_PREMIUM_SHORT_CODE;
 import static android.telephony.SmsManager.SMS_CATEGORY_PREMIUM_SHORT_CODE;
-import static android.telephony.SmsManager.SMS_CATEGORY_STANDARD_SHORT_CODE;
 
 import static androidx.test.InstrumentationRegistry.getInstrumentation;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assume.assumeTrue;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.telephony.PhoneNumberUtils;
 import android.telephony.SmsManager;
+import android.test.InstrumentationTestCase;
+import android.telephony.PhoneNumberUtils;
 
 import androidx.test.annotation.UiThreadTest;
+
+import com.android.internal.telephony.SmsUsageMonitor;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -42,6 +44,7 @@ import org.junit.Test;
  */
 public class SmsUsageMonitorShortCodeTest {
 
+    private PackageManager mPackageManager;
     private Context mContext;
 
     private static final class ShortCodeTest {
@@ -483,8 +486,7 @@ public class SmsUsageMonitorShortCodeTest {
     @Before
     public void setUp() throws Exception {
         mContext = getInstrumentation().getTargetContext();
-        assumeTrue(mContext.getPackageManager().hasSystemFeature(
-                PackageManager.FEATURE_TELEPHONY_MESSAGING));
+        mPackageManager = mContext.getPackageManager();
     }
 
     private static int expectedReturnCode(String address) {
@@ -495,6 +497,11 @@ public class SmsUsageMonitorShortCodeTest {
     @UiThreadTest
     @Test
     public void testSmsShortCodeDestination() {
+        if (!mPackageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {
+            // do not test if device does not support telephony (voice or sms)
+            return;
+        }
+
         for (ShortCodeTest test : sShortCodeTests) {
             // It is intended that a short code number in country A may be an emergency number
             // in country B. It is intended that the destination will be changed because of this
