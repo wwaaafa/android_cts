@@ -48,7 +48,7 @@ public class CarrierServiceTest extends ServiceTestCase<CarrierServiceTest.TestC
         PackageManager packageManager = getInstrumentation().getContext().getPackageManager();
         TelephonyManager telephonyManager =
                 getInstrumentation().getContext().getSystemService(TelephonyManager.class);
-        return packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY_SUBSCRIPTION)
+        return packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)
                 && telephonyManager.getPhoneCount() > 0;
     }
 
