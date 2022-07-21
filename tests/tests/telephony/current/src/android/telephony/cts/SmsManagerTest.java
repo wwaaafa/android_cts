@@ -112,6 +112,7 @@ public class SmsManagerTest {
     private static final String FINANCIAL_SMS_APP = "android.telephony.cts.financialsms";
 
     private TelephonyManager mTelephonyManager;
+    private PackageManager mPackageManager;
     private String mDestAddr;
     private String mText;
     private SmsBroadcastReceiver mSendReceiver;
@@ -138,19 +139,24 @@ public class SmsManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        assumeTrue(getContext().getPackageManager().hasSystemFeature(
-                PackageManager.FEATURE_TELEPHONY_MESSAGING));
+        assumeTrue(InstrumentationRegistry.getContext().getPackageManager()
+                .hasSystemFeature(PackageManager.FEATURE_TELEPHONY));
 
         mContext = getContext();
         mTelephonyManager =
             (TelephonyManager) getContext().getSystemService(
                     Context.TELEPHONY_SERVICE);
+        mPackageManager = mContext.getPackageManager();
         mDestAddr = mTelephonyManager.getLine1Number();
         mText = "This is a test message";
 
-        // exclude the networks that don't support SMS delivery report
-        String mccmnc = mTelephonyManager.getSimOperator();
-        mDeliveryReportSupported = !(CarrierCapability.NO_DELIVERY_REPORTS.contains(mccmnc));
+        if (!mPackageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {
+            mDeliveryReportSupported = false;
+        } else {
+            // exclude the networks that don't support SMS delivery report
+            String mccmnc = mTelephonyManager.getSimOperator();
+            mDeliveryReportSupported = !(CarrierCapability.NO_DELIVERY_REPORTS.contains(mccmnc));
+        }
 
         // register receivers
         mSendIntent = new Intent(SMS_SEND_ACTION);
