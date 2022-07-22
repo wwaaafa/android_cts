@@ -48,5 +48,10 @@ android_test {
         "cts",
         "general-tests",
     ],
+    data: [
+        ":TestIme",
+        ":CtsWidgetApp",
+    ],
+    per_testcase_directory: true,
 
 }
