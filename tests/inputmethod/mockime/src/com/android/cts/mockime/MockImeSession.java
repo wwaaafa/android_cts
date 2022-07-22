@@ -1376,6 +1376,27 @@ public class MockImeSession implements AutoCloseable {
     }
 
     /**
+     * Lets {@link MockIme} to call {@link
+     * android.inputmethodservice.InputMethodService#switchInputMethod(String, InputMethodSubtype)}
+     * with the given parameters.
+     *
+     * <p>This triggers {@code switchInputMethod(id, subtype)}.</p>
+     *
+     * @param id the IME ID.
+     * @param subtype {@link InputMethodSubtype} to be switched to. Ignored if {@code null}.
+     * @return {@link ImeCommand} object that can be passed to
+     *         {@link ImeEventStreamTestUtils#expectCommand(ImeEventStream, ImeCommand, long)} to
+     *         wait until this event is handled by {@link MockIme}
+     */
+    @NonNull
+    public ImeCommand callSwitchInputMethod(String id, @Nullable InputMethodSubtype subtype) {
+        final Bundle params = new Bundle();
+        params.putString("id", id);
+        params.putParcelable("subtype", subtype);
+        return callCommandInternal("switchInputMethod(String,InputMethodSubtype)", params);
+    }
+
+    /**
      * Lets {@link MockIme} to call
      * {@link android.inputmethodservice.InputMethodService#setBackDisposition(int)} with the given
      * parameters.
