@@ -16,18 +16,27 @@
 
 package android.view.inputmethod.cts;
 
+import static com.android.cts.mockime.ImeEventStreamTestUtils.editorMatcher;
+import static com.android.cts.mockime.ImeEventStreamTestUtils.expectEvent;
+import static com.android.cts.mockime.ImeEventStreamTestUtils.notExpectEvent;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import android.app.Instrumentation;
+import android.os.SystemClock;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
 import android.view.inputmethod.cts.util.EndToEndImeTestBase;
+import android.view.inputmethod.cts.util.TestActivity;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.android.cts.mockime.ImeEventStream;
 import com.android.cts.mockime.ImeSettings;
 import com.android.cts.mockime.MockImeSession;
 
@@ -35,16 +44,39 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class InputMethodSubtypeTest extends EndToEndImeTestBase {
+    static final long TIMEOUT = TimeUnit.SECONDS.toMillis(5);
 
     private static final InputMethodSubtype IMPLICITLY_ENABLED_TEST_SUBTYPE =
             new InputMethodSubtype.InputMethodSubtypeBuilder()
                     .setSubtypeId(0x01234567)
                     .setOverridesImplicitlyEnabledSubtype(true)
                     .build();
+
+    private static final String TEST_MARKER_PREFIX =
+            "android.view.inputmethod.cts.InputMethodSubtypeTest";
+
+    private static String getTestMarker() {
+        return TEST_MARKER_PREFIX + "/"  + SystemClock.elapsedRealtimeNanos();
+    }
+
+    private void launchTestActivity(@NonNull String marker) {
+        TestActivity.startSync(activity -> {
+            final EditText editText = new EditText(activity);
+            editText.setPrivateImeOptions(marker);
+
+            final LinearLayout layout = new LinearLayout(activity);
+            layout.setOrientation(LinearLayout.VERTICAL);
+            layout.addView(editText);
+
+            editText.requestFocus();
+            return layout;
+        });
+    }
 
     @NonNull
     private final InputMethodManager mImm = Objects.requireNonNull(
@@ -78,6 +110,33 @@ public class InputMethodSubtypeTest extends EndToEndImeTestBase {
 
             assertThat(mImm.getCurrentInputMethodSubtype())
                     .isEqualTo(IMPLICITLY_ENABLED_TEST_SUBTYPE);
+        }
+    }
+
+    /**
+     * Verifies that
+     * {@link android.inputmethodservice.InputMethodService#onCurrentInputMethodSubtypeChanged(
+     * InputMethodSubtype)} will not happen for the cold startup.
+     */
+    @Test
+    public void testNoOnCurrentInputMethodSubtypeChangedForColdStartup() throws Exception {
+        final Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
+        try (MockImeSession imeSession = MockImeSession.create(instrumentation.getContext(),
+                instrumentation.getUiAutomation(),
+                new ImeSettings.Builder().setAdditionalSubtypes(IMPLICITLY_ENABLED_TEST_SUBTYPE))) {
+            final ImeEventStream stream = imeSession.openEventStream();
+
+            final String marker = getTestMarker();
+            launchTestActivity(marker);
+
+            expectEvent(stream, event -> "onCreate".equals(event.getEventName()), TIMEOUT);
+            final ImeEventStream eventsAfterOnCreate = stream.copy();
+
+            expectEvent(stream, editorMatcher("onStartInput", marker), TIMEOUT);
+
+            // It's OK to pass 0 to timeout as we've already made sure that "onStartInput" happened.
+            notExpectEvent(eventsAfterOnCreate, event ->
+                    "onCurrentInputMethodSubtypeChanged".equals(event.getEventName()), 0);
         }
     }
 }
