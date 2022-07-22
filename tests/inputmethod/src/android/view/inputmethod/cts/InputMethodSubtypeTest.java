@@ -17,6 +17,7 @@
 package android.view.inputmethod.cts;
 
 import static com.android.cts.mockime.ImeEventStreamTestUtils.editorMatcher;
+import static com.android.cts.mockime.ImeEventStreamTestUtils.expectCommand;
 import static com.android.cts.mockime.ImeEventStreamTestUtils.expectEvent;
 import static com.android.cts.mockime.ImeEventStreamTestUtils.notExpectEvent;
 
@@ -36,6 +37,7 @@ import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.android.cts.mockime.ImeEvent;
 import com.android.cts.mockime.ImeEventStream;
 import com.android.cts.mockime.ImeSettings;
 import com.android.cts.mockime.MockImeSession;
@@ -54,6 +56,12 @@ public class InputMethodSubtypeTest extends EndToEndImeTestBase {
     private static final InputMethodSubtype IMPLICITLY_ENABLED_TEST_SUBTYPE =
             new InputMethodSubtype.InputMethodSubtypeBuilder()
                     .setSubtypeId(0x01234567)
+                    .setOverridesImplicitlyEnabledSubtype(true)
+                    .build();
+
+    private static final InputMethodSubtype IMPLICITLY_ENABLED_TEST_SUBTYPE2 =
+            new InputMethodSubtype.InputMethodSubtypeBuilder()
+                    .setSubtypeId(0x12345678)
                     .setOverridesImplicitlyEnabledSubtype(true)
                     .build();
 
@@ -137,6 +145,40 @@ public class InputMethodSubtypeTest extends EndToEndImeTestBase {
             // It's OK to pass 0 to timeout as we've already made sure that "onStartInput" happened.
             notExpectEvent(eventsAfterOnCreate, event ->
                     "onCurrentInputMethodSubtypeChanged".equals(event.getEventName()), 0);
+        }
+    }
+
+    /**
+     * Verifies that {@link android.inputmethodservice.InputMethodService#switchInputMethod(String,
+     * InputMethodSubtype)} works to switch {@link InputMethodSubtype} in the same IME.
+     */
+    @Test
+    public void testSubtypeSwitchingInTheSameIme() throws Exception {
+        final Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
+        try (MockImeSession imeSession = MockImeSession.create(instrumentation.getContext(),
+                instrumentation.getUiAutomation(),
+                new ImeSettings.Builder().setAdditionalSubtypes(
+                        IMPLICITLY_ENABLED_TEST_SUBTYPE, IMPLICITLY_ENABLED_TEST_SUBTYPE2))) {
+            final ImeEventStream stream = imeSession.openEventStream();
+
+            final String marker = getTestMarker();
+            launchTestActivity(marker);
+            expectEvent(stream, editorMatcher("onStartInput", marker), TIMEOUT);
+
+            final InputMethodSubtype initialSubtype = mImm.getCurrentInputMethodSubtype();
+            assertThat(initialSubtype).isEqualTo(IMPLICITLY_ENABLED_TEST_SUBTYPE);
+
+            expectCommand(stream, imeSession.callSwitchInputMethod(
+                    imeSession.getImeId(), IMPLICITLY_ENABLED_TEST_SUBTYPE2), TIMEOUT);
+            final ImeEvent result = expectEvent(stream, event ->
+                    "onCurrentInputMethodSubtypeChanged".equals(event.getEventName()), TIMEOUT);
+            final InputMethodSubtype actualNewSubtype =
+                    result.getArguments().getParcelable("newSubtype", InputMethodSubtype.class);
+            assertThat(actualNewSubtype).isEqualTo(IMPLICITLY_ENABLED_TEST_SUBTYPE2);
+
+            assertThat(mImm.getLastInputMethodSubtype()).isEqualTo(IMPLICITLY_ENABLED_TEST_SUBTYPE);
+            assertThat(mImm.getCurrentInputMethodSubtype())
+                    .isEqualTo(IMPLICITLY_ENABLED_TEST_SUBTYPE2);
         }
     }
 }
