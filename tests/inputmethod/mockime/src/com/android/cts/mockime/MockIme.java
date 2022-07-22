@@ -398,6 +398,13 @@ public final class MockIme extends InputMethodService {
                         return getMemorizedOrCurrentInputConnection().setImeConsumesInput(
                                 imeConsumesInput);
                     }
+                    case "switchInputMethod(String,InputMethodSubtype)": {
+                        final String id = command.getExtras().getString("id");
+                        final InputMethodSubtype subtype = command.getExtras().getParcelable(
+                                "subtype", InputMethodSubtype.class);
+                        switchInputMethod(id, subtype);
+                        return ImeEvent.RETURN_VALUE_UNAVAILABLE;
+                    }
                     case "setBackDisposition": {
                         final int backDisposition =
                                 command.getExtras().getInt("backDisposition");
