@@ -1367,48 +1367,6 @@ public abstract class DeviceAndProfileOwnerTest extends BaseDevicePolicyTest {
     }
 
     @Test
-    public void testSetAutoTimeRequired() throws Exception {
-        assertMetricsLogged(getDevice(), () -> {
-            executeDeviceTestMethod(".DevicePolicyLoggingTest", "testSetAutoTimeRequired");
-        }, new DevicePolicyEventWrapper.Builder(EventId.SET_AUTO_TIME_REQUIRED_VALUE)
-                    .setAdminPackageName(DEVICE_ADMIN_PKG)
-                    .setBoolean(true)
-                    .build(),
-            new DevicePolicyEventWrapper.Builder(EventId.SET_AUTO_TIME_REQUIRED_VALUE)
-                    .setAdminPackageName(DEVICE_ADMIN_PKG)
-                    .setBoolean(false)
-                    .build());
-    }
-
-    @Test
-    public void testSetAutoTimeEnabled() throws Exception {
-        assertMetricsLogged(getDevice(), () -> {
-            executeDeviceTestMethod(".DevicePolicyLoggingTest", "testSetAutoTimeEnabled");
-        }, new DevicePolicyEventWrapper.Builder(EventId.SET_AUTO_TIME_VALUE)
-                    .setAdminPackageName(DEVICE_ADMIN_PKG)
-                    .setBoolean(true)
-                    .build(),
-            new DevicePolicyEventWrapper.Builder(EventId.SET_AUTO_TIME_VALUE)
-                    .setAdminPackageName(DEVICE_ADMIN_PKG)
-                    .setBoolean(false)
-                    .build());
-    }
-
-    @Test
-    public void testSetAutoTimeZoneEnabled() throws Exception {
-        assertMetricsLogged(getDevice(), () -> {
-                    executeDeviceTestMethod(".TimeManagementTest", "testSetAutoTimeZoneEnabled");
-                }, new DevicePolicyEventWrapper.Builder(EventId.SET_AUTO_TIME_ZONE_VALUE)
-                        .setAdminPackageName(DEVICE_ADMIN_PKG)
-                        .setBoolean(true)
-                        .build(),
-                new DevicePolicyEventWrapper.Builder(EventId.SET_AUTO_TIME_ZONE_VALUE)
-                        .setAdminPackageName(DEVICE_ADMIN_PKG)
-                        .setBoolean(false)
-                        .build());
-    }
-
-    @Test
     public void testEnableSystemAppLogged() throws Exception {
         final List<String> enabledSystemPackageNames = getEnabledSystemPackageNames();
         // We enable an enabled package to not worry about restoring the state.
