@@ -262,5 +262,12 @@ android_test {
         ":CtsScopedStorageTestAppFileManagerBypassDB",
         ":CtsScopedStorageTestAppSystemGalleryBypassDB",
         ":CtsScopedStorageTestAppSystemGallery30BypassDB",
-    ]
+    ],
+    data: [
+        ":CtsScopedStorageTestAppFileManager",
+        ":CtsScopedStorageTestAppA",
+        ":CtsScopedStorageTestAppB",
+        ":CtsScopedStorageTestAppDLegacy",
+    ],
+    per_testcase_directory: true,
 }
