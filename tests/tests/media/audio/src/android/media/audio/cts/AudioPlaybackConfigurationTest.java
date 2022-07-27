@@ -445,14 +445,14 @@ public class AudioPlaybackConfigurationTest extends CtsAndroidTestCase {
         if (!isValidPlatform("testMuteFromAppOpsNotification")) return;
 
         verifyMuteUnmuteNotifications(
-                /* mute= */() -> {
+                /*mute=*/() -> {
                     try {
                         setOpMode(getContext().getPackageName(), OPSTR_PLAY_AUDIO, MODE_IGNORED);
                     } catch (IOException e) {
                         fail("Failed to set AppOps ignore for play audio: " + e);
                     }
                 },
-                /* unmute= */() -> {
+                /*unmute=*/() -> {
                     try {
                         if (getOpMode(getContext().getPackageName(), OPSTR_PLAY_AUDIO)
                                 != MODE_ALLOWED) {
@@ -472,8 +472,17 @@ public class AudioPlaybackConfigurationTest extends CtsAndroidTestCase {
         assertNotNull("Could not create AudioManager", am);
 
         verifyMuteUnmuteNotifications(
+                /*mute=*/
                 () -> am.adjustStreamVolume(STREAM_NOTIFICATION, ADJUST_MUTE, /* flags= */0),
+                /*unmute=*/
                 () -> am.adjustStreamVolume(STREAM_NOTIFICATION, ADJUST_UNMUTE, /* flags= */0));
+    }
+
+    public void testMuteFromClientVolumeNotification() throws Exception {
+        if (!isValidPlatform("testMuteFromClientVolumeNotification")) return;
+
+        verifyMuteUnmuteNotifications(/*mute*/() -> mAt.setVolume(0.f),
+                /*unmute=*/() -> mAt.setVolume(1.f));
     }
 
     private void verifyMuteUnmuteNotifications(Runnable mute, Runnable unmute) throws Exception {
