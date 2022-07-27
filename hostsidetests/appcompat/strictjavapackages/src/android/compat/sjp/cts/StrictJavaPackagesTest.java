@@ -207,6 +207,7 @@ public class StrictJavaPackagesTest extends BaseHostJUnit4Test {
                     "Landroid/os/IVoldListener;",
                     "Landroid/os/IVoldMountCallback;",
                     "Landroid/os/IVoldTaskListener;",
+                    "Landroid/os/TouchOcclusionMode;",
                     "Landroid/os/storage/CrateMetadata;",
                     "Landroid/view/LayerMetadataKey;",
                     "Lcom/android/internal/annotations/CompositeRWLock;",
