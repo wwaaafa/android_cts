@@ -472,32 +472,6 @@ public abstract class DeviceAndProfileOwnerTest extends BaseDevicePolicyTest {
         }
     }
 
-    @Test
-    public void testApplicationHidden() throws Exception {
-        installAppPermissionAppAsUser();
-        executeDeviceTestClass(".ApplicationHiddenTest");
-        installAppAsUser(PERMISSIONS_APP_APK, mUserId);
-        assertMetricsLogged(getDevice(), () -> {
-            executeDeviceTestMethod(".ApplicationHiddenTest","testSetApplicationHidden");
-        }, new DevicePolicyEventWrapper.Builder(EventId.SET_APPLICATION_HIDDEN_VALUE)
-                .setAdminPackageName(DEVICE_ADMIN_PKG)
-                .setBoolean(false)
-                .setStrings(PERMISSIONS_APP_PKG, "hidden", NOT_CALLED_FROM_PARENT)
-                .build(),
-        new DevicePolicyEventWrapper.Builder(EventId.SET_APPLICATION_HIDDEN_VALUE)
-                .setAdminPackageName(DEVICE_ADMIN_PKG)
-                .setBoolean(false)
-                .setStrings(PERMISSIONS_APP_PKG, "not_hidden", NOT_CALLED_FROM_PARENT)
-                .build());
-    }
-
-    @Test
-    public void testApplicationHidden_cannotHidePolicyExemptApps() throws Exception {
-        // Needed to access dpm.getPolicyExemptApps()
-        allowTestApiAccess(DEVICE_ADMIN_PKG);
-        executeDeviceTestMethod(".ApplicationHiddenTest", "testCannotHidePolicyExemptApps");
-    }
-
     @TemporarilyIgnoreOnHeadlessSystemUserMode(bugId = "197859595",
             reason = "Will be migrated to new test infra")
     @Test
