@@ -348,11 +348,6 @@ public class OrgOwnedProfileOwnerTest extends BaseDevicePolicyTest {
     }
 
     @Test
-    public void testApplicationHiddenParent() throws Exception {
-        runDeviceTestsAsUser(DEVICE_ADMIN_PKG, ".ApplicationHiddenParentTest", mUserId);
-    }
-
-    @Test
     public void testSetKeyguardDisabledFeatures() throws Exception {
         runDeviceTestsAsUser(DEVICE_ADMIN_PKG, ".KeyguardDisabledFeaturesTest",
                 "testSetKeyguardDisabledFeatures_onParent", mUserId);
