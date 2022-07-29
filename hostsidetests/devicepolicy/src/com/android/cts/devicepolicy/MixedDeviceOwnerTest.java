@@ -524,17 +524,6 @@ public final class MixedDeviceOwnerTest extends DeviceAndProfileOwnerTest {
     }
 
     @Override
-    public void testApplicationHidden() throws Exception {
-        if (isHeadlessSystemUserMode()) {
-            // Must run on user 0 because the test has a broadcast receiver that listen to packages
-            // added / removed intents
-            mUserId = mDeviceOwnerUserId;
-            CLog.d("testApplicationHidden(): setting mUserId as %d before running it", mUserId);
-        }
-        super.testApplicationHidden();
-    }
-
-    @Override
     protected void installDelegateApp() throws Exception {
         // TODO(b/176993670): must call installDeviceOwnerApp() - even though it's not one - so
         // the permissions required to use DpmWrapper are set on headless system user mode
