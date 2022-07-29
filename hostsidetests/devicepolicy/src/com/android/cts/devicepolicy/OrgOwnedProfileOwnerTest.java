@@ -281,20 +281,6 @@ public class OrgOwnedProfileOwnerTest extends BaseDevicePolicyTest {
         }
     }
 
-    @Test
-    public void testSetTime() throws Exception {
-        runDeviceTestsAsUser(DEVICE_ADMIN_PKG, ".TimeManagementTest", "testSetTime", mUserId);
-        runDeviceTestsAsUser(DEVICE_ADMIN_PKG, ".TimeManagementTest",
-                "testSetTime_failWhenAutoTimeEnabled", mUserId);
-    }
-
-    @Test
-    public void testSetTimeZone() throws Exception {
-        runDeviceTestsAsUser(DEVICE_ADMIN_PKG, ".TimeManagementTest", "testSetTimeZone", mUserId);
-        runDeviceTestsAsUser(DEVICE_ADMIN_PKG, ".TimeManagementTest",
-                "testSetTimeZone_failIfAutoTimeZoneEnabled", mUserId);
-    }
-
     @FlakyTest(bugId = 137088260)
     @Test
     public void testWifi() throws Exception {
