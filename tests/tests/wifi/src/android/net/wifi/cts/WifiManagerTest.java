@@ -5519,7 +5519,6 @@ public class WifiManagerTest extends WifiJUnit3TestBase {
             waitForConnection();
             wifiInfo = mWifiManager.getConnectionInfo();
             assertEquals(networkId, wifiInfo.getNetworkId());
-            assertEquals(connectedBssid, wifiInfo.getBSSID());
         } finally {
             // Reset BSSID allow list to accept all APs
             for (WifiConfiguration network : savedNetworks) {
