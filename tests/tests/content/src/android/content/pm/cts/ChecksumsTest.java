@@ -1381,7 +1381,7 @@ public class ChecksumsTest {
 
         public ApkChecksum[] getResult() {
             try {
-                return mResult.poll(5, TimeUnit.SECONDS);
+                return mResult.poll(6, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
