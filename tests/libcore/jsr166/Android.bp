@@ -39,4 +39,5 @@ android_test {
         "general-tests",
         "mts-art",
     ],
+    host_required: ["cts-dalvik-host-test-runner"],
 }
