@@ -39,8 +39,7 @@ class MediaPermissionTest : BaseUsePermissionTest() {
     fun testWhenRESIsGrantedFromGrantDialogThenShouldGrantAllPermissions() {
         installPackage(APP_APK_PATH_23)
         requestAppPermissionsAndAssertResult(
-            android.Manifest.permission.READ_EXTERNAL_STORAGE to true,
-            expectTargetSdkWarning = true
+            android.Manifest.permission.READ_EXTERNAL_STORAGE to true
         ) {
             clickPermissionRequestAllowButton()
         }
@@ -72,8 +71,7 @@ class MediaPermissionTest : BaseUsePermissionTest() {
     fun testWhenRESIsDeniedFromGrantDialogThenShouldDenyAllPermissions() {
         installPackage(APP_APK_PATH_23)
         requestAppPermissionsAndAssertResult(
-            android.Manifest.permission.READ_EXTERNAL_STORAGE to false,
-            expectTargetSdkWarning = true
+            android.Manifest.permission.READ_EXTERNAL_STORAGE to false
         ) {
             clickPermissionRequestDenyButton()
         }

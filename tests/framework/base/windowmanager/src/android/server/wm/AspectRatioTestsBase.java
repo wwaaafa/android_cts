@@ -26,10 +26,6 @@ import android.content.ComponentName;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.server.wm.WindowManagerState.DisplayArea;
-import android.support.test.uiautomator.UiDevice;
-import android.support.test.uiautomator.UiObject;
-import android.support.test.uiautomator.UiObjectNotFoundException;
-import android.support.test.uiautomator.UiSelector;
 import android.view.Display;
 import android.view.WindowManager;
 
@@ -71,7 +67,6 @@ class AspectRatioTestsBase extends ActivityManagerTestBase {
     void runAspectRatioTest(final ActivityTestRule activityRule,
             final AssertAspectRatioCallback callback) {
         final Activity activity = launchActivity(activityRule);
-        clearTargetSdkWarning();
         WindowUtil.waitForFocus(activity);
         try {
             final Point displaySize = new Point();
@@ -141,18 +136,6 @@ class AspectRatioTestsBase extends ActivityManagerTestBase {
         final float longSide = Math.max(size.x, size.y);
         final float shortSide = Math.min(size.x, size.y);
         return longSide / shortSide;
-    }
-
-    private static void clearTargetSdkWarning() {
-        try {
-            // Clear the target SDK warning message if it's there
-            UiDevice.getInstance(getInstrumentation());
-            waitForIdle();
-            UiObject okButton = new UiObject(new UiSelector().resourceId("android:id/button1"));
-            okButton.click();
-        } catch (UiObjectNotFoundException e) {
-            // Nothing to clear if the button isn't there
-        }
     }
 
     protected Activity launchActivity(final ActivityTestRule activityRule) {
