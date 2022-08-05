@@ -2212,6 +2212,8 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="7.4.4/C-2-1,C-2-2" />
+
         </activity>
 
         <activity android:name=".nfc.hce.ProtocolParamsEmulatorActivity"
@@ -2219,6 +2221,7 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="7.4.4/C-2-1,C-2-2" />
         </activity>
 
         <activity android:name=".nfc.hce.SinglePaymentEmulatorActivity"
@@ -2226,6 +2229,7 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="3.2.3.5/C-3-2|7.4.4/C-2-1,C-2-2" />
         </activity>
 
         <activity android:name=".nfc.hce.SimpleReaderActivity"
@@ -2233,6 +2237,14 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="7.4.4/C-1-2" />
+            <meta-data android:name="ApiTest"
+                       android:value="android.nfc.NfcAdapter#enableReaderMode|
+                                      android.nfc.NfcAdapter#disableReaderMode|
+                                      android.nfc.tech.IsoDep#get|
+                                      android.nfc.tech.IsoDep#connect|
+                                      android.nfc.tech.IsoDep#setTimeout|
+                                      android.nfc.tech.IsoDep#transceive" />
         </activity>
 
         <activity android:name=".nfc.hce.ProtocolParamsReaderActivity"
@@ -2240,6 +2252,16 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="7.4.4/C-1-2" />
+            <meta-data android:name="ApiTest"
+                       android:value="android.nfc.NfcAdapter#enableReaderMode|
+                                      android.nfc.Tag#getId|
+                                      android.nfc.tech.NfcA#close|
+                                      android.nfc.tech.NfcA#connect|
+                                      android.nfc.tech.NfcA#get|
+                                      android.nfc.tech.NfcA#getAtqa|
+                                      android.nfc.tech.NfcA#getSak|
+                                      android.nfc.tech.NfcA#transceive" />
         </activity>
 
         <activity android:name=".nfc.hce.DualPaymentEmulatorActivity"
@@ -2247,6 +2269,7 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="3.2.3.5/C-3-2|7.4.4/C-2-1,C-2-2" />
         </activity>
 
         <activity android:name=".nfc.hce.ChangeDefaultEmulatorActivity"
@@ -2254,6 +2277,7 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="3.2.3.5/C-3-2|7.4.4/C-2-1,C-2-2" />
         </activity>
 
         <activity android:name=".nfc.hce.SingleNonPaymentEmulatorActivity"
@@ -2261,6 +2285,7 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="7.4.4/C-2-1,C-2-2" />
         </activity>
 
         <activity android:name=".nfc.hce.DualNonPaymentEmulatorActivity"
@@ -2268,6 +2293,7 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="7.4.4/C-2-1,C-2-2" />
         </activity>
 
         <activity android:name=".nfc.hce.ConflictingNonPaymentEmulatorActivity"
@@ -2275,6 +2301,7 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="7.4.4/C-2-1,C-2-2" />
         </activity>
 
         <activity android:name=".nfc.hce.ForegroundNonPaymentEmulatorActivity"
@@ -2282,6 +2309,10 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="7.4.4/C-2-1,C-2-2" />
+            <meta-data android:name="ApiTest"
+                       android:value="android.nfc.cardemulation.CardEmulation#setPreferredService|
+                                      android.nfc.cardemulation.CardEmulation#unsetPreferredService" />
         </activity>
 
         <activity android:name=".nfc.hce.ForegroundPaymentEmulatorActivity"
@@ -2289,6 +2320,9 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="3.2.3.5/C-3-1,C-3-2|7.4.4/C-2-1,C-2-2" />
+            <meta-data android:name="ApiTest"
+                       android:value="android.nfc.cardemulation.CardEmulation#categoryAllowsForegroundPreference" />
         </activity>
 
         <activity android:name=".nfc.hce.OffHostEmulatorActivity"
@@ -2296,6 +2330,7 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="7.4.4/C-2-1,C-2-2" />
         </activity>
 
         <activity android:name=".nfc.hce.OnAndOffHostEmulatorActivity"
@@ -2303,6 +2338,7 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="7.4.4/C-2-1,C-2-2" />
         </activity>
 
         <activity android:name=".nfc.hce.ThroughputEmulatorActivity"
@@ -2310,6 +2346,7 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="7.4.4/C-2-1,C-2-2" />
         </activity>
 
         <activity android:name=".nfc.hce.TapTestEmulatorActivity"
@@ -2317,6 +2354,7 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="7.4.4/C-2-1,C-2-2" />
         </activity>
 
         <activity android:name=".nfc.hce.DynamicAidEmulatorActivity"
@@ -2324,6 +2362,9 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="3.2.3.5/C-3-2|7.4.4/C-2-1,C-2-2" />
+            <meta-data android:name="ApiTest"
+                       android:value="android.nfc.cardemulation.CardEmulation#registerAidsForService" />
         </activity>
 
         <activity android:name=".nfc.hce.LargeNumAidsEmulatorActivity"
@@ -2331,6 +2372,9 @@
                   android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="7.4.4/C-2-1,C-2-2" />
+            <meta-data android:name="ApiTest"
+                       android:value="android.nfc.cardemulation.CardEmulation#registerAidsForService" />
         </activity>
 
         <activity android:name=".nfc.hce.PrefixPaymentEmulatorActivity"
@@ -2338,6 +2382,7 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="3.2.3.5/C-3-2|7.4.4/C-2-1,C-2-2" />
         </activity>
 
         <activity android:name=".nfc.hce.PrefixPaymentEmulator2Activity"
@@ -2345,6 +2390,7 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="3.2.3.5/C-3-2|7.4.4/C-2-1,C-2-2" />
         </activity>
 
         <activity android:name=".nfc.hce.DualNonPaymentPrefixEmulatorActivity"
@@ -2352,6 +2398,9 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="7.4.4/C-2-1,C-2-2" />
+            <meta-data android:name="ApiTest"
+                       android:value="android.nfc.cardemulation.CardEmulation#registerAidsForService" />
         </activity>
 
         <activity android:name=".nfc.hce.ConflictingNonPaymentPrefixEmulatorActivity"
@@ -2359,6 +2408,9 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="7.4.4/C-2-1,C-2-2" />
+            <meta-data android:name="ApiTest"
+                       android:value="android.nfc.cardemulation.CardEmulation#registerAidsForService" />
         </activity>
 
         <activity android:name=".nfc.hce.ScreenOnOnlyOffHostEmulatorActivity"
@@ -2366,6 +2418,7 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="7.4.4/C-2-1,C-2-2" />
         </activity>
 
         <activity android:name=".nfc.hce.ScreenOffPaymentEmulatorActivity"
@@ -2373,6 +2426,7 @@
                 android:configChanges="keyboardHidden|orientation|screenSize" >
             <meta-data android:name="display_mode"
                        android:value="multi_display_mode" />
+            <meta-data android:name="CddTest" android:value="3.2.3.5/C-3-2|7.4.4/C-2-1,C-2-2" />
         </activity>
 
         <activity android:name=".nfc.hcef.HceFEmulatorActivity"
