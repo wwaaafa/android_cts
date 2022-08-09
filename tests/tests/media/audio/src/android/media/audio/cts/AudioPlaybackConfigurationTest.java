@@ -43,6 +43,7 @@ import android.media.AudioPlaybackConfiguration;
 import android.media.AudioTrack;
 import android.media.MediaPlayer;
 import android.media.SoundPool;
+import android.media.VolumeShaper;
 import android.media.audio.cts.R;
 import android.media.cts.NonMediaMainlineTest;
 import android.media.cts.TestUtils;
@@ -76,6 +77,19 @@ public class AudioPlaybackConfigurationTest extends CtsAndroidTestCase {
     private static final int TEST_AUDIO_TRACK_CHANNELS = 2;
     private static final int TEST_AUDIO_TRACK_PLAY_SECONDS = 2;
     private static final double TEST_AUDIO_TRACK_SWEEP = 0;
+
+    // volume shaper duration in milliseconds.
+    private static final long VOLUME_SHAPER_DURATION_MS = 10;
+
+    private static final VolumeShaper.Configuration SHAPER_MUTE =
+            new VolumeShaper.Configuration.Builder()
+                    .setInterpolatorType(VolumeShaper.Configuration.INTERPOLATOR_TYPE_LINEAR)
+                    .setCurve(new float[] { 0.f, 1.f } /* times */,
+                            new float[] { 1.f, 0.f } /* volumes */)
+                    .setDuration(VOLUME_SHAPER_DURATION_MS)
+                    .build();
+
+    private VolumeShaper mMuteShaper;
 
     // not declared inside test so it can be released in case of failure
     private MediaPlayer mMp;
@@ -481,8 +495,22 @@ public class AudioPlaybackConfigurationTest extends CtsAndroidTestCase {
     public void testMuteFromClientVolumeNotification() throws Exception {
         if (!isValidPlatform("testMuteFromClientVolumeNotification")) return;
 
-        verifyMuteUnmuteNotifications(/*mute*/() -> mAt.setVolume(0.f),
+        verifyMuteUnmuteNotifications(/*mute=*/() -> mAt.setVolume(0.f),
                 /*unmute=*/() -> mAt.setVolume(1.f));
+    }
+
+    public void testMuteFromVolumeShaperNotification() throws Exception {
+        if (!isValidPlatform("testMuteFromVolumeShaperNotification")) return;
+        verifyMuteUnmuteNotifications(/*mute=*/
+                () -> {
+                    mMuteShaper = mAt.createVolumeShaper(SHAPER_MUTE);
+                    mMuteShaper.apply(VolumeShaper.Operation.PLAY);
+                },
+                /*unmute=*/() -> {
+                    mMuteShaper.replace(SHAPER_MUTE, VolumeShaper.Operation.REVERSE, /*join=*/
+                            false);
+                    mMuteShaper.apply(VolumeShaper.Operation.PLAY);
+                });
     }
 
     private void verifyMuteUnmuteNotifications(Runnable mute, Runnable unmute) throws Exception {
@@ -525,20 +553,20 @@ public class AudioPlaybackConfigurationTest extends CtsAndroidTestCase {
             callback.reset();
             mute.run();
 
-            assertTrue("onPlaybackConfigChanged for AppOps mute expected",
+            assertTrue("onPlaybackConfigChanged for mute expected",
                     callback.waitForCallbacks(1,
                             TEST_TIMING_TOLERANCE_MS + PLAY_ROUTING_TIMING_TOLERANCE_MS));
-            assertEquals("number of active players after AppOps mute not expected",
+            assertEquals("number of active players after mute not expected",
                     nbActivePlayersBeforeStart, am.getActivePlaybackConfigurations().size());
 
             // unmute with Runnable
             callback.reset();
             unmute.run();
 
-            assertTrue("onPlaybackConfigChanged for AppOps unmute expected",
+            assertTrue("onPlaybackConfigChanged for unmute expected",
                     callback.waitForCallbacks(1,
                             TEST_TIMING_TOLERANCE_MS + PLAY_ROUTING_TIMING_TOLERANCE_MS));
-            assertEquals("number of active players after AppOps unmute not expected",
+            assertEquals("number of active players after unmute not expected",
                     nbActivePlayersBeforeStart + 1, am.getActivePlaybackConfigurations().size());
         } finally {
             am.unregisterAudioPlaybackCallback(callback);
