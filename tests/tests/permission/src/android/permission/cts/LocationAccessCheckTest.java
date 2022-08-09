@@ -23,7 +23,6 @@ import static android.app.AppOpsManager.OP_FLAGS_ALL_TRUSTED;
 import static android.app.Notification.EXTRA_TITLE;
 import static android.content.Context.BIND_AUTO_CREATE;
 import static android.content.Context.BIND_NOT_FOREGROUND;
-import static android.content.Intent.ACTION_BOOT_COMPLETED;
 import static android.content.Intent.FLAG_RECEIVER_FOREGROUND;
 import static android.location.Criteria.ACCURACY_FINE;
 import static android.os.Process.myUserHandle;
@@ -41,7 +40,6 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
@@ -116,6 +114,8 @@ public class LocationAccessCheckTest {
             "/data/local/tmp/cts/permissions/CtsAppThatAccessesLocationOnCommand.apk";
     private static final String TEST_APP_LOCATION_FG_ACCESS_APK =
             "/data/local/tmp/cts/permissions/AppThatDoesNotHaveBgLocationAccess.apk";
+    private static final String ACTION_SET_UP_LOCATION_ACCESS_CHECK =
+            "com.android.permissioncontroller.action.SET_UP_LOCATION_ACCESS_CHECK";
     private static final int LOCATION_ACCESS_CHECK_JOB_ID = 0;
 
     /** Whether to show location access check notifications. */
@@ -137,6 +137,10 @@ public class LocationAccessCheckTest {
 
     private static final String PERMISSION_CONTROLLER_PKG = sContext.getPackageManager()
             .getPermissionControllerPackageName();
+    private static final String LocationAccessCheckOnBootReceiver =
+            "com.android.permissioncontroller.permission.service"
+                    + ".LocationAccessCheck$SetupPeriodicBackgroundLocationAccessCheck";
+
 
     /**
      * The result of {@link #assumeCanGetFineLocation()}, so we don't have to run it over and over
@@ -297,6 +301,11 @@ public class LocationAccessCheckTest {
      * Force a run of the location check.
      */
     private static void runLocationCheck() throws Throwable {
+        // If the job isn't setup, do it before running a location check
+        if (!isLocationAccessJobSetup(myUserHandle().getIdentifier())) {
+            setupLocationAccessCheckJob();
+        }
+
         // Sleep a little bit to make sure we don't have overlap in timing
         Thread.sleep(1000);
 
@@ -589,36 +598,45 @@ public class LocationAccessCheckTest {
             }
         }, UNEXPECTED_TIMEOUT_MILLIS);
 
-        // Setup up permission controller again (simulate a reboot)
-        Intent permissionControllerSetupIntent = null;
-        for (ResolveInfo ri : sContext.getPackageManager().queryBroadcastReceivers(
-                new Intent(ACTION_BOOT_COMPLETED), 0)) {
-            String pkg = ri.activityInfo.packageName;
-
-            if (pkg.equals(PERMISSION_CONTROLLER_PKG)) {
-                permissionControllerSetupIntent = new Intent()
-                        .setClassName(pkg, ri.activityInfo.name)
-                        .setFlags(FLAG_RECEIVER_FOREGROUND)
-                        .setPackage(PERMISSION_CONTROLLER_PKG);
-
-                sContext.sendBroadcast(permissionControllerSetupIntent);
-            }
-        }
+        setupLocationAccessCheckJob();
 
         // Wait until jobs are set up
         eventually(() -> {
-            JobSchedulerServiceDumpProto dump = getJobSchedulerDump();
-
-            for (RegisteredJob job : dump.registeredJobs) {
-                if (job.dump.sourceUserId == currentUserId
-                        && job.dump.sourcePackageName.equals(PERMISSION_CONTROLLER_PKG)
-                        && job.dump.jobInfo.service.className.contains("LocationAccessCheck")) {
-                    return;
-                }
-            }
-
-            fail("Permission controller jobs not found");
+            assertTrue("LocationAccessCheck job not found",
+                    isLocationAccessJobSetup(currentUserId));
         }, UNEXPECTED_TIMEOUT_MILLIS);
+    }
+
+    private static boolean isLocationAccessJobSetup(int currentUserId) throws Exception {
+        JobSchedulerServiceDumpProto dump = getJobSchedulerDump();
+        for (RegisteredJob job : dump.registeredJobs) {
+            if (job.dump.sourceUserId == currentUserId
+                    && job.dump.sourcePackageName.equals(PERMISSION_CONTROLLER_PKG)
+                    && job.dump.jobInfo.service.className.contains("LocationAccessCheck")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void setupLocationAccessCheckJob() {
+        // Setup location access check
+        Intent permissionControllerSetupIntent = new Intent(
+                ACTION_SET_UP_LOCATION_ACCESS_CHECK).setPackage(
+                PERMISSION_CONTROLLER_PKG).setFlags(FLAG_RECEIVER_FOREGROUND);
+
+        // Query for the setup broadcast receiver
+        List<ResolveInfo> resolveInfos = sContext.getPackageManager().queryBroadcastReceivers(
+                permissionControllerSetupIntent, 0);
+
+        if (resolveInfos.size() > 0) {
+            sContext.sendBroadcast(permissionControllerSetupIntent);
+        } else {
+            sContext.sendBroadcast(new Intent()
+                    .setClassName(PERMISSION_CONTROLLER_PKG, LocationAccessCheckOnBootReceiver)
+                    .setFlags(FLAG_RECEIVER_FOREGROUND)
+                    .setPackage(PERMISSION_CONTROLLER_PKG));
+        }
     }
 
     /**
