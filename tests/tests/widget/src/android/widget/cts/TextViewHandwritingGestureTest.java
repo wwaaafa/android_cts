@@ -18,6 +18,7 @@ package android.widget.cts;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.util.TypedValue;
@@ -27,6 +28,7 @@ import android.view.inputmethod.DeleteGesture;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.HandwritingGesture;
 import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.InsertGesture;
 import android.view.inputmethod.SelectGesture;
 import android.widget.EditText;
 
@@ -181,6 +183,75 @@ public class TextViewHandwritingGestureTest {
         assertFallbackTextInserted(/* initialCursorPosition= */ 2);
     }
 
+    @Test
+    @ApiTest(apis = "android.view.inputmethod.InputConnection#performHandwritingGesture")
+    public void performInsertGesture_firstLine() {
+        // Closest to offset 3 with horizontal position 30.
+        performInsertGesture(new PointF(32f, mEditText.getLayout().getLineTop(0) + 1f));
+
+        assertInsertGesturePerformed(3);
+    }
+
+    @Test
+    @ApiTest(apis = "android.view.inputmethod.InputConnection#performHandwritingGesture")
+    public void performInsertGesture_secondLine() {
+        // Closest to offset 13 with horizontal position 30.
+        performInsertGesture(new PointF(26f, mEditText.getLayout().getLineTop(1) + 1f));
+
+        assertInsertGesturePerformed(13);
+    }
+
+    @Test
+    @ApiTest(apis = "android.view.inputmethod.InputConnection#performHandwritingGesture")
+    public void performInsertGesture_aboveFirstLine_shouldFallback() {
+        mEditText.setSelection(3);
+
+        performInsertGesture(new PointF(32f, mEditText.getLayout().getLineTop(0) - 1f));
+
+        assertFallbackTextInserted(/* initialCursorPosition= */ 3);
+    }
+
+    @Test
+    @ApiTest(apis = "android.view.inputmethod.InputConnection#performHandwritingGesture")
+    public void performInsertGesture_betweenLines_shouldFallback() {
+        mEditText.setSelection(4);
+
+        // Due to the additional line spacing, this point is in the space between the two lines.
+        performInsertGesture(new PointF(32f, mEditText.getLayout().getLineTop(1) - 1f));
+
+        assertFallbackTextInserted(/* initialCursorPosition= */ 4);
+    }
+
+    @Test
+    @ApiTest(apis = "android.view.inputmethod.InputConnection#performHandwritingGesture")
+    public void performInsertGesture_belowLastLine_shouldFallback() {
+        mEditText.setSelection(11);
+
+        performInsertGesture(new PointF(32f, mEditText.getLayout().getLineBottom(1) + 1f));
+
+        assertFallbackTextInserted(/* initialCursorPosition= */ 11);
+    }
+
+    @Test
+    @ApiTest(apis = "android.view.inputmethod.InputConnection#performHandwritingGesture")
+    public void performInsertGesture_leftOfLine_shouldFallback() {
+        mEditText.setSelection(7);
+
+        performInsertGesture(new PointF(-1f, mEditText.getLayout().getLineTop(0) + 1f));
+
+        assertFallbackTextInserted(/* initialCursorPosition= */ 7);
+    }
+
+    @Test
+    @ApiTest(apis = "android.view.inputmethod.InputConnection#performHandwritingGesture")
+    public void performInsertGesture_rightOfLine_shouldFallback() {
+        mEditText.setSelection(6);
+
+        performInsertGesture(new PointF(101f, mEditText.getLayout().getLineTop(0) + 1f));
+
+        assertFallbackTextInserted(/* initialCursorPosition= */ 6);
+    }
+
     private void performSelectGesture(RectF area, int granularity) {
         area.offset(mLocationOnScreen[0], mLocationOnScreen[1]);
         HandwritingGesture gesture = new SelectGesture.Builder()
@@ -215,6 +286,24 @@ public class TextViewHandwritingGestureTest {
                 .isEqualTo(DEFAULT_TEXT.substring(0, start) + DEFAULT_TEXT.substring(end));
         assertThat(mEditText.getSelectionStart()).isEqualTo(start);
         assertThat(mEditText.getSelectionEnd()).isEqualTo(start);
+    }
+
+    private void performInsertGesture(PointF point) {
+        point.offset(mLocationOnScreen[0], mLocationOnScreen[1]);
+        HandwritingGesture gesture = new InsertGesture.Builder()
+                .setInsertionPoint(point)
+                .setTextToInsert(INSERT_TEXT)
+                .setFallbackText(FALLBACK_TEXT)
+                .build();
+        InputConnection inputConnection = mEditText.onCreateInputConnection(new EditorInfo());
+        inputConnection.performHandwritingGesture(gesture, null, null);
+    }
+
+    private void assertInsertGesturePerformed(int offset) {
+        assertThat(mEditText.getText().toString()).isEqualTo(
+                DEFAULT_TEXT.substring(0, offset) + INSERT_TEXT + DEFAULT_TEXT.substring(offset));
+        assertThat(mEditText.getSelectionStart()).isEqualTo(offset + INSERT_TEXT.length());
+        assertThat(mEditText.getSelectionEnd()).isEqualTo(offset + INSERT_TEXT.length());
     }
 
     private void assertFallbackTextInserted(int initialCursorPosition) {
