@@ -276,8 +276,8 @@ class CameraMicIndicatorsPermissionTest {
         openApp(useMic, useCamera, useHotword)
         try {
             eventually {
-                val appView = uiDevice.findObject(By.textContains(APP_LABEL))
-                assertNotNull("View with text $APP_LABEL not found", appView)
+                val appView = uiDevice.findObject(UiSelector().textContains(APP_LABEL))
+                assertTrue("View with text $APP_LABEL not found", appView.exists())
             }
             if (chainUsage) {
                 chainAttribution = createChainAttribution()
@@ -408,7 +408,7 @@ class CameraMicIndicatorsPermissionTest {
                 var iconView = if (safetyCenterEnabled) {
                     waitFindObjectOrNull(By.text(micLabel))
                 } else {
-                    uiDevice.findObject(By.descContains(micLabel))
+                    uiDevice.findObject(UiSelector().descriptionContains(micLabel))
                 }
                 assertNotNull("View with description $micLabel not found", iconView)
             }
@@ -416,11 +416,11 @@ class CameraMicIndicatorsPermissionTest {
                 var iconView = if (safetyCenterEnabled) {
                     waitFindObjectOrNull(By.text(cameraLabel))
                 } else {
-                    uiDevice.findObject(By.descContains(cameraLabel))
+                    uiDevice.findObject(UiSelector().descriptionContains(cameraLabel))
                 }
                 assertNotNull("View with text $APP_LABEL not found", iconView)
             }
-            val appView = waitFindObjectOrNull(By.textContains(APP_LABEL))
+            var appView = waitFindObjectOrNull(By.textContains(APP_LABEL))
             assertNotNull("View with text $APP_LABEL not found", appView)
             if (safetyCenterEnabled) {
                 assertTrue("Did not find safety center views",
