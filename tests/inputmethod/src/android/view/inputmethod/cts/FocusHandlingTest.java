@@ -16,10 +16,12 @@
 
 package android.view.inputmethod.cts;
 
+import static android.provider.InputMethodManagerDeviceConfig.KEY_HIDE_IME_WHEN_NO_EDITOR_FOCUS;
 import static android.view.WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM;
 import static android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN;
 import static android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE;
 import static android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN;
+import static android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_UNCHANGED;
 import static android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED;
 import static android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE;
 import static android.view.inputmethod.cts.util.InputMethodVisibilityVerifier.expectImeInvisible;
@@ -55,6 +57,7 @@ import android.os.Process;
 import android.os.SystemClock;
 import android.os.SystemProperties;
 import android.platform.test.annotations.AppModeFull;
+import android.provider.DeviceConfig;
 import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.View;
@@ -84,7 +87,9 @@ import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.android.compatibility.common.util.ApiTest;
 import com.android.compatibility.common.util.CtsTouchUtils;
+import com.android.compatibility.common.util.SystemUtil;
 import com.android.cts.mockime.ImeCommand;
 import com.android.cts.mockime.ImeEvent;
 import com.android.cts.mockime.ImeEventStream;
@@ -399,6 +404,43 @@ public class FocusHandlingTest extends EndToEndImeTestBase {
             // Wait until the MockIme gets bound to the TestActivity.
             expectBindInput(stream, Process.myPid(), TIMEOUT);
 
+            expectEvent(stream, event -> "showSoftInput".equals(event.getEventName()), TIMEOUT);
+        }
+    }
+
+    @ApiTest(apis = {"android.inputmethodservice.InputMethodService#showSoftInput"})
+    @Test
+    public void testSoftInputStateAlwaysVisibleFocusEditorAfterLaunch() throws Exception {
+        final Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
+        try (MockImeSession imeSession = createTestImeSession()) {
+            final ImeEventStream stream = imeSession.openEventStream();
+
+            // Launch a test activity with STATE_ALWAYS_VISIBLE without requesting editor focus.
+            AtomicReference<EditText> editTextRef = new AtomicReference<>();
+            TestActivity.startSync(activity -> {
+                final LinearLayout layout = new LinearLayout(activity);
+                layout.setOrientation(LinearLayout.VERTICAL);
+
+                final EditText editText = new EditText(activity);
+                editTextRef.set(editText);
+                editText.setText("editText");
+                activity.getWindow().setSoftInputMode(SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+                layout.addView(editText);
+                return layout;
+            });
+
+            // Wait until the MockIme gets bound to the TestActivity.
+            expectBindInput(stream, Process.myPid(), TIMEOUT);
+
+            // Not expect showSoftInput called when the editor not yet focused.
+            notExpectEvent(stream, event -> "showSoftInput".equals(event.getEventName()),
+                    NOT_EXPECT_TIMEOUT);
+
+            // Expect showSoftInput called when the editor is focused.
+            instrumentation.runOnMainSync(editTextRef.get()::requestFocus);
+            CtsTouchUtils.emulateTapOnViewCenter(instrumentation, null, editTextRef.get());
+            assertTrue(TestUtils.getOnMainSync(() -> editTextRef.get().hasFocus()
+                    && editTextRef.get().hasWindowFocus()));
             expectEvent(stream, event -> "showSoftInput".equals(event.getEventName()), TIMEOUT);
         }
     }
@@ -914,31 +956,78 @@ public class FocusHandlingTest extends EndToEndImeTestBase {
     }
 
     @Test
-    public void testUnfocusedEditor_stateVisible_startsIme() throws Exception {
+    @ApiTest(apis = {"android.inputmethodservice.InputMethodService#onStartInput",
+            "android.inputmethodservice.InputMethodService#showSoftInput"})
+    public void testUnfocusedEditor_stateVisible() throws Exception {
         ImeEventStream stream = startFocusedEditorActivity_thenAnotherUnfocusedEditorActivity(
                 SOFT_INPUT_STATE_VISIBLE);
         // The previous IME should be finished
         expectOnFinishInput(stream);
 
-        // Input should be started and shown
+        // Input should be started
         expectEvent(stream, event -> "onStartInput".equals(event.getEventName()),
                 EXPECT_TIMEOUT);
-        expectEvent(stream, event -> "showSoftInput".equals(event.getEventName()),
-                EXPECT_TIMEOUT);
+
+        final boolean willHideIme = willHideImeWhenNoEditorFocus();
+        if (willHideIme) {
+            // The keyboard will not expected to show when focusing the app set STATE_VISIBLE
+            // without an editor from the IME shown activity
+            notExpectEvent(stream, event -> "showSoftInput".equals(event.getEventName()),
+                    NOT_EXPECT_TIMEOUT);
+        } else {
+            expectEvent(stream, event -> "showSoftInput".equals(event.getEventName()),
+                    EXPECT_TIMEOUT);
+        }
     }
 
     @Test
-    public void testUnfocusedEditor_stateAlwaysVisible_startsIme() throws Exception {
+    @ApiTest(apis = {"android.inputmethodservice.InputMethodService#onStartInput",
+            "android.inputmethodservice.InputMethodService#showSoftInput"})
+    public void testUnfocusedEditor_stateAlwaysVisible() throws Exception {
         ImeEventStream stream = startFocusedEditorActivity_thenAnotherUnfocusedEditorActivity(
                 SOFT_INPUT_STATE_ALWAYS_VISIBLE);
         // The previous IME should be finished
         expectOnFinishInput(stream);
 
-        // Input should be started and shown
+        // Input should be started
         expectEvent(stream, event -> "onStartInput".equals(event.getEventName()),
                 EXPECT_TIMEOUT);
-        expectEvent(stream, event -> "showSoftInput".equals(event.getEventName()),
+
+        final boolean willHideIme = willHideImeWhenNoEditorFocus();
+        if (willHideIme) {
+            // The keyboard will not expected to show when focusing the app set STATE_ALWAYS_VISIBLE
+            // without an editor from the IME shown activity
+            notExpectEvent(stream, event -> "showSoftInput".equals(event.getEventName()),
+                    NOT_EXPECT_TIMEOUT);
+        } else {
+            expectEvent(stream, event -> "showSoftInput".equals(event.getEventName()),
+                    EXPECT_TIMEOUT);
+        }
+    }
+
+    @Test
+    @ApiTest(apis = {"android.inputmethodservice.InputMethodService#onStartInput",
+            "android.inputmethodservice.InputMethodService#showSoftInput"})
+    public void testUnfocusedEditor_stateUnchanged() throws Exception {
+        ImeEventStream stream = startFocusedEditorActivity_thenAnotherUnfocusedEditorActivity(
+                SOFT_INPUT_STATE_UNCHANGED);
+        // The previous IME should be finished
+        expectOnFinishInput(stream);
+
+        // Input should be started
+        expectEvent(stream, event -> "onStartInput".equals(event.getEventName()),
                 EXPECT_TIMEOUT);
+
+        final boolean willHideIme = willHideImeWhenNoEditorFocus();
+        if (willHideIme) {
+            // The keyboard will not expected to show when focusing the app set STATE_UNCHANGED
+            // without an editor from the IME shown activity
+            notExpectEvent(stream, event -> "showSoftInput".equals(event.getEventName()),
+                    NOT_EXPECT_TIMEOUT);
+        } else {
+            expectEvent(stream, event -> "showSoftInput".equals(event.getEventName()),
+                    EXPECT_TIMEOUT);
+        }
     }
 
     @Test
@@ -1059,5 +1148,11 @@ public class FocusHandlingTest extends EndToEndImeTestBase {
         static CloseOnce of(@NonNull AutoCloseable autoCloseable) {
             return new CloseOnce(autoCloseable);
         }
+    }
+
+    private static boolean willHideImeWhenNoEditorFocus() throws Exception {
+        return SystemUtil.callWithShellPermissionIdentity(
+                () -> DeviceConfig.getBoolean(DeviceConfig.NAMESPACE_INPUT_METHOD_MANAGER,
+                        KEY_HIDE_IME_WHEN_NO_EDITOR_FOCUS, true));
     }
 }
