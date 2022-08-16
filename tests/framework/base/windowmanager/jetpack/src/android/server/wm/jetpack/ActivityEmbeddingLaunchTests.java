@@ -22,14 +22,15 @@ import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.createWildca
 import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.getPrimaryStackTopActivity;
 import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.getSecondaryStackTopActivity;
 import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.startActivityAndVerifySplit;
-import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.waitForResumed;
+import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.waitAndAssertResumed;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.server.wm.jetpack.utils.ActivityEmbeddingTestBase;
+import android.platform.test.annotations.FlakyTest;
+import android.platform.test.annotations.Presubmit;
 import android.server.wm.jetpack.utils.TestActivityWithId;
 import android.server.wm.jetpack.utils.TestConfigChangeHandlingActivity;
 import android.util.Pair;
@@ -60,6 +61,7 @@ import java.util.function.Predicate;
  * Build/Install/Run:
  *     atest CtsWindowManagerJetpackTestCases:ActivityEmbeddingLaunchTests
  */
+@Presubmit
 @RunWith(AndroidJUnit4.class)
 public class ActivityEmbeddingLaunchTests extends ActivityEmbeddingTestBase {
 
@@ -256,14 +258,14 @@ public class ActivityEmbeddingLaunchTests extends ActivityEmbeddingTestBase {
                 alwaysExpandedActivityId);
 
         // Verify that the always expanded activity is resumed and fills its parent
-        waitForResumed(alwaysExpandedActivityId);
+        waitAndAssertResumed(alwaysExpandedActivityId);
         Activity alwaysExpandedActivity = getResumedActivityById(alwaysExpandedActivityId);
         assertEquals(getMaximumActivityBounds(alwaysExpandedActivity),
                 getActivityBounds(alwaysExpandedActivity));
 
         // Finish the always expanded activity and verify that the split is resumed
         alwaysExpandedActivity.finish();
-        waitForResumed(Arrays.asList(primaryActivity, secondaryActivity));
+        waitAndAssertResumed(Arrays.asList(primaryActivity, secondaryActivity));
         assertValidSplit(primaryActivity, secondaryActivity, splitPairRule);
     }
 
@@ -271,6 +273,7 @@ public class ActivityEmbeddingLaunchTests extends ActivityEmbeddingTestBase {
      * Tests launching an activity that is set to always expand when it is launched over an existing
      * split from the current secondary activity.
      */
+    @FlakyTest(bugId = 213322133)
     @Test
     public void testAlwaysExpandOverSplit_launchFromSecondary() {
         // Create activity rule that sets the target activity to always expand
@@ -297,14 +300,14 @@ public class ActivityEmbeddingLaunchTests extends ActivityEmbeddingTestBase {
                 alwaysExpandedActivityId);
 
         // Verify that the always expanded activity is resumed and fills its parent
-        waitForResumed(alwaysExpandedActivityId);
+        waitAndAssertResumed(alwaysExpandedActivityId);
         Activity alwaysExpandedActivity = getResumedActivityById(alwaysExpandedActivityId);
         assertEquals(getMaximumActivityBounds(alwaysExpandedActivity),
                 getActivityBounds(alwaysExpandedActivity));
 
         // Finish the always expanded activity and verify that the split is resumed
         alwaysExpandedActivity.finish();
-        waitForResumed(Arrays.asList(primaryActivity, secondaryActivity));
+        waitAndAssertResumed(Arrays.asList(primaryActivity, secondaryActivity));
         assertValidSplit(primaryActivity, secondaryActivity, splitPairRule);
     }
 

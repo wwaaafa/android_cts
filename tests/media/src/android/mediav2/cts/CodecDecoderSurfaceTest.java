@@ -198,18 +198,20 @@ public class CodecDecoderSurfaceTest extends CodecDecoderTestBase {
     @Test(timeout = PER_TEST_TIMEOUT_LARGE_TEST_MS)
     public void testSimpleDecodeToSurface() throws IOException, InterruptedException {
         boolean[] boolStates = {true, false};
-        OutputManager ref;
+        OutputManager ref = null;
         OutputManager test = new OutputManager();
         final long pts = 0;
         final int mode = MediaExtractor.SEEK_TO_CLOSEST_SYNC;
         {
-            decodeAndSavePts(mTestFile, mCodecName, pts, mode, Integer.MAX_VALUE);
-            ref = mOutputBuff;
-            // TODO: Timestamps for deinterlaced content are under review. (E.g. can decoders
-            // produce multiple progressive frames?) For now, do not verify timestamps.
-            if (!mIsInterlaced) {
-                assertTrue("input pts list and output pts list are not identical",
-                        ref.isOutPtsListIdenticalToInpPtsList(false));
+            if (!mSkipChecksumVerification || VNDK_IS_AT_LEAST_T) {
+                decodeAndSavePts(mTestFile, mCodecName, pts, mode, Integer.MAX_VALUE);
+                ref = mOutputBuff;
+                // TODO: Timestamps for deinterlaced content are under review. (E.g. can decoders
+                // produce multiple progressive frames?) For now, do not verify timestamps.
+                if (!mIsInterlaced) {
+                    assertTrue("input pts list and output pts list are not identical",
+                            ref.isOutPtsListIdenticalToInpPtsList(false));
+                }
             }
             MediaFormat format = setUpSource(mTestFile);
             mCodec = MediaCodec.createByCodecName(mCodecName);
@@ -229,12 +231,15 @@ public class CodecDecoderSurfaceTest extends CodecDecoderTestBase {
                 assertTrue(log + " unexpected error", !mAsyncHandle.hasSeenError());
                 assertTrue(log + "no input sent", 0 != mInputCount);
                 assertTrue(log + "output received", 0 != mOutputCount);
-                // TODO: Timestamps for deinterlaced content are under review. (E.g. can decoders
-                // produce multiple progressive frames?) For now, do not verify timestamps.
-                if (mIsInterlaced) {
-                    assertTrue(log + "decoder output is flaky", ref.equalsInterlaced(test));
-                } else {
-                    assertTrue(log + "decoder output is flaky", ref.equals(test));
+                if (ref != null) {
+                    // TODO: Timestamps for deinterlaced content are under review.
+                    // (E.g. can decoders produce multiple progressive frames?)
+                    // For now, do not verify timestamps.
+                    if (mIsInterlaced) {
+                        assertTrue(log + "decoder output is flaky", ref.equalsInterlaced(test));
+                    } else {
+                        assertTrue(log + "decoder output is flaky", ref.equals(test));
+                    }
                 }
             }
             mCodec.release();
@@ -264,13 +269,16 @@ public class CodecDecoderSurfaceTest extends CodecDecoderTestBase {
         boolean[] boolStates = {true, false};
         OutputManager test = new OutputManager();
         {
-            decodeAndSavePts(mTestFile, mCodecName, pts, mode, Integer.MAX_VALUE);
-            OutputManager ref = mOutputBuff;
-            // TODO: Timestamps for deinterlaced content are under review. (E.g. can decoders
-            // produce multiple progressive frames?) For now, do not verify timestamps.
-            if (!mIsInterlaced) {
-                assertTrue("input pts list and output pts list are not identical",
-                        ref.isOutPtsListIdenticalToInpPtsList(false));
+            OutputManager ref = null;
+            if (!mSkipChecksumVerification || VNDK_IS_AT_LEAST_T) {
+                decodeAndSavePts(mTestFile, mCodecName, pts, mode, Integer.MAX_VALUE);
+                ref = mOutputBuff;
+                // TODO: Timestamps for deinterlaced content are under review. (E.g. can decoders
+                // produce multiple progressive frames?) For now, do not verify timestamps.
+                if (!mIsInterlaced) {
+                    assertTrue("input pts list and output pts list are not identical",
+                            ref.isOutPtsListIdenticalToInpPtsList(false));
+                }
             }
             mOutputBuff = test;
             setUpSource(mTestFile);
@@ -310,12 +318,15 @@ public class CodecDecoderSurfaceTest extends CodecDecoderTestBase {
                 assertTrue(log + " unexpected error", !mAsyncHandle.hasSeenError());
                 assertTrue(log + "no input sent", 0 != mInputCount);
                 assertTrue(log + "output received", 0 != mOutputCount);
-                // TODO: Timestamps for deinterlaced content are under review. (E.g. can decoders
-                // produce multiple progressive frames?) For now, do not verify timestamps.
-                if (mIsInterlaced) {
-                    assertTrue(log + "decoder output is flaky", ref.equalsInterlaced(test));
-                } else {
-                    assertTrue(log + "decoder output is flaky", ref.equals(test));
+                if (ref != null) {
+                    // TODO: Timestamps for deinterlaced content are under review.
+                    // (E.g. can decoders produce multiple progressive frames?)
+                    // For now, do not verify timestamps.
+                    if (mIsInterlaced) {
+                        assertTrue(log + "decoder output is flaky", ref.equalsInterlaced(test));
+                    } else {
+                        assertTrue(log + "decoder output is flaky", ref.equals(test));
+                    }
                 }
 
                 /* test flush in eos state */
@@ -330,12 +341,15 @@ public class CodecDecoderSurfaceTest extends CodecDecoderTestBase {
                 assertTrue(log + " unexpected error", !mAsyncHandle.hasSeenError());
                 assertTrue(log + "no input sent", 0 != mInputCount);
                 assertTrue(log + "output received", 0 != mOutputCount);
-                // TODO: Timestamps for deinterlaced content are under review. (E.g. can decoders
-                // produce multiple progressive frames?) For now, do not verify timestamps.
-                if (mIsInterlaced) {
-                    assertTrue(log + "decoder output is flaky", ref.equalsInterlaced(test));
-                } else {
-                    assertTrue(log + "decoder output is flaky", ref.equals(test));
+                if (ref != null) {
+                    // TODO: Timestamps for deinterlaced content are under review.
+                    // (E.g. can decoders produce multiple progressive frames?)
+                    // For now, do not verify timestamps.
+                    if (mIsInterlaced) {
+                        assertTrue(log + "decoder output is flaky", ref.equalsInterlaced(test));
+                    } else {
+                        assertTrue(log + "decoder output is flaky", ref.equals(test));
+                    }
                 }
             }
             mCodec.release();
@@ -364,19 +378,24 @@ public class CodecDecoderSurfaceTest extends CodecDecoderTestBase {
         boolean[] boolStates = {true, false};
         OutputManager test = new OutputManager();
         {
-            decodeAndSavePts(mTestFile, mCodecName, pts, mode, Integer.MAX_VALUE);
-            OutputManager ref = mOutputBuff;
-            if (!mIsInterlaced) {
-                assertTrue("input pts list and reference pts list are not identical",
-                        ref.isOutPtsListIdenticalToInpPtsList(false));
-            }
-            decodeAndSavePts(mReconfigFile, mCodecName, pts, mode, Integer.MAX_VALUE);
-            OutputManager configRef = mOutputBuff;
-            // TODO: Timestamps for deinterlaced content are under review. (E.g. can decoders
-            // produce multiple progressive frames?) For now, do not verify timestamps.
-            if (!mIsInterlaced) {
-                assertTrue("input pts list and reconfig ref output pts list are not identical",
-                        configRef.isOutPtsListIdenticalToInpPtsList(false));
+            OutputManager ref = null;
+            OutputManager configRef = null;
+
+            if (!mSkipChecksumVerification || VNDK_IS_AT_LEAST_T) {
+                decodeAndSavePts(mTestFile, mCodecName, pts, mode, Integer.MAX_VALUE);
+                ref = mOutputBuff;
+                if (!mIsInterlaced) {
+                    assertTrue("input pts list and reference pts list are not identical",
+                            ref.isOutPtsListIdenticalToInpPtsList(false));
+                }
+                decodeAndSavePts(mReconfigFile, mCodecName, pts, mode, Integer.MAX_VALUE);
+                configRef = mOutputBuff;
+                // TODO: Timestamps for deinterlaced content are under review. (E.g. can decoders
+                // produce multiple progressive frames?) For now, do not verify timestamps.
+                if (!mIsInterlaced) {
+                    assertTrue("input pts list and reconfig ref output pts list are not identical",
+                            configRef.isOutPtsListIdenticalToInpPtsList(false));
+                }
             }
             mOutputBuff = test;
             mCodec = MediaCodec.createByCodecName(mCodecName);
@@ -409,12 +428,15 @@ public class CodecDecoderSurfaceTest extends CodecDecoderTestBase {
                 assertTrue(log + " unexpected error", !mAsyncHandle.hasSeenError());
                 assertTrue(log + "no input sent", 0 != mInputCount);
                 assertTrue(log + "output received", 0 != mOutputCount);
-                // TODO: Timestamps for deinterlaced content are under review. (E.g. can decoders
-                // produce multiple progressive frames?) For now, do not verify timestamps.
-                if (mIsInterlaced) {
-                    assertTrue(log + "decoder output is flaky", ref.equalsInterlaced(test));
-                } else {
-                    assertTrue(log + "decoder output is flaky", ref.equals(test));
+                if (ref != null) {
+                    // TODO: Timestamps for deinterlaced content are under review.
+                    // (E.g. can decoders produce multiple progressive frames?)
+                    // For now, do not verify timestamps.
+                    if (mIsInterlaced) {
+                        assertTrue(log + "decoder output is flaky", ref.equalsInterlaced(test));
+                    } else {
+                        assertTrue(log + "decoder output is flaky", ref.equals(test));
+                    }
                 }
                 /* test reconfigure codec at eos state */
                 reConfigureCodec(format, !isAsync, false, false);
@@ -428,12 +450,15 @@ public class CodecDecoderSurfaceTest extends CodecDecoderTestBase {
                 assertTrue(log + " unexpected error", !mAsyncHandle.hasSeenError());
                 assertTrue(log + "no input sent", 0 != mInputCount);
                 assertTrue(log + "output received", 0 != mOutputCount);
-                // TODO: Timestamps for deinterlaced content are under review. (E.g. can decoders
-                // produce multiple progressive frames?) For now, do not verify timestamps.
-                if (mIsInterlaced) {
-                    assertTrue(log + "decoder output is flaky", ref.equalsInterlaced(test));
-                } else {
-                    assertTrue(log + "decoder output is flaky", ref.equals(test));
+                if (ref != null) {
+                    // TODO: Timestamps for deinterlaced content are under review.
+                    // (E.g. can decoders produce multiple progressive frames?)
+                    // For now, do not verify timestamps.
+                    if (mIsInterlaced) {
+                        assertTrue(log + "decoder output is flaky", ref.equalsInterlaced(test));
+                    } else {
+                        assertTrue(log + "decoder output is flaky", ref.equals(test));
+                    }
                 }
                 mExtractor.release();
 
@@ -453,12 +478,16 @@ public class CodecDecoderSurfaceTest extends CodecDecoderTestBase {
                 assertTrue(log + " unexpected error", !mAsyncHandle.hasSeenError());
                 assertTrue(log + "no input sent", 0 != mInputCount);
                 assertTrue(log + "output received", 0 != mOutputCount);
-                // TODO: Timestamps for deinterlaced content are under review. (E.g. can decoders
-                // produce multiple progressive frames?) For now, do not verify timestamps.
-                if (mIsInterlaced) {
-                    assertTrue(log + "decoder output is flaky", configRef.equalsInterlaced(test));
-                } else {
-                    assertTrue(log + "decoder output is flaky", configRef.equals(test));
+                if (configRef != null) {
+                    // TODO: Timestamps for deinterlaced content are under review.
+                    // (E.g. can decoders produce multiple progressive frames?)
+                    // For now, do not verify timestamps.
+                    if (mIsInterlaced) {
+                        assertTrue(log + "decoder output is flaky",
+                            configRef.equalsInterlaced(test));
+                    } else {
+                        assertTrue(log + "decoder output is flaky", configRef.equals(test));
+                    }
                 }
                 mExtractor.release();
             }
@@ -472,6 +501,9 @@ public class CodecDecoderSurfaceTest extends CodecDecoderTestBase {
     @LargeTest
     @Test(timeout = PER_TEST_TIMEOUT_LARGE_TEST_MS)
     public void testSimpleDecodeToSurfaceNative() throws IOException {
+        if (mSkipChecksumVerification) {
+            Assume.assumeTrue("vendor should be T or higher", VNDK_IS_AT_LEAST_T);
+        }
         MediaFormat format = setUpSource(mTestFile);
         mExtractor.release();
         mActivity.setScreenParams(getWidth(format), getHeight(format), false);
@@ -486,6 +518,9 @@ public class CodecDecoderSurfaceTest extends CodecDecoderTestBase {
     @LargeTest
     @Test(timeout = PER_TEST_TIMEOUT_LARGE_TEST_MS)
     public void testFlushNative() throws IOException {
+        if (mSkipChecksumVerification) {
+            Assume.assumeTrue("vendor should be T or higher", VNDK_IS_AT_LEAST_T);
+        }
         MediaFormat format = setUpSource(mTestFile);
         mExtractor.release();
         mActivity.setScreenParams(getWidth(format), getHeight(format), true);

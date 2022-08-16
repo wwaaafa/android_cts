@@ -103,7 +103,7 @@ public class MediaActivityTest {
         mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
         mUseFixedVolume = mAudioManager.isVolumeFixed();
         mHdmiControlManager = mContext.getSystemService(HdmiControlManager.class);
-        if (mHdmiControlManager != null) {
+        if(mHdmiControlManager != null) {
             mHdmiEnableStatus = mHdmiControlManager.getHdmiCecEnabled();
             mHdmiControlManager.setHdmiCecEnabled(HdmiControlManager.HDMI_CEC_CONTROL_DISABLED);
         }
