@@ -75,7 +75,7 @@ public class BluetoothLeAudioTest extends AndroidTestCase {
 
     private static final List<BluetoothLeAudioCodecConfig> TEST_CODEC_CAPA_CONFIG =
             new ArrayList() {{
-                add(LC3_16KHZ_CONFIG);
+                    add(LC3_16KHZ_CONFIG);
             }};
 
     private static final BluetoothLeAudioCodecStatus TEST_CODEC_STATUS =
@@ -86,7 +86,7 @@ public class BluetoothLeAudioTest extends AndroidTestCase {
     class TestCallback implements BluetoothLeAudio.Callback {
         @Override
         public void onCodecConfigChanged(int groupId,
-                BluetoothLeAudioCodecStatus status) {
+                                         BluetoothLeAudioCodecStatus status) {
             mCodecConfigChangedCalled = true;
             assertTrue(groupId == mTestGroupId);
             assertTrue(status == TEST_CODEC_STATUS);

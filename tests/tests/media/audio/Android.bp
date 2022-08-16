@@ -40,9 +40,11 @@ cc_test_library {
         "jni/audio-track-native.cpp",
         "jni/sl-utils.cpp",
     ],
-    include_dirs: ["frameworks/wilhelm/include",
-                   "frameworks/wilhelm/src/android",
-                   "system/core/include"],
+    include_dirs: [
+        "frameworks/wilhelm/include",
+        "frameworks/wilhelm/src/android",
+        "system/core/include",
+    ],
     shared_libs: [
         "libandroid",
         "liblog",
@@ -86,6 +88,7 @@ android_test {
     resource_dirs: ["res"],
     srcs: [
         "src/**/*.java",
+        "src/**/*.kt",
     ],
     platform_apis: true,
     jni_uses_sdk_apis: true,

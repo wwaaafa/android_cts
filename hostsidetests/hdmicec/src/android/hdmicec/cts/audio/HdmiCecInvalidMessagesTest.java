@@ -21,9 +21,9 @@ import android.hdmicec.cts.BaseHdmiCecCtsTest;
 import android.hdmicec.cts.CecMessage;
 import android.hdmicec.cts.CecOperand;
 import android.hdmicec.cts.HdmiCecConstants;
+import android.hdmicec.cts.LogicalAddress;
 import android.hdmicec.cts.error.CecClientWrapperException;
 import android.hdmicec.cts.error.ErrorCodes;
-import android.hdmicec.cts.LogicalAddress;
 
 import com.android.tradefed.testtype.DeviceJUnit4ClassRunner;
 
