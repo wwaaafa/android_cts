@@ -114,7 +114,10 @@ public class CodecEncoderPerformanceTest extends CodecEncoderPerformanceTestBase
                 " Encoder: %s, Key-priority: %d :: ", mDecoderMime, mDecoderName, mHeight,
                 mEncoderMime, mEncoderName, mKeyPriority);
         int maxExpectedFps = getMaxExpectedFps(mWidth, mHeight);
-        double fpsToleranceFactor = Math.min(0.9, FPS_TOLERANCE_FACTOR);
+        double fpsToleranceFactor = FPS_TOLERANCE_FACTOR;
+        if (VNDK_VERSION <= Build.VERSION_CODES.TIRAMISU) {
+            fpsToleranceFactor = Math.min(0.9, fpsToleranceFactor);
+        }
         double expectedFps =
                 Math.min(mOperatingRateExpected * fpsToleranceFactor, maxExpectedFps);
         Log.d(LOG_TAG, log + "act/exp fps: " + mAchievedFps + "/" + expectedFps);

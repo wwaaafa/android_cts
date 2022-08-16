@@ -83,7 +83,7 @@ public class MultiStaConcurrencyWifiNetworkSpecifierTest extends WifiJUnit4TestB
     private WifiConfiguration mTestNetworkForPeerToPeer;
     private WifiConfiguration mTestNetworkForInternetConnection;
     private ConnectivityManager.NetworkCallback mNetworkCallback;
-    private TestHelper.TestNetworkCallback mNrNetworkCallback;
+    private ConnectivityManager.NetworkCallback mNrNetworkCallback;
     private TestHelper mTestHelper;
 
     private static final int DURATION = 10_000;
@@ -222,14 +222,14 @@ public class MultiStaConcurrencyWifiNetworkSpecifierTest extends WifiJUnit4TestB
 
     private void testSuccessfulConnectionWithSpecifier(
             WifiConfiguration network, WifiNetworkSpecifier specifier) throws Exception {
-        mNrNetworkCallback = (TestHelper.TestNetworkCallback) mTestHelper
-                .testConnectionFlowWithSpecifier(network, specifier, false);
+        mNrNetworkCallback = mTestHelper.testConnectionFlowWithSpecifier(
+                network, specifier, false);
     }
 
     private void testUserRejectionWithSpecifier(
             WifiConfiguration network, WifiNetworkSpecifier specifier) throws Exception {
-        mNrNetworkCallback = (TestHelper.TestNetworkCallback) mTestHelper
-                .testConnectionFlowWithSpecifier(network, specifier, true);
+        mNrNetworkCallback = mTestHelper.testConnectionFlowWithSpecifier(
+                network, specifier, true);
     }
 
     /**
@@ -276,18 +276,10 @@ public class MultiStaConcurrencyWifiNetworkSpecifierTest extends WifiJUnit4TestB
         mNetworkCallback = mTestHelper.testConnectionFlowWithConnect(
                 mTestNetworkForInternetConnection);
 
-        if (mNrNetworkCallback.waitForAnyCallback(DURATION)
-                && mNrNetworkCallback.onLostCalled) {
-            // If the local only network became unavailable, that should because both network are
-            // using the same SSID. That makes only 1 network available.
-            assumeTrue(mTestNetworkForPeerToPeer.SSID
-                    .equals(mTestNetworkForInternetConnection.SSID));
-            assertThat(mTestHelper.getNumWifiConnections()).isEqualTo(1);
-            return;
-        }
-
         // Ensure that there are 2 wifi connections available for apps.
-        assertThat(mTestHelper.getNumWifiConnections()).isEqualTo(2);
+        assertThat(mTestHelper.getNumWifiConnections()).isEqualTo(
+                mTestNetworkForPeerToPeer.SSID.equals(mTestNetworkForInternetConnection.SSID)
+                        ? 1 : 2);
     }
 
     /**

@@ -23,6 +23,7 @@ import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 import static android.server.wm.SplitActivityLifecycleTest.ActivityB.EXTRA_SHOW_WHEN_LOCKED;
 import static android.server.wm.WindowManagerState.STATE_STARTED;
 import static android.server.wm.WindowManagerState.STATE_STOPPED;
+import static android.view.Display.DEFAULT_DISPLAY;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
@@ -44,7 +45,6 @@ import android.window.TaskFragmentInfo;
 import android.window.WindowContainerToken;
 import android.window.WindowContainerTransaction;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -60,8 +60,6 @@ import org.junit.Test;
  */
 @Presubmit
 public class SplitActivityLifecycleTest extends TaskFragmentOrganizerTestBase {
-    private Activity mOwnerActivity;
-    private IBinder mOwnerToken;
     private final Rect mPrimaryBounds = new Rect();
     private final Rect mSideBounds = new Rect();
     private TaskFragmentRecord mTaskFragA;
@@ -73,13 +71,16 @@ public class SplitActivityLifecycleTest extends TaskFragmentOrganizerTestBase {
 
     @Override
     public void setUp() throws Exception {
-        super.setUp();
         assumeTrue(supportsMultiWindow());
+        super.setUp();
+    }
+
+    @Override
+    Activity setUpOwnerActivity() {
         // Launch activities in fullscreen, otherwise, some tests fail on devices which use freeform
         // as the default windowing mode, because tests' prerequisite are that activity A, B, and C
         // need to overlay completely, but they can be partially overlay as freeform windows.
-        mOwnerActivity = startActivityInWindowingModeFullScreen(ActivityA.class);
-        mOwnerToken = getActivityToken(mOwnerActivity);
+        return startActivityInWindowingModeFullScreen(ActivityA.class);
     }
 
     /** Launch two Activities in two adjacent TaskFragments side-by-side. */
@@ -394,32 +395,6 @@ public class SplitActivityLifecycleTest extends TaskFragmentOrganizerTestBase {
         testActivityLaunchInExpandedTaskFragmentInternal();
     }
 
-    /**
-     * Verifies the behavior to launch Activity in expanded TaskFragment and occludes the embedded
-     * Task.
-     * <p>
-     * For example, given that Activity A and B are showed side-by-side, which Activity B is in
-     * embedded Task, this test verifies the behavior to launch Activity C in the TaskFragment which
-     * fills the Task bounds of owner Activity:
-     * <pre class="prettyprint">
-     *     - Fullscreen -
-     *     TaskFragmentC
-     *       - ActivityC <---- new started Activity
-     * - Left -      - Right -
-     * TaskFragmentA TaskFragmentB
-     *   - ActivityA   - Embedded Task
-     *                   - ActivityB
-     * </pre></p>
-     */
-    @Test
-    @Ignore("b/197364677")
-    public void testActivityLaunchInExpandedTaskFragment_AboveEmbeddedTask() {
-        // Initialize test environment by launching Activity A and B side-by-side.
-        initializeSplitActivities(true /* verifyEmbeddedTask */);
-
-        testActivityLaunchInExpandedTaskFragmentInternal();
-    }
-
     private void testActivityLaunchInExpandedTaskFragmentInternal() {
 
         final TaskFragmentCreationParams fullScreenParamsC = mTaskFragmentOrganizer
@@ -442,91 +417,6 @@ public class SplitActivityLifecycleTest extends TaskFragmentOrganizerTestBase {
                 "Activity A is occluded by Activity C, so it must be stopped.");
         waitAndAssertActivityState(mActivityB, STATE_STOPPED,
                 "Activity B is occluded by Activity C, so it must be stopped.");
-    }
-
-    /**
-     * Verifies the behavior to launch Activity above the embedded Task in TaskFragment.
-     * <p>
-     * For example, given that Activity A and B are showed side-by-side, which Activity B is in
-     * embedded Task, this test verifies the behavior to launch Activity C on top of the embedded
-     * Task in the same TaskFragment as Activity B:
-     * <pre class="prettyprint">
-     * - Left -      - Right -
-     * TaskFragmentA TaskFragmentB
-     *   - ActivityA   - ActivityC <---- new started Activity
-     *                 - Embedded Task
-     *                   - ActivityB
-     * </pre></p>
-     */
-    @Test
-    @Ignore("b/197364677")
-    public void testActivityLaunchAboveEmbeddedTaskInTaskFragment() {
-        // Initialize test environment by launching Activity A and B side-by-side.
-        initializeSplitActivities(true /* verifyEmbeddedTask */);
-
-        final IBinder taskFragTokenB = mTaskFragB.getTaskFragToken();
-
-        WindowContainerTransaction wct = new WindowContainerTransaction()
-                .startActivityInTaskFragment(taskFragTokenB, mOwnerToken, mIntent,
-                        null /* activityOptions */);
-
-        mTaskFragmentOrganizer.applyTransaction(wct);
-
-        mTaskFragmentOrganizer.waitForTaskFragmentInfoChanged();
-
-        final TaskFragmentInfo infoB = mTaskFragmentOrganizer.getTaskFragmentInfo(taskFragTokenB);
-
-        assertNotEmptyTaskFragment(infoB, taskFragTokenB);
-
-        waitAndAssertResumedActivity(mActivityC, "Activity C must be resumed.");
-        waitAndAssertResumedActivity(mActivityA, "Activity A must be resumed.");
-        waitAndAssertActivityState(mActivityB, WindowManagerState.STATE_STOPPED,
-                "Activity B is occluded by Activity C, so it must be stopped.");
-
-        final TaskFragment taskFragmentB = mWmState.getTaskFragmentByActivity(mActivityB);
-        assertWithMessage("TaskFragmentB must contain Activity C")
-                .that(taskFragmentB.mActivities).containsExactly(mWmState.getActivity(mActivityC));
-    }
-
-    /**
-     * Verifies the behavior to launch Activity to the embedded Task in TaskFragment.
-     * <p>
-     * For example, given that Activity A and B are showed side-by-side, which Activity B is in
-     * embedded Task, this test verifies the behavior to launch Activity C to the embedded Task
-     * and on top of Activity B:
-     * <pre class="prettyprint">
-     * - Left -      - Right -
-     * TaskFragmentA TaskFragmentB
-     *   - ActivityA   - Embedded Task
-     *                   - ActivityC <---- new started Activity
-     *                   - ActivityB
-     * </pre></p>
-     */
-    @Test
-    @Ignore("b/197364677")
-    public void testActivityLaunchToEmbeddedTaskInTaskFragment() {
-        // Initialize test environment by launching Activity A and B side-by-side.
-        initializeSplitActivities(true /* verifyEmbeddedTask */);
-
-        final IBinder taskFragTokenB = mTaskFragB.getTaskFragToken();
-        // Make Activity C launch to the embedded Task.
-        final Intent intent = new Intent(mIntent).addFlags(FLAG_ACTIVITY_NEW_TASK);
-
-        WindowContainerTransaction wct = new WindowContainerTransaction()
-                .startActivityInTaskFragment(taskFragTokenB, mOwnerToken, intent,
-                        null /* activityOptions */);
-
-        mTaskFragmentOrganizer.applyTransaction(wct);
-
-        waitAndAssertResumedActivity(mActivityC, "Activity C must be resumed.");
-        waitAndAssertResumedActivity(mActivityA, "Activity A must be resumed.");
-        waitAndAssertActivityState(mActivityB, STATE_STOPPED,
-                "Activity B is occluded by Activity C, so it must be stopped.");
-
-        final Task embeddedTask = mWmState.getTaskByActivity(mActivityB);
-        assertWithMessage("Embedded Task must contain Activity B and Activity C")
-                .that(embeddedTask.mActivities).containsExactly(mWmState.getActivity(mActivityB),
-                mWmState.getActivity(mActivityC));
     }
 
     /**
@@ -608,8 +498,11 @@ public class SplitActivityLifecycleTest extends TaskFragmentOrganizerTestBase {
      */
     @Test
     public void testTranslucentAdjacentTaskFragment() {
-        // Create ActivityB on top of ActivityA
-        Activity activityB = startActivityInWindowingModeFullScreen(ActivityB.class);
+        // Create ActivityB on top of ActivityA.
+        // Make sure ActivityB is launched into the same task as ActivityA so that we can reparent
+        // it to TaskFragment in the same task later.
+        Activity activityB = startActivity(ActivityB.class, DEFAULT_DISPLAY, true /* hasFocus */,
+                WINDOWING_MODE_FULLSCREEN, mOwnerActivity.getTaskId());
         waitAndAssertResumedActivity(mActivityB, "Activity B must be resumed.");
         waitAndAssertActivityState(mActivityA, STATE_STOPPED,
                 "Activity A is occluded by Activity B, so it must be stopped.");
