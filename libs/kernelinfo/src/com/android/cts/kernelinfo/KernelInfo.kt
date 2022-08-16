@@ -93,7 +93,7 @@ abstract class KernelInfo {
             inputStream.use {
                 val reader = BufferedReader(InputStreamReader(inputStream))
                 // Remove any lines that are comments
-                sConfigs = reader.lines().filter { !isComment(it) }.collect(Collectors.toSet())
+                sConfigs = reader.lines().filter {!isComment(it)}.collect(Collectors.toSet())
             }
         }
     }

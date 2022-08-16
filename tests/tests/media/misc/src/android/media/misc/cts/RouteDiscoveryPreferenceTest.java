@@ -26,14 +26,14 @@ import android.media.RouteDiscoveryPreference;
 import android.media.cts.NonMediaMainlineTest;
 import android.os.Parcel;
 
+import androidx.test.filters.SmallTest;
+import androidx.test.runner.AndroidJUnit4;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import androidx.test.filters.SmallTest;
-import androidx.test.runner.AndroidJUnit4;
 
 @RunWith(AndroidJUnit4.class)
 @SmallTest
@@ -42,6 +42,10 @@ public class RouteDiscoveryPreferenceTest {
 
     private static final String TEST_FEATURE_1 = "TEST_FEATURE_1";
     private static final String TEST_FEATURE_2 = "TEST_FEATURE_2";
+
+    private static final String TEST_PACKAGE_1 = "TEST_PACKAGE_1";
+    private static final String TEST_PACKAGE_2 = "TEST_PACKAGE_2";
+    private static final String TEST_PACKAGE_3 = "TEST_PACKAGE_3";
 
     @Test
     public void testBuilderConstructorWithNull() {
@@ -63,14 +67,26 @@ public class RouteDiscoveryPreferenceTest {
     }
 
     @Test
-    public void testGetters() {
-        final List<String> features = new ArrayList<>();
-        features.add(TEST_FEATURE_1);
-        features.add(TEST_FEATURE_2);
+    public void testDefaultValues() {
+        List<String> preferredFeatures = List.of(TEST_FEATURE_1, TEST_FEATURE_2);
 
         RouteDiscoveryPreference preference =
-                new RouteDiscoveryPreference.Builder(features, true /* isActiveScan */).build();
-        assertEquals(features, preference.getPreferredFeatures());
+                new RouteDiscoveryPreference.Builder(preferredFeatures, true /* isActiveScan */)
+                        .build();
+        assertEquals(preferredFeatures, preference.getPreferredFeatures());
+        assertTrue(preference.shouldPerformActiveScan());
+
+        assertEquals(0, preference.describeContents());
+    }
+
+    @Test
+    public void testGetters() {
+        List<String> preferredFeatures = List.of(TEST_FEATURE_1, TEST_FEATURE_2);
+
+        RouteDiscoveryPreference preference =
+                new RouteDiscoveryPreference.Builder(preferredFeatures, true /* isActiveScan */)
+                        .build();
+        assertEquals(preferredFeatures, preference.getPreferredFeatures());
         assertTrue(preference.shouldPerformActiveScan());
         assertEquals(0, preference.describeContents());
     }
@@ -116,27 +132,26 @@ public class RouteDiscoveryPreferenceTest {
 
     @Test
     public void testEqualsCreatedWithSameArguments() {
-        final List<String> features = new ArrayList<>();
-        features.add(TEST_FEATURE_1);
-        features.add(TEST_FEATURE_2);
+        List<String> preferredFeatures = List.of(TEST_FEATURE_1, TEST_FEATURE_2);
 
         RouteDiscoveryPreference preference1 =
-                new RouteDiscoveryPreference.Builder(features, true /* isActiveScan */).build();
+                new RouteDiscoveryPreference.Builder(preferredFeatures, true /* isActiveScan */)
+                        .build();
 
         RouteDiscoveryPreference preference2 =
-                new RouteDiscoveryPreference.Builder(features, true /* isActiveScan */).build();
+                new RouteDiscoveryPreference.Builder(preferredFeatures, true /* isActiveScan */)
+                        .build();
 
         assertEquals(preference1, preference2);
     }
 
     @Test
     public void testEqualsCreatedWithBuilderCopyConstructor() {
-        final List<String> features = new ArrayList<>();
-        features.add(TEST_FEATURE_1);
-        features.add(TEST_FEATURE_2);
+        List<String> preferredFeatures = List.of(TEST_FEATURE_1, TEST_FEATURE_2);
 
         RouteDiscoveryPreference preference1 =
-                new RouteDiscoveryPreference.Builder(features, true /* isActiveScan */).build();
+                new RouteDiscoveryPreference.Builder(preferredFeatures, true /* isActiveScan */)
+                        .build();
 
         RouteDiscoveryPreference preference2 =
                 new RouteDiscoveryPreference.Builder(preference1).build();
@@ -146,12 +161,11 @@ public class RouteDiscoveryPreferenceTest {
 
     @Test
     public void testEqualsReturnFalse() {
-        final List<String> features = new ArrayList<>();
-        features.add(TEST_FEATURE_1);
-        features.add(TEST_FEATURE_2);
+        List<String> preferredFeatures = List.of(TEST_FEATURE_1, TEST_FEATURE_2);
 
         RouteDiscoveryPreference preference =
-                new RouteDiscoveryPreference.Builder(features, true /* isActiveScan */).build();
+                new RouteDiscoveryPreference.Builder(preferredFeatures, true /* isActiveScan */)
+                        .build();
 
         RouteDiscoveryPreference preferenceWithDifferentFeatures =
                 new RouteDiscoveryPreference.Builder(new ArrayList<>(), true /* isActiveScan */)
@@ -159,19 +173,18 @@ public class RouteDiscoveryPreferenceTest {
         assertNotEquals(preference, preferenceWithDifferentFeatures);
 
         RouteDiscoveryPreference preferenceWithDifferentActiveScan =
-                new RouteDiscoveryPreference.Builder(features, false /* isActiveScan */)
+                new RouteDiscoveryPreference.Builder(preferredFeatures, false /* isActiveScan */)
                         .build();
         assertNotEquals(preference, preferenceWithDifferentActiveScan);
     }
 
     @Test
     public void testEqualsReturnFalseWithCopyConstructor() {
-        final List<String> features = new ArrayList<>();
-        features.add(TEST_FEATURE_1);
-        features.add(TEST_FEATURE_2);
+        List<String> preferredFeatures = List.of(TEST_FEATURE_1, TEST_FEATURE_2);
 
         RouteDiscoveryPreference preference =
-                new RouteDiscoveryPreference.Builder(features, true /* isActiveScan */).build();
+                new RouteDiscoveryPreference.Builder(preferredFeatures, true /* isActiveScan */)
+                        .build();
 
         final List<String> newFeatures = new ArrayList<>();
         newFeatures.add(TEST_FEATURE_1);
@@ -190,12 +203,11 @@ public class RouteDiscoveryPreferenceTest {
 
     @Test
     public void testParcelingAndUnParceling() {
-        final List<String> features = new ArrayList<>();
-        features.add(TEST_FEATURE_1);
-        features.add(TEST_FEATURE_2);
+        List<String> preferredFeatures = List.of(TEST_FEATURE_1, TEST_FEATURE_2);
 
         RouteDiscoveryPreference preference =
-                new RouteDiscoveryPreference.Builder(features, true /* isActiveScan */).build();
+                new RouteDiscoveryPreference.Builder(preferredFeatures, true /* isActiveScan */)
+                        .build();
 
         Parcel parcel = Parcel.obtain();
         parcel.writeParcelable(preference, 0);

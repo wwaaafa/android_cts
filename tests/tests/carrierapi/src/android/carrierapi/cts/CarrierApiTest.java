@@ -525,10 +525,9 @@ public class CarrierApiTest extends BaseCarrierApiTest {
             mTelephonyManager.getServiceState();
             mTelephonyManager.getManualNetworkSelectionPlmn();
             mTelephonyManager.setForbiddenPlmns(new ArrayList<String>());
-            int activeModemCount = mTelephonyManager.getActiveModemCount();
-            for (int i = 0; i < activeModemCount; i++) {
-                mTelephonyManager.isModemEnabledForSlot(i);
-            }
+            // TODO(b/235490259): test all slots once TM#isModemEnabledForSlot allows
+            mTelephonyManager.isModemEnabledForSlot(
+                    SubscriptionManager.getSlotIndex(mTelephonyManager.getSubscriptionId()));
         } catch (SecurityException e) {
             fail(NO_CARRIER_PRIVILEGES_FAILURE_MESSAGE);
         }
@@ -742,11 +741,21 @@ public class CarrierApiTest extends BaseCarrierApiTest {
         assertThat(mTelephonyManager.iccCloseLogicalChannel(response.getChannel())).isTrue();
 
         // Close opened channel twice.
-        assertThat(mTelephonyManager.iccCloseLogicalChannel(response.getChannel())).isFalse();
+        try {
+            boolean result = mTelephonyManager.iccCloseLogicalChannel(response.getChannel());
+            assertThat(result).isFalse();
+        } catch (IllegalArgumentException ex) {
+            //IllegalArgumentException is expected sometimes because of different behaviour of modem
+        }
 
         // Channel 0 is guaranteed to be always available and cannot be closed, per TS 102 221
         // Section 11.1.17
-        assertThat(mTelephonyManager.iccCloseLogicalChannel(0)).isFalse();
+        try {
+            mTelephonyManager.iccCloseLogicalChannel(0);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException ex) {
+            // IllegalArgumentException is expected
+        }
     }
 
     /**
@@ -1095,7 +1104,7 @@ public class CarrierApiTest extends BaseCarrierApiTest {
         }
 
         // Set subscription group with current sub Id.
-        int subId = SubscriptionManager.getDefaultDataSubscriptionId();
+        int subId = SubscriptionManager.getDefaultSubscriptionId();
         if (subId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) return;
         ParcelUuid uuid = ShellIdentityUtils.invokeMethodWithShellPermissions(mSubscriptionManager,
                 (sm) -> sm.createSubscriptionGroup(Arrays.asList(subId)));
@@ -1132,7 +1141,7 @@ public class CarrierApiTest extends BaseCarrierApiTest {
     @Test
     public void testAddSubscriptionToExistingGroupForEsim() {
         // Set subscription group with current sub Id.
-        int subId = SubscriptionManager.getDefaultDataSubscriptionId();
+        int subId = SubscriptionManager.getDefaultSubscriptionId();
         if (subId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) return;
         ParcelUuid uuid = mSubscriptionManager.createSubscriptionGroup(Arrays.asList(subId));
 
@@ -1162,7 +1171,7 @@ public class CarrierApiTest extends BaseCarrierApiTest {
      */
     @Test
     public void testOpportunistic() {
-        int subId = SubscriptionManager.getDefaultDataSubscriptionId();
+        int subId = SubscriptionManager.getDefaultSubscriptionId();
         if (subId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) return;
         SubscriptionInfo info = mSubscriptionManager.getActiveSubscriptionInfo(subId);
         boolean oldOpportunistic = info.isOpportunistic();

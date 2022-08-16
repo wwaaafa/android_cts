@@ -42,6 +42,5 @@ android_test {
     per_testcase_directory: true,
     data: [
         ":CtsInputMethod1",
-        ":CtsAccessibilityWidgetProvider",
-    ],
+        ":CtsAccessibilityWidgetProvider"],
 }

@@ -114,7 +114,8 @@ public class SystemMediaRouter2Test {
         mContext = InstrumentationRegistry.getTargetContext();
         mUiAutomation = InstrumentationRegistry.getInstrumentation().getUiAutomation();
         mUiAutomation.adoptShellPermissionIdentity(Manifest.permission.MEDIA_CONTENT_CONTROL,
-                                                   Manifest.permission.QUERY_AUDIO_STATE);
+                Manifest.permission.MODIFY_AUDIO_ROUTING,
+                Manifest.permission.QUERY_AUDIO_STATE);
 
         mExecutor = Executors.newSingleThreadExecutor();
         mAudioManager = (AudioManager) mContext.getSystemService(AUDIO_SERVICE);
@@ -1024,7 +1025,7 @@ public class SystemMediaRouter2Test {
 
     private void releaseAllSessions() {
         MediaRouter2Manager manager = MediaRouter2Manager.getInstance(mContext);
-        for (RoutingSessionInfo session : manager.getActiveSessions()) {
+        for (RoutingSessionInfo session : manager.getRemoteSessions()) {
             manager.releaseSession(session);
         }
     }

@@ -18,6 +18,10 @@ package android.autofillservice.cts.commontests;
 import android.autofillservice.cts.activities.AbstractWebViewActivity;
 import android.autofillservice.cts.testcore.IdMode;
 import android.autofillservice.cts.testcore.UiBot;
+import android.content.Context;
+import android.content.res.Resources;
+
+import androidx.test.InstrumentationRegistry;
 
 import android.content.Context;
 import android.content.res.Resources;

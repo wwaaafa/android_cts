@@ -27,7 +27,6 @@
 #include <jni.h>
 #include <nativehelper/JNIHelp.h>
 #include <sys/stat.h>
-
 #include <android/native_window_jni.h>
 
 #include "AMediaObjects.h"
@@ -62,7 +61,10 @@ static bool gOnKeyChangeListenerOK = false;
 
 static const char kFileScheme[] = "file://";
 static constexpr size_t kFileSchemeStrLen = sizeof(kFileScheme) - 1;
-static constexpr size_t kPlayTimeSeconds = 30;
+// Test time must be under 30 seconds to meet CTS quality bar.
+// The first ten seconds in kPlayTimeSeconds plays the clear lead,
+// the next ten seconds verifies encrypted playback.
+static constexpr size_t kPlayTimeSeconds = 20;
 static constexpr size_t kUuidSize = 16;
 
 static const uint8_t kClearKeyUuid[kUuidSize] = {
@@ -102,6 +104,8 @@ static const uint8_t kKeyRequestData[] = {
     0x6d, 0x70, 0x6f, 0x72, 0x61,
     0x72, 0x79, 0x22, 0x7d
 };
+
+static const char kDefaultUrl[] = "https://default.url";
 
 static const size_t kKeyRequestSize = sizeof(kKeyRequestData);
 
@@ -970,6 +974,98 @@ extern "C" jboolean testFindSessionIdNative(
     return JNI_TRUE;
 }
 
+extern "C" jboolean testGetKeyRequestNative(
+    JNIEnv* env, jclass /*clazz*/, jbyteArray uuid, jobject playbackParams) {
+
+    if (NULL == uuid || NULL == playbackParams) {
+        jniThrowException(env, "java/lang/NullPointerException",
+                "null uuid or null playback parameters");
+        return JNI_FALSE;
+    }
+
+    Uuid juuid = jbyteArrayToUuid(env, uuid);
+    if (!isUuidSizeValid(juuid)) {
+        jniThrowExceptionFmt(env, "java/lang/IllegalArgumentException",
+                "invalid UUID size, expected %u bytes", kUuidSize);
+        return JNI_FALSE;
+    }
+
+    PlaybackParams params;
+    initPlaybackParams(env, playbackParams, params);
+
+    AMediaObjects aMediaObjects;
+    media_status_t status = AMEDIA_OK;
+    aMediaObjects.setDrm(AMediaDrm_createByUUID(&juuid[0]));
+    if (NULL == aMediaObjects.getDrm()) {
+        jniThrowException(env, "java/lang/RuntimeException", "null MediaDrm");
+        return JNI_FALSE;
+    }
+
+    AMediaDrmSessionId sessionId;
+    status = AMediaDrm_openSession(aMediaObjects.getDrm(), &sessionId);
+    if (status != AMEDIA_OK) {
+        jniThrowException(env, "java/lang/RuntimeException",
+                "openSession failed");
+        return JNI_FALSE;
+    }
+
+    // Pointer to keyRequest memory, which remains until the next
+    // AMediaDrm_getKeyRequest call or until the drm object is released.
+    const uint8_t* keyRequest;
+    size_t keyRequestSize = 0;
+    std::string errorMessage;
+
+    const char *defaultUrl;
+    AMediaDrmKeyRequestType keyRequestType;
+
+    // The server recognizes "video/mp4" but not "video/avc".
+    status = AMediaDrm_getKeyRequestWithDefaultUrlAndType(aMediaObjects.getDrm(),
+            &sessionId, kClearkeyPssh, sizeof(kClearkeyPssh),
+            "video/mp4" /*mimeType*/, KEY_TYPE_STREAMING,
+            NULL, 0, &keyRequest, &keyRequestSize, &defaultUrl, &keyRequestType);
+
+    if(status != AMEDIA_OK) return JNI_FALSE;
+
+    switch(keyRequestType) {
+        case KEY_REQUEST_TYPE_INITIAL:
+        case KEY_REQUEST_TYPE_RENEWAL:
+        case KEY_REQUEST_TYPE_RELEASE:
+        case KEY_REQUEST_TYPE_NONE:
+        case KEY_REQUEST_TYPE_UPDATE:
+            break;
+        default:
+            errorMessage.assign("keyRequestType returned is [%d], error = %d");
+            AMediaDrm_closeSession(aMediaObjects.getDrm(), &sessionId);
+            jniThrowExceptionFmt(env, "java/lang/RuntimeException", errorMessage.c_str(), keyRequestType, status);
+            return JNI_FALSE;
+    }
+
+    // Check service availability
+    const char *outValue = NULL;
+    status = AMediaDrm_getPropertyString(aMediaObjects.getDrm(),
+            "aidlVersion", &outValue);
+    if (status != AMEDIA_OK) {
+        // Drm service not using aidl interface, skip checking default url value
+        return JNI_TRUE;
+    }
+
+    ALOGD("aidlVersion is [%s]", outValue);
+
+    ALOGD("kDefaultUrl [%s], length %d, defaultUrl [%s], length %d",
+        kDefaultUrl,
+        (int)strlen(kDefaultUrl),
+        defaultUrl,
+        (int)strlen(defaultUrl));
+
+    if (strlen(kDefaultUrl) != strlen(defaultUrl) || strcmp(kDefaultUrl, defaultUrl) != 0) {
+        AMediaDrm_closeSession(aMediaObjects.getDrm(), &sessionId);
+        jniThrowExceptionFmt(env, "java/lang/RuntimeException", "Default Url is not correct [%s], error = %d", defaultUrl, status);
+        return JNI_FALSE;
+    }
+
+    return JNI_TRUE;
+}
+
 static JNINativeMethod gMethods[] = {
     { "isCryptoSchemeSupportedNative", "([B)Z",
             (void *)isCryptoSchemeSupportedNative },
@@ -994,6 +1090,10 @@ static JNINativeMethod gMethods[] = {
 
     { "testFindSessionIdNative", "([B)Z",
             (void *)testFindSessionIdNative },
+
+    { "testGetKeyRequestNative",
+            "([BLandroid/media/drmframework/cts/NativeMediaDrmClearkeyTest$PlaybackParams;)Z",
+            (void *)testGetKeyRequestNative},
 };
 
 int registerNativeMediaDrmClearkeyTest(JNIEnv* env) {
