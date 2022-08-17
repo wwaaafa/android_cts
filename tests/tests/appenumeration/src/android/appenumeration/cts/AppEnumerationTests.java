@@ -142,6 +142,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -157,6 +158,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.PackageInfoFlags;
+import android.content.pm.ServiceInfo;
 import android.content.pm.Signature;
 import android.content.res.Resources;
 import android.net.Uri;
@@ -1191,6 +1193,15 @@ public class AppEnumerationTests extends AppEnumerationTestsBase {
         } finally {
             ensurePackageIsNotInstalled(TARGET_STUB);
         }
+    }
+
+    @Test
+    public void testSelfVisibility() throws Exception {
+        ServiceInfo serviceInfo = sContext.getPackageManager().getServiceInfo(
+                new ComponentName(sContext,
+                        "android.appenumeration.cts.TestPmComponentDiscoveryService"),
+                PackageManager.GET_META_DATA);
+        assertNotNull(serviceInfo);
     }
 
     private void assertVisible(String sourcePackageName, String targetPackageName)
