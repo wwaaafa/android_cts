@@ -373,9 +373,14 @@ public class DecodeGlAccuracyTest extends CodecDecoderTestBase {
         mHeight = format.getInteger(MediaFormat.KEY_HEIGHT);
         mEGLWindowOutSurface = new OutputSurface(mWidth, mHeight, false, mUseYuvSampling);
 
+        // If device supports HDR editing, then GL_EXT_YUV_target extension support is mandatory
         if (mUseYuvSampling) {
             String message = "Device doesn't support EXT_YUV_target GL extension";
-            assumeTrue(message, mEGLWindowOutSurface.getEXTYuvTargetSupported());
+            if (IS_AT_LEAST_T && IS_HDR_EDITING_SUPPORTED) {
+                assertTrue(message, mEGLWindowOutSurface.getEXTYuvTargetSupported());
+            } else {
+                assumeTrue(message, mEGLWindowOutSurface.getEXTYuvTargetSupported());
+            }
         }
 
         mSurface = mEGLWindowOutSurface.getSurface();
