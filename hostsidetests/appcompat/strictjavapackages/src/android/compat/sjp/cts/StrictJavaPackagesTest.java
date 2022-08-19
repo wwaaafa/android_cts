@@ -1104,7 +1104,8 @@ public class StrictJavaPackagesTest extends BaseHostJUnit4Test {
      * included in BOOTCLASSPATH, SYSTEMSERVERCLASSPATH and shared library jars
      */
     @Test
-    public void testNoProtobufClassesWithoutJarjar() {
+    public void testNoProtobufClassesWithoutJarjar() throws Exception {
+        assumeTrue(mDeviceSdkLevel.isDeviceAtLeastU());
         assertWithMessage("Classes from protobuf libraries must not be included in bootclasspath "
             + "and systemserverclasspath without being jarjared.")
                 .that(Stream.of(sBootclasspathJars.stream(),
