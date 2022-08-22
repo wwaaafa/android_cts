@@ -736,6 +736,7 @@ public class StrictJavaPackagesTest extends BaseHostJUnit4Test {
                 "Lcom/android/sdksandbox/IDataReceivedCallback;",
                 "Lcom/android/sdksandbox/ILoadSdkInSandboxCallback;",
                 "Lcom/android/sdksandbox/IRequestSurfacePackageFromSdkCallback;",
+                "Lcom/android/sdksandbox/ISdkSandboxDisabledCallback;",
                 "Lcom/android/sdksandbox/ISdkSandboxManagerToSdkSandboxCallback;",
                 "Lcom/android/sdksandbox/ISdkSandboxService;"
             );
