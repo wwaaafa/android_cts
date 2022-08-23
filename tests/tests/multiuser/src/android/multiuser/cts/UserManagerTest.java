@@ -43,7 +43,6 @@ import android.content.pm.PackageManager;
 import android.content.pm.UserInfo;
 import android.content.pm.UserProperties;
 import android.graphics.Bitmap;
-import android.os.Build;
 import android.os.NewUserRequest;
 import android.os.NewUserResponse;
 import android.os.PersistableBundle;
@@ -403,6 +402,11 @@ public final class UserManagerTest {
     @Test
     @RequireFeature(FEATURE_MANAGED_USERS)
     @EnsureHasPermission({CREATE_USERS, QUERY_USERS})
+    @ApiTest(apis = {
+            "android.os.UserManager#createProfile",
+            "android.os.UserManager#isManagedProfile",
+            "android.os.UserManager#isProfile",
+            "android.os.UserManager#isUserOfType"})
     public void testManagedProfile() throws Exception {
         UserHandle userHandle = null;
 
@@ -421,10 +425,7 @@ public final class UserManagerTest {
                     .createPackageContextAsUser("android", 0, userHandle)
                     .getSystemService(UserManager.class);
 
-            // TODO(b/222584163): Remove the if{} clause after v33 Sdk bump.
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S_V2) {
-                assertThat(umOfProfile.isManagedProfile()).isTrue();
-            }
+            assertThat(umOfProfile.isManagedProfile()).isTrue();
             assertThat(umOfProfile.isManagedProfile(userHandle.getIdentifier())).isTrue();
             assertThat(umOfProfile.isProfile()).isTrue();
             assertThat(umOfProfile.isUserOfType(UserManager.USER_TYPE_PROFILE_MANAGED)).isTrue();
@@ -435,16 +436,18 @@ public final class UserManagerTest {
 
     @Test
     @EnsureHasPermission({QUERY_USERS})
+    @ApiTest(apis = {
+            "android.os.UserManager#isSystemUser",
+            "android.os.UserManager#isUserOfType",
+            "android.os.UserManager#isProfile",
+            "android.os.UserManager#isManagedProfile",
+            "android.os.UserManager#isCloneProfile"})
     public void testSystemUser() throws Exception {
         final UserManager umOfSys = sContext
                 .createPackageContextAsUser("android", 0, UserHandle.SYSTEM)
                 .getSystemService(UserManager.class);
 
-        // TODO(b/222584163): Remove the if{} clause after v33 Sdk bump.
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S_V2) {
-            assertThat(umOfSys.isSystemUser()).isTrue();
-        }
-
+        assertThat(umOfSys.isSystemUser()).isTrue();
         // We cannot demand what type of user SYSTEM is, but we can say some things it isn't.
         assertThat(umOfSys.isUserOfType(UserManager.USER_TYPE_PROFILE_CLONE)).isFalse();
         assertThat(umOfSys.isUserOfType(UserManager.USER_TYPE_PROFILE_MANAGED)).isFalse();
@@ -458,6 +461,10 @@ public final class UserManagerTest {
 
     @Test
     @SystemUserOnly(reason = "Restricted users are only supported on system user.")
+    @ApiTest(apis = {
+            "android.os.UserManager#isRestrictedProfile",
+            "android.os.UserManager#getRestrictedProfileParent",
+            "android.os.UserManager#createRestrictedProfile"})
     public void testRestrictedUser() throws Exception {
         UserHandle user = null;
         try (PermissionHelper ph = adoptShellPermissionIdentity(mInstrumentation, CREATE_USERS)) {
@@ -476,10 +483,8 @@ public final class UserManagerTest {
 
             final Context userContext = sContext.createPackageContextAsUser("system", 0, user);
             final UserManager userUm = userContext.getSystemService(UserManager.class);
-            // TODO(b/222584163): Remove the if{} clause after v33 Sdk bump.
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S_V2) {
-                assertThat(userUm.isRestrictedProfile()).isTrue();
-            }
+
+            assertThat(userUm.isRestrictedProfile()).isTrue();
             assertThat(userUm.getRestrictedProfileParent().isSystem()).isTrue();
         } finally {
             removeUser(user);
@@ -528,6 +533,13 @@ public final class UserManagerTest {
     }
 
     @Test
+    @ApiTest(apis = {
+            "android.os.UserManager#supportsMultipleUsers",
+            "android.os.UserManager#createUser",
+            "android.os.UserManager#getUserName",
+            "android.os.UserManager#isUserNameSet",
+            "android.os.UserManager#getUserType",
+            "android.os.UserManager#isUserOfType"})
     public void testCreateUser_withNewUserRequest_shouldCreateUserWithCorrectProperties()
             throws PackageManager.NameNotFoundException {
         // TODO: (b/233197356): Replace with bedstead annotation.
@@ -548,10 +560,7 @@ public final class UserManagerTest {
                     .getSystemService(UserManager.class);
 
             assertThat(userManagerOfNewUser.getUserName()).isEqualTo(request.getName());
-            // TODO(b/222584163): Remove the if{} clause after v33 Sdk bump.
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S_V2) {
-                assertThat(userManagerOfNewUser.isUserNameSet()).isTrue();
-            }
+            assertThat(userManagerOfNewUser.isUserNameSet()).isTrue();
             assertThat(userManagerOfNewUser.getUserType()).isEqualTo(request.getUserType());
             assertThat(userManagerOfNewUser.isUserOfType(request.getUserType())).isEqualTo(true);
             // We can not test userIcon and accountOptions,
