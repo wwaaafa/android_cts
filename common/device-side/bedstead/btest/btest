@@ -121,6 +121,7 @@ class WorkProfileState:
         user = self._get_or_create_work_profile()
         self.user_id = user["id"]
         execute_shell_command("Test", self.args, ["adb", "shell", "am", "switch-user", str(user["parent"])])
+        execute_shell_command("Test", self.args, ["adb", "shell", "am", "start-user ", str(self.user_id)])
         execute_shell_command("Test", self.args, ["adb", "shell", "pm", "install-existing", "--user", str(self.user_id), supported_modules[self.args.module][PACKAGE_NAME]])
 
     def _get_or_create_work_profile(self):
@@ -313,36 +314,39 @@ class Test:
             print("[Test] Slept")
 
         num_tests = self.get_num_tests()
-        self.total_test_count += num_tests
+        if num_tests > -1:
+            self.total_test_count += num_tests
 
-        modified_total_test_count = str(self.total_test_count)
-        if self.has_later_states:
-            modified_total_test_count += "+"
-        total_test_length = len(modified_total_test_count)
+            modified_total_test_count = str(self.total_test_count)
+            if self.has_later_states:
+                modified_total_test_count += "+"
+            total_test_length = len(modified_total_test_count)
 
-        for i in range(num_tests):
-            result = self.get_result(i)
-
-            test_name_parts = re.split('[#\[\]]', result["testName"])
-            print("[" + str(self.next_test).rjust(total_test_length) + "/" + modified_total_test_count + "] " + CLASS_NAME_COLOUR_CODE + test_name_parts[0] + RESET_CODE + "#" + TEST_NAME_COLOUR_CODE + test_name_parts[1] + RESET_CODE, end='')
-            self.next_test += 1
-
-            if len(test_name_parts) > 2:
-                print("[" + self.get_parameter_colour_code(test_name_parts[2]) + test_name_parts[2] + RESET_CODE + "]", end='')
-            sys.stdout.flush()
-
-            while not result["isFinished"]:
+            for i in range(num_tests):
                 result = self.get_result(i)
 
-            self.print_result(result)
+                test_name_parts = re.split('[#\[\]]', result["testName"])
+                print("[" + str(self.next_test).rjust(total_test_length) + "/" + modified_total_test_count + "] " + CLASS_NAME_COLOUR_CODE + test_name_parts[0] + RESET_CODE + "#" + TEST_NAME_COLOUR_CODE + test_name_parts[1] + RESET_CODE, end='')
+                self.next_test += 1
 
-        while self.tests_are_running():
-            pass
+                if len(test_name_parts) > 2:
+                    print("[" + self.get_parameter_colour_code(test_name_parts[2]) + test_name_parts[2] + RESET_CODE + "]", end='')
+                sys.stdout.flush()
+
+                while not result["isFinished"]:
+                    result = self.get_result(i)
+
+                self.print_result(result)
+
+            while self.tests_are_running():
+                pass
 
         if not self.args.debug:
             out, err = self.test_process.communicate()
             self.out = out.decode('utf-8')
 
+            if "(0 tests)" in self.out:
+                print("[" + self.state.name() + "] No tests to run")
             if "Process crashed before executing the test" in self.out:
                 print(self.out)
                 sys.exit(1)
@@ -354,8 +358,7 @@ class Test:
         numTests = -1
         while numTests == -1:
             if not self.tests_are_running():
-                print("Error - tests not running")
-                sys.exit(0)
+                return -1
 
             output, err = execute_shell_command("TEST", self.args, ["adb", "shell", "content query --user " + str(self.state.get_user()) + " --uri content://" + self.module_package + ".BedsteadRunResultsProvider/numTests"])
             if not output:
@@ -431,6 +434,12 @@ def execute_shell_command(stage, args, command, **extra_args):
     r = subprocess.run(command, capture_output=True, text=True, **extra_args)
     output = r.stdout
     debug(args, "[" + stage + "] Output: '" + output + "' Err: '" + r.stderr + "'")
+
+    if r.stderr:
+        if "no devices/emulators found" in r.stderr:
+            print("Error: No devices/emulators found")
+            sys.exit(1)
+
     return output, r.stderr
 
 def create_user(args):
@@ -442,7 +451,6 @@ def create_user(args):
 def create_work_profile(args, parent_id):
     output, err = execute_shell_command("Test", args, ["adb", "shell", "pm", "create-user", "--managed", "--profileOf", str(parent_id), "user"])
     id = int(output.rsplit(" ", 1)[1].strip())
-    execute_shell_command("Test", args, ["adb", "shell", "am start-user " + str(id)])
     return id
 
 def gather_device_state(args):
