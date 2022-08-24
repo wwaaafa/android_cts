@@ -977,20 +977,32 @@ public class PackageManagerTest {
     }
 
     @Test
-    public void testGetPackageArchiveInfo() throws Exception {
+    public void testGetPackageArchiveInfo() {
         final String apkPath = mContext.getPackageCodePath();
         final String apkName = mContext.getPackageName();
 
-        final int flags = PackageManager.GET_SIGNATURES;
-
-        final PackageInfo pkgInfo = mPackageManager.getPackageArchiveInfo(apkPath,
-                PackageManager.PackageInfoFlags.of(flags));
-
+        PackageInfo pkgInfo = mPackageManager.getPackageArchiveInfo(apkPath,
+                PackageManager.PackageInfoFlags.of(PackageManager.GET_SIGNING_CERTIFICATES));
         assertEquals("getPackageArchiveInfo should return the correct package name",
                 apkName, pkgInfo.packageName);
+        assertNotNull("SigningInfo should have been collected when GET_SIGNING_CERTIFICATES"
+                        + " flag is specified", pkgInfo.signingInfo);
 
-        assertNotNull("Signatures should have been collected when GET_SIGNATURES flag specified",
+        pkgInfo = mPackageManager.getPackageArchiveInfo(apkPath,
+                PackageManager.PackageInfoFlags.of(PackageManager.GET_SIGNATURES));
+        assertNotNull("Signatures should have been collected when GET_SIGNATURES"
+                + " flag is specified", pkgInfo.signatures);
+
+        pkgInfo = mPackageManager.getPackageArchiveInfo(apkPath,
+                PackageManager.PackageInfoFlags.of(
+                        PackageManager.GET_SIGNATURES | PackageManager.GET_SIGNING_CERTIFICATES));
+        assertNotNull("SigningInfo should have been collected when"
+                        + " GET_SIGNATURES and GET_SIGNING_CERTIFICATES flags are both specified",
+                pkgInfo.signingInfo);
+        assertNotNull("Signatures should have been collected when"
+                + " GET_SIGNATURES and GET_SIGNING_CERTIFICATES flags are both specified",
                 pkgInfo.signatures);
+
     }
 
     private void runTestGetPackageArchiveInfoSameApplicationInfo(long flags) {
