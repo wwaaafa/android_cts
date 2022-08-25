@@ -71,8 +71,6 @@ import com.android.compatibility.common.util.ShellIdentityUtils;
 import com.android.compatibility.common.util.SystemUtil;
 import com.android.cts.IBinderPermissionTestService;
 
-import junit.framework.Assert;
-
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -606,6 +604,8 @@ public class ContextTest extends AndroidTestCase {
     }
 
     private void registerBroadcastReceiver(BroadcastReceiver receiver, IntentFilter filter) {
+        // All of the broadcasts for tests that use this method are sent by the local app, so by
+        // default all receivers can be registered as not exported.
         registerBroadcastReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED);
     }
 
@@ -628,8 +628,7 @@ public class ContextTest extends AndroidTestCase {
         registerBroadcastReceiver(highPriorityReceiver, filterHighPriority);
         registerBroadcastReceiver(lowPriorityReceiver, filterLowPriority);
 
-        final Intent broadcastIntent = new Intent(ResultReceiver.MOCK_ACTION)
-                .setPackage(mContext.getPackageName());
+        final Intent broadcastIntent = new Intent(ResultReceiver.MOCK_ACTION);
         broadcastIntent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
         mContext.sendOrderedBroadcast(broadcastIntent, null);
         new PollingCheck(BROADCAST_TIMEOUT) {
@@ -660,8 +659,7 @@ public class ContextTest extends AndroidTestCase {
         Bundle bundle = new Bundle();
         bundle.putString(KEY_KEPT, VALUE_KEPT);
         bundle.putString(KEY_REMOVED, VALUE_REMOVED);
-        Intent intent = new Intent(ResultReceiver.MOCK_ACTION)
-                .setPackage(mContext.getPackageName());
+        Intent intent = new Intent(ResultReceiver.MOCK_ACTION);
         intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
         mContext.sendOrderedBroadcast(intent, null, broadcastReceiver, null, 1,
                 INTIAL_RESULT, bundle);
@@ -699,7 +697,7 @@ public class ContextTest extends AndroidTestCase {
         registerBroadcastReceiver(receiver, new IntentFilter(ResultReceiver.MOCK_ACTION));
 
         mContext.sendOrderedBroadcast(
-                new Intent(ResultReceiver.MOCK_ACTION).setPackage(mContext.getPackageName()),
+                new Intent(ResultReceiver.MOCK_ACTION),
                 null, // permission
                 AppOpsManager.OPSTR_READ_CELL_BROADCASTS,
                 finalReceiver,
@@ -742,7 +740,7 @@ public class ContextTest extends AndroidTestCase {
         registerBroadcastReceiver(receiver, new IntentFilter(ResultReceiver.MOCK_ACTION));
 
         mContext.sendOrderedBroadcast(
-                new Intent(ResultReceiver.MOCK_ACTION).setPackage(mContext.getPackageName()),
+                new Intent(ResultReceiver.MOCK_ACTION),
                 null, // permission
                 AppOpsManager.OPSTR_READ_CELL_BROADCASTS,
                 null, // final receiver
@@ -1022,29 +1020,6 @@ public class ContextTest extends AndroidTestCase {
             // Because ContextWrapper is a wrapper class, so no need to test
             // the details of the function's performance. Getting a result
             // from the wrapped class is enough for testing.
-        }
-    }
-
-    public void testStartActivityWithNonExportedActivity() {
-        Intent intent = new Intent("android.cts.action.TEST_NON_EXPORTED");
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        try {
-            mContext.startActivity(intent);
-            fail("Test startActivity should throw a ActivityNotFoundException here.");
-        } catch (ActivityNotFoundException e) {
-            // Because ContextWrapper is a wrapper class, so no need to test
-            // the details of the function's performance. Getting a result
-            // from the wrapped class is enough for testing.
-        }
-    }
-
-    public void testStartActivityWithExportedActivity() {
-        Intent intent = new Intent("android.cts.action.TEST_EXPORTED");
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        try {
-            mContext.startActivity(intent);
-        } catch (ActivityNotFoundException e) {
-            fail("Test startActivity should not throw a ActivityNotFoundException here.");
         }
     }
 
@@ -1561,8 +1536,7 @@ public class ContextTest extends AndroidTestCase {
 
         registerBroadcastReceiver(receiver, new IntentFilter(ResultReceiver.MOCK_ACTION));
 
-        mContext.sendBroadcast(new Intent(ResultReceiver.MOCK_ACTION)
-                .setPackage(mContext.getPackageName()));
+        mContext.sendBroadcast(new Intent(ResultReceiver.MOCK_ACTION));
 
         new PollingCheck(BROADCAST_TIMEOUT){
             @Override
@@ -1577,8 +1551,7 @@ public class ContextTest extends AndroidTestCase {
 
         registerBroadcastReceiver(receiver, new IntentFilter(ResultReceiver.MOCK_ACTION));
 
-        mContext.sendBroadcast(new Intent(ResultReceiver.MOCK_ACTION)
-                .setPackage(mContext.getPackageName()), null);
+        mContext.sendBroadcast(new Intent(ResultReceiver.MOCK_ACTION), null);
 
         new PollingCheck(BROADCAST_TIMEOUT){
             @Override
@@ -1586,49 +1559,6 @@ public class ContextTest extends AndroidTestCase {
                 return receiver.hasReceivedBroadCast();
             }
         }.run();
-    }
-
-    public void testSendBroadcast_WithExportedRuntimeReceiver() throws InterruptedException {
-        final ResultReceiver receiver = new ResultReceiver();
-
-        registerBroadcastReceiver(receiver, new IntentFilter(
-                ResultReceiver.MOCK_ACTION), Context.RECEIVER_EXPORTED);
-
-        mContext.sendBroadcast(new Intent(ResultReceiver.MOCK_ACTION), null);
-
-        try {
-            new PollingCheck(BROADCAST_TIMEOUT) {
-                @Override
-                protected boolean check() {
-                    return receiver.hasReceivedBroadCast();
-                }
-            }.run();
-        } catch (AssertionError e) {
-            Assert.fail();
-        }
-    }
-
-    public void testSendBroadcast_WithNonExportedRuntimeReceiver() throws InterruptedException {
-        final ResultReceiver receiver = new ResultReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                Assert.fail();
-            }
-        };
-        registerBroadcastReceiver(receiver, new IntentFilter(ResultReceiver.MOCK_ACTION));
-        mContext.sendBroadcast(new Intent(ResultReceiver.MOCK_ACTION), null);
-
-        try {
-            new PollingCheck(BROADCAST_TIMEOUT) {
-                @Override
-                protected boolean check() {
-                    return receiver.hasReceivedBroadCast();
-                }
-            }.run();
-        } catch (AssertionError e) {
-            // If the check still fails after the given timeout we can assume the receiver has
-            // never received the broadcast, so we can swallow the exception and pass the test.
-        }
     }
 
     /**
@@ -1645,8 +1575,8 @@ public class ContextTest extends AndroidTestCase {
                         android.Manifest.permission.ACCESS_WIFI_STATE,
                         android.Manifest.permission.ACCESS_NETWORK_STATE
                 });
-        mContext.sendBroadcast(new Intent(ResultReceiver.MOCK_ACTION)
-                        .setPackage(mContext.getPackageName()), null, options.toBundle());
+        mContext.sendBroadcast(new Intent(ResultReceiver.MOCK_ACTION), null,
+                options.toBundle());
 
         new PollingCheck(BROADCAST_TIMEOUT) {
             @Override
@@ -1670,8 +1600,8 @@ public class ContextTest extends AndroidTestCase {
                 });
 
         mContext.sendBroadcast(
-                new Intent(ResultReceiver.MOCK_ACTION).setPackage(mContext.getPackageName()),
-                null, options.toBundle());
+                new Intent(ResultReceiver.MOCK_ACTION), null,
+                options.toBundle());
 
         Thread.sleep(BROADCAST_TIMEOUT);
         assertFalse(receiver.hasReceivedBroadCast());
@@ -1695,8 +1625,8 @@ public class ContextTest extends AndroidTestCase {
                 new String[] { // test package does not have NETWORK_STACK
                         android.Manifest.permission.NETWORK_STACK
                 });
-        mContext.sendBroadcast(new Intent(ResultReceiver.MOCK_ACTION)
-                        .setPackage(mContext.getPackageName()), null, options.toBundle());
+        mContext.sendBroadcast(new Intent(ResultReceiver.MOCK_ACTION), null,
+                options.toBundle());
 
         new PollingCheck(BROADCAST_TIMEOUT) {
             @Override
@@ -1723,8 +1653,7 @@ public class ContextTest extends AndroidTestCase {
                 new String[] { // test package has ACCESS_NETWORK_STATE
                         android.Manifest.permission.ACCESS_NETWORK_STATE
                 });
-        mContext.sendBroadcast(new Intent(ResultReceiver.MOCK_ACTION)
-                        .setPackage(mContext.getPackageName()), null,
+        mContext.sendBroadcast(new Intent(ResultReceiver.MOCK_ACTION), null,
                 options.toBundle());
 
         Thread.sleep(BROADCAST_TIMEOUT);
@@ -1739,7 +1668,7 @@ public class ContextTest extends AndroidTestCase {
         registerBroadcastReceiver(receiver, new IntentFilter(ResultReceiver.MOCK_ACTION));
 
         mContext.sendBroadcastWithMultiplePermissions(
-                new Intent(ResultReceiver.MOCK_ACTION).setPackage(mContext.getPackageName()),
+                new Intent(ResultReceiver.MOCK_ACTION),
                 new String[] { // this test APK has both these permissions
                         android.Manifest.permission.ACCESS_WIFI_STATE,
                         android.Manifest.permission.ACCESS_NETWORK_STATE,
@@ -1761,7 +1690,7 @@ public class ContextTest extends AndroidTestCase {
         registerBroadcastReceiver(receiver, new IntentFilter(ResultReceiver.MOCK_ACTION));
 
         mContext.sendBroadcastWithMultiplePermissions(
-                new Intent(ResultReceiver.MOCK_ACTION).setPackage(mContext.getPackageName()),
+                new Intent(ResultReceiver.MOCK_ACTION),
                 new String[] { // this test APK only has ACCESS_WIFI_STATE
                         android.Manifest.permission.ACCESS_WIFI_STATE,
                         android.Manifest.permission.NETWORK_STACK,
@@ -1779,7 +1708,7 @@ public class ContextTest extends AndroidTestCase {
         registerBroadcastReceiver(receiver, new IntentFilter(ResultReceiver.MOCK_ACTION));
 
         mContext.sendBroadcastWithMultiplePermissions(
-                new Intent(ResultReceiver.MOCK_ACTION).setPackage(mContext.getPackageName()),
+                new Intent(ResultReceiver.MOCK_ACTION),
                 new String[] { // this test APK has neither of these permissions
                         android.Manifest.permission.NETWORK_SETTINGS,
                         android.Manifest.permission.NETWORK_STACK,
