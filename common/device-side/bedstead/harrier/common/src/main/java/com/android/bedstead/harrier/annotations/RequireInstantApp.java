@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 The Android Open Source Project
+ * Copyright (C) 2022 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.android.bedstead.harrier.annotations;
 
-import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.MIDDLE;
+import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.EARLY;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -24,17 +24,15 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Ensure that the given permission is denied before running the test.
+ * Annotation to indicate that a test requires running as an instant app.
  *
- * <p>Note that use of this annotation implies {@link RequireNotInstantApp} as instant apps are not
- * able to drop permissions.
+ * <p>This can be enforced by using {@code DeviceState}.
  */
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface EnsureDoesNotHavePermission {
-    String[] value();
-
-    FailureMode failureMode() default FailureMode.FAIL;
+public @interface RequireInstantApp {
+    String reason();
+    FailureMode failureMode() default FailureMode.SKIP;
 
     /**
      * Weight sets the order that annotations will be resolved.
@@ -46,6 +44,5 @@ public @interface EnsureDoesNotHavePermission {
      *
      * <p>Weight can be set to a {@link AnnotationRunPrecedence} constant, or to any {@link int}.
      */
-    int weight() default MIDDLE;
+    int weight() default EARLY;
 }
-
