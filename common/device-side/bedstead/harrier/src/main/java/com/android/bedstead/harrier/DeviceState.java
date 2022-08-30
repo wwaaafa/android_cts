@@ -68,9 +68,11 @@ import com.android.bedstead.harrier.annotations.OtherUser;
 import com.android.bedstead.harrier.annotations.RequireDoesNotHaveFeature;
 import com.android.bedstead.harrier.annotations.RequireFeature;
 import com.android.bedstead.harrier.annotations.RequireHeadlessSystemUserMode;
+import com.android.bedstead.harrier.annotations.RequireInstantApp;
 import com.android.bedstead.harrier.annotations.RequireLowRamDevice;
 import com.android.bedstead.harrier.annotations.RequireMultiUserSupport;
 import com.android.bedstead.harrier.annotations.RequireNotHeadlessSystemUserMode;
+import com.android.bedstead.harrier.annotations.RequireNotInstantApp;
 import com.android.bedstead.harrier.annotations.RequireNotLowRamDevice;
 import com.android.bedstead.harrier.annotations.RequirePackageInstalled;
 import com.android.bedstead.harrier.annotations.RequirePackageNotInstalled;
@@ -819,6 +821,23 @@ public final class DeviceState extends HarrierRule {
                 RequireHasPolicyExemptApps requireHasPolicyExemptAppsAnnotation =
                         (RequireHasPolicyExemptApps) annotation;
                 requireHasPolicyExemptApps(requireHasPolicyExemptAppsAnnotation.failureMode());
+                continue;
+            }
+
+            if (annotation instanceof RequireInstantApp) {
+                RequireInstantApp requireInstantAppAnnotation =
+                        (RequireInstantApp) annotation;
+                requireInstantApp(requireInstantAppAnnotation.reason(),
+                        requireInstantAppAnnotation.failureMode());
+                continue;
+            }
+
+            if (annotation instanceof RequireNotInstantApp) {
+                RequireNotInstantApp requireNotInstantAppAnnotation =
+                        (RequireNotInstantApp) annotation;
+                requireNotInstantApp(requireNotInstantAppAnnotation.reason(),
+                        requireNotInstantAppAnnotation.failureMode());
+                continue;
             }
         }
 
@@ -2698,6 +2717,8 @@ public final class DeviceState extends HarrierRule {
     }
 
     private void withoutPermission(String... permission) {
+        requireNotInstantApp("Uses withoutPermission", FailureMode.SKIP);
+
         if (mPermissionContext == null) {
             mPermissionContext = TestApis.permissions().withoutPermission(permission);
         } else {
@@ -2725,5 +2746,15 @@ public final class DeviceState extends HarrierRule {
     private void requireHasPolicyExemptApps(FailureMode failureMode) {
         checkFailOrSkip("OEM does not define any policy-exempt apps",
                 TestApis.devicePolicy().getPolicyExemptApps().isEmpty(), failureMode);
+    }
+
+    private void requireInstantApp(String reason, FailureMode failureMode) {
+        checkFailOrSkip("Test only runs as an instant-app: " + reason,
+                TestApis.packages().instrumented().isInstantApp(), failureMode);
+    }
+
+    private void requireNotInstantApp(String reason, FailureMode failureMode) {
+        checkFailOrSkip("Test does not run as an instant-app: " + reason,
+                TestApis.packages().instrumented().isInstantApp(), failureMode);
     }
 }
