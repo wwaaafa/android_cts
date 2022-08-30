@@ -354,6 +354,10 @@ public final class DeviceState extends HarrierRule {
                 boolean dpcIsPrimary = false;
                 boolean useParentInstance = false;
                 if (ensureHasProfileAnnotation.hasProfileOwner()) {
+                    // TODO(b/206441366): Add instant app support
+                    requireNotInstantApp(
+                            "Instant Apps cannot run Enterprise Tests", FailureMode.SKIP);
+
                     dpcIsPrimary = (boolean)
                             annotation.annotationType()
                                     .getMethod(DPC_IS_PRIMARY).invoke(annotation);
