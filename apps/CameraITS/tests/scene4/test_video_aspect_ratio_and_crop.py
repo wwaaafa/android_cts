@@ -137,13 +137,13 @@ class VideoAspectRatioAndCropTest(its_base_test.ItsBaseTest):
       logging.debug('physical available focal lengths: %s', str(fls_physical))
 
       # Check SKIP conditions.
-      first_api_level = its_session_utils.get_first_api_level(self.dut.serial)
+      vendor_api_level = its_session_utils.get_vendor_api_level(self.dut.serial)
       camera_properties_utils.skip_unless(
-          first_api_level >= its_session_utils.ANDROID13_API_LEVEL)
+          vendor_api_level >= its_session_utils.ANDROID13_API_LEVEL)
 
       # Load scene.
       its_session_utils.load_scene(cam, props, self.scene,
-                                   self.tablet, chart_distance=0)
+                                   self.tablet, self.chart_distance)
 
       # Determine camera capabilities.
       supported_video_qualities = cam.get_supported_video_qualities(
@@ -152,6 +152,8 @@ class VideoAspectRatioAndCropTest(its_base_test.ItsBaseTest):
       full_or_better = camera_properties_utils.full_or_better(props)
       raw_avlb = camera_properties_utils.raw16(props)
 
+      # Converge 3A.
+      cam.do_3a()
       req = capture_request_utils.auto_capture_request()
       ref_img_name_stem = f'{os.path.join(self.log_path, _NAME)}'
 
@@ -165,6 +167,10 @@ class VideoAspectRatioAndCropTest(its_base_test.ItsBaseTest):
           cam, req, props, raw_bool, ref_img_name_stem)
 
       run_crop_test = full_or_better and raw_avlb
+
+      # Get ffmpeg version being used.
+      ffmpeg_version = video_processing_utils.get_ffmpeg_version()
+      logging.debug('ffmpeg_version: %s', ffmpeg_version)
 
       for quality_profile_id_pair in supported_video_qualities:
         quality = quality_profile_id_pair.split(':')[0]
