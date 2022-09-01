@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assume.assumeTrue;
 
 import android.app.UiAutomation;
 import android.car.Car;
@@ -42,8 +43,10 @@ import android.car.hardware.property.EvChargeState;
 import android.car.hardware.property.EvRegenerativeBrakingState;
 import android.car.hardware.property.VehicleElectronicTollCollectionCardStatus;
 import android.car.hardware.property.VehicleElectronicTollCollectionCardType;
+import android.content.pm.PackageManager;
 import android.platform.test.annotations.AppModeFull;
 import android.platform.test.annotations.RequiresDevice;
+import android.support.v4.content.ContextCompat;
 import android.test.suitebuilder.annotation.SmallTest;
 import android.util.ArraySet;
 import android.util.SparseArray;
@@ -60,7 +63,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -207,6 +209,10 @@ public class CarPropertyManagerTest extends CarApiTestBase {
         UiAutomation uiAutomation = InstrumentationRegistry.getInstrumentation().getUiAutomation();
         uiAutomation.adoptShellPermissionIdentity(permission);
         try {
+            assumeTrue("Unable to adopt Car Shell permission: " + permission,
+                    ContextCompat.checkSelfPermission(
+                            InstrumentationRegistry.getInstrumentation().getTargetContext(),
+                            permission) == PackageManager.PERMISSION_GRANTED);
             verifierRunnable.run();
         } finally {
             uiAutomation.dropShellPermissionIdentity();
@@ -2924,7 +2930,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
     @Test
     public void testUnregisterWithPropertyId() throws Exception {
         // Ignores the test if wheel_tick property does not exist in the car.
-        Assume.assumeTrue("WheelTick is not available, skip unregisterCallback test",
+        assumeTrue("WheelTick is not available, skip unregisterCallback test",
                 mCarPropertyManager.isPropertyAvailable(
                         VehiclePropertyIds.WHEEL_TICK, VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL));
 
@@ -2937,7 +2943,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
         int eventCounter = getCounterBySampleRate(maxSampleRateHz);
 
         // Ignores the test if sampleRates for properties are too low.
-        Assume.assumeTrue("The SampleRates for properties are too low, "
+        assumeTrue("The SampleRates for properties are too low, "
                 + "skip testUnregisterWithPropertyId test", eventCounter != 0);
         CarPropertyEventCounter speedAndWheelTicksListener = new CarPropertyEventCounter();
 
