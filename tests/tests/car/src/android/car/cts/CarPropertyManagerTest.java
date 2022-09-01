@@ -2688,7 +2688,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
                 testGetPropertyAsyncCallback.getErrorList().isEmpty()).isTrue();
     }
 
-    private static final class TestGetPropertyAsyncCallback extends
+    private static final class TestGetPropertyAsyncCallback implements
             CarPropertyManager.GetPropertyCallback {
         private final CountDownLatch mCountDownLatch;
         private final Set<Integer> mPendingRequests;
