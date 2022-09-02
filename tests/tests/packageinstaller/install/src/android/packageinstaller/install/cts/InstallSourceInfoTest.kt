@@ -62,7 +62,7 @@ class InstallSourceInfoTest : PackageInstallerTestBase() {
     fun installViaAdb() {
         assumeNotWatch()
 
-        uiDevice.executeShellCommand("pm install $TEST_APK_EXTERNAL_LOCATION/$TEST_APK_NAME")
+        uiDevice.executeShellCommand("pm install $TEST_APK_LOCATION/$TEST_APK_NAME")
 
         val info = pm.getInstallSourceInfo(TEST_APK_PACKAGE_NAME)
         assertThat(info.installingPackageName).isNull()

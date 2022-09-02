@@ -51,7 +51,7 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 
 const val TEST_APK_PACKAGE_NAME = "android.packageinstaller.emptytestapp.cts"
-const val TEST_APK_EXTERNAL_LOCATION = "/data/local/tmp/cts/packageinstaller"
+const val TEST_APK_LOCATION = "/data/local/tmp/cts/packageinstaller"
 const val INSTALL_ACTION_CB = "PackageInstallerTestBase.install_cb"
 
 const val CONTENT_AUTHORITY = "android.packageinstaller.install.cts.fileprovider"
@@ -67,6 +67,7 @@ const val INSTALL_INSTANT_APP = 0x00000800
 open class PackageInstallerTestBase {
     companion object {
         const val TEST_APK_NAME = "CtsEmptyTestApp.apk"
+        const val TEST_APK_NAME_PL = "CtsEmptyTestApp_pl.apk"
     }
 
     @get:Rule
@@ -76,6 +77,7 @@ open class PackageInstallerTestBase {
     private val pm = context.packageManager
     private val uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
     private val apkFile = File(context.filesDir, TEST_APK_NAME)
+    private val apkFile_pl = File(context.filesDir, TEST_APK_NAME_PL)
 
     /** If a status was received the value of the status, otherwise null */
     private var installSessionResult = LinkedBlockingQueue<Int>()
@@ -96,7 +98,8 @@ open class PackageInstallerTestBase {
 
     @Before
     fun copyTestApk() {
-        File(TEST_APK_EXTERNAL_LOCATION, TEST_APK_NAME).copyTo(target = apkFile, overwrite = true)
+        File(TEST_APK_LOCATION, TEST_APK_NAME).copyTo(target = apkFile, overwrite = true)
+        File(TEST_APK_LOCATION, TEST_APK_NAME_PL).copyTo(target = apkFile_pl, overwrite = true)
     }
 
     @Before
