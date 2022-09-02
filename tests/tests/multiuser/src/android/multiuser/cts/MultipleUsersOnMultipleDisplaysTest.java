@@ -111,7 +111,7 @@ public final class MultipleUsersOnMultipleDisplaysTest {
 
     @Test
     @ApiTest(apis = {"android.os.UserManager#isUserVisible"})
-    @RequireHeadlessSystemUserMode// non-HSUM cannot have profiles on secondary users
+    @RequireHeadlessSystemUserMode(reason = "non-HSUM cannot have profiles on secondary users")
     @RequireRunOnSecondaryUser
     @EnsureHasPermission(INTERACT_ACROSS_USERS) // needed to call isUserVisible() on other context
     @RequireFeature(FEATURE_MANAGED_USERS) // TODO(b/239961027): remove if supports other profiles
@@ -146,7 +146,7 @@ public final class MultipleUsersOnMultipleDisplaysTest {
 
     @Test
     @ApiTest(apis = {"android.os.UserManager#getVisibleUsers"})
-    @RequireHeadlessSystemUserMode// non-HSUM cannot have profiles on secondary users
+    @RequireHeadlessSystemUserMode(reason = "non-HSUM cannot have profiles on secondary users")
     @RequireRunOnSecondaryUser
     @RequireFeature(FEATURE_MANAGED_USERS) // TODO(b/239961027): remove if supports other profiles
     @EnsureHasPermission(INTERACT_ACROSS_USERS) // needed to call getVisibleUsers()
@@ -190,7 +190,7 @@ public final class MultipleUsersOnMultipleDisplaysTest {
 
     @Test
     @ApiTest(apis = {"android.app.ActivityManager#startUserInBackgroundOnSecondaryDisplay"})
-    @RequireHeadlessSystemUserMode// non-HSUM cannot have profiles on secondary users
+    @RequireHeadlessSystemUserMode(reason = "non-HSUM cannot have profiles on secondary users")
     @RequireRunOnSecondaryUser
     @RequireFeature(FEATURE_MANAGED_USERS) // TODO(b/239961027): remove if supports other profiles
     public void testStartUserInBackgroundOnSecondaryDisplay_profileOnSameDisplay() {
@@ -226,7 +226,7 @@ public final class MultipleUsersOnMultipleDisplaysTest {
     @FlakyTest(bugId = 242364454)
     @Test
     @ApiTest(apis = {"android.app.ActivityManager#startUserInBackgroundOnSecondaryDisplay"})
-    @RequireHeadlessSystemUserMode// non-HSUM cannot have profiles on secondary users
+    @RequireHeadlessSystemUserMode(reason =  "non-HSUM cannot have profiles on secondary users")
     @RequireRunOnSecondaryUser
     @RequireFeature(FEATURE_MANAGED_USERS) // TODO(b/239961027): remove if supports other profiles
     public void testStartUserInBackgroundOnSecondaryDisplay_profileOnDefaultDisplay() {

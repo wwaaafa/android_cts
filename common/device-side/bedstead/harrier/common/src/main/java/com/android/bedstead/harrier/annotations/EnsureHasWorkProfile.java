@@ -18,8 +18,8 @@ package com.android.bedstead.harrier.annotations;
 
 import static com.android.bedstead.harrier.OptionalBoolean.ANY;
 import static com.android.bedstead.harrier.OptionalBoolean.FALSE;
-import static com.android.bedstead.harrier.UserType.PRIMARY_USER;
-import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.MIDDLE;
+import static com.android.bedstead.harrier.UserType.INITIAL_USER;
+import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.EARLY;
 
 import com.android.bedstead.harrier.OptionalBoolean;
 import com.android.bedstead.harrier.UserType;
@@ -48,7 +48,7 @@ import java.lang.annotation.Target;
 @EnsureHasNoDeviceOwner // TODO: This should only apply on Android R+
 public @interface EnsureHasWorkProfile {
     /** Which user type the work profile should be attached to. */
-    UserType forUser() default PRIMARY_USER; // Currently only the primary user is supported
+    UserType forUser() default INITIAL_USER;
 
     /** Whether the instrumented test app should be installed in the work profile. */
     OptionalBoolean installInstrumentedApp() default ANY;
@@ -91,5 +91,5 @@ public @interface EnsureHasWorkProfile {
      *
      * <p>Weight can be set to a {@link AnnotationRunPrecedence} constant, or to any {@link int}.
      */
-    int weight() default MIDDLE;
+    int weight() default EARLY - 1; // Must be before RequireRunOn to ensure users exist
 }
