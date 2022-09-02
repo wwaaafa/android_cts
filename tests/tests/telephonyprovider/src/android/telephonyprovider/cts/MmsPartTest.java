@@ -32,6 +32,8 @@ import android.telephony.cts.util.DefaultSmsAppHelper;
 
 import com.android.compatibility.common.util.ApiTest;
 
+import com.android.compatibility.common.util.ApiTest;
+
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
