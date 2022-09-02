@@ -19,6 +19,7 @@ package android.devicepolicy.cts;
 import static android.provider.Settings.ACTION_MANAGE_CROSS_PROFILE_ACCESS;
 
 import static com.android.bedstead.harrier.OptionalBoolean.TRUE;
+import static com.android.bedstead.harrier.UserType.ADDITIONAL_USER;
 import static com.android.bedstead.harrier.UserType.INITIAL_USER;
 import static com.android.bedstead.harrier.UserType.WORK_PROFILE;
 import static com.android.bedstead.metricsrecorder.truth.MetricQueryBuilderSubject.assertThat;
@@ -126,9 +127,9 @@ public final class CrossProfileAppsTest {
 
     @CrossUserTest({
             @UserPair(from = INITIAL_USER, to = INITIAL_USER),
-//            @UserPair(from = INITIAL_USER, to = ADDITIONAL_USER),
-//            @UserPair(from = WORK_PROFILE, to = ADDITIONAL_USER),
-//            @UserPair(from = ADDITIONAL_USER, to = WORK_PROFILE)
+            @UserPair(from = INITIAL_USER, to = ADDITIONAL_USER),
+            @UserPair(from = WORK_PROFILE, to = ADDITIONAL_USER),
+            @UserPair(from = ADDITIONAL_USER, to = WORK_PROFILE)
     })
     @Postsubmit(reason = "new test")
     public void getTargetUserProfiles_doesNotContainOtherUser() {
@@ -607,9 +608,9 @@ public final class CrossProfileAppsTest {
     @Test
     @CrossUserTest({
             @UserPair(from = INITIAL_USER, to = INITIAL_USER),
-//            @UserPair(from = INITIAL_USER, to = ADDITIONAL_USER),
-//            @UserPair(from = WORK_PROFILE, to = ADDITIONAL_USER),
-//            @UserPair(from = ADDITIONAL_USER, to = WORK_PROFILE)
+            @UserPair(from = INITIAL_USER, to = ADDITIONAL_USER),
+            @UserPair(from = WORK_PROFILE, to = ADDITIONAL_USER),
+            @UserPair(from = ADDITIONAL_USER, to = WORK_PROFILE)
     })
     public void
             startMainActivity_targetIsInvalid_throwsSecurityException() {
@@ -623,9 +624,9 @@ public final class CrossProfileAppsTest {
     @Test
     @CrossUserTest({
             @UserPair(from = INITIAL_USER, to = INITIAL_USER),
-//            @UserPair(from = INITIAL_USER, to = ADDITIONAL_USER),
-//            @UserPair(from = WORK_PROFILE, to = ADDITIONAL_USER),
-//            @UserPair(from = ADDITIONAL_USER, to = WORK_PROFILE)
+            @UserPair(from = INITIAL_USER, to = ADDITIONAL_USER),
+            @UserPair(from = WORK_PROFILE, to = ADDITIONAL_USER),
+            @UserPair(from = ADDITIONAL_USER, to = WORK_PROFILE)
     })
     public void getProfileSwitchingLabel_targetIsInvalid_throwsSecurityException() {
         TestApis.packages().instrumented().installExisting(sDeviceState.otherUser());
@@ -651,9 +652,9 @@ public final class CrossProfileAppsTest {
     @Test
     @CrossUserTest({
             @UserPair(from = INITIAL_USER, to = INITIAL_USER),
-//            @UserPair(from = INITIAL_USER, to = ADDITIONAL_USER),
-//            @UserPair(from = WORK_PROFILE, to = ADDITIONAL_USER),
-//            @UserPair(from = ADDITIONAL_USER, to = WORK_PROFILE)
+            @UserPair(from = INITIAL_USER, to = ADDITIONAL_USER),
+            @UserPair(from = WORK_PROFILE, to = ADDITIONAL_USER),
+            @UserPair(from = ADDITIONAL_USER, to = WORK_PROFILE)
     })
     public void getProfileSwitchingLabelIconDrawable_targetIsInvalid_throwsSecurityException() {
         TestApis.packages().instrumented().installExisting(sDeviceState.otherUser());
