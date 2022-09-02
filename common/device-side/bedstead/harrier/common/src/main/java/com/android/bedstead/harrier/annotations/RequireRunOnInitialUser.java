@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 The Android Open Source Project
+ * Copyright (C) 2022 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package com.android.bedstead.harrier.annotations;
 
-import static com.android.bedstead.harrier.OptionalBoolean.ANY;
+import static com.android.bedstead.harrier.OptionalBoolean.TRUE;
 import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.EARLY;
 
 import com.android.bedstead.harrier.OptionalBoolean;
-import com.android.bedstead.harrier.annotations.meta.EnsureHasUserAnnotation;
+import com.android.bedstead.harrier.annotations.meta.RequiresBedsteadJUnit4;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -28,25 +28,26 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Mark that a test method should run on a device which has a secondary user.
+ * Marks that a test method should run on the initial user.
  *
- * <p>Your test configuration may be configured so that this test is only run on a device which
- * has a secondary user that is not the current user. Otherwise, you can use {@code Devicestate}
- * to ensure that the device enters the correct state for the method. If there is not already a
- * secondary user on the device, and the device does not support creating additional users, then
- * the test will be skipped.
+ * <p>This requires the use of {@link com.android.bedstead.harrier.BedsteadJUnit4}. This will
+ * replace this annotation with the {@code RequireRunOn} annotation for the initial user.
+ *
+ * <p>Note that in general this requires the test runs on the system user. On headless system user
+ * devices, this will require running on the first non-system user.
  */
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@EnsureHasUserAnnotation("android.os.usertype.full.SECONDARY")
-public @interface EnsureHasSecondaryUser {
-    /** Whether the instrumented test app should be installed in the secondary user. */
-    OptionalBoolean installInstrumentedApp() default ANY;
+@RequiresBedsteadJUnit4
+public @interface RequireRunOnInitialUser {
+
+    // Note that when generating the list of tests, BedsteadJUnit4 will replace this annotation with
+    // the relevant annotation to ensure a test is run on the correct user for the given device
 
     /**
      * Should we ensure that we are switched to the given user
      */
-    OptionalBoolean switchedToUser() default ANY;
+    OptionalBoolean switchedToUser() default TRUE;
 
     /**
      * Weight sets the order that annotations will be resolved.
@@ -58,5 +59,5 @@ public @interface EnsureHasSecondaryUser {
      *
      * <p>Weight can be set to a {@link AnnotationRunPrecedence} constant, or to any {@link int}.
      */
-    int weight() default EARLY - 1; // Must be before RequireRunOn to ensure users exist
+    int weight() default EARLY;
 }

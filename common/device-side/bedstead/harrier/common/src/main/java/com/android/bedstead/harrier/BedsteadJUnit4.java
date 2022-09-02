@@ -27,6 +27,8 @@ import com.android.bedstead.harrier.annotations.EnumTestParameter;
 import com.android.bedstead.harrier.annotations.IntTestParameter;
 import com.android.bedstead.harrier.annotations.OtherUser;
 import com.android.bedstead.harrier.annotations.PermissionTest;
+import com.android.bedstead.harrier.annotations.RequireNotHeadlessSystemUserMode;
+import com.android.bedstead.harrier.annotations.RequireRunOnInitialUser;
 import com.android.bedstead.harrier.annotations.RequireRunOnPrimaryUser;
 import com.android.bedstead.harrier.annotations.RequireRunOnSecondaryUser;
 import com.android.bedstead.harrier.annotations.RequireRunOnSystemUser;
@@ -48,6 +50,7 @@ import com.android.bedstead.nene.annotations.Nullable;
 import com.android.bedstead.nene.exceptions.NeneException;
 
 import com.google.auto.value.AutoAnnotation;
+import com.google.common.collect.ImmutableMap;
 
 import org.junit.Test;
 import org.junit.rules.TestRule;
@@ -71,6 +74,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -119,6 +123,11 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
     }
 
     @AutoAnnotation
+    private static RequireRunOnInitialUser requireRunOnInitialUser() {
+        return new AutoAnnotation_BedsteadJUnit4_requireRunOnInitialUser();
+    }
+
+    @AutoAnnotation
     private static EnsureHasSecondaryUser ensureHasSecondaryUser() {
         return new AutoAnnotation_BedsteadJUnit4_ensureHasSecondaryUser();
     }
@@ -136,6 +145,11 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
     @AutoAnnotation
     private static OtherUser otherUser(UserType value) {
         return new AutoAnnotation_BedsteadJUnit4_otherUser(value);
+    }
+
+    @AutoAnnotation
+    private static RequireNotHeadlessSystemUserMode requireNotHeadlessSystemUserMode(String reason) {
+        return new AutoAnnotation_BedsteadJUnit4_requireNotHeadlessSystemUserMode(reason);
     }
 
     // These are annotations which are not included indirectly
@@ -180,18 +194,29 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
     }
 
     /**
-     * Resolve annotations recursively.
+     * Resolves annotations recursively.
      *
      * @param parameterizedAnnotation The class of the parameterized annotation to expand, if any
      */
-    public static void resolveRecursiveAnnotations(List<Annotation> annotations,
+    public void resolveRecursiveAnnotations(List<Annotation> annotations,
+            @Nullable Annotation parameterizedAnnotation) {
+        resolveRecursiveAnnotations(getHarrierRule(), annotations, parameterizedAnnotation);
+    }
+
+    /**
+     * Resolves annotations recursively.
+     *
+     * @param parameterizedAnnotation The class of the parameterized annotation to expand, if any
+     */
+    public static void resolveRecursiveAnnotations(HarrierRule harrierRule,
+            List<Annotation> annotations,
             @Nullable Annotation parameterizedAnnotation) {
         int index = 0;
         while (index < annotations.size()) {
             Annotation annotation = annotations.get(index);
             annotations.remove(index);
             List<Annotation> replacementAnnotations =
-                    getReplacementAnnotations(annotation, parameterizedAnnotation);
+                    getReplacementAnnotations(harrierRule, annotation, parameterizedAnnotation);
             replacementAnnotations.sort(BedsteadJUnit4::annotationSorter);
             annotations.addAll(index, replacementAnnotations);
             index += replacementAnnotations.size();
@@ -221,8 +246,32 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
         return annotation.annotationType().getAnnotation(RepeatingAnnotation.class) != null;
     }
 
-    private static List<Annotation> getReplacementAnnotations(Annotation annotation,
+    private HarrierRule mHarrierRule;
+
+    private static final ImmutableMap<Class<? extends Annotation>, BiFunction<HarrierRule, Annotation, Stream<Annotation>>>
+            ANNOTATION_REPLACEMENTS = ImmutableMap.of(
+                    RequireRunOnInitialUser.class, (harrierRule, a) -> {
+                if (harrierRule.isHeadlessSystemUserMode()) {
+                    return Stream.of(ensureHasSecondaryUser(), requireRunOnSecondaryUser());
+                } else {
+                    return Stream.of(requireRunOnPrimaryUser());
+                }
+            }
+    );
+
+    private static List<Annotation> getReplacementAnnotations(
+            HarrierRule harrierRule, Annotation annotation,
             @Nullable Annotation parameterizedAnnotation) {
+        BiFunction<HarrierRule, Annotation, Stream<Annotation>> specialReplaceFunction =
+                ANNOTATION_REPLACEMENTS.get(annotation.annotationType());
+
+        if (specialReplaceFunction != null) {
+            List<Annotation> replacement =
+                    specialReplaceFunction.apply(harrierRule, annotation)
+                            .collect(Collectors.toList());
+            return replacement;
+        }
+
         List<Annotation> replacementAnnotations = new ArrayList<>();
 
         if (isRepeatingAnnotation(annotation)) {
@@ -247,7 +296,7 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
             }
 
             replacementAnnotations.addAll(getReplacementAnnotations(
-                    indirectAnnotation, parameterizedAnnotation));
+                    harrierRule, indirectAnnotation, parameterizedAnnotation));
         }
 
         if (!(annotation instanceof DynamicParameterizedAnnotation)) {
@@ -316,7 +365,7 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
 
             if (parameterizedAnnotations.isEmpty()) {
                 // Unparameterized, just add the original
-                modifiedTests.add(new BedsteadFrameworkMethod(m.getMethod()));
+                modifiedTests.add(new BedsteadFrameworkMethod(this, m.getMethod()));
             }
 
             for (Annotation annotation : parameterizedAnnotations) {
@@ -325,7 +374,7 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
                     continue;
                 }
                 modifiedTests.add(
-                        new BedsteadFrameworkMethod(m.getMethod(), annotation));
+                        new BedsteadFrameworkMethod(this, m.getMethod(), annotation));
             }
         }
 
@@ -336,14 +385,14 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
         return modifiedTests;
     }
 
-    private static List<FrameworkMethod> generateGeneralParameterisationMethods(
+    private List<FrameworkMethod> generateGeneralParameterisationMethods(
             List<FrameworkMethod> modifiedTests) {
         return modifiedTests.stream()
-                .flatMap(BedsteadJUnit4::generateGeneralParameterisationMethods)
+                .flatMap(this::generateGeneralParameterisationMethods)
                 .collect(Collectors.toList());
     }
 
-    private static Stream<FrameworkMethod> generateGeneralParameterisationMethods(
+    private Stream<FrameworkMethod> generateGeneralParameterisationMethods(
             FrameworkMethod method) {
         Stream<FrameworkMethod> expandedMethods = Stream.of(method);
         if (method.getMethod().getParameterCount() == 0) {
@@ -734,6 +783,10 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
         switch (userType) {
             case SYSTEM_USER:
                 return requireRunOnSystemUser();
+            case CURRENT_USER:
+                return null; // No requirement, run on current user
+            case INITIAL_USER:
+                return requireRunOnInitialUser();
             case PRIMARY_USER:
                 return requireRunOnPrimaryUser();
             case SECONDARY_USER:
@@ -752,8 +805,13 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
         switch (userType) {
             case SYSTEM_USER:
                 return null; // We always have a system user
+            case CURRENT_USER:
+                return null; // We always have a current user
+            case INITIAL_USER:
+                return null; // We always have an initial user
             case PRIMARY_USER:
-                return null; // We assume we always have a primary user (this may change)
+                return requireNotHeadlessSystemUserMode(
+                        "Headless System User Mode Devices do not have a primary user");
             case SECONDARY_USER:
                 return ensureHasSecondaryUser();
             case WORK_PROFILE:
@@ -766,19 +824,41 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
         }
     }
 
+    private HarrierRule getHarrierRule() {
+        if (mHarrierRule == null) {
+            classRules();
+        }
+        return mHarrierRule;
+    }
+
     @Override
     protected List<TestRule> classRules() {
         List<TestRule> rules = super.classRules();
 
         for (TestRule rule : rules) {
             if (rule instanceof HarrierRule) {
-                HarrierRule harrierRule = (HarrierRule) rule;
-
-                harrierRule.setSkipTestTeardown(true);
-                harrierRule.setUsingBedsteadJUnit4(true);
-
+                mHarrierRule = (HarrierRule) rule;
                 break;
             }
+        }
+
+        if (mHarrierRule == null) {
+            try {
+                mHarrierRule =
+                        (HarrierRule)
+                                Class.forName("com.android.bedstead.harrier.DeviceState")
+                                        .newInstance();
+
+            } catch (ClassNotFoundException e) {
+                // Must be running on the host - for now we don't add anything
+            } catch (InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException("Error initialising Harrier Rule", e);
+            }
+        }
+
+        if (mHarrierRule != null) {
+            mHarrierRule.setSkipTestTeardown(true);
+            mHarrierRule.setUsingBedsteadJUnit4(true);
         }
 
         return rules;
