@@ -20,33 +20,36 @@ import static org.junit.Assume.assumeNoException;
 
 import android.platform.test.annotations.AsbSecurityTest;
 
-import com.android.sts.common.tradefed.testtype.StsExtraBusinessLogicHostTestBase;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.testtype.DeviceJUnit4ClassRunner;
+import com.android.sts.common.tradefed.testtype.StsExtraBusinessLogicHostTestBase;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(DeviceJUnit4ClassRunner.class)
-public class CVE_2022_20007 extends StsExtraBusinessLogicHostTestBase {
+public class CVE_2021_39704 extends StsExtraBusinessLogicHostTestBase {
 
-    @AsbSecurityTest(cveBugId = 211481342)
+    @AsbSecurityTest(cveBugId = 209965481)
     @Test
-    public void testPocCVE_2022_20007() {
-        final String testPkg = "android.security.cts.CVE_2022_20007";
-        final String testClass = testPkg + "." + "DeviceTest";
-        final String testApp = "CVE-2022-20007.apk";
-        final String testAttackerApp = "CVE-2022-20007-Attacker.apk";
-        final String testSecondApp = "CVE-2022-20007-Second.apk";
-        ITestDevice device = getDevice();
+    public void testPocCVE_2021_39704() {
         try {
-            installPackage(testApp);
-            installPackage(testAttackerApp);
-            installPackage(testSecondApp);
+            final String testPkg = "android.security.cts.CVE_2021_39704";
+
+            ITestDevice device = getDevice();
+
             AdbUtils.runCommandLine("input keyevent KEYCODE_WAKEUP", device);
             AdbUtils.runCommandLine("input keyevent KEYCODE_MENU", device);
             AdbUtils.runCommandLine("input keyevent KEYCODE_HOME", device);
-            runDeviceTests(testPkg, testClass, "testRaceCondition");
+
+            installPackage("CVE-2021-39704.apk");
+            AdbUtils.runCommandLine(
+                    "pm revoke " + "android.security.cts.CVE_2021_39704 "
+                            + "android.permission.ACCESS_COARSE_LOCATION",
+                    device);
+
+            runDeviceTests(testPkg, testPkg + "." + "DeviceTest",
+                    "testdeleteNotificationChannelGroup");
         } catch (Exception e) {
             assumeNoException(e);
         }
