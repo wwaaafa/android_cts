@@ -324,7 +324,7 @@ public class MediaSessionManagerTest {
         mSessionManager.setOnVolumeKeyLongPressListener(listener, handler);
         injectInputEvent(KeyEvent.KEYCODE_VOLUME_DOWN, true);
         assertThat(listener.mCountDownLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS)).isTrue();
-        assertThat(listener.mKeyEvents.size()).isEqualTo(3);
+        assertThat(listener.mKeyEvents).hasSize(3);
         assertKeyEventEquals(listener.mKeyEvents.get(0),
                 KeyEvent.KEYCODE_VOLUME_DOWN, KeyEvent.ACTION_DOWN, 0);
         assertKeyEventEquals(listener.mKeyEvents.get(1),
@@ -337,13 +337,13 @@ public class MediaSessionManagerTest {
         mSessionManager.setOnVolumeKeyLongPressListener(listener, handler);
         injectInputEvent(KeyEvent.KEYCODE_VOLUME_DOWN, false);
         assertThat(listener.mCountDownLatch.await(WAIT_MS, TimeUnit.MILLISECONDS)).isFalse();
-        assertThat(listener.mKeyEvents.size()).isEqualTo(0);
+        assertThat(listener.mKeyEvents).isEmpty();
 
         // Ensure that the listener isn't called anymore.
         mSessionManager.setOnVolumeKeyLongPressListener(null, handler);
         injectInputEvent(KeyEvent.KEYCODE_VOLUME_DOWN, true);
         assertThat(listener.mCountDownLatch.await(WAIT_MS, TimeUnit.MILLISECONDS)).isFalse();
-        assertThat(listener.mKeyEvents.size()).isEqualTo(0);
+        assertThat(listener.mKeyEvents).isEmpty();
 
         removeHandler(handler);
     }
@@ -373,13 +373,13 @@ public class MediaSessionManagerTest {
             mSessionManager.setOnMediaKeyListener(listener, handler);
             injectInputEvent(KeyEvent.KEYCODE_HEADSETHOOK, false);
             assertThat(listener.mCountDownLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS)).isTrue();
-            assertThat(listener.mKeyEvents.size()).isEqualTo(2);
+            assertThat(listener.mKeyEvents).hasSize(2);
             assertKeyEventEquals(listener.mKeyEvents.get(0),
                     KeyEvent.KEYCODE_HEADSETHOOK, KeyEvent.ACTION_DOWN, 0);
             assertKeyEventEquals(listener.mKeyEvents.get(1),
                     KeyEvent.KEYCODE_HEADSETHOOK, KeyEvent.ACTION_UP, 0);
             assertThat(callback.mCountDownLatch.await(WAIT_MS, TimeUnit.MILLISECONDS)).isFalse();
-            assertThat(callback.mKeyEvents.size()).isEqualTo(0);
+            assertThat(callback.mKeyEvents).isEmpty();
 
             // Ensure that the listener is called for media key event,
             // and another media session gets the key.
@@ -387,13 +387,13 @@ public class MediaSessionManagerTest {
             mSessionManager.setOnMediaKeyListener(listener, handler);
             injectInputEvent(KeyEvent.KEYCODE_HEADSETHOOK, false);
             assertThat(listener.mCountDownLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS)).isTrue();
-            assertThat(listener.mKeyEvents.size()).isEqualTo(2);
+            assertThat(listener.mKeyEvents).hasSize(2);
             assertKeyEventEquals(listener.mKeyEvents.get(0),
                     KeyEvent.KEYCODE_HEADSETHOOK, KeyEvent.ACTION_DOWN, 0);
             assertKeyEventEquals(listener.mKeyEvents.get(1),
                     KeyEvent.KEYCODE_HEADSETHOOK, KeyEvent.ACTION_UP, 0);
             assertThat(callback.mCountDownLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS)).isTrue();
-            assertThat(callback.mKeyEvents.size()).isEqualTo(2);
+            assertThat(callback.mKeyEvents).hasSize(2);
             assertKeyEventEquals(callback.mKeyEvents.get(0),
                     KeyEvent.KEYCODE_HEADSETHOOK, KeyEvent.ACTION_DOWN, 0);
             assertKeyEventEquals(callback.mKeyEvents.get(1),
@@ -405,7 +405,7 @@ public class MediaSessionManagerTest {
             mSessionManager.setOnMediaKeyListener(null, handler);
             injectInputEvent(KeyEvent.KEYCODE_HEADSETHOOK, false);
             assertThat(listener.mCountDownLatch.await(WAIT_MS, TimeUnit.MILLISECONDS)).isFalse();
-            assertThat(listener.mKeyEvents.size()).isEqualTo(0);
+            assertThat(listener.mKeyEvents).isEmpty();
         } finally {
             if (session != null) {
                 session.release();
@@ -589,7 +589,7 @@ public class MediaSessionManagerTest {
             assertThat(listener.mCountDownLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS)).isFalse();
             List<Session2Token> laterSession2Tokens = mSessionManager.getSession2Tokens();
 
-            assertThat(laterSession2Tokens.size()).isEqualTo(initialSession2Tokens.size());
+            assertThat(laterSession2Tokens).hasSize(initialSession2Tokens.size());
         } finally {
             if (session != null) {
                 session.release();

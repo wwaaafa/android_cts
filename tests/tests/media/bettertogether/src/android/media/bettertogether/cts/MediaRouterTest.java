@@ -356,7 +356,7 @@ public class MediaRouterTest {
 
         List<RouteInfo> routesInCategory = new ArrayList<RouteInfo>();
         routeCategory.getRoutes(routesInCategory);
-        assertThat(routesInCategory.size()).isEqualTo(1);
+        assertThat(routesInCategory).hasSize(1);
 
         RouteInfo route = routesInCategory.get(0);
         assertThat(route).isEqualTo(userRoute);
