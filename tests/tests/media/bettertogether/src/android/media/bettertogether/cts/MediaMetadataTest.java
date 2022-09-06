@@ -47,7 +47,7 @@ public class MediaMetadataTest {
         MediaMetadata metadata = new MediaMetadata.Builder().build();
 
         assertThat(metadata.size()).isEqualTo(0);
-        assertThat(metadata.keySet().isEmpty()).isTrue();
+        assertThat(metadata.keySet()).isEmpty();
     }
 
     @Test
@@ -211,9 +211,8 @@ public class MediaMetadataTest {
 
         assertThat(metadata.size()).isEqualTo(2);
         Set<String> keySet = metadata.keySet();
-        assertThat(keySet.size()).isEqualTo(2);
-        assertThat(keySet.contains(MediaMetadata.METADATA_KEY_RATING)).isTrue();
-        assertThat(keySet.contains(MediaMetadata.METADATA_KEY_ART)).isTrue();
+        assertThat(keySet).containsExactly(
+                MediaMetadata.METADATA_KEY_RATING, MediaMetadata.METADATA_KEY_ART);
     }
 
     @Test
