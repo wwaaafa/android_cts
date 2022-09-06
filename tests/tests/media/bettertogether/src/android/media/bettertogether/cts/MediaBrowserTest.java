@@ -253,8 +253,8 @@ public class MediaBrowserTest {
 
         assertThat(mSubscriptionCallback.mLastParentId)
                 .isEqualTo(StubMediaBrowserService.MEDIA_ID_ROOT);
-        assertThat(mSubscriptionCallback.mLastChildMediaItems.size())
-                .isEqualTo(StubMediaBrowserService.MEDIA_ID_CHILDREN.length);
+        assertThat(mSubscriptionCallback.mLastChildMediaItems)
+                .hasSize(StubMediaBrowserService.MEDIA_ID_CHILDREN.length);
         for (int i = 0; i < StubMediaBrowserService.MEDIA_ID_CHILDREN.length; ++i) {
             assertThat(mSubscriptionCallback.mLastChildMediaItems.get(i).getMediaId())
                     .isEqualTo(StubMediaBrowserService.MEDIA_ID_CHILDREN[i]);
@@ -327,10 +327,10 @@ public class MediaBrowserTest {
             assertThat(mSubscriptionCallback.mLastParentId)
                     .isEqualTo(StubMediaBrowserService.MEDIA_ID_ROOT);
             if (page != lastPage) {
-                assertThat(mSubscriptionCallback.mLastChildMediaItems.size()).isEqualTo(pageSize);
+                assertThat(mSubscriptionCallback.mLastChildMediaItems).hasSize(pageSize);
             } else {
-                assertThat(mSubscriptionCallback.mLastChildMediaItems.size())
-                        .isEqualTo((StubMediaBrowserService.MEDIA_ID_CHILDREN.length - 1)
+                assertThat(mSubscriptionCallback.mLastChildMediaItems)
+                        .hasSize((StubMediaBrowserService.MEDIA_ID_CHILDREN.length - 1)
                                 % pageSize + 1);
             }
             // Check whether all the items in the current page are loaded.
