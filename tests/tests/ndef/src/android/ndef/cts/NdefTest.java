@@ -500,6 +500,21 @@ public class NdefTest extends TestCase {
                 1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,})).toByteArray());
     }
 
+    public void testGetByteArrayLength() {
+        NdefRecord r;
+        byte[] b;
+
+        // single short record
+        r = new NdefRecord(NdefRecord.TNF_EMPTY, null, null, null);
+        b = new byte[] {(byte) 0xD8, 0, 0, 0};
+        assertEquals(b.length, new NdefMessage(r).getByteArrayLength());
+
+        // 3 records
+        r = new NdefRecord(NdefRecord.TNF_EMPTY, null, null, null);
+        b = new byte[] {(byte) 0x98, 0, 0, 0, (byte) 0x18, 0, 0, 0, (byte) 0x58, 0, 0, 0};
+        assertEquals(b.length, new NdefMessage(r, r, r).getByteArrayLength());
+    }
+
     public void testToUri() {
         // absolute uri
         assertEquals(Uri.parse("http://www.android.com"),
