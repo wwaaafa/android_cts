@@ -16,7 +16,8 @@
 package android.media.bettertogether.cts;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth.assertWithMessage;
+
+import static org.junit.Assert.assertThrows;
 
 import android.Manifest;
 import android.app.Instrumentation;
@@ -101,38 +102,26 @@ public class MediaSessionManagerTest {
 
     @Test
     public void testGetActiveSessions() throws Exception {
-        try {
-            List<MediaController> controllers = mSessionManager.getActiveSessions(null);
-            assertWithMessage("Expected security exception"
-                    + " for unauthorized call to getActiveSessions").fail();
-        } catch (SecurityException e) {
-            // Expected
-        }
+        assertThrows("Expected security exception for unauthorized call to getActiveSessions",
+                SecurityException.class,
+                () -> mSessionManager.getActiveSessions(null));
         // TODO enable a notification listener, test again, disable, test again
     }
 
     @Test
     public void testGetMediaKeyEventSession_throwsSecurityException() {
         if (!MediaUtils.check(sIsAtLeastS, "test invalid before Android 12")) return;
-        try {
-            mSessionManager.getMediaKeyEventSession();
-            assertWithMessage("Expected security exception"
-                    + " for call to getMediaKeyEventSession").fail();
-        } catch (SecurityException ex) {
-            // Expected
-        }
+        assertThrows("Expected security exception for call to getMediaKeyEventSession",
+                SecurityException.class,
+                () -> mSessionManager.getMediaKeyEventSession());
     }
 
     @Test
     public void testGetMediaKeyEventSessionPackageName_throwsSecurityException() {
         if (!MediaUtils.check(sIsAtLeastS, "test invalid before Android 12")) return;
-        try {
-            mSessionManager.getMediaKeyEventSessionPackageName();
-            assertWithMessage("Expected security exception"
-                    + " for call to getMediaKeyEventSessionPackageName").fail();
-        } catch (SecurityException ex) {
-            // Expected
-        }
+        assertThrows("Expected security exception for call to getMediaKeyEventSessionPackageName",
+                SecurityException.class,
+                () -> mSessionManager.getMediaKeyEventSessionPackageName());
     }
 
     @Test
@@ -211,14 +200,11 @@ public class MediaSessionManagerTest {
     public void testOnMediaKeyEventSessionChangedListener_noPermission_throwsSecurityException() {
         if (!MediaUtils.check(sIsAtLeastS, "test invalid before Android 12")) return;
         MediaKeyEventSessionListener keyEventSessionListener = new MediaKeyEventSessionListener();
-        try {
-            mSessionManager.addOnMediaKeyEventSessionChangedListener(
-                    Executors.newSingleThreadExecutor(), keyEventSessionListener);
-            assertWithMessage("Expected security exception for call to"
-                    + " addOnMediaKeyEventSessionChangedListener").fail();
-        } catch (SecurityException ex) {
-            // Expected
-        }
+        assertThrows("Expected security exception for call to"
+                        + " addOnMediaKeyEventSessionChangedListener",
+                SecurityException.class,
+                () -> mSessionManager.addOnMediaKeyEventSessionChangedListener(
+                        Executors.newSingleThreadExecutor(), keyEventSessionListener));
     }
 
     @Test
@@ -270,12 +256,9 @@ public class MediaSessionManagerTest {
     @UiThreadTest
     public void testAddOnActiveSessionsListener() throws Exception {
         if (!MediaUtils.check(sIsAtLeastS, "test invalid before Android 12")) return;
-        try {
-            mSessionManager.addOnActiveSessionsChangedListener(null, null);
-            assertWithMessage("Expected NPE for call to addOnActiveSessionsChangedListener").fail();
-        } catch (NullPointerException e) {
-            // Expected
-        }
+        assertThrows("Expected NPE for call to addOnActiveSessionsChangedListener",
+                NullPointerException.class,
+                () -> mSessionManager.addOnActiveSessionsChangedListener(null, null));
 
         MediaSessionManager.OnActiveSessionsChangedListener listener =
                 new MediaSessionManager.OnActiveSessionsChangedListener() {
@@ -284,13 +267,10 @@ public class MediaSessionManagerTest {
 
                     }
         };
-        try {
-            mSessionManager.addOnActiveSessionsChangedListener(listener, null);
-            assertWithMessage("Expected security exception"
-                    + " for call to addOnActiveSessionsChangedListener").fail();
-        } catch (SecurityException e) {
-            // Expected
-        }
+
+        assertThrows("Expected security exception for call to addOnActiveSessionsChangedListener",
+                SecurityException.class,
+                () -> mSessionManager.addOnActiveSessionsChangedListener(listener, null));
     }
 
     private void assertKeyEventEquals(KeyEvent lhs, int keyCode, int action, int repeatCount) {
