@@ -16,15 +16,16 @@
 
 package android.ndef.cts;
 
-import java.nio.charset.Charset;
-import java.util.Arrays;
-
 import android.net.Uri;
+import android.nfc.FormatException;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
-import android.nfc.FormatException;
 
 import junit.framework.TestCase;
+
+import java.nio.BufferUnderflowException;
+import java.nio.charset.Charset;
+import java.util.Arrays;
 
 /**
  * NDEF is a NFC-Forum defined data format.<p>
@@ -429,6 +430,25 @@ public class NdefTest extends TestCase {
         assertEquals("android.com:pkg".getBytes(), r.getType());
         assertEquals(new byte[] {}, r.getId());
         assertEquals("com.foo.bar".getBytes(), r.getPayload());
+    }
+
+    public void testCreateTextRecord() {
+        String s = new String("Hello");
+        NdefRecord r = NdefRecord.createTextRecord("en", s);
+        byte[] payload = r.getPayload();
+        byte[] textArray = Arrays.copyOfRange(payload, (int) payload[0] + 1 , payload.length);
+        assertEquals(s.getBytes(), textArray);
+
+        try {
+            NdefRecord.createTextRecord("en", null);
+            fail("NullPointerException not throw");
+        } catch (NullPointerException e) { }
+
+        try {
+            byte[] language = new byte[64];
+            NdefRecord.createTextRecord(new String(language), s);
+            fail("IllegalArgumentException not throw");
+        } catch (IllegalArgumentException e) { }
     }
 
     public void testToByteArray() throws FormatException {
