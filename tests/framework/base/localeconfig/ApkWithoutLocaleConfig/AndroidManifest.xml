@@ -15,19 +15,7 @@
 -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.android.cts.localeconfig">
-
-  <queries>
-    <package android:name="com.android.cts.localeconfiginorout" />
-  </queries>
-
+    package="com.android.cts.localeconfiginorout">
   <application android:debuggable="true">
   </application>
-
-  <instrumentation android:name="androidx.test.runner.AndroidJUnitRunner"
-      android:targetPackage="com.android.cts.localeconfig"
-      android:label="CTS tests for android.app.LocaleConfig">
-    <meta-data android:name="listener"
-        android:value="com.android.cts.runner.CtsTestRunListener"/>
-  </instrumentation>
 </manifest>
