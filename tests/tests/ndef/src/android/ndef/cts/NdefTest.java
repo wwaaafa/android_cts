@@ -564,6 +564,29 @@ public class NdefTest extends TestCase {
                 null, null).toMimeType());
     }
 
+    public void testFormatException() {
+        try {
+            throw new FormatException();
+        } catch (FormatException e) {
+            assertTrue(e.getMessage() == null);
+        }
+
+        String s = new String("testFormatException");
+        try {
+            throw new FormatException(s);
+        } catch (FormatException e) {
+            assertTrue(e.getMessage().equals(s));
+        }
+
+        BufferUnderflowException ex = new BufferUnderflowException();
+        try {
+            throw new FormatException(s, ex);
+        } catch (FormatException e) {
+            assertTrue(e.getMessage().equals(s));
+            assertTrue(e.getCause().toString().equals(ex.toString()));
+        }
+    }
+
     static void assertEquals(byte[] expected, byte[] actual) {
         assertTrue("expected equals:<" + bytesToString(expected) + "> was:<" +
                 bytesToString(actual) + ">", Arrays.equals(expected, actual));
