@@ -16,6 +16,8 @@
 
 package android.media.bettertogether.cts;
 
+import static androidx.test.ext.truth.os.BundleSubject.assertThat;
+
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
@@ -178,9 +180,8 @@ public class MediaSession2Test {
                 .build()) {
             Bundle extrasOut = session.getToken().getExtras();
             assertThat(extrasOut).isNotNull();
-            assertThat(extrasOut.containsKey(testKey)).isTrue();
-            assertThat((Session2Token) extrasOut.getParcelable(testKey))
-                    .isEqualTo(frameworkParcelable);
+            assertThat(extrasOut).containsKey(testKey);
+            assertThat(extrasOut).parcelable(testKey).isEqualTo(frameworkParcelable);
         }
     }
 
