@@ -1102,11 +1102,12 @@ public class StrictJavaPackagesTest extends BaseHostJUnit4Test {
                 .reduce(Stream::concat).orElseGet(Stream::empty)
                 .parallel()
                 .filter(jarPath -> {
-                    return sJarsToFiles
-                            .get(jarPath)
-                            .stream()
-                            .anyMatch(file -> file.contains(".kotlin_builtins")
-                                    || file.contains(".kotlin_module"));
+                    // Exclude shared library apks.
+                    return jarPath.endsWith(".jar")
+                            && sJarsToFiles.get(jarPath)
+                                .stream()
+                                .anyMatch(file -> file.contains(".kotlin_builtins")
+                                        || file.contains(".kotlin_module"));
                 })
                 .collect(ImmutableList.toImmutableList());
         assertThat(kotlinFiles).isEmpty();
