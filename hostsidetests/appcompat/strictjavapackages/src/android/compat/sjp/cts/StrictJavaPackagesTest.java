@@ -1057,7 +1057,9 @@ public class StrictJavaPackagesTest extends BaseHostJUnit4Test {
      * and shared library jars.
      */
     @Test
-    public void testBootClasspathAndSystemServerClasspathAndSharedLibs_noAndroidxDependencies() {
+    public void testBootClasspathAndSystemServerClasspathAndSharedLibs_noAndroidxDependencies()
+            throws Exception {
+        assumeTrue(mDeviceSdkLevel.isDeviceAtLeastT());
         // WARNING: Do not add more exceptions here, no androidx should be in bootclasspath.
         // See go/androidx-api-guidelines#module-naming for more details.
         final ImmutableMap<String, ImmutableSet<String>>
