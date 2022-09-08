@@ -271,9 +271,7 @@ public class TextViewIntegrationTest {
 
     private static void assertFloatingToolbarIsDisplayed() {
         // Simply check that the toolbar item is visible.
-        //assertThat(sDevice.hasObject(By.text(TOOLBAR_ITEM_LABEL))).isTrue();
-        // EST TH, will remove later
-        assertThat(sDevice.hasObject(By.text("12245"))).isTrue();
+        assertThat(sDevice.hasObject(By.text(TOOLBAR_ITEM_LABEL))).isTrue();
     }
 
     /**
