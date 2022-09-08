@@ -673,7 +673,7 @@ public class StylusHandwritingTest extends EndToEndImeTestBase {
             expectEvent(
                     stream,
                     editorMatcher("onFinishStylusHandwriting", marker),
-                    TIMEOUT_1_S);
+                    TIMEOUT);
         }
     }
 
