@@ -86,15 +86,13 @@ def get_test_tols_and_cap_size(cam, props, chart_distance, debug):
 
     # determine if minimum focus distance is less than rig depth
     min_fd = physical_props[i]['android.lens.info.minimumFocusDistance']
-    focal_ls = physical_props[i]['android.lens.info.availableFocalLengths']
-    logging.debug('cam[%s] min_fd: %.3f (diopters), fls: %s',
-                  i, min_fd, str(focal_ls))
-    for focal_l in focal_ls:
+    for fl in physical_props[i]['android.lens.info.availableFocalLengths']:
+      logging.debug('cam[%s] min_fd: %.3f (diopters), fl: %.2f', i, min_fd, fl)
       if (math.isclose(min_fd, 0.0, rel_tol=1E-6) or  # fixed focus
-          1.0/min_fd < chart_distance_m*MIN_FOCUS_DIST_TOL):
-        test_tols[focal_l] = (RADIUS_RTOL, OFFSET_RTOL)
+          (1.0/min_fd < chart_distance_m*MIN_FOCUS_DIST_TOL)):
+        test_tols[fl] = (RADIUS_RTOL, OFFSET_RTOL)
       else:
-        test_tols[focal_l] = (RADIUS_RTOL_MIN_FD, OFFSET_RTOL_MIN_FD)
+        test_tols[fl] = (RADIUS_RTOL_MIN_FD, OFFSET_RTOL_MIN_FD)
         logging.debug('loosening RTOL for cam[%s]: '
                       'min focus distance too large.', i)
   # find intersection of formats for max common format
@@ -232,13 +230,14 @@ class ZoomTest(its_base_test.ItsBaseTest):
       z_list = np.append(z_list, z_max)
 
       # set TOLs based on camera and test rig params
-      test_tols = {}
       if camera_properties_utils.logical_multi_camera(props):
         test_tols, size = get_test_tols_and_cap_size(
             cam, props, self.chart_distance, debug)
       else:
-        for fl in props['android.lens.info.availableFocalLengths']:
-          test_tols[fl] = (RADIUS_RTOL, OFFSET_RTOL)}
+        test_tols = {}
+        fls = props['android.lens.info.availableFocalLengths']
+        for fl in fls:
+          test_tols[fl] = (RADIUS_RTOL, OFFSET_RTOL)
         yuv_size = capture_request_utils.get_largest_yuv_format(props)
         size = [yuv_size['width'], yuv_size['height']]
       logging.debug('capture size: %s', str(size))
