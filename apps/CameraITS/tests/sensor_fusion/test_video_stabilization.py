@@ -129,7 +129,7 @@ class VideoStabilizationTest(its_base_test.ItsBaseTest):
   in gyroscope movement. Test is a PASS if rotation is reduced in video.
   """
 
-  def test_video_stability(self):
+  def test_video_stabilization(self):
     rot_rig = {}
     log_path = self.log_path
 
@@ -139,13 +139,17 @@ class VideoStabilizationTest(its_base_test.ItsBaseTest):
         hidden_physical_id=self.hidden_physical_id) as cam:
       props = cam.get_camera_properties()
       props = cam.override_with_hidden_physical_camera_props(props)
-      first_api_level = its_session_utils.get_first_api_level(self.dut.serial)
+      vendor_api_level = its_session_utils.get_vendor_api_level(self.dut.serial)
       supported_stabilization_modes = props[
           'android.control.availableVideoStabilizationModes']
 
       camera_properties_utils.skip_unless(
-          first_api_level >= its_session_utils.ANDROID13_API_LEVEL and
+          vendor_api_level >= its_session_utils.ANDROID13_API_LEVEL and
           _VIDEO_STABILIZATION_MODE in supported_stabilization_modes)
+
+      # Get ffmpeg version being used.
+      ffmpeg_version = video_processing_utils.get_ffmpeg_version()
+      logging.debug('ffmpeg_version: %s', ffmpeg_version)
 
       # Raise error if not FRONT or REAR facing camera
       facing = props['android.lens.facing']
