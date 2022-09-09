@@ -32,6 +32,16 @@
     <string name="finish_button_text">Finish</string>
     <string name="fail_and_next_button_text">Fail and Next</string>
 
+    <!-- Strings for CtsReportLog warning -->
+    <string name="reportlog_warning_title">CTS-Verifier Report Log</string>
+    <string name="reportlog_warning_body">Can\'t create folder for CTS-Verifier Report Logs.
+        \n\nPlease enable Report Log creation by exiting CTS Verifier and running the following commands:
+        \n\n<code>adb shell appops set com.android.cts.verifier android:read_device_identifiers allow</code>
+        \n\n<code>adb shell appops set com.android.cts.verifier MANAGE_EXTERNAL_STORAGE 0</code>
+        \n\nTest instructions are found in the \"Using CTS Verifier\" document found at
+        <a href="https://source.android.com/compatibility/cts/verifier">https://source.android.com/compatibility/cts/verifier</a>
+    </string>
+
     <!-- Strings for TestListActivity -->
     <string name="test_category_audio">Audio</string>
     <string name="test_category_camera">Camera</string>
@@ -301,9 +311,12 @@
     </string>
     <string name="clipboard_preview_test_instructions">
         Press the \'Copy\' button to copy the secret code to the clipboard.
-        \n\nUse the clipboard preview UI, or the clipboard editor component to view the secret code.
-        \n\nEnter the secret code using the buttons below.
+        \nDo not press any other buttons after you press the \'Copy\' button.
+        \n\n If nothing happens, press Fail.
+        \n\n If you see the word "FAIL" appear on screen, press Fail.
+        \n\n If you see a confirmation that content has been copied to the clipboard, press Pass.
     </string>
+    <string name="clipboard_preview_test_secret">FAIL</string>
     <string name="clipboard_preview_test_copy_button">Copy</string>
 
 
@@ -5485,6 +5498,7 @@ You should be prompted to select credentials; choose the ones you just installed
     <string name="audio_general_test_not_run">Test Not Run</string>
     <string name="audio_general_testnotcompleted">Test not completed.</string>
 
+    <string name="audio_general_reportlogtest">[Can\'t Write ReportLog]</string>
 
     <!-- Audio Loopback Latency Test -->
     <string name="audio_loopback_latency_test">Audio Loopback Latency Test</string>

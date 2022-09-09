@@ -54,6 +54,7 @@ import com.android.bedstead.harrier.annotations.EnsureHasNoWorkProfile;
 import com.android.bedstead.harrier.annotations.EnsureHasPermission;
 import com.android.bedstead.harrier.annotations.Postsubmit;
 import com.android.bedstead.harrier.annotations.RequireFeature;
+import com.android.bedstead.harrier.annotations.RequireMultiUserSupport;
 import com.android.bedstead.harrier.annotations.RequireRunOnPrimaryUser;
 import com.android.bedstead.harrier.annotations.enterprise.EnsureHasDeviceOwner;
 import com.android.bedstead.harrier.annotations.enterprise.EnsureHasNoDpc;
@@ -65,6 +66,7 @@ import com.android.bedstead.nene.utils.Poll;
 import com.android.bedstead.remotedpc.RemoteDpc;
 import com.android.bedstead.testapp.TestApp;
 import com.android.bedstead.testapp.TestAppInstance;
+import com.android.compatibility.common.util.CddTest;
 import com.android.eventlib.truth.EventLogsSubject;
 import com.android.queryable.queries.ActivityQuery;
 
@@ -140,6 +142,7 @@ public class DevicePolicyManagementRoleHolderTest {
     @EnsureHasNoDpc
     @EnsureHasNoSecondaryUser
     @Test
+    @CddTest(requirements = {"3.9.4/C-3-1"})
     public void createAndProvisionManagedProfile_roleHolderIsInWorkProfile()
             throws ProvisioningException, InterruptedException {
         UserHandle profile = null;
@@ -172,7 +175,9 @@ public class DevicePolicyManagementRoleHolderTest {
     @EnsureHasDeviceOwner
     @RequireRunOnPrimaryUser
     @EnsureHasNoSecondaryUser
+    @RequireMultiUserSupport
     @Test
+    @CddTest(requirements = {"3.9.4/C-3-1"})
     public void createAndManageUser_roleHolderIsInManagedUser() throws InterruptedException {
         UserHandle managedUser = null;
         String roleHolderPackageName = null;
@@ -313,6 +318,7 @@ public class DevicePolicyManagementRoleHolderTest {
     @EnsureHasNoWorkProfile
     @RequireRunOnPrimaryUser
     @EnsureHasNoDpc
+    @RequireMultiUserSupport
     public void shouldAllowBypassingDevicePolicyManagementRoleQualification_withUsers_returnsFalse()
             throws Exception {
         resetInternalShouldAllowBypassingState();
