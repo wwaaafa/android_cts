@@ -239,8 +239,8 @@ public class CodecEncoderTest extends CodecEncoderTestBase {
                 assertTrue("no valid color formats received \n" + mTestConfig + mTestEnv,
                         colorFormat != -1);
             }
-            assertTrue(nativeTestSimpleEncode(mCodecName, mInpPrefix + mActiveRawRes.mFileName,
-                    mMime, mBitrates, mEncParamList1, mEncParamList2, colorFormat));
+            assertTrue(nativeTestSimpleEncode(mCodecName, mActiveRawRes.mFileName, mMime, mBitrates,
+                    mEncParamList1, mEncParamList2, colorFormat));
         }
     }
 
@@ -337,8 +337,8 @@ public class CodecEncoderTest extends CodecEncoderTestBase {
                 colorFormat = findByteBufferColorFormat(mCodecName, mMime);
                 assertTrue("no valid color formats received", colorFormat != -1);
             }
-            assertTrue(nativeTestFlush(mCodecName, mInpPrefix + mActiveRawRes.mFileName,
-                    mMime, mBitrates, mEncParamList1, mEncParamList2, colorFormat));
+            assertTrue(nativeTestFlush(mCodecName, mActiveRawRes.mFileName, mMime, mBitrates,
+                    mEncParamList1, mEncParamList2, colorFormat));
         }
     }
 
@@ -478,8 +478,8 @@ public class CodecEncoderTest extends CodecEncoderTestBase {
                 colorFormat = findByteBufferColorFormat(mCodecName, mMime);
                 assertTrue("no valid color formats received", colorFormat != -1);
             }
-            assertTrue(nativeTestReconfigure(mCodecName, mInpPrefix + mActiveRawRes.mFileName,
-                    mMime, mBitrates, mEncParamList1, mEncParamList2, colorFormat));
+            assertTrue(nativeTestReconfigure(mCodecName, mActiveRawRes.mFileName, mMime, mBitrates,
+                    mEncParamList1, mEncParamList2, colorFormat));
         }
     }
 
@@ -630,8 +630,8 @@ public class CodecEncoderTest extends CodecEncoderTestBase {
                 colorFormat = findByteBufferColorFormat(mCodecName, mMime);
                 assertTrue("no valid color formats received", colorFormat != -1);
             }
-            assertTrue(nativeTestSetForceSyncFrame(mCodecName, mInpPrefix + mActiveRawRes.mFileName,
-                    mMime, mBitrates, mEncParamList1, mEncParamList2, colorFormat));
+            assertTrue(nativeTestSetForceSyncFrame(mCodecName, mActiveRawRes.mFileName, mMime,
+                    mBitrates, mEncParamList1, mEncParamList2, colorFormat));
         }
     }
 
@@ -723,8 +723,8 @@ public class CodecEncoderTest extends CodecEncoderTestBase {
                 colorFormat = findByteBufferColorFormat(mCodecName, mMime);
                 assertTrue("no valid color formats received", colorFormat != -1);
             }
-            assertTrue(nativeTestAdaptiveBitRate(mCodecName, mInpPrefix + mActiveRawRes.mFileName,
-                    mMime, mBitrates, mEncParamList1, mEncParamList2, colorFormat));
+            assertTrue(nativeTestAdaptiveBitRate(mCodecName, mActiveRawRes.mFileName, mMime,
+                    mBitrates, mEncParamList1, mEncParamList2, colorFormat));
         }
     }
 }

@@ -1708,13 +1708,9 @@ class CodecDecoderTestBase extends CodecTestBase {
     }
 
     MediaFormat setUpSource(String srcFile) throws IOException {
-        return setUpSource(mInpPrefix, srcFile);
-    }
-
-    MediaFormat setUpSource(String prefix, String srcFile) throws IOException {
-        Preconditions.assertTestFileExists(prefix + srcFile);
+        Preconditions.assertTestFileExists(srcFile);
         mExtractor = new MediaExtractor();
-        mExtractor.setDataSource(prefix + srcFile);
+        mExtractor.setDataSource(srcFile);
         for (int trackID = 0; trackID < mExtractor.getTrackCount(); trackID++) {
             MediaFormat format = mExtractor.getTrackFormat(trackID);
             if (mMime.equalsIgnoreCase(format.getString(MediaFormat.KEY_MIME))) {
@@ -1974,21 +1970,17 @@ class CodecDecoderTestBase extends CodecTestBase {
         return metrics;
     }
 
-    void validateColorAspects(String decoder, String parent, String name, int range, int standard,
-            int transfer, boolean ignoreColorBox)
+    void validateColorAspects(int range, int standard, int transfer, boolean ignoreColorBox)
             throws IOException, InterruptedException {
+        Preconditions.assertTestFileExists(mTestFile);
         mOutputBuff = new OutputManager();
-        MediaFormat format = setUpSource(parent, name);
+        MediaFormat format = setUpSource(mTestFile);
         if (ignoreColorBox) {
             format.removeKey(MediaFormat.KEY_COLOR_RANGE);
             format.removeKey(MediaFormat.KEY_COLOR_STANDARD);
             format.removeKey(MediaFormat.KEY_COLOR_TRANSFER);
         }
-        if (decoder == null) {
-            MediaCodecList codecList = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
-            decoder = codecList.findDecoderForFormat(format);
-        }
-        mCodec = MediaCodec.createByCodecName(decoder);
+        mCodec = MediaCodec.createByCodecName(mCodecName);
         configureCodec(format, true, true, false);
         mCodec.start();
         doWork(1);
@@ -2007,14 +1999,14 @@ class CodecEncoderTestBase extends CodecTestBase {
     // files are in WorkDir.getMediaDirString();
     protected static final RawResource INPUT_VIDEO_FILE =
             new RawResource.Builder()
-                    .setFileName("bbb_cif_yuv420p_30fps.yuv", false)
+                    .setFileName(mInpPrefix + "bbb_cif_yuv420p_30fps.yuv", false)
                     .setDimension(352, 288)
                     .setBytesPerSample(1)
                     .setColorFormat(ImageFormat.YUV_420_888)
                     .build();
     protected static final RawResource INPUT_VIDEO_FILE_HBD =
             new RawResource.Builder()
-                    .setFileName("cosmat_cif_24fps_yuv420p16le.yuv", false)
+                    .setFileName(mInpPrefix + "cosmat_cif_24fps_yuv420p16le.yuv", false)
                     .setDimension(352, 288)
                     .setBytesPerSample(2)
                     .setColorFormat(ImageFormat.YCBCR_P010)
@@ -2028,7 +2020,7 @@ class CodecEncoderTestBase extends CodecTestBase {
     the resource file to be of testSampleRate and testChannelCount. */
     protected static final RawResource INPUT_AUDIO_FILE =
             new RawResource.Builder()
-                    .setFileName("bbb_2ch_44kHz_s16le.raw", true)
+                    .setFileName(mInpPrefix + "bbb_2ch_44kHz_s16le.raw", true)
                     .setSampleRate(44100)
                     .setChannelCount(2)
                     .setBytesPerSample(2)
@@ -2036,7 +2028,7 @@ class CodecEncoderTestBase extends CodecTestBase {
                     .build();
     protected static final RawResource INPUT_AUDIO_FILE_HBD =
             new RawResource.Builder()
-                    .setFileName("audio/sd_2ch_48kHz_f32le.raw", true)
+                    .setFileName(mInpPrefix + "audio/sd_2ch_48kHz_f32le.raw", true)
                     .setSampleRate(48000)
                     .setChannelCount(2)
                     .setBytesPerSample(4)
@@ -2148,8 +2140,7 @@ class CodecEncoderTestBase extends CodecTestBase {
         mNumBytesSubmitted = 0;
     }
 
-    void setUpSource(String srcFile) throws IOException {
-        String inpPath = mInpPrefix + srcFile;
+    void setUpSource(String inpPath) throws IOException {
         Preconditions.assertTestFileExists(inpPath);
         try (FileInputStream fInp = new FileInputStream(inpPath)) {
             int size = (int) new File(inpPath).length();
@@ -2498,11 +2489,7 @@ class HDRDecoderTestBase extends CodecDecoderTestBase {
                     mProfileHdr10Map.get(mMime));
         }
 
-        File fObj = new File(mTestFile);
-        String parent = fObj.getParent();
-        if (parent != null) parent += File.separator;
-        else parent = mInpPrefix;
-        Preconditions.assertTestFileExists(parent + fObj.getName());
+        Preconditions.assertTestFileExists(mTestFile);
         // For decoders, if you intend to supply hdr10+ info using external means like json, make
         // sure that info that is being supplied is in sync with SEI info
         if (mHdrDynamicInfoStream != null && mHdrDynamicInfoContainer != null) {
@@ -2516,7 +2503,7 @@ class HDRDecoderTestBase extends CodecDecoderTestBase {
             }
         }
         mOutputBuff = new OutputManager();
-        MediaFormat format = setUpSource(parent, fObj.getName());
+        MediaFormat format = setUpSource(mTestFile);
         if (mHdrDynamicInfoStream != null || mHdrDynamicInfoContainer != null) {
             format.setInteger(MediaFormat.KEY_PROFILE, mProfileHdr10PlusMap.get(mMime)[0]);
         } else {
