@@ -188,6 +188,13 @@ public class FocusHandlingTest extends EndToEndImeTestBase {
         Assume.assumeFalse(isPreventImeStartup());
         try (MockImeSession imeSession = createTestImeSession()) {
             final ImeEventStream stream = imeSession.openEventStream();
+
+            // "onStartInput" with a fallback InputConnection for StateInitializeActivity.
+            // "debug.imm.optimize_noneditable_views" doesn't prevent startInput when it has
+            // WINDOW_GAINED_FOCUS flag.
+            expectEvent(stream, event -> "onStartInput".equals(event.getEventName())
+                    && event.getEnterState().hasFallbackInputConnection(), EXPECT_TIMEOUT);
+
             final AtomicReference<TextView> viewRef1 = new AtomicReference<>();
             final AtomicReference<TextView> viewRef2 = new AtomicReference<>();
             final BlockingQueue<KeyEvent> keyEvents = new LinkedBlockingQueue<>();
@@ -217,22 +224,28 @@ public class FocusHandlingTest extends EndToEndImeTestBase {
                 return layout;
             });
 
-            // Skip events relating to showStateInitializeActivity()
-            stream.skipAll();
+            // "onStartInput" with a fallback InputConnection for TestActivity.
+            // "debug.imm.optimize_noneditable_views" doesn't prevent startInput when it has
+            // WINDOW_GAINED_FOCUS flag.
+            expectEvent(stream, event -> "onStartInput".equals(event.getEventName())
+                    && event.getEnterState().hasFallbackInputConnection(), EXPECT_TIMEOUT);
 
-            // Since we are focusing a view on a new window, we do expect an onStartInput
+            // The focus change below still triggers "onStartInput".
+            // "debug.imm.optimize_noneditable_views" doesn't prevent startInput when
+            // StartInputReason is different.
             testActivity.runOnUiThread(() -> viewRef1.get().requestFocus());
-            expectEvent(stream, event -> "onStartInput".equals(event.getEventName()),
-                    EXPECT_TIMEOUT);
-            // Switch to view2, which should now be considered equivalent
+            expectEvent(stream, event -> "onStartInput".equals(event.getEventName())
+                    && event.getEnterState().hasFallbackInputConnection(), EXPECT_TIMEOUT);
+
+            // If optimization is enabled, we do not expect another call to "onStartInput" after
+            // a view focus change.
             testActivity.runOnUiThread(() -> viewRef2.get().requestFocus());
-            // If optimization is enabled, we do not expect another call to onStartInput
             if (SystemProperties.getBoolean("debug.imm.optimize_noneditable_views", true)) {
-                notExpectEvent(stream, event -> "onStartInput".equals(event.getEventName()),
-                        NOT_EXPECT_TIMEOUT);
+                notExpectEvent(stream, event -> "onStartInput".equals(event.getEventName())
+                        && event.getEnterState().hasFallbackInputConnection(), NOT_EXPECT_TIMEOUT);
             } else {
-                expectEvent(stream, event -> "onStartInput".equals(event.getEventName()),
-                        EXPECT_TIMEOUT);
+                expectEvent(stream, event -> "onStartInput".equals(event.getEventName())
+                        && event.getEnterState().hasFallbackInputConnection(), EXPECT_TIMEOUT);
             }
 
             // Force show the IME and expect it to come up
