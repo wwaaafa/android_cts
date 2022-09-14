@@ -18,8 +18,8 @@ package android.hardware.input.cts.tests;
 
 import static org.junit.Assert.assertThrows;
 
+import android.hardware.input.VirtualDpad;
 import android.hardware.input.VirtualKeyEvent;
-import android.hardware.input.VirtualKeyboard;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 
@@ -33,35 +33,45 @@ import java.util.Arrays;
 
 @SmallTest
 @RunWith(AndroidJUnit4.class)
-public class VirtualKeyboardTest extends VirtualDeviceTestCase {
+public class VirtualDpadTest extends VirtualDeviceTestCase {
 
-    private static final String DEVICE_NAME = "CtsVirtualKeyboardTestDevice";
-    private VirtualKeyboard mVirtualKeyboard;
+    private static final String DEVICE_NAME = "CtsVirtualDpadTestDevice";
+    private VirtualDpad mVirtualDpad;
 
     @Override
     void onSetUpVirtualInputDevice() {
-        mVirtualKeyboard =
-                mVirtualDevice.createVirtualKeyboard(
+        mVirtualDpad =
+                mVirtualDevice.createVirtualDpad(
                         mVirtualDisplay, DEVICE_NAME, /* vendorId= */ 1, /* productId= */ 1);
     }
 
     @Override
     void onTearDownVirtualInputDevice() {
-        if (mVirtualKeyboard != null) {
-            mVirtualKeyboard.close();
+        if (mVirtualDpad != null) {
+            mVirtualDpad.close();
         }
     }
 
     @Test
     public void sendKeyEvent() {
-        mVirtualKeyboard.sendKeyEvent(
+        mVirtualDpad.sendKeyEvent(
                 new VirtualKeyEvent.Builder()
-                        .setKeyCode(KeyEvent.KEYCODE_A)
+                        .setKeyCode(KeyEvent.KEYCODE_DPAD_UP)
                         .setAction(VirtualKeyEvent.ACTION_DOWN)
                         .build());
-        mVirtualKeyboard.sendKeyEvent(
+        mVirtualDpad.sendKeyEvent(
                 new VirtualKeyEvent.Builder()
-                        .setKeyCode(KeyEvent.KEYCODE_A)
+                        .setKeyCode(KeyEvent.KEYCODE_DPAD_UP)
+                        .setAction(VirtualKeyEvent.ACTION_UP)
+                        .build());
+        mVirtualDpad.sendKeyEvent(
+                new VirtualKeyEvent.Builder()
+                        .setKeyCode(KeyEvent.KEYCODE_DPAD_CENTER)
+                        .setAction(VirtualKeyEvent.ACTION_DOWN)
+                        .build());
+        mVirtualDpad.sendKeyEvent(
+                new VirtualKeyEvent.Builder()
+                        .setKeyCode(KeyEvent.KEYCODE_DPAD_CENTER)
                         .setAction(VirtualKeyEvent.ACTION_UP)
                         .build());
         verifyEvents(
@@ -70,24 +80,50 @@ public class VirtualKeyboardTest extends VirtualDeviceTestCase {
                                 /* downTime= */ 0,
                                 /* eventTime= */ 0,
                                 KeyEvent.ACTION_DOWN,
-                                KeyEvent.KEYCODE_A,
+                                KeyEvent.KEYCODE_DPAD_UP,
                                 /* repeat= */ 0,
                                 /* metaState= */ 0,
                                 /* deviceId= */ 0,
                                 /* scancode= */ 0,
                                 /* flags= */ 0,
-                                /* source= */ InputDevice.SOURCE_KEYBOARD),
+                                /* source= */ InputDevice.SOURCE_KEYBOARD
+                                        | InputDevice.SOURCE_DPAD),
                         new KeyEvent(
                                 /* downTime= */ 0,
                                 /* eventTime= */ 0,
                                 KeyEvent.ACTION_UP,
-                                KeyEvent.KEYCODE_A,
+                                KeyEvent.KEYCODE_DPAD_UP,
                                 /* repeat= */ 0,
                                 /* metaState= */ 0,
                                 /* deviceId= */ 0,
                                 /* scancode= */ 0,
                                 /* flags= */ 0,
-                                /* source= */ InputDevice.SOURCE_KEYBOARD)));
+                                /* source= */ InputDevice.SOURCE_KEYBOARD
+                                        | InputDevice.SOURCE_DPAD),
+                        new KeyEvent(
+                                /* downTime= */ 0,
+                                /* eventTime= */ 0,
+                                KeyEvent.ACTION_DOWN,
+                                KeyEvent.KEYCODE_DPAD_CENTER,
+                                /* repeat= */ 0,
+                                /* metaState= */ 0,
+                                /* deviceId= */ 0,
+                                /* scancode= */ 0,
+                                /* flags= */ 0,
+                                /* source= */ InputDevice.SOURCE_KEYBOARD
+                                        | InputDevice.SOURCE_DPAD),
+                        new KeyEvent(
+                                /* downTime= */ 0,
+                                /* eventTime= */ 0,
+                                KeyEvent.ACTION_UP,
+                                KeyEvent.KEYCODE_DPAD_CENTER,
+                                /* repeat= */ 0,
+                                /* metaState= */ 0,
+                                /* deviceId= */ 0,
+                                /* scancode= */ 0,
+                                /* flags= */ 0,
+                                /* source= */ InputDevice.SOURCE_KEYBOARD
+                                        | InputDevice.SOURCE_DPAD)));
     }
 
     @Test
@@ -95,9 +131,9 @@ public class VirtualKeyboardTest extends VirtualDeviceTestCase {
         assertThrows(
                 IllegalArgumentException.class,
                 () ->
-                        mVirtualKeyboard.sendKeyEvent(
+                        mVirtualDpad.sendKeyEvent(
                                 new VirtualKeyEvent.Builder()
-                                        .setKeyCode(KeyEvent.KEYCODE_DPAD_CENTER)
+                                        .setKeyCode(KeyEvent.KEYCODE_Q)
                                         .setAction(VirtualKeyEvent.ACTION_DOWN)
                                         .build()));
     }
