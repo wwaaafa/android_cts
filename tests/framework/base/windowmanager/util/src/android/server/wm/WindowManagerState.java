@@ -764,6 +764,10 @@ public class WindowManagerState {
         return false;
     }
 
+    public boolean isTaskDisplayAreaIgnoringOrientationRequest(ComponentName activityName) {
+        return getTaskDisplayArea(activityName).isIgnoringOrientationRequest();
+    }
+
     public boolean containsStartedActivities() {
         for (Task rootTask : mRootTasks) {
             final Activity activity = rootTask.getActivity(
@@ -1868,6 +1872,7 @@ public class WindowManagerState {
         private final boolean mIsRootDisplayArea;
         private final int mFeatureId;
         private final boolean mIsOrganized;
+        private final boolean mIsIgnoringOrientationRequest;
         private ArrayList<Activity> mActivities;
         private final ArrayList<WindowState> mWindows = new ArrayList<>();
 
@@ -1877,6 +1882,7 @@ public class WindowManagerState {
             mIsRootDisplayArea = proto.isRootDisplayArea;
             mFeatureId = proto.featureId;
             mIsOrganized = proto.isOrganized;
+            mIsIgnoringOrientationRequest = proto.isIgnoringOrientationRequest;
             if (mIsTaskDisplayArea) {
                 mActivities = new ArrayList<>();
                 collectDescendantsOfType(Activity.class, this, mActivities);
@@ -1902,6 +1908,10 @@ public class WindowManagerState {
 
         public Rect getAppBounds() {
             return mFullConfiguration.windowConfiguration.getAppBounds();
+        }
+
+        public boolean isIgnoringOrientationRequest() {
+            return mIsIgnoringOrientationRequest;
         }
 
         @Override
