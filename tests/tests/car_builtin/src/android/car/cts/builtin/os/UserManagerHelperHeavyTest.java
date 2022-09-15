@@ -89,7 +89,7 @@ public final class UserManagerHelperHeavyTest extends AbstractCarBuiltinTestCase
     @EnsureHasPermission(CREATE_USERS) // needed to query user properties
     @ApiTest(apis = {
             "android.car.builtin.os.UserManagerHelper#isEphemeralUser(UserManager, UserHandle)",
-            "android.car.builtin.os.UserManagerHelper#isSecondaryUser(UserManager, UserHandle)",
+            "android.car.builtin.os.UserManagerHelper#isFullUser(UserManager, UserHandle)",
             "android.car.builtin.os.UserManagerHelper#isGuestUser(UserManager, UserHandle)",
             "android.car.builtin.os.UserManagerHelper#isEnabledUser(UserManager, UserHandle)",
             "android.car.builtin.os.UserManagerHelper#isPreCreatedUser(UserManager, UserHandle)",
@@ -100,7 +100,7 @@ public final class UserManagerHelperHeavyTest extends AbstractCarBuiltinTestCase
 
         assertThat(UserManagerHelper.isGuestUser(mUserManager, guestUser)).isTrue();
         assertThat(UserManagerHelper.isEphemeralUser(mUserManager, guestUser)).isTrue();
-        assertThat(UserManagerHelper.isSecondaryUser(mUserManager, guestUser)).isTrue();
+        assertThat(UserManagerHelper.isFullUser(mUserManager, guestUser)).isTrue();
         assertThat(UserManagerHelper.isEnabledUser(mUserManager, guestUser)).isTrue();
         assertThat(UserManagerHelper.isPreCreatedUser(mUserManager, guestUser)).isFalse();
 
@@ -117,7 +117,7 @@ public final class UserManagerHelperHeavyTest extends AbstractCarBuiltinTestCase
     @EnsureHasPermission(CREATE_USERS) // needed to query user properties
     @ApiTest(apis = {
             "android.car.builtin.os.UserManagerHelper#isEphemeralUser(UserManager, UserHandle)",
-            "android.car.builtin.os.UserManagerHelper#isSecondaryUser(UserManager, UserHandle)",
+            "android.car.builtin.os.UserManagerHelper#isFullUser(UserManager, UserHandle)",
             "android.car.builtin.os.UserManagerHelper#isGuestUser(UserManager, UserHandle)",
             "android.car.builtin.os.UserManagerHelper#isEnabledUser(UserManager, UserHandle)",
             "android.car.builtin.os.UserManagerHelper#isPreCreatedUser(UserManager, UserHandle)",
@@ -128,7 +128,7 @@ public final class UserManagerHelperHeavyTest extends AbstractCarBuiltinTestCase
 
         assertThat(UserManagerHelper.isEphemeralUser(mUserManager, fullUser)).isFalse();
         assertThat(UserManagerHelper.isGuestUser(mUserManager, fullUser)).isFalse();
-        assertThat(UserManagerHelper.isSecondaryUser(mUserManager, fullUser)).isTrue();
+        assertThat(UserManagerHelper.isFullUser(mUserManager, fullUser)).isTrue();
         assertThat(UserManagerHelper.isEnabledUser(mUserManager, fullUser)).isTrue();
         assertThat(UserManagerHelper.isPreCreatedUser(mUserManager, fullUser)).isFalse();
 
@@ -145,7 +145,7 @@ public final class UserManagerHelperHeavyTest extends AbstractCarBuiltinTestCase
     @EnsureHasPermission(CREATE_USERS) // needed to query user properties
     @ApiTest(apis = {
             "android.car.builtin.os.UserManagerHelper#isEphemeralUser(UserManager, UserHandle)",
-            "android.car.builtin.os.UserManagerHelper#isSecondaryUser(UserManager, UserHandle)",
+            "android.car.builtin.os.UserManagerHelper#isFullUser(UserManager, UserHandle)",
             "android.car.builtin.os.UserManagerHelper#isGuestUser(UserManager, UserHandle)",
             "android.car.builtin.os.UserManagerHelper#isEnabledUser(UserManager, UserHandle)",
             "android.car.builtin.os.UserManagerHelper#isPreCreatedUser(UserManager, UserHandle)",
@@ -156,7 +156,7 @@ public final class UserManagerHelperHeavyTest extends AbstractCarBuiltinTestCase
 
         assertThat(UserManagerHelper.isEphemeralUser(mUserManager, preCreateUser)).isFalse();
         assertThat(UserManagerHelper.isGuestUser(mUserManager, preCreateUser)).isFalse();
-        assertThat(UserManagerHelper.isSecondaryUser(mUserManager, preCreateUser)).isTrue();
+        assertThat(UserManagerHelper.isFullUser(mUserManager, preCreateUser)).isTrue();
         assertThat(UserManagerHelper.isEnabledUser(mUserManager, preCreateUser)).isTrue();
         assertThat(UserManagerHelper.isPreCreatedUser(mUserManager, preCreateUser)).isTrue();
 
@@ -173,7 +173,7 @@ public final class UserManagerHelperHeavyTest extends AbstractCarBuiltinTestCase
     @EnsureHasPermission(CREATE_USERS) // needed to query user properties
     @ApiTest(apis = {
             "android.car.builtin.os.UserManagerHelper#isEphemeralUser(UserManager, UserHandle)",
-            "android.car.builtin.os.UserManagerHelper#isSecondaryUser(UserManager, UserHandle)",
+            "android.car.builtin.os.UserManagerHelper#isFullUser(UserManager, UserHandle)",
             "android.car.builtin.os.UserManagerHelper#isGuestUser(UserManager, UserHandle)",
             "android.car.builtin.os.UserManagerHelper#isEnabledUser(UserManager, UserHandle)",
             "android.car.builtin.os.UserManagerHelper#isPreCreatedUser(UserManager, UserHandle)",
@@ -186,7 +186,7 @@ public final class UserManagerHelperHeavyTest extends AbstractCarBuiltinTestCase
         assertThat(UserManagerHelper.isEphemeralUser(mUserManager, preCreateUser)).isFalse();
 
         assertThat(UserManagerHelper.isGuestUser(mUserManager, preCreateUser)).isTrue();
-        assertThat(UserManagerHelper.isSecondaryUser(mUserManager, preCreateUser)).isTrue();
+        assertThat(UserManagerHelper.isFullUser(mUserManager, preCreateUser)).isTrue();
         assertThat(UserManagerHelper.isEnabledUser(mUserManager, preCreateUser)).isTrue();
         assertThat(UserManagerHelper.isPreCreatedUser(mUserManager, preCreateUser)).isTrue();
 
