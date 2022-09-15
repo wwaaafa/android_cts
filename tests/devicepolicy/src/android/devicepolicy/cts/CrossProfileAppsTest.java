@@ -18,7 +18,6 @@ package android.devicepolicy.cts;
 
 import static android.provider.Settings.ACTION_MANAGE_CROSS_PROFILE_ACCESS;
 
-import static com.android.bedstead.harrier.OptionalBoolean.TRUE;
 import static com.android.bedstead.harrier.UserType.ADDITIONAL_USER;
 import static com.android.bedstead.harrier.UserType.INITIAL_USER;
 import static com.android.bedstead.harrier.UserType.WORK_PROFILE;
@@ -27,6 +26,7 @@ import static com.android.bedstead.nene.permissions.CommonPermissions.INTERACT_A
 import static com.android.bedstead.nene.permissions.CommonPermissions.INTERACT_ACROSS_USERS;
 import static com.android.bedstead.nene.permissions.CommonPermissions.INTERACT_ACROSS_USERS_FULL;
 import static com.android.bedstead.nene.permissions.CommonPermissions.START_CROSS_PROFILE_ACTIVITIES;
+import static com.android.bedstead.nene.types.OptionalBoolean.TRUE;
 import static com.android.eventlib.truth.EventLogsSubject.assertThat;
 
 import static com.google.common.truth.Truth.assertThat;

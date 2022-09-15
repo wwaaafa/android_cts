@@ -16,11 +16,11 @@
 
 package com.android.bedstead.harrier.annotations;
 
-import static com.android.bedstead.harrier.OptionalBoolean.TRUE;
 import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.EARLY;
+import static com.android.bedstead.nene.types.OptionalBoolean.TRUE;
 
-import com.android.bedstead.harrier.OptionalBoolean;
 import com.android.bedstead.harrier.annotations.meta.RequiresBedsteadJUnit4;
+import com.android.bedstead.nene.types.OptionalBoolean;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -45,7 +45,9 @@ public @interface RequireRunOnInitialUser {
     // the relevant annotation to ensure a test is run on the correct user for the given device
 
     /**
-     * Should we ensure that we are switched to the given user
+     * Should we ensure that we are switched to the given user.
+     *
+     * <p>ANY will be treated as TRUE if no other annotation has forced a switch.
      */
     OptionalBoolean switchedToUser() default TRUE;
 

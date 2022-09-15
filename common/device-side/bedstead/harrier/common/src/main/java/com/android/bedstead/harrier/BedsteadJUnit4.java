@@ -50,6 +50,7 @@ import com.android.bedstead.harrier.annotations.parameterized.IncludeNone;
 import com.android.bedstead.harrier.exceptions.RestartTestException;
 import com.android.bedstead.nene.annotations.Nullable;
 import com.android.bedstead.nene.exceptions.NeneException;
+import com.android.bedstead.nene.types.OptionalBoolean;
 
 import com.google.auto.value.AutoAnnotation;
 import com.google.common.collect.ImmutableMap;
@@ -104,14 +105,23 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
         return new AutoAnnotation_BedsteadJUnit4_requireRunOnSystemUser();
     }
 
-    @AutoAnnotation
     private static RequireRunOnPrimaryUser requireRunOnPrimaryUser() {
-        return new AutoAnnotation_BedsteadJUnit4_requireRunOnPrimaryUser();
+        return requireRunOnPrimaryUser(OptionalBoolean.ANY);
     }
 
     @AutoAnnotation
+    private static RequireRunOnPrimaryUser requireRunOnPrimaryUser(OptionalBoolean switchedToUser) {
+        return new AutoAnnotation_BedsteadJUnit4_requireRunOnPrimaryUser(switchedToUser);
+    }
+
     private static RequireRunOnSecondaryUser requireRunOnSecondaryUser() {
-        return new AutoAnnotation_BedsteadJUnit4_requireRunOnSecondaryUser();
+        return requireRunOnSecondaryUser(OptionalBoolean.ANY);
+    }
+
+    @AutoAnnotation
+    private static RequireRunOnSecondaryUser requireRunOnSecondaryUser(
+            OptionalBoolean switchedToUser) {
+        return new AutoAnnotation_BedsteadJUnit4_requireRunOnSecondaryUser(switchedToUser);
     }
 
     @AutoAnnotation
@@ -130,8 +140,12 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
     }
 
     @AutoAnnotation
-    private static RequireRunOnInitialUser requireRunOnInitialUser() {
-        return new AutoAnnotation_BedsteadJUnit4_requireRunOnInitialUser();
+    static RequireRunOnInitialUser requireRunOnInitialUser(OptionalBoolean switchedToUser) {
+        return new AutoAnnotation_BedsteadJUnit4_requireRunOnInitialUser(switchedToUser);
+    }
+
+    static RequireRunOnInitialUser requireRunOnInitialUser() {
+        return requireRunOnInitialUser(OptionalBoolean.TRUE);
     }
 
     @AutoAnnotation
@@ -260,25 +274,49 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
 
     private HarrierRule mHarrierRule;
 
-    private static final ImmutableMap<Class<? extends Annotation>, BiFunction<HarrierRule, Annotation, Stream<Annotation>>>
-            ANNOTATION_REPLACEMENTS = ImmutableMap.of(
-                    RequireRunOnInitialUser.class, (harrierRule, a) -> {
-                if (harrierRule.isHeadlessSystemUserMode()) {
-                    return Stream.of(ensureHasSecondaryUser(), requireRunOnSecondaryUser());
-                } else {
-                    return Stream.of(requireRunOnPrimaryUser());
-                }
-            }, RequireRunOnAdditionalUser.class, (harrierRule, a) -> {
-                if (harrierRule.isHeadlessSystemUserMode()) {
-                    return Stream.of(ensureHasSecondaryUser(), requireRunOnAdditionalUser());
-                } else {
-                    return Stream.of(requireRunOnSecondaryUser());
-                }
-            }
-    );
+    private static final ImmutableMap<
+                    Class<? extends Annotation>,
+                    BiFunction<HarrierRule, Annotation, Stream<Annotation>>>
+            ANNOTATION_REPLACEMENTS =
+                    ImmutableMap.of(
+                            RequireRunOnInitialUser.class,
+                            (harrierRule, a) -> {
+                                RequireRunOnInitialUser requireRunOnInitialUserAnnotation =
+                                        (RequireRunOnInitialUser) a;
 
-    private static List<Annotation> getReplacementAnnotations(
-            HarrierRule harrierRule, Annotation annotation,
+                                if (harrierRule.isHeadlessSystemUserMode()) {
+                                    return Stream.of(
+                                            a,
+                                            ensureHasSecondaryUser(),
+                                            requireRunOnSecondaryUser(
+                                                    requireRunOnInitialUserAnnotation
+                                                            .switchedToUser()));
+                                } else {
+                                    return Stream.of(
+                                            a,
+                                            requireRunOnPrimaryUser(
+                                                    requireRunOnInitialUserAnnotation
+                                                            .switchedToUser()));
+                                }
+                            },
+                            RequireRunOnAdditionalUser.class,
+                            (harrierRule, a) -> {
+                                RequireRunOnAdditionalUser requireRunOnAdditionalUserAnnotation =
+                                        (RequireRunOnAdditionalUser) a;
+                                if (harrierRule.isHeadlessSystemUserMode()) {
+                                    return Stream.of(ensureHasSecondaryUser(), a);
+                                } else {
+                                    return Stream.of(
+                                            a,
+                                            requireRunOnSecondaryUser(
+                                                    requireRunOnAdditionalUserAnnotation
+                                                            .switchedToUser()));
+                                }
+                            });
+
+    static List<Annotation> getReplacementAnnotations(
+            HarrierRule harrierRule,
+            Annotation annotation,
             @Nullable Annotation parameterizedAnnotation) {
         BiFunction<HarrierRule, Annotation, Stream<Annotation>> specialReplaceFunction =
                 ANNOTATION_REPLACEMENTS.get(annotation.annotationType());
@@ -846,7 +884,7 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
         }
     }
 
-    private HarrierRule getHarrierRule() {
+    HarrierRule getHarrierRule() {
         if (mHarrierRule == null) {
             classRules();
         }
