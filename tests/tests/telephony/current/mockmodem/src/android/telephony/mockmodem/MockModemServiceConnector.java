@@ -248,6 +248,7 @@ class MockModemServiceConnector {
         if (mMockModemServiceConn != null) {
             mInstrumentation.getContext().unbindService(mMockModemServiceConn);
             mMockModemService = null;
+            mMockModemServiceConn = null;
         }
 
         return isComplete;
