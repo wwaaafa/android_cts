@@ -14,32 +14,23 @@
  * limitations under the License.
  */
 
-package com.android.bedstead.harrier.annotations.parameterized;
+package com.android.bedstead.harrier.annotations;
 
-import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.EARLY;
+import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.MIDDLE;
 
-import com.android.bedstead.harrier.annotations.AnnotationRunPrecedence;
-import com.android.bedstead.harrier.annotations.RequireRunOnAdditionalUser;
-import com.android.bedstead.harrier.annotations.enterprise.EnsureHasDeviceOwner;
-import com.android.bedstead.harrier.annotations.enterprise.EnsureHasProfileOwner;
-import com.android.bedstead.harrier.annotations.meta.ParameterizedAnnotation;
+import com.android.bedstead.harrier.annotations.meta.RepeatingAnnotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * Parameterize a test so that it runs on an unaffiliated secondary user on a device with a Device
- * Owner - with the profile owner set as primary.
- */
-@Target({ElementType.METHOD, ElementType.TYPE})
+@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@ParameterizedAnnotation
-@RequireRunOnAdditionalUser
-@EnsureHasDeviceOwner(affiliationIds = "affiliated")
-@EnsureHasProfileOwner(affiliationIds = "not-affiliated", isPrimary = true)
-public @interface IncludeRunOnUnaffiliatedProfileOwnerSecondaryUser {
+@RepeatingAnnotation
+public @interface EnsureCanAddUserGroup {
+    EnsureCanAddUser[] value();
+
     /**
      * Weight sets the order that annotations will be resolved.
      *
@@ -50,5 +41,5 @@ public @interface IncludeRunOnUnaffiliatedProfileOwnerSecondaryUser {
      *
      * <p>Weight can be set to a {@link AnnotationRunPrecedence} constant, or to any {@link int}.
      */
-    int weight() default EARLY;
+    int weight() default MIDDLE;
 }

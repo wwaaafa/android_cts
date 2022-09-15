@@ -16,10 +16,10 @@
 
 package com.android.bedstead.harrier.annotations;
 
-import static com.android.bedstead.harrier.OptionalBoolean.ANY;
 import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.EARLY;
+import static com.android.bedstead.nene.types.OptionalBoolean.ANY;
 
-import com.android.bedstead.harrier.OptionalBoolean;
+import com.android.bedstead.nene.types.OptionalBoolean;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

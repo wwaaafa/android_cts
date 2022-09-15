@@ -22,8 +22,8 @@ import static android.Manifest.permission.INTERACT_ACROSS_USERS;
 import static android.content.pm.PackageManager.FEATURE_MANAGED_USERS;
 import static android.multiuser.cts.PermissionHelper.adoptShellPermissionIdentity;
 
-import static com.android.bedstead.harrier.OptionalBoolean.FALSE;
-import static com.android.bedstead.harrier.OptionalBoolean.TRUE;
+import static com.android.bedstead.nene.types.OptionalBoolean.FALSE;
+import static com.android.bedstead.nene.types.OptionalBoolean.TRUE;
 
 import static com.google.common.truth.Truth.assertWithMessage;
 
