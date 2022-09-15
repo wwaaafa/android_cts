@@ -975,6 +975,7 @@ class AppOpsLoggingTest {
     fun sendBroadcastToProtectedReceiver() {
         context.createAttributionContext(TEST_ATTRIBUTION_TAG)
                 .sendBroadcast(Intent(PROTECTED_ACTION).setPackage(myPackage))
+        runShellCommand("am wait-for-broadcast-barrier")
 
         eventually {
             assertThat(asyncNoted[0].op).isEqualTo(OPSTR_READ_CONTACTS)
