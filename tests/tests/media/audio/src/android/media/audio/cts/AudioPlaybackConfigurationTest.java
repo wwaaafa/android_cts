@@ -61,6 +61,8 @@ import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 @NonMediaMainlineTest
 public class AudioPlaybackConfigurationTest extends CtsAndroidTestCase {
@@ -130,6 +132,11 @@ public class AudioPlaybackConfigurationTest extends CtsAndroidTestCase {
     // create an AudioPlaybackConfiguration directly, we first need to play something to get one.
     public void testParcelableWriteToParcel() throws Exception {
         if (!isValidPlatform("testParcelableWriteToParcel")) return;
+        if (hasAudioSilentProperty()) {
+            // No reasons to test since the started MediaPlayer will be muted and inactive
+            Log.w(TAG, "Skipping testParcelableWriteToParcel");
+            return;
+        }
 
         // create a player, make it play so we can get an AudioPlaybackConfiguration instance
         AudioManager am = new AudioManager(getContext());
@@ -173,6 +180,11 @@ public class AudioPlaybackConfigurationTest extends CtsAndroidTestCase {
 
     public void testGetterMediaPlayer() throws Exception {
         if (!isValidPlatform("testGetterMediaPlayer")) return;
+        if (hasAudioSilentProperty()) {
+            // No reasons to test since the started MediaPlayer will be muted and inactive
+            Log.w(TAG, "Skipping testGetterMediaPlayer");
+            return;
+        }
 
         AudioManager am = new AudioManager(getContext());
         assertNotNull("Could not create AudioManager", am);
@@ -198,7 +210,6 @@ public class AudioPlaybackConfigurationTest extends CtsAndroidTestCase {
                 nbActivePlayersBeforeStart + 1 /*expected*/,
                 configs.size());
         assertTrue("Active player, attributes not found", hasAttr(configs, aa));
-
         // verify "privileged" fields aren't available through reflection
         final AudioPlaybackConfiguration config = configs.get(0);
         final Class<?> confClass = config.getClass();
@@ -458,14 +469,32 @@ public class AudioPlaybackConfigurationTest extends CtsAndroidTestCase {
 
     @ApiTest(apis = {"android.media.AudioManager#getActivePlaybackConfigurations",
             "android.media.AudioManager.AudioPlaybackCallback#onPlaybackConfigChanged"})
-    public void testMuteFromAppOpsNotification() throws Exception {
-        if (!isValidPlatform("testMuteFromAppOpsNotification")) return;
+    public void testAudioTrackMuteFromAppOpsNotification() throws Exception {
+        if (!isValidPlatform("testAudioTrackMuteFromAppOpsNotification")) return;
         if (hasAudioSilentProperty()) {
-            Log.w(TAG, "Skipping testMuteFromAppOpsNotification");
+            Log.w(TAG, "Skipping testAudioTrackMuteFromAppOpsNotification");
             return;
         }
 
-        verifyMuteUnmuteNotifications(
+        initializeAudioTrack();
+        checkMuteFromAppOpsNotification(new MyPlayer(mAt));
+    }
+
+    @ApiTest(apis = {"android.media.AudioManager#getActivePlaybackConfigurations",
+            "android.media.AudioManager.AudioPlaybackCallback#onPlaybackConfigChanged"})
+    public void testMediaPlayerMuteFromAppOpsNotification() throws Exception {
+        if (!isValidPlatform("testMediaPlayerMuteFromAppOpsNotification")) return;
+        if (hasAudioSilentProperty()) {
+            Log.w(TAG, "Skipping testMediaPlayerMuteFromAppOpsNotification");
+            return;
+        }
+
+        initializeMediaPlayer();
+        checkMuteFromAppOpsNotification(new MyPlayer(mMp));
+    }
+
+    private void checkMuteFromAppOpsNotification(MyPlayer player) throws Exception {
+        verifyMuteUnmuteNotifications(/*start=*/player.mPlay,
                 /*mute=*/() -> {
                     try {
                         setOpMode(getContext().getPackageName(), OPSTR_PLAY_AUDIO, MODE_IGNORED);
@@ -488,17 +517,35 @@ public class AudioPlaybackConfigurationTest extends CtsAndroidTestCase {
 
     @ApiTest(apis = {"android.media.AudioManager#getActivePlaybackConfigurations",
             "android.media.AudioManager.AudioPlaybackCallback#onPlaybackConfigChanged"})
-    public void testMuteFromStreamVolumeNotification() throws Exception {
-        if (!isValidPlatform("testMuteFromStreamVolumeNotification")) return;
+    public void testAudioTrackMuteFromStreamVolumeNotification() throws Exception {
+        if (!isValidPlatform("testAudioTrackMuteFromStreamVolumeNotification")) return;
         if (hasAudioSilentProperty()) {
-            Log.w(TAG, "Skipping testMuteFromStreamVolumeNotification");
+            Log.w(TAG, "Skipping testAudioTrackMuteFromStreamVolumeNotification");
             return;
         }
 
+        initializeAudioTrack();
+        checkMuteFromStreamVolumeNotification(new MyPlayer(mAt));
+    }
+
+    @ApiTest(apis = {"android.media.AudioManager#getActivePlaybackConfigurations",
+            "android.media.AudioManager.AudioPlaybackCallback#onPlaybackConfigChanged"})
+    public void testMediaPlayerMuteFromStreamVolumeNotification() throws Exception {
+        if (!isValidPlatform("testMediaPlayerMuteFromStreamVolumeNotification")) return;
+        if (hasAudioSilentProperty()) {
+            Log.w(TAG, "Skipping testMediaPlayerMuteFromStreamVolumeNotification");
+            return;
+        }
+
+        initializeMediaPlayer();
+        checkMuteFromStreamVolumeNotification(new MyPlayer(mMp));
+    }
+
+    private void checkMuteFromStreamVolumeNotification(MyPlayer player) throws Exception {
         AudioManager am = new AudioManager(getContext());
         assertNotNull("Could not create AudioManager", am);
 
-        verifyMuteUnmuteNotifications(
+        verifyMuteUnmuteNotifications(/*start=*/player.mPlay,
                 /*mute=*/
                 () -> am.adjustStreamVolume(STREAM_NOTIFICATION, ADJUST_MUTE, /* flags= */0),
                 /*unmute=*/
@@ -507,29 +554,67 @@ public class AudioPlaybackConfigurationTest extends CtsAndroidTestCase {
 
     @ApiTest(apis = {"android.media.AudioManager#getActivePlaybackConfigurations",
             "android.media.AudioManager.AudioPlaybackCallback#onPlaybackConfigChanged"})
-    public void testMuteFromClientVolumeNotification() throws Exception {
-        if (!isValidPlatform("testMuteFromClientVolumeNotification")) return;
+    public void testAudioTrackMuteFromClientVolumeNotification() throws Exception {
+        if (!isValidPlatform("testAudioTrackMuteFromClientVolumeNotification")) return;
         if (hasAudioSilentProperty()) {
-            Log.w(TAG, "Skipping testMuteFromClientVolumeNotification");
+            Log.w(TAG, "Skipping testAudioTrackMuteFromClientVolumeNotification");
             return;
         }
 
-        verifyMuteUnmuteNotifications(/*mute=*/() -> mAt.setVolume(0.f),
-                /*unmute=*/() -> mAt.setVolume(1.f));
+        initializeAudioTrack();
+        checkMuteFromClientVolumeNotification(new MyPlayer(mAt));
+    }
+
+
+    @ApiTest(apis = {"android.media.AudioManager#getActivePlaybackConfigurations",
+            "android.media.AudioManager.AudioPlaybackCallback#onPlaybackConfigChanged"})
+    public void testMediaPlayerMuteFromClientVolumeNotification() throws Exception {
+        if (!isValidPlatform("testMediaPlayerMuteFromClientVolumeNotification")) return;
+        if (hasAudioSilentProperty()) {
+            Log.w(TAG, "Skipping testMediaPlayerMuteFromClientVolumeNotification");
+            return;
+        }
+
+        initializeMediaPlayer();
+        checkMuteFromClientVolumeNotification(new MyPlayer(mMp));
+    }
+
+    private void checkMuteFromClientVolumeNotification(MyPlayer player) throws Exception {
+        verifyMuteUnmuteNotifications(/*start=*/player.mPlay,
+                /*mute=*/() -> player.mSetClientVolume.accept(0.f),
+                /*unmute=*/() -> player.mSetClientVolume.accept(1.f));
     }
 
     @ApiTest(apis = {"android.media.AudioManager#getActivePlaybackConfigurations",
             "android.media.AudioManager.AudioPlaybackCallback#onPlaybackConfigChanged"})
-    public void testMuteFromVolumeShaperNotification() throws Exception {
-        if (!isValidPlatform("testMuteFromVolumeShaperNotification")) return;
+    public void testAudioTrackMuteFromVolumeShaperNotification() throws Exception {
+        if (!isValidPlatform("testAudioTrackMuteFromVolumeShaperNotification")) return;
         if (hasAudioSilentProperty()) {
-            Log.w(TAG, "Skipping testMuteFromVolumeShaperNotification");
+            Log.w(TAG, "Skipping testAudioTrackMuteFromVolumeShaperNotification");
             return;
         }
 
-        verifyMuteUnmuteNotifications(/*mute=*/
-                () -> {
-                    mMuteShaper = mAt.createVolumeShaper(SHAPER_MUTE);
+        initializeAudioTrack();
+        checkMuteFromVolumeShaperNotification(new MyPlayer(mAt));
+    }
+
+    @ApiTest(apis = {"android.media.AudioManager#getActivePlaybackConfigurations",
+            "android.media.AudioManager.AudioPlaybackCallback#onPlaybackConfigChanged"})
+    public void testMediaPlayerMuteFromVolumeShaperNotification() throws Exception {
+        if (!isValidPlatform("testMediaPlayerMuteFromVolumeShaperNotification")) return;
+        if (hasAudioSilentProperty()) {
+            Log.w(TAG, "Skipping testMediaPlayerMuteFromVolumeShaperNotification");
+            return;
+        }
+
+        initializeMediaPlayer();
+        checkMuteFromVolumeShaperNotification(new MyPlayer(mMp));
+    }
+
+    private void checkMuteFromVolumeShaperNotification(MyPlayer player) throws Exception {
+        verifyMuteUnmuteNotifications(/*start=*/player.mPlay,
+                /*mute=*/() -> {
+                    mMuteShaper = player.mCreateVolumeShaper.apply(SHAPER_MUTE);
                     mMuteShaper.apply(VolumeShaper.Operation.PLAY);
                 },
                 /*unmute=*/() -> {
@@ -539,42 +624,21 @@ public class AudioPlaybackConfigurationTest extends CtsAndroidTestCase {
                 });
     }
 
-    private void verifyMuteUnmuteNotifications(Runnable mute, Runnable unmute) throws Exception {
+    private void verifyMuteUnmuteNotifications(Runnable start, Runnable mute, Runnable unmute)
+            throws Exception {
         AudioManager am = new AudioManager(getContext());
         assertNotNull("Could not create AudioManager", am);
 
         MyAudioPlaybackCallback callback = new MyAudioPlaybackCallback();
-
-        final AudioAttributes aa = (new AudioAttributes.Builder())
-                .setUsage(TEST_USAGE)
-                .setContentType(TEST_CONTENT)
-                .build();
 
         try {
             am.registerAudioPlaybackCallback(callback, null /*handler*/);
 
             // query how many active players before starting the MediaPlayer
             final int nbActivePlayersBeforeStart = am.getActivePlaybackConfigurations().size();
-            final int bufferSizeInBytes =
-                    TEST_AUDIO_TRACK_PLAY_SECONDS * TEST_AUDIO_TRACK_SAMPLERATE
-                            * TEST_AUDIO_TRACK_CHANNELS;
 
-            ByteBuffer audioData = createSoundDataInShortByteBuffer(bufferSizeInBytes,
-                    TEST_AUDIO_TRACK_SAMPLERATE, TEST_AUDIO_TRACK_FREQUENCY,
-                    TEST_AUDIO_TRACK_SWEEP);
-
-            mAt = new AudioTrack.Builder()
-                    .setAudioAttributes(aa)
-                    .setAudioFormat(new AudioFormat.Builder()
-                            .setSampleRate(TEST_AUDIO_TRACK_SAMPLERATE)
-                            .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
-                            .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                            .build())
-                    .setBufferSizeInBytes(bufferSizeInBytes)
-                    .build();
-
-            mAt.write(audioData, audioData.remaining(), WRITE_NON_BLOCKING);
-            mAt.play();
+            // start playing audio
+            start.run();
 
             assertTrue("onPlaybackConfigChanged new player, device expected",
                     callback.waitForCallbacks(2,
@@ -603,6 +667,46 @@ public class AudioPlaybackConfigurationTest extends CtsAndroidTestCase {
             am.unregisterAudioPlaybackCallback(callback);
             unmute.run();
         }
+    }
+
+    private void initializeAudioTrack() {
+        final int bufferSizeInBytes =
+                TEST_AUDIO_TRACK_PLAY_SECONDS * TEST_AUDIO_TRACK_SAMPLERATE
+                        * TEST_AUDIO_TRACK_CHANNELS;
+
+        ByteBuffer audioData = createSoundDataInShortByteBuffer(bufferSizeInBytes,
+                TEST_AUDIO_TRACK_SAMPLERATE, TEST_AUDIO_TRACK_FREQUENCY,
+                TEST_AUDIO_TRACK_SWEEP);
+
+        final AudioAttributes aa = (new AudioAttributes.Builder())
+                .setUsage(TEST_USAGE)
+                .setContentType(TEST_CONTENT)
+                .build();
+
+        mAt = new AudioTrack.Builder()
+                .setAudioAttributes(aa)
+                .setAudioFormat(new AudioFormat.Builder()
+                        .setSampleRate(TEST_AUDIO_TRACK_SAMPLERATE)
+                        .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
+                        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                        .build())
+                .setBufferSizeInBytes(bufferSizeInBytes)
+                .build();
+
+        mAt.write(audioData, audioData.remaining(), WRITE_NON_BLOCKING);
+    }
+
+    private void initializeMediaPlayer() throws Exception {
+        AudioManager am = new AudioManager(getContext());
+        assertNotNull("Could not create AudioManager", am);
+
+        final AudioAttributes aa = (new AudioAttributes.Builder())
+                .setUsage(TEST_USAGE)
+                .setContentType(TEST_CONTENT)
+                .build();
+
+        mMp = createPreparedMediaPlayer(R.raw.sine1khzs40dblong, aa,
+                am.generateAudioSessionId());
     }
 
     private @Nullable MediaPlayer createPreparedMediaPlayer(
@@ -697,6 +801,24 @@ public class AudioPlaybackConfigurationTest extends CtsAndroidTestCase {
             int signalsCounted =
                     mOnCalledMonitor.waitForCountedSignals(calledCount, timeoutMs);
             return (signalsCounted == calledCount);
+        }
+    }
+
+    private static class MyPlayer {
+        Runnable mPlay;
+        Consumer<Float> mSetClientVolume;
+        Function<VolumeShaper.Configuration, VolumeShaper> mCreateVolumeShaper;
+
+        MyPlayer(AudioTrack at) {
+            mPlay = at::play;
+            mSetClientVolume = at::setVolume;
+            mCreateVolumeShaper = at::createVolumeShaper;
+        }
+
+        MyPlayer(MediaPlayer mp) {
+            mPlay = mp::start;
+            mSetClientVolume = mp::setVolume;
+            mCreateVolumeShaper = mp::createVolumeShaper;
         }
     }
 
