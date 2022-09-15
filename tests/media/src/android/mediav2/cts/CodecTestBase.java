@@ -2005,19 +2005,50 @@ class CodecEncoderTestBase extends CodecTestBase {
     private static final String LOG_TAG = CodecEncoderTestBase.class.getSimpleName();
 
     // files are in WorkDir.getMediaDirString();
-    protected static final String INPUT_AUDIO_FILE = "bbb_2ch_44kHz_s16le.raw";
-    protected static final String INPUT_VIDEO_FILE = "bbb_cif_yuv420p_30fps.yuv";
-    protected static final String INPUT_AUDIO_FILE_HBD = "audio/sd_2ch_48kHz_f32le.raw";
-    protected static final String INPUT_VIDEO_FILE_HBD = "cosmat_cif_24fps_yuv420p16le.yuv";
-    protected final int INP_FRM_WIDTH = 352;
-    protected final int INP_FRM_HEIGHT = 288;
+    protected static final RawResource INPUT_VIDEO_FILE =
+            new RawResource.Builder()
+                    .setFileName("bbb_cif_yuv420p_30fps.yuv", false)
+                    .setDimension(352, 288)
+                    .setBytesPerSample(1)
+                    .setColorFormat(ImageFormat.YUV_420_888)
+                    .build();
+    protected static final RawResource INPUT_VIDEO_FILE_HBD =
+            new RawResource.Builder()
+                    .setFileName("cosmat_cif_24fps_yuv420p16le.yuv", false)
+                    .setDimension(352, 288)
+                    .setBytesPerSample(2)
+                    .setColorFormat(ImageFormat.YCBCR_P010)
+                    .build();
+
+    /* Note: The mSampleRate and mChannelCount fields of RawResource are not used by the tests
+    the way mWidth and mHeight are used. mWidth and mHeight is used by fillImage() to select a
+    portion of the frame or duplicate the frame as tiles depending on testWidth and testHeight.
+    Ideally mSampleRate and mChannelCount information should be used to resample and perform
+    channel-conversion basing on testSampleRate and testChannelCount. Instead the test considers
+    the resource file to be of testSampleRate and testChannelCount. */
+    protected static final RawResource INPUT_AUDIO_FILE =
+            new RawResource.Builder()
+                    .setFileName("bbb_2ch_44kHz_s16le.raw", true)
+                    .setSampleRate(44100)
+                    .setChannelCount(2)
+                    .setBytesPerSample(2)
+                    .setAudioEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                    .build();
+    protected static final RawResource INPUT_AUDIO_FILE_HBD =
+            new RawResource.Builder()
+                    .setFileName("audio/sd_2ch_48kHz_f32le.raw", true)
+                    .setSampleRate(48000)
+                    .setChannelCount(2)
+                    .setBytesPerSample(4)
+                    .setAudioEncoding(AudioFormat.ENCODING_PCM_FLOAT)
+                    .build();
 
     final String mMime;
     final int[] mBitrates;
     final int[] mEncParamList1;
     final int[] mEncParamList2;
 
-    final String mInputFile;
+    RawResource mActiveRawRes;
     byte[] mInputData;
     int mNumBytesSubmitted;
     long mInputOffsetPts;
@@ -2026,11 +2057,11 @@ class CodecEncoderTestBase extends CodecTestBase {
     ArrayList<MediaCodec.BufferInfo> mInfoList;
 
     int mWidth, mHeight;
+    int mBytesPerSample;
     int mFrameRate;
     int mMaxBFrames;
     int mChannels;
     int mSampleRate;
-    int mBytesPerSample;
 
     CodecEncoderTestBase(String encoder, String mime, int[] bitrates, int[] encoderInfo1,
             int[] encoderInfo2, String allTestParams) {
@@ -2042,19 +2073,19 @@ class CodecEncoderTestBase extends CodecTestBase {
         mAllTestParams = allTestParams;
         mFormats = new ArrayList<>();
         mInfoList = new ArrayList<>();
-        mWidth = INP_FRM_WIDTH;
-        mHeight = INP_FRM_HEIGHT;
+        mWidth = 0;
+        mHeight = 0;
         if (mime.equals(MediaFormat.MIMETYPE_VIDEO_MPEG4)) mFrameRate = 12;
         else if (mime.equals(MediaFormat.MIMETYPE_VIDEO_H263)) mFrameRate = 12;
         else mFrameRate = 30;
         mMaxBFrames = 0;
-        mChannels = 1;
-        mSampleRate = 8000;
+        mChannels = 0;
+        mSampleRate = 0;
         mAsyncHandle = new CodecAsyncHandler();
         mIsAudio = mMime.startsWith("audio/");
         mIsVideo = mMime.startsWith("video/");
-        mBytesPerSample = mIsAudio ? 2 : 1;
-        mInputFile = mIsAudio ? INPUT_AUDIO_FILE : INPUT_VIDEO_FILE;
+        mActiveRawRes = mIsAudio ? INPUT_AUDIO_FILE : INPUT_VIDEO_FILE;
+        mBytesPerSample = mActiveRawRes.mBytesPerSample;
     }
 
     @Before
@@ -2082,6 +2113,19 @@ class CodecEncoderTestBase extends CodecTestBase {
         }
         codec.release();
         return colorFormat;
+    }
+
+    @Override
+    void configureCodec(MediaFormat format, boolean isAsync, boolean signalEOSWithLastFrame,
+            boolean isEncoder) {
+        super.configureCodec(format, isAsync, signalEOSWithLastFrame, isEncoder);
+        if (mIsAudio) {
+            mSampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
+            mChannels = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT);
+        } else {
+            mWidth = format.getInteger(MediaFormat.KEY_WIDTH);
+            mHeight = format.getInteger(MediaFormat.KEY_HEIGHT);
+        }
     }
 
     @Override
@@ -2130,15 +2174,15 @@ class CodecEncoderTestBase extends CodecTestBase {
             ByteBuffer buf = planes[i].getBuffer();
             int width = imageWidth;
             int height = imageHeight;
-            int tileWidth = INP_FRM_WIDTH;
-            int tileHeight = INP_FRM_HEIGHT;
+            int tileWidth = mActiveRawRes.mWidth;
+            int tileHeight = mActiveRawRes.mHeight;
             int rowStride = planes[i].getRowStride();
             int pixelStride = planes[i].getPixelStride();
             if (i != 0) {
                 width = imageWidth / 2;
                 height = imageHeight / 2;
-                tileWidth = INP_FRM_WIDTH / 2;
-                tileHeight = INP_FRM_HEIGHT / 2;
+                tileWidth = mActiveRawRes.mWidth / 2;
+                tileHeight = mActiveRawRes.mHeight / 2;
             }
             if (pixelStride == bytesPerSample) {
                 if (width == rowStride && width == tileWidth && height == tileHeight) {
@@ -2184,13 +2228,13 @@ class CodecEncoderTestBase extends CodecTestBase {
         for (int plane = 0; plane < 3; plane++) {
             int width = mWidth;
             int height = mHeight;
-            int tileWidth = INP_FRM_WIDTH;
-            int tileHeight = INP_FRM_HEIGHT;
+            int tileWidth = mActiveRawRes.mWidth;
+            int tileHeight = mActiveRawRes.mHeight;
             if (plane != 0) {
                 width = mWidth / 2;
                 height = mHeight / 2;
-                tileWidth = INP_FRM_WIDTH / 2;
-                tileHeight = INP_FRM_HEIGHT / 2;
+                tileWidth = mActiveRawRes.mWidth / 2;
+                tileHeight = mActiveRawRes.mHeight / 2;
             }
             for (int k = 0; k < height; k += tileHeight) {
                 int rowsToCopy = Math.min(height - k, tileHeight);
@@ -2231,7 +2275,8 @@ class CodecEncoderTestBase extends CodecTestBase {
             } else {
                 pts += mInputCount * 1000000L / mFrameRate;
                 size = mBytesPerSample * mWidth * mHeight * 3 / 2;
-                int frmSize = mBytesPerSample * INP_FRM_WIDTH * INP_FRM_HEIGHT * 3 / 2;
+                int frmSize = mActiveRawRes.mBytesPerSample * mActiveRawRes.mWidth
+                                * mActiveRawRes.mHeight * 3 / 2;
                 if (mNumBytesSubmitted + frmSize > mInputData.length) {
                     fail("received partial frame to encode \n" + mTestConfig + mTestEnv);
                 } else {
@@ -2239,7 +2284,7 @@ class CodecEncoderTestBase extends CodecTestBase {
                     if (img != null) {
                         fillImage(img);
                     } else {
-                        if (mWidth == INP_FRM_WIDTH && mHeight == INP_FRM_HEIGHT) {
+                        if (mWidth == mActiveRawRes.mWidth && mHeight == mActiveRawRes.mHeight) {
                             inputBuffer.put(mInputData, mNumBytesSubmitted, size);
                         } else {
                             fillByteBuffer(inputBuffer);
@@ -2348,13 +2393,6 @@ class CodecEncoderTestBase extends CodecTestBase {
         mCodec = MediaCodec.createByCodecName(encoder);
         setUpSource(file);
         configureCodec(format, false, true, true);
-        if (mIsAudio) {
-            mSampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
-            mChannels = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT);
-        } else {
-            mWidth = format.getInteger(MediaFormat.KEY_WIDTH);
-            mHeight = format.getInteger(MediaFormat.KEY_HEIGHT);
-        }
         mCodec.start();
         doWork(frameLimit);
         queueEOS();
@@ -2566,8 +2604,7 @@ class HDREncoderTestBase extends CodecEncoderTestBase {
         Assume.assumeTrue(mCodecName + " does not support color format COLOR_FormatYUVP010",
                 hasSupportForColorFormat(mCodecName, mMime, COLOR_FormatYUVP010));
 
-        mBytesPerSample = 2;
-        setUpSource(INPUT_VIDEO_FILE_HBD);
+        setUpSource(mActiveRawRes.mFileName);
 
         int frameLimit = 4;
         if (mHdrDynamicInfo != null) {
@@ -2576,9 +2613,10 @@ class HDREncoderTestBase extends CodecEncoderTestBase {
                             .getKey();
             frameLimit = lastHdr10PlusFrame + 10;
         }
-        int maxNumFrames = mInputData.length / (INP_FRM_WIDTH * INP_FRM_HEIGHT * mBytesPerSample);
+        int maxNumFrames = mInputData.length
+                / (mActiveRawRes.mWidth * mActiveRawRes.mHeight * mActiveRawRes.mBytesPerSample);
         assertTrue("HDR info tests require input file with at least " + frameLimit + " frames. "
-                + INPUT_VIDEO_FILE_HBD + " has " + maxNumFrames + " frames. \n" + mTestConfig
+                + mActiveRawRes.mFileName + " has " + maxNumFrames + " frames. \n" + mTestConfig
                 + mTestEnv, frameLimit <= maxNumFrames);
 
         mOutputBuff = new OutputManager();
