@@ -59,7 +59,7 @@ public final class UserManagerHelperLiteTest extends AbstractCarBuiltinTestCase 
     @EnsureHasPermission(CREATE_USERS) // needed to query user properties
     @ApiTest(apis = {
             "android.car.builtin.os.UserManagerHelper#isEphemeralUser(UserManager, UserHandle)",
-            "android.car.builtin.os.UserManagerHelper#isSecondaryUser(UserManager, UserHandle)",
+            "android.car.builtin.os.UserManagerHelper#isFullUser(UserManager, UserHandle)",
             "android.car.builtin.os.UserManagerHelper#isGuestUser(UserManager, UserHandle)",
             "android.car.builtin.os.UserManagerHelper#isEnabledUser(UserManager, UserHandle)",
             "android.car.builtin.os.UserManagerHelper#isPreCreatedUser(UserManager, UserHandle)",
@@ -69,7 +69,7 @@ public final class UserManagerHelperLiteTest extends AbstractCarBuiltinTestCase 
         // Current user should not be ephemeral or guest because test runs as secondary user.
         UserHandle currentUser = TestApis.users().current().userHandle();
         assertThat(UserManagerHelper.isEphemeralUser(mUserManager, currentUser)).isFalse();
-        assertThat(UserManagerHelper.isSecondaryUser(mUserManager, currentUser)).isTrue();
+        assertThat(UserManagerHelper.isFullUser(mUserManager, currentUser)).isTrue();
         assertThat(UserManagerHelper.isGuestUser(mUserManager, currentUser)).isFalse();
 
         // Current user should be enabled.
@@ -90,7 +90,7 @@ public final class UserManagerHelperLiteTest extends AbstractCarBuiltinTestCase 
     @RequireNotHeadlessSystemUserMode
     @ApiTest(apis = {
             "android.car.builtin.os.UserManagerHelper#isEphemeralUser(UserManager, UserHandle)",
-            "android.car.builtin.os.UserManagerHelper#isSecondaryUser(UserManager, UserHandle)",
+            "android.car.builtin.os.UserManagerHelper#isFullUser(UserManager, UserHandle)",
             "android.car.builtin.os.UserManagerHelper#isGuestUser(UserManager, UserHandle)",
             "android.car.builtin.os.UserManagerHelper#isEnabledUser(UserManager, UserHandle)",
             "android.car.builtin.os.UserManagerHelper#isPreCreatedUser(UserManager, UserHandle)",
@@ -100,7 +100,7 @@ public final class UserManagerHelperLiteTest extends AbstractCarBuiltinTestCase 
         UserHandle systemUser = UserHandle.SYSTEM;
 
         assertThat(UserManagerHelper.isEphemeralUser(mUserManager, systemUser)).isFalse();
-        assertThat(UserManagerHelper.isSecondaryUser(mUserManager, systemUser)).isFalse();
+        assertThat(UserManagerHelper.isFullUser(mUserManager, systemUser)).isTrue();
         assertThat(UserManagerHelper.isGuestUser(mUserManager, systemUser)).isFalse();
         assertThat(UserManagerHelper.isEnabledUser(mUserManager, systemUser)).isTrue();
         assertThat(UserManagerHelper.isPreCreatedUser(mUserManager, systemUser)).isFalse();
@@ -113,7 +113,7 @@ public final class UserManagerHelperLiteTest extends AbstractCarBuiltinTestCase 
     @RequireHeadlessSystemUserMode
     @ApiTest(apis = {
             "android.car.builtin.os.UserManagerHelper#isEphemeralUser(UserManager, UserHandle)",
-            "android.car.builtin.os.UserManagerHelper#isSecondaryUser(UserManager, UserHandle)",
+            "android.car.builtin.os.UserManagerHelper#isFullUser(UserManager, UserHandle)",
             "android.car.builtin.os.UserManagerHelper#isGuestUser(UserManager, UserHandle)",
             "android.car.builtin.os.UserManagerHelper#isEnabledUser(UserManager, UserHandle)",
             "android.car.builtin.os.UserManagerHelper#isPreCreatedUser(UserManager, UserHandle)",
@@ -123,7 +123,7 @@ public final class UserManagerHelperLiteTest extends AbstractCarBuiltinTestCase 
         UserHandle systemUser = UserHandle.SYSTEM;
 
         assertThat(UserManagerHelper.isEphemeralUser(mUserManager, systemUser)).isFalse();
-        assertThat(UserManagerHelper.isSecondaryUser(mUserManager, systemUser)).isTrue();
+        assertThat(UserManagerHelper.isFullUser(mUserManager, systemUser)).isFalse();
         assertThat(UserManagerHelper.isGuestUser(mUserManager, systemUser)).isFalse();
         assertThat(UserManagerHelper.isEnabledUser(mUserManager, systemUser)).isTrue();
         assertThat(UserManagerHelper.isPreCreatedUser(mUserManager, systemUser)).isFalse();
