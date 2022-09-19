@@ -7287,13 +7287,15 @@ public class TextViewTest {
     }
 
     @Test
-    public void testSendAccessibilityContentChangeTypeInvalid() throws Throwable {
+    public void testSendAccessibilityContentChangeTypeErrorAndInvalid() throws Throwable {
         initTextViewForTypingOnUiThread();
         UiAutomation uiAutomation = mInstrumentation.getUiAutomation();
         uiAutomation.executeAndWaitForEvent(
-                () -> mInstrumentation.runOnMainSync(() -> mTextView.setError("error")),
+                () -> mInstrumentation.runOnMainSync(
+                        () -> mTextView.setError("error", null)),
                 event -> isExpectedChangeType(event,
-                        AccessibilityEvent.CONTENT_CHANGE_TYPE_INVALID),
+                        AccessibilityEvent.CONTENT_CHANGE_TYPE_ERROR
+                                | AccessibilityEvent.CONTENT_CHANGE_TYPE_CONTENT_INVALID),
                 TIMEOUT);
     }
 
