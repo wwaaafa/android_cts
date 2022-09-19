@@ -5574,6 +5574,38 @@ public class TextViewTest {
 
     @UiThreadTest
     @Test
+    public void isAutoHandwritingEnabled_default_returnsTrue() {
+        mTextView = new TextView(mActivity);
+        mTextView.setText(null, BufferType.EDITABLE);
+        mTextView.setInputType(InputType.TYPE_CLASS_TEXT);
+
+        assertTrue(mTextView.isAutoHandwritingEnabled());
+    }
+
+    @UiThreadTest
+    @Test
+    public void isAutoHandwritingEnabled_password_returnsFalse() {
+        mTextView = new TextView(mActivity);
+        mTextView.setText(null, BufferType.EDITABLE);
+        mTextView.setInputType(InputType.TYPE_CLASS_TEXT
+                | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+
+        assertFalse(mTextView.isAutoHandwritingEnabled());
+    }
+
+    @UiThreadTest
+    @Test
+    public void isAutoHandwritingEnabled_visiblePassword_returnsFalse() {
+        mTextView = new TextView(mActivity);
+        mTextView.setText(null, BufferType.EDITABLE);
+        mTextView.setInputType(InputType.TYPE_CLASS_TEXT
+                | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+
+        assertFalse(mTextView.isAutoHandwritingEnabled());
+    }
+
+    @UiThreadTest
+    @Test
     public void testVerifyDrawable() {
         mTextView = new MockTextView(mActivity);
 
