@@ -182,6 +182,7 @@ public class ItsService extends Service implements SensorEventListener {
     public static final String VIB_PATTERN_KEY = "pattern";
     public static final String EVCOMP_KEY = "evComp";
     public static final String AUTO_FLASH_KEY = "autoFlash";
+    public static final String ZOOM_RATIO_KEY = "zoomRatio";
     public static final String AUDIO_RESTRICTION_MODE_KEY = "mode";
 
     private CameraManager mCameraManager = null;
@@ -268,19 +269,23 @@ public class ItsService extends Service implements SensorEventListener {
         public Size videoSize;
         public int videoFrameRate; // -1 implies video framerate was not set by the test
         public int fileFormat;
+        public double zoomRatio;
 
         public VideoRecordingObject(String recordedOutputPath,
-                String quality, Size videoSize, int videoFrameRate, int fileFormat) {
+                String quality, Size videoSize, int videoFrameRate,
+                int fileFormat, double zoomRatio) {
             this.recordedOutputPath = recordedOutputPath;
             this.quality = quality;
             this.videoSize = videoSize;
             this.videoFrameRate = videoFrameRate;
             this.fileFormat = fileFormat;
+            this.zoomRatio = zoomRatio;
         }
 
         VideoRecordingObject(String recordedOutputPath, String quality, Size videoSize,
-                int fileFormat) {
-            this(recordedOutputPath, quality, videoSize, INVALID_FRAME_RATE, fileFormat);
+                int fileFormat, double zoomRatio) {
+            this(recordedOutputPath, quality, videoSize,
+                INVALID_FRAME_RATE, fileFormat, zoomRatio);
         }
 
         public boolean isFrameRateValid() {
@@ -812,14 +817,17 @@ public class ItsService extends Service implements SensorEventListener {
                     int recordingDuration = cmdObj.getInt("recordingDuration");
                     int videoStabilizationMode = cmdObj.getInt("videoStabilizationMode");
                     boolean hlg10Enabled = cmdObj.getBoolean("hlg10Enabled");
+                    double zoomRatio = cmdObj.optDouble("zoomRatio");
                     doBasicRecording(cameraId, profileId, quality, recordingDuration,
-                            videoStabilizationMode, hlg10Enabled);
+                            videoStabilizationMode, hlg10Enabled, zoomRatio);
                 } else if ("doPreviewRecording".equals(cmdObj.getString("cmdName"))) {
                     String cameraId = cmdObj.getString("cameraId");
                     String videoSize = cmdObj.getString("videoSize");
                     int recordingDuration = cmdObj.getInt("recordingDuration");
                     boolean stabilize = cmdObj.getBoolean("stabilize");
-                    doBasicPreviewRecording(cameraId, videoSize, recordingDuration, stabilize);
+                    double zoomRatio = cmdObj.optDouble("zoomRatio");
+                    doBasicPreviewRecording(cameraId, videoSize, recordingDuration,
+                            stabilize, zoomRatio);
                 } else if ("isHLG10Supported".equals(cmdObj.getString("cmdName"))) {
                     String cameraId = cmdObj.getString("cameraId");
                     int profileId = cmdObj.getInt("profileId");
@@ -1454,6 +1462,11 @@ public class ItsService extends Service implements SensorEventListener {
                 Logt.i(TAG, String.format("Running with auto flash mode."));
             }
 
+            double zoomRatio = params.optDouble(ZOOM_RATIO_KEY);
+            if (!Double.isNaN(zoomRatio)) {
+                Logt.i(TAG, String.format("Running 3A with zoom ratio: %f", zoomRatio));
+            }
+
             // By default, AE and AF both get triggered, but the user can optionally override this.
             // Also, AF won't get triggered if the lens is fixed-focus.
             if (params.has(TRIGGER_KEY)) {
@@ -1548,6 +1561,10 @@ public class ItsService extends Service implements SensorEventListener {
                         } else {
                             req.set(CaptureRequest.CONTROL_AE_MODE,
                                     CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+                        }
+
+                        if (!Double.isNaN(zoomRatio)) {
+                            req.set(CaptureRequest.CONTROL_ZOOM_RATIO, (float) zoomRatio);
                         }
 
                         if (mConvergedAE && mNeedsLockedAE) {
@@ -1921,13 +1938,14 @@ public class ItsService extends Service implements SensorEventListener {
     }
 
     private void doBasicRecording(String cameraId, int profileId, String quality,
-            int recordingDuration, int videoStabilizationMode, boolean hlg10Enabled)
+            int recordingDuration, int videoStabilizationMode,
+            boolean hlg10Enabled, double zoomRatio)
             throws ItsException {
         final long SESSION_CLOSE_TIMEOUT_MS  = 3000;
 
         if (!hlg10Enabled) {
             doBasicRecording(cameraId, profileId, quality, recordingDuration,
-                    videoStabilizationMode);
+                    videoStabilizationMode, zoomRatio);
             return;
         }
 
@@ -1946,7 +1964,8 @@ public class ItsService extends Service implements SensorEventListener {
         String outputFilePath = getOutputMediaFile(cameraDeviceId, videoSize, quality, fileFormat,
                 /* hlg10Enabled= */ true,
                 /* stabilized= */
-                videoStabilizationMode != CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_OFF);
+                videoStabilizationMode != CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_OFF,
+                zoomRatio);
         assert (outputFilePath != null);
 
         MediaCodecList list = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
@@ -1994,7 +2013,7 @@ public class ItsService extends Service implements SensorEventListener {
         // Configure and create capture session.
         try {
             configureAndCreateCaptureSession(CameraDevice.TEMPLATE_RECORD, mRecordSurface,
-                    videoStabilizationMode, DynamicRangeProfiles.HLG10, mockCallback);
+                    videoStabilizationMode, DynamicRangeProfiles.HLG10, mockCallback, zoomRatio);
         } catch (CameraAccessException e) {
             throw new ItsException("Access error: ", e);
         }
@@ -2032,12 +2051,13 @@ public class ItsService extends Service implements SensorEventListener {
 
         // Send VideoRecordingObject for further processing.
         VideoRecordingObject obj = new VideoRecordingObject(outputFilePath,
-                quality, videoSize, camcorderProfile.videoFrameRate, fileFormat);
+                quality, videoSize, camcorderProfile.videoFrameRate, fileFormat, zoomRatio);
         mSocketRunnableObj.sendVideoRecordingObject(obj);
     }
 
     private void doBasicRecording(String cameraId, int profileId, String quality,
-            int recordingDuration, int videoStabilizationMode) throws ItsException {
+            int recordingDuration, int videoStabilizationMode,
+            double zoomRatio) throws ItsException {
         int cameraDeviceId = Integer.parseInt(cameraId);
         mMediaRecorder = new MediaRecorder();
         CamcorderProfile camcorderProfile = getCamcorderProfile(cameraDeviceId, profileId);
@@ -2053,7 +2073,8 @@ public class ItsService extends Service implements SensorEventListener {
         int fileFormat = camcorderProfile.fileFormat;
         String outputFilePath = getOutputMediaFile(cameraDeviceId, videoSize, quality,
                 fileFormat, /* stabilized= */
-                videoStabilizationMode != CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_OFF);
+                videoStabilizationMode != CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_OFF,
+                zoomRatio);
         assert(outputFilePath != null);
         Log.i(TAG, "Video recording outputFilePath:"+ outputFilePath);
         setupMediaRecorderWithProfile(cameraDeviceId, camcorderProfile, outputFilePath);
@@ -2068,7 +2089,7 @@ public class ItsService extends Service implements SensorEventListener {
         // Configure and create capture session.
         try {
             configureAndCreateCaptureSession(CameraDevice.TEMPLATE_RECORD, mRecordSurface,
-                    videoStabilizationMode);
+                    videoStabilizationMode, zoomRatio);
         } catch (android.hardware.camera2.CameraAccessException e) {
             throw new ItsException("Access error: ", e);
         }
@@ -2098,7 +2119,7 @@ public class ItsService extends Service implements SensorEventListener {
 
         // Send VideoRecordingObject for further processing.
         VideoRecordingObject obj = new VideoRecordingObject(outputFilePath,
-                quality, videoSize, camcorderProfile.videoFrameRate, fileFormat);
+                quality, videoSize, camcorderProfile.videoFrameRate, fileFormat, zoomRatio);
         mSocketRunnableObj.sendVideoRecordingObject(obj);
     }
 
@@ -2113,7 +2134,7 @@ public class ItsService extends Service implements SensorEventListener {
      * ImageReader to the MediaRecorder surface which is encoded into a video.
      */
     private void doBasicPreviewRecording(String cameraId, String videoSizeString,
-            int recordingDuration, boolean stabilize)
+            int recordingDuration, boolean stabilize, double zoomRatio)
             throws ItsException {
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
@@ -2135,7 +2156,7 @@ public class ItsService extends Service implements SensorEventListener {
         int fileFormat = MediaRecorder.OutputFormat.DEFAULT;
 
         String outputFilePath = getOutputMediaFile(cameraDeviceId, videoSize,
-                /* quality= */"preview", fileFormat, stabilize);
+                /* quality= */"preview", fileFormat, stabilize, zoomRatio);
         assert outputFilePath != null;
 
         try (PreviewRecorder pr = new PreviewRecorder(cameraDeviceId, videoSize,
@@ -2144,7 +2165,7 @@ public class ItsService extends Service implements SensorEventListener {
                     ? CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
                     : CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_OFF;
             configureAndCreateCaptureSession(CameraDevice.TEMPLATE_PREVIEW,
-                    pr.getCameraSurface(), stabilizationMode);
+                    pr.getCameraSurface(), stabilizationMode, zoomRatio);
             pr.recordPreview(recordingDuration * 1000L);
             mSession.close();
         } catch (CameraAccessException e) {
@@ -2154,22 +2175,26 @@ public class ItsService extends Service implements SensorEventListener {
         Log.i(TAG, "Preview recording complete: " + outputFilePath);
         // Send VideoRecordingObject for further processing.
         VideoRecordingObject obj = new VideoRecordingObject(outputFilePath, /* quality= */"preview",
-                videoSize, fileFormat);
+                videoSize, fileFormat, zoomRatio);
         mSocketRunnableObj.sendVideoRecordingObject(obj);
     }
 
     private void configureAndCreateCaptureSession(int requestTemplate, Surface recordSurface,
-            int videoStabilizationMode) throws CameraAccessException {
+            int videoStabilizationMode, double zoomRatio) throws CameraAccessException {
         configureAndCreateCaptureSession(requestTemplate, recordSurface, videoStabilizationMode,
-                DynamicRangeProfiles.STANDARD, /* stateCallback= */ null);
+                DynamicRangeProfiles.STANDARD, /* stateCallback= */ null, zoomRatio);
     }
 
     private void configureAndCreateCaptureSession(int requestTemplate, Surface recordSurface,
             int videoStabilizationMode, long dynamicRangeProfile,
-            CameraCaptureSession.StateCallback stateCallback) throws CameraAccessException {
+            CameraCaptureSession.StateCallback stateCallback,
+            double zoomRatio) throws CameraAccessException {
         assert (recordSurface != null);
         // Create capture request builder
         mCaptureRequestBuilder = mCamera.createCaptureRequest(requestTemplate);
+        if (!Double.isNaN(zoomRatio)) {
+            mCaptureRequestBuilder.set(CaptureRequest.CONTROL_ZOOM_RATIO, (float) zoomRatio);
+        }
 
         switch (videoStabilizationMode) {
             case CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON:
@@ -2250,13 +2275,13 @@ public class ItsService extends Service implements SensorEventListener {
     }
 
     private String getOutputMediaFile(int cameraId, Size videoSize, String quality,
-            int fileFormat, boolean stabilized) {
+            int fileFormat, boolean stabilized, double zoomRatio) {
         return getOutputMediaFile(cameraId, videoSize, quality, fileFormat,
-                /* hlg10Enabled= */false, stabilized);
+                /* hlg10Enabled= */false, stabilized, zoomRatio);
     }
 
     private String getOutputMediaFile(int cameraId, Size videoSize, String quality,
-            int fileFormat, boolean hlg10Enabled, boolean stabilized) {
+            int fileFormat, boolean hlg10Enabled, boolean stabilized, double zoomRatio) {
         // If any quality has file format other than 3gp and webm then the
         // recording file will have mp4 as default extension.
         String fileExtension = "";
@@ -2281,7 +2306,11 @@ public class ItsService extends Service implements SensorEventListener {
         }
         String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String fileName = mediaStorageDir.getPath() + File.separator +
-                "VID_" + timestamp + '_' + cameraId + '_' + quality + '_' + videoSize;
+                "VID_" + timestamp + '_' + cameraId + '_' + quality + '_' +
+                videoSize;
+        if (!Double.isNaN(zoomRatio)) {
+            fileName += "_" + zoomRatio;
+        }
         if (hlg10Enabled) {
             fileName += "_hlg10";
         }
