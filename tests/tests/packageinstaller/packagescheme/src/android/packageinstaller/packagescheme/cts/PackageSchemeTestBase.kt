@@ -136,7 +136,7 @@ open class PackageSchemeTestBase {
         intent.putExtra(Intent.EXTRA_INTENT, getAppInstallIntent())
         intent.putExtra("requestCode", REQUEST_CODE)
 
-        mScenario = ActivityScenario.launch(intent)
+        mScenario = ActivityScenario.launchActivityForResult(intent)
         mScenario!!.onActivity {
             var dialog: UiObject
             var button: UiObject
