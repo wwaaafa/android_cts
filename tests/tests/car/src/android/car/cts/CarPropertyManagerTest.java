@@ -34,6 +34,7 @@ import android.car.VehicleGear;
 import android.car.VehicleIgnitionState;
 import android.car.VehiclePropertyIds;
 import android.car.VehicleUnit;
+import android.car.annotation.ApiRequirements;
 import android.car.cts.utils.VehiclePropertyVerifier;
 import android.car.hardware.CarPropertyConfig;
 import android.car.hardware.CarPropertyValue;
@@ -43,12 +44,15 @@ import android.car.hardware.property.EvChargeState;
 import android.car.hardware.property.EvRegenerativeBrakingState;
 import android.car.hardware.property.VehicleElectronicTollCollectionCardStatus;
 import android.car.hardware.property.VehicleElectronicTollCollectionCardType;
+import android.car.test.ApiCheckerRule.Builder;
+import android.car.test.ApiCheckerRule.IgnoreInvalidApi;
 import android.content.pm.PackageManager;
 import android.platform.test.annotations.AppModeFull;
 import android.platform.test.annotations.RequiresDevice;
 import android.support.v4.content.ContextCompat;
 import android.test.suitebuilder.annotation.SmallTest;
 import android.util.ArraySet;
+import android.util.Log;
 import android.util.SparseArray;
 
 import androidx.annotation.GuardedBy;
@@ -81,7 +85,9 @@ import java.util.stream.Collectors;
 @RequiresDevice
 @RunWith(AndroidJUnit4.class)
 @AppModeFull(reason = "Instant apps cannot get car related permissions.")
-public class CarPropertyManagerTest extends CarApiTestBase {
+public final class CarPropertyManagerTest extends AbstractCarTestCase {
+
+    private static final String TAG = CarPropertyManagerTest.class.getSimpleName();
 
     private static final long WAIT_CALLBACK = 1500L;
     private static final int NO_EVENTS = 0;
@@ -219,9 +225,19 @@ public class CarPropertyManagerTest extends CarApiTestBase {
         }
     }
 
+    // TODO(b/242350638): remove once all tests are annotated, all missed @IgnoreInvalidApi are
+    // removed, etc..
+    // Also, while fixing those, make sure the proper versions were set in the ApiRequirements
+    // annotations added to @CddTests
+    // Finally, make these changes on a child bug of 242350638
+    @Override
+    protected void configApiCheckerRule(Builder builder) {
+        Log.w(TAG, "Disabling API requirements check");
+        builder.disableAnnotationsCheck();
+    }
+
     @Before
     public void setUp() throws Exception {
-        super.setUp();
         mCarPropertyManager = (CarPropertyManager) getCar().getCarManager(Car.PROPERTY_SERVICE);
         mPropertyIds.add(VehiclePropertyIds.PERF_VEHICLE_SPEED);
         mPropertyIds.add(VehiclePropertyIds.GEAR_SELECTION);
@@ -289,8 +305,10 @@ public class CarPropertyManagerTest extends CarApiTestBase {
         assertThat(mCarPropertyManager.getCarPropertyConfig(VehiclePropertyIds.INVALID)).isNull();
     }
 
-    @CddTest(requirement = "2.5.1")
+    @CddTest(requirements = {"2.5.1"})
     @Test
+    @ApiRequirements(minCarVersion = ApiRequirements.CarVersion.TIRAMISU_0,
+              minPlatformVersion = ApiRequirements.PlatformVersion.TIRAMISU_0)
     public void testMustSupportGearSelection() {
         VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.GEAR_SELECTION,
                 CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ,
@@ -301,8 +319,10 @@ public class CarPropertyManagerTest extends CarApiTestBase {
                 mCarPropertyManager);
     }
 
-    @CddTest(requirement = "2.5.1")
+    @CddTest(requirements = {"2.5.1"})
     @Test
+    @ApiRequirements(minCarVersion = ApiRequirements.CarVersion.TIRAMISU_0,
+             minPlatformVersion = ApiRequirements.PlatformVersion.TIRAMISU_0)
     public void testMustSupportNightMode() {
         VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.NIGHT_MODE,
                 CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ,
@@ -311,8 +331,10 @@ public class CarPropertyManagerTest extends CarApiTestBase {
                 Boolean.class).requireProperty().build().verify(mCarPropertyManager);
     }
 
-    @CddTest(requirement = "2.5.1")
+    @CddTest(requirements = {"2.5.1"})
     @Test
+    @ApiRequirements(minCarVersion = ApiRequirements.CarVersion.TIRAMISU_0,
+            minPlatformVersion = ApiRequirements.PlatformVersion.TIRAMISU_0)
     public void testMustSupportPerfVehicleSpeed() {
         VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.PERF_VEHICLE_SPEED,
                 CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ,
@@ -330,8 +352,10 @@ public class CarPropertyManagerTest extends CarApiTestBase {
                 Float.class).build().verify(mCarPropertyManager);
     }
 
-    @CddTest(requirement = "2.5.1")
+    @CddTest(requirements = {"2.5.1"})
     @Test
+    @ApiRequirements(minCarVersion = ApiRequirements.CarVersion.TIRAMISU_0,
+              minPlatformVersion = ApiRequirements.PlatformVersion.TIRAMISU_0)
     public void testMustSupportParkingBrakeOn() {
         VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.PARKING_BRAKE_ON,
                 CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ,
@@ -401,6 +425,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#getProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testInfoVinIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_IDENTIFICATION, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.INFO_VIN,
@@ -420,6 +445,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#getProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testInfoMakeIfSupported() {
         VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.INFO_MAKE,
                 CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ,
@@ -746,6 +772,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testMirrorZPosIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_MIRRORS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.MIRROR_Z_POS,
@@ -764,6 +791,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testMirrorZMoveIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_MIRRORS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.MIRROR_Z_MOVE,
@@ -782,6 +810,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testMirrorYPosIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_MIRRORS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.MIRROR_Y_POS,
@@ -800,6 +829,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testMirrorYMoveIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_MIRRORS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.MIRROR_Y_MOVE,
@@ -818,6 +848,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testMirrorLockIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_MIRRORS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.MIRROR_LOCK,
@@ -834,6 +865,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testMirrorFoldIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_MIRRORS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.MIRROR_FOLD,
@@ -850,6 +882,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testWindowPosIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_WINDOWS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.WINDOW_POS,
@@ -868,6 +901,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testWindowMoveIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_WINDOWS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.WINDOW_MOVE,
@@ -886,6 +920,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testWindowLockIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_WINDOWS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.WINDOW_LOCK,
@@ -1522,6 +1557,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#getProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testCabinLightsStateIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_READ_INTERIOR_LIGHTS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.CABIN_LIGHTS_STATE,
@@ -1538,6 +1574,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#getProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testReadingLightsStateIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_READ_INTERIOR_LIGHTS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.READING_LIGHTS_STATE,
@@ -1554,6 +1591,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#getProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testVehicleCurbWeightIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_PRIVILEGED_CAR_INFO, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.VEHICLE_CURB_WEIGHT,
@@ -1693,6 +1731,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testCabinLightsSwitchIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_INTERIOR_LIGHTS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.CABIN_LIGHTS_SWITCH,
@@ -1710,6 +1749,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testReadingLightsSwitchIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_INTERIOR_LIGHTS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.READING_LIGHTS_SWITCH,
@@ -1727,6 +1767,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testSeatBeltBuckledIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_SEATS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.SEAT_BELT_BUCKLED,
@@ -1839,6 +1880,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testSeatHeightPosIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_SEATS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.SEAT_HEIGHT_POS,
@@ -1856,6 +1898,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testSeatHeightMoveIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_SEATS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.SEAT_HEIGHT_MOVE,
@@ -1873,6 +1916,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testSeatDepthPosIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_SEATS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.SEAT_DEPTH_POS,
@@ -1890,6 +1934,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testSeatDepthMoveIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_SEATS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.SEAT_DEPTH_MOVE,
@@ -1907,6 +1952,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testSeatTiltPosIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_SEATS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.SEAT_TILT_POS,
@@ -1924,6 +1970,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testSeatTiltMoveIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_SEATS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.SEAT_TILT_MOVE,
@@ -1941,6 +1988,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testSeatLumbarForeAftPosIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_SEATS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.SEAT_LUMBAR_FORE_AFT_POS,
@@ -1958,6 +2006,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testSeatLumbarForeAftMoveIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_SEATS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.SEAT_LUMBAR_FORE_AFT_MOVE,
@@ -1975,6 +2024,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testSeatLumbarSideSupportPosIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_SEATS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.SEAT_LUMBAR_SIDE_SUPPORT_POS,
@@ -1992,6 +2042,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testSeatLumbarSideSupportMoveIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_SEATS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.SEAT_LUMBAR_SIDE_SUPPORT_MOVE,
@@ -2009,6 +2060,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testSeatHeadrestHeightMoveIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_SEATS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.SEAT_HEADREST_HEIGHT_MOVE,
@@ -2026,6 +2078,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testSeatHeadrestAnglePosIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_SEATS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.SEAT_HEADREST_ANGLE_POS,
@@ -2043,6 +2096,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testSeatHeadrestAngleMoveIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_SEATS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.SEAT_HEADREST_ANGLE_MOVE,
@@ -2060,6 +2114,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testSeatHeadrestForeAftPosIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_SEATS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.SEAT_HEADREST_FORE_AFT_POS,
@@ -2077,6 +2132,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testSeatHeadrestForeAftMoveIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_SEATS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.SEAT_HEADREST_FORE_AFT_MOVE,
@@ -2093,6 +2149,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#getProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testSeatOccupancyIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_SEATS, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.SEAT_OCCUPANCY,
@@ -2111,6 +2168,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testHvacDefrosterIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_CLIMATE, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.HVAC_DEFROSTER,
@@ -2186,6 +2244,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testHvacPowerOnIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_CLIMATE, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.HVAC_POWER_ON,
@@ -2226,6 +2285,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testHvacFanSpeedIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_CLIMATE, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.HVAC_FAN_SPEED,
@@ -2243,6 +2303,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testHvacFanDirectionAvailableIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_CLIMATE, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.HVAC_FAN_DIRECTION_AVAILABLE,
@@ -2293,6 +2354,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testHvacFanDirectionIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_CLIMATE, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.HVAC_FAN_DIRECTION,
@@ -2337,6 +2399,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testHvacTemperatureCurrentIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_CLIMATE, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.HVAC_TEMPERATURE_CURRENT,
@@ -2354,6 +2417,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testHvacTemperatureSetIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_CLIMATE, () -> {
             VehiclePropertyVerifier.Builder<Float> hvacTempSetVerifierBuilder =
@@ -2441,6 +2505,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testHvacAcOnIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_CLIMATE, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.HVAC_AC_ON,
@@ -2458,6 +2523,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testHvacMaxAcOnIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_CLIMATE, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.HVAC_MAX_AC_ON,
@@ -2475,6 +2541,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testHvacMaxDefrostOnIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_CLIMATE, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.HVAC_MAX_DEFROST_ON,
@@ -2492,6 +2559,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testHvacRecircOnIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_CLIMATE, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.HVAC_RECIRC_ON,
@@ -2509,6 +2577,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testHvacAutoOnIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_CLIMATE, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.HVAC_AUTO_ON,
@@ -2526,6 +2595,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testHvacSeatTemperatureIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_CLIMATE, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.HVAC_SEAT_TEMPERATURE,
@@ -2543,6 +2613,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testHvacActualFanSpeedRpmIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_CLIMATE, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.HVAC_ACTUAL_FAN_SPEED_RPM,
@@ -2560,6 +2631,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testHvacAutoRecircOnIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_CLIMATE, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.HVAC_AUTO_RECIRC_ON,
@@ -2577,6 +2649,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testHvacSeatVentilationIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_CLIMATE, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.HVAC_SEAT_VENTILATION,
@@ -2594,6 +2667,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             "android.car.hardware.property.CarPropertyManager#setProperty",
             "android.car.hardware.property.CarPropertyManager#registerCallback",
             "android.car.hardware.property.CarPropertyManager#unregisterCallback"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testHvacDualOnIfSupported() {
         adoptSystemLevelPermission(Car.PERMISSION_CONTROL_CAR_CLIMATE, () -> {
             VehiclePropertyVerifier.newBuilder(VehiclePropertyIds.HVAC_DUAL_ON,
@@ -2641,6 +2715,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
     @SuppressWarnings("unchecked")
     @Test
     @ApiTest(apis = {"android.car.hardware.property.CarPropertyManager#getProperty"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testGetAllSupportedReadablePropertiesSync() {
         List<CarPropertyConfig> configs = mCarPropertyManager.getPropertyList(mPropertyIds);
         for (CarPropertyConfig cfg : configs) {
@@ -2682,6 +2757,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
      */
     @Test
     @ApiTest(apis = {"android.car.hardware.property.CarPropertyManager#getPropertiesAsync"})
+    @IgnoreInvalidApi(reason = "TODO(b/242350638) - invalid syntax (missing argument classes")
     public void testGetAllSupportedReadablePropertiesAsync() throws Exception {
         Executor executor = Executors.newFixedThreadPool(1);
         Set<Integer> pendingRequests = new ArraySet<>();
