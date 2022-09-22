@@ -3132,7 +3132,7 @@ public class CarPropertyManagerTest extends CarApiTestBase {
             long timeoutMillis = 2 * durationInMs;
             long startTimeMillis = SystemClock.uptimeMillis();
             while (true) {
-                if (countDownLatch.await(durationInMs, TimeUnit.SECONDS)) {
+                if (countDownLatch.await(durationInMs, TimeUnit.MILLISECONDS)) {
                     if (SystemClock.uptimeMillis() - startTimeMillis > timeoutMillis) {
                         // If we are still receiving events when timeout happens, the test failed.
                         throw new IllegalStateException("We are still receiving callback within "
