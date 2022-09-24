@@ -63,7 +63,6 @@ public final class PackageManagerHelperTest {
     private final PackageManager mPackageManager = mContext.getPackageManager();
 
     @Test
-    @Ignore("b/248609709")
     public void testGetPackageInfoAsUser() throws Exception {
         String expectedActivityName = "android.car.cts.builtin.activity.SimpleActivity";
         int flags = PackageManager.GET_ACTIVITIES | PackageManager.GET_INSTRUMENTATION
@@ -144,6 +143,7 @@ public final class PackageManagerHelperTest {
     }
 
     @Test
+    @Ignore("b/248609709")
     public void testGetPackageUidAsUser() throws Exception {
         int userId = UserHandle.SYSTEM.getIdentifier();
         int expectedUid = UserHandle.SYSTEM.getUid(Process.SYSTEM_UID);
