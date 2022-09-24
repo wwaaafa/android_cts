@@ -39,6 +39,7 @@ import android.util.Log;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -62,6 +63,7 @@ public final class PackageManagerHelperTest {
     private final PackageManager mPackageManager = mContext.getPackageManager();
 
     @Test
+    @Ignore("b/248609709")
     public void testGetPackageInfoAsUser() throws Exception {
         String expectedActivityName = "android.car.cts.builtin.activity.SimpleActivity";
         int flags = PackageManager.GET_ACTIVITIES | PackageManager.GET_INSTRUMENTATION
