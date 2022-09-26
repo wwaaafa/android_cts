@@ -430,6 +430,7 @@ public final class UserManagerTest {
 
     @Test
     @ApiTest(apis = {"android.os.UserManager#createProfile"})
+    @AppModeFull
     public void testAddCloneProfile_shouldSendProfileAddedBroadcast() {
         assumeTrue(mUserManager.supportsMultipleUsers());
         BlockingBroadcastReceiver broadcastReceiver = sDeviceState
@@ -451,6 +452,7 @@ public final class UserManagerTest {
 
     @Test
     @ApiTest(apis = {"android.os.UserManager#createProfile"})
+    @AppModeFull
     @RequireFeature(FEATURE_MANAGED_USERS)
     public void testCreateManagedProfile_shouldSendProfileAddedBroadcast() {
         BlockingBroadcastReceiver broadcastReceiver = sDeviceState
@@ -472,6 +474,7 @@ public final class UserManagerTest {
 
     @Test
     @ApiTest(apis = {"android.os.UserManager#createProfile"})
+    @AppModeFull
     public void testRemoveCloneProfile_shouldSendProfileRemovedBroadcast() {
         assumeTrue(mUserManager.supportsMultipleUsers());
         BlockingBroadcastReceiver broadcastReceiver = null;
@@ -495,6 +498,7 @@ public final class UserManagerTest {
 
     @Test
     @ApiTest(apis = {"android.os.UserManager#createProfile"})
+    @AppModeFull
     @RequireFeature(FEATURE_MANAGED_USERS)
     public void testRemoveManagedProfile_shouldSendProfileRemovedBroadcast() {
         BlockingBroadcastReceiver broadcastReceiver = null;
