@@ -223,8 +223,9 @@ open class UiAutomationTestBase(
         val (resultCode: Int, data: Intent?) = CompanionActivity.waitForActivityResult()
         assertEquals(actual = resultCode, expected = Activity.RESULT_OK)
         assertNotNull(data)
-        val associationFromActivityResult: AssociationInfo? =
-                data.getParcelableExtra(CompanionDeviceManager.EXTRA_ASSOCIATION)
+        val associationFromActivityResult: AssociationInfo? = data.getParcelableExtra(
+                CompanionDeviceManager.EXTRA_ASSOCIATION,
+                AssociationInfo::class.java)
         assertNotNull(associationFromActivityResult)
         // Check that the association reported back via the callback same as the association
         // delivered via onActivityResult().
@@ -232,8 +233,7 @@ open class UiAutomationTestBase(
 
         // Make sure "device data" was included (for backwards compatibility), and that the
         // MAC address extracted from this data matches the MAC address from AssociationInfo.
-        val deviceFromActivityResult: Parcelable? =
-                data.getParcelableExtra(CompanionDeviceManager.EXTRA_DEVICE)
+        val deviceFromActivityResult: Parcelable? = associationFromActivityResult.associatedDevice
         assertNotNull(deviceFromActivityResult)
 
         val deviceMacAddress =
