@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 The Android Open Source Project
+ * Copyright (C) 2022 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,32 +14,31 @@
  * limitations under the License.
  */
 
-package com.android.bedstead.harrier.annotations.parameterized;
+package com.android.bedstead.harrier.annotations;
 
-import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.EARLY;
-
-import com.android.bedstead.harrier.annotations.AnnotationRunPrecedence;
-import com.android.bedstead.harrier.annotations.RequireRunOnAdditionalUser;
-import com.android.bedstead.harrier.annotations.enterprise.EnsureHasDeviceOwner;
-import com.android.bedstead.harrier.annotations.enterprise.EnsureHasProfileOwner;
-import com.android.bedstead.harrier.annotations.meta.ParameterizedAnnotation;
+import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.MIDDLE;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Parameterize a test so that it runs on an unaffiliated secondary user on a device with a Device
- * Owner - with the profile owner set as primary.
+ * Mark that a test method requires the ability to add a new user.
+ *
+ * <p>You can use {@code Devicestate} to ensure that the device enters the correct state for the
+ * method.
  */
-@Target({ElementType.METHOD, ElementType.TYPE})
+@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@ParameterizedAnnotation
-@RequireRunOnAdditionalUser
-@EnsureHasDeviceOwner(affiliationIds = "affiliated")
-@EnsureHasProfileOwner(affiliationIds = "not-affiliated", isPrimary = true)
-public @interface IncludeRunOnUnaffiliatedProfileOwnerSecondaryUser {
+@Repeatable(EnsureCanAddUserGroup.class)
+public @interface EnsureCanAddUser {
+    /** The number of users we need space for. Defaults to 1. */
+    int number() default 1;
+
+    FailureMode failureMode() default FailureMode.SKIP;
+
     /**
      * Weight sets the order that annotations will be resolved.
      *
@@ -50,5 +49,5 @@ public @interface IncludeRunOnUnaffiliatedProfileOwnerSecondaryUser {
      *
      * <p>Weight can be set to a {@link AnnotationRunPrecedence} constant, or to any {@link int}.
      */
-    int weight() default EARLY;
+    int weight() default MIDDLE;
 }

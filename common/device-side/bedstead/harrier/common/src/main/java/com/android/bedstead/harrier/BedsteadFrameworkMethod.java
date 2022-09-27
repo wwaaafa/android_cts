@@ -16,6 +16,11 @@
 
 package com.android.bedstead.harrier;
 
+import com.android.bedstead.harrier.annotations.RequireRunOnInitialUser;
+import com.android.bedstead.harrier.annotations.meta.RequireRunOnProfileAnnotation;
+import com.android.bedstead.harrier.annotations.meta.RequireRunOnUserAnnotation;
+import com.android.bedstead.nene.types.OptionalBoolean;
+
 import com.google.common.base.Objects;
 
 import org.junit.runners.model.FrameworkMethod;
@@ -65,10 +70,33 @@ public final class BedsteadFrameworkMethod extends FrameworkMethod {
                 .collect(Collectors.toList()));
 
         BedsteadJUnit4.parseEnterpriseAnnotations(annotations);
+
         BedsteadJUnit4.parsePermissionAnnotations(annotations);
+
         BedsteadJUnit4.parseUserAnnotations(annotations);
 
         mBedsteadJUnit4.resolveRecursiveAnnotations(annotations, mParameterizedAnnotation);
+
+        boolean hasRequireRunOnAnnotation = false;
+
+        for (Annotation annotation : annotations) {
+            if (annotation instanceof RequireRunOnUserAnnotation
+                    || annotation instanceof RequireRunOnProfileAnnotation
+                    || annotation instanceof RequireRunOnInitialUser) {
+                hasRequireRunOnAnnotation = true;
+                break;
+            }
+        }
+
+        // If there is no RequireRunOn annotation, we'll add and resolve RequireRunOnInitialUser
+        if (!hasRequireRunOnAnnotation) {
+            annotations.addAll(
+                    BedsteadJUnit4.getReplacementAnnotations(
+                            mBedsteadJUnit4.getHarrierRule(),
+                            BedsteadJUnit4.requireRunOnInitialUser(
+                                    /* switchToUser= */ OptionalBoolean.ANY),
+                            /* parameterizedAnnotation= */ null));
+        }
 
         mAnnotations = annotations.toArray(new Annotation[0]);
         for (Annotation annotation : annotations) {

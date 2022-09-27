@@ -14,15 +14,9 @@
  * limitations under the License.
  */
 
-package com.android.bedstead.harrier.annotations.parameterized;
+package com.android.bedstead.harrier.annotations;
 
-import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.EARLY;
-
-import com.android.bedstead.harrier.annotations.AnnotationRunPrecedence;
-import com.android.bedstead.harrier.annotations.RequireRunOnAdditionalUser;
-import com.android.bedstead.harrier.annotations.enterprise.EnsureHasDeviceOwner;
-import com.android.bedstead.harrier.annotations.enterprise.EnsureHasProfileOwner;
-import com.android.bedstead.harrier.annotations.meta.ParameterizedAnnotation;
+import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.MIDDLE;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -30,16 +24,21 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Parameterize a test so that it runs on an unaffiliated secondary user on a device with a Device
- * Owner - with the profile owner set as primary.
+ * Mark that a test method should run on a device which has an additional user.
+ *
+ * <p>An additional user is a full user which is not the initial user. In general this will be a
+ * secondary user. On headless-system-user devices it will mean there are at least two secondary
+ * users on the device.
+ *
+ * <p>Your test configuration may be configured so that this test is only run on a device which has
+ * an additional user that is not the current user. Otherwise, you can use {@code Devicestate} to
+ * ensure that the device enters the correct state for the method. If there is not already an
+ * additional user on the device, and the device does not support creating additional users, then
+ * the test will be skipped.
  */
-@Target({ElementType.METHOD, ElementType.TYPE})
+@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@ParameterizedAnnotation
-@RequireRunOnAdditionalUser
-@EnsureHasDeviceOwner(affiliationIds = "affiliated")
-@EnsureHasProfileOwner(affiliationIds = "not-affiliated", isPrimary = true)
-public @interface IncludeRunOnUnaffiliatedProfileOwnerSecondaryUser {
+public @interface EnsureHasNoAdditionalUser {
     /**
      * Weight sets the order that annotations will be resolved.
      *
@@ -50,5 +49,5 @@ public @interface IncludeRunOnUnaffiliatedProfileOwnerSecondaryUser {
      *
      * <p>Weight can be set to a {@link AnnotationRunPrecedence} constant, or to any {@link int}.
      */
-    int weight() default EARLY;
+    int weight() default MIDDLE;
 }
