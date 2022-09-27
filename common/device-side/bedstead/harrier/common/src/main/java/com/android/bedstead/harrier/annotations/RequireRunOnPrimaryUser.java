@@ -37,7 +37,9 @@ import java.lang.annotation.Target;
  *
  * <p>Note that in practice this requires that the test runs on the system user, but excludes
  * headless system users. To mark that a test should run on the system user, including headless
- * system users, see {@link RequireRunOnSystemUser}.
+ * system users, see {@link RequireRunOnSystemUser} - or to run on the first user used by a
+ * human (which will be the primary user on non-headless-system-user devices, or a secondary user
+ * otherwise), use {@link RequireRunOnInitialUser}.
  */
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)

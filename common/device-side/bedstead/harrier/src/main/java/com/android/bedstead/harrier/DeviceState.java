@@ -688,12 +688,17 @@ public final class DeviceState extends HarrierRule {
             }
 
             if (annotation instanceof RequireNotHeadlessSystemUserMode) {
-                requireNotHeadlessSystemUserMode();
+                RequireNotHeadlessSystemUserMode requireNotHeadlessSystemUserModeAnnotation =
+                        (RequireNotHeadlessSystemUserMode) annotation;
+                requireNotHeadlessSystemUserMode(
+                        requireNotHeadlessSystemUserModeAnnotation.reason());
                 continue;
             }
 
             if (annotation instanceof RequireHeadlessSystemUserMode) {
-                requireHeadlessSystemUserMode();
+                RequireHeadlessSystemUserMode requireHeadlessSystemUserModeAnnotation =
+                        (RequireHeadlessSystemUserMode) annotation;
+                requireHeadlessSystemUserMode(requireHeadlessSystemUserModeAnnotation.reason());
                 continue;
             }
 
@@ -900,7 +905,7 @@ public final class DeviceState extends HarrierRule {
 
         checkAnnotations(annotations);
 
-        BedsteadJUnit4.resolveRecursiveAnnotations(annotations,
+        BedsteadJUnit4.resolveRecursiveAnnotations(this, annotations,
                 /* parameterizedAnnotation= */ null);
 
         checkAnnotations(annotations);
@@ -1264,7 +1269,7 @@ public final class DeviceState extends HarrierRule {
     }
 
     /**
-     * Get the {@link UserReference} of the work profile for the primary user.
+     * Get the {@link UserReference} of the work profile for the initial user.
      *
      * <p>If the current user is a work profile, then the current user will be returned.
      *
@@ -1274,8 +1279,7 @@ public final class DeviceState extends HarrierRule {
      * @throws IllegalStateException if there is no harrier-managed work profile
      */
     public UserReference workProfile() {
-        // Work profiles are currently only supported on the primary user
-        return workProfile(/* forUser= */ UserType.PRIMARY_USER);
+        return workProfile(/* forUser= */ UserType.INITIAL_USER);
     }
 
     /**
@@ -1419,7 +1423,15 @@ public final class DeviceState extends HarrierRule {
     }
 
     /**
-     * Get the user ID of the first human user on the device.
+     * Gets the user ID of the initial user.
+     */
+    // TODO(b/249047658): cache the initial user at the start of the run.
+    public UserReference initialUser() {
+        return TestApis.users().initial();
+    }
+
+    /**
+     * Gets the user ID of the first human user on the device.
      */
     public UserReference primaryUser() {
         return TestApis.users().all()
@@ -1440,7 +1452,7 @@ public final class DeviceState extends HarrierRule {
     }
 
     /**
-     * Get the user marked as "other" by use of the {@code @OtherUser} annotation.
+     * Gets the user marked as "other" by use of the {@code @OtherUser} annotation.
      *
      * @throws IllegalStateException if there is no "other" user
      */
@@ -1489,7 +1501,7 @@ public final class DeviceState extends HarrierRule {
             throw new IllegalStateException(
                     "No harrier-managed user of type " + userType
                             + ". This method should only be"
-                            + "used when Harrier has been used to create the user.");
+                            + " used when Harrier has been used to create the user.");
         }
 
         return mUsers.get(userType);
@@ -1822,6 +1834,8 @@ public final class DeviceState extends HarrierRule {
                 return tvProfile();
             case DPC_USER:
                 return dpc().user();
+            case INITIAL_USER:
+                return TestApis.users().initial();
             case ANY:
                 throw new IllegalStateException("ANY UserType can not be used here");
             default:
@@ -2635,14 +2649,12 @@ public final class DeviceState extends HarrierRule {
                 /* switchedToUser= */ OptionalBoolean.TRUE);
     }
 
-    private void requireNotHeadlessSystemUserMode() {
-        assumeFalse("This test is not supported on headless system user devices",
-                TestApis.users().isHeadlessSystemUserMode());
+    private void requireNotHeadlessSystemUserMode(String reason) {
+        assumeFalse(reason, TestApis.users().isHeadlessSystemUserMode());
     }
 
-    private void requireHeadlessSystemUserMode() {
-        assumeTrue("This test is only supported on headless system user devices",
-                TestApis.users().isHeadlessSystemUserMode());
+    private void requireHeadlessSystemUserMode(String reason) {
+        assumeTrue(reason, TestApis.users().isHeadlessSystemUserMode());
     }
 
     private void requireLowRamDevice(String reason, FailureMode failureMode) {
@@ -2809,5 +2821,10 @@ public final class DeviceState extends HarrierRule {
     private void requireNotInstantApp(String reason, FailureMode failureMode) {
         checkFailOrSkip("Test does not run as an instant-app: " + reason,
                 !TestApis.packages().instrumented().isInstantApp(), failureMode);
+    }
+
+    @Override
+    boolean isHeadlessSystemUserMode() {
+        return TestApis.users().isHeadlessSystemUserMode();
     }
 }

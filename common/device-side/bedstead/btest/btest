@@ -71,7 +71,7 @@ class SecondaryUserState:
         return "RUN_ON_SECONDARY_USER"
 
     def is_active(self, device_state):
-        return self._is_secondary_user(device_state["users"][device_state["current_user"]])
+        return is_secondary_user(device_state["users"][device_state["current_user"]])
 
     def include_annotations(self):
         return ["com.android.bedstead.harrier.annotations.RequireRunOnSecondaryUser"]
@@ -101,10 +101,8 @@ class WorkProfileState:
             if device_state["current_user"] == 0:
                 return False
         else:
-            print("Current user: " + str(device_state["current_user"]))
             if not device_state["current_user"] == 0:
                 return False
-            sys.exit(0)
         return self._has_work_profile(device_state["users"][device_state["current_user"]])
 
     def include_annotations(self):

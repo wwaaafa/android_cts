@@ -105,8 +105,6 @@ public final class Users {
      * <p>This will be the {@link #system()} user on most systems.</p>
      */
     public UserReference initial() {
-        boolean skipUserZero = false;
-
         if (!isHeadlessSystemUserMode()) {
             return system();
         }
@@ -121,7 +119,6 @@ public final class Users {
                 } else {
                     Log.d(LOG_TAG, "Initial user " + user + " does not exist."
                             + "Finding first non-system full user");
-                    skipUserZero = true;
                 }
             } catch (AdbException e) {
                 throw new NeneException("Error finding initial user on Auto", e);
@@ -135,7 +132,7 @@ public final class Users {
             if (user.parent() != null) {
                 continue;
             }
-            if (skipUserZero && user.id() == 0) {
+            if (user.id() == 0) {
                 continue;
             }
 

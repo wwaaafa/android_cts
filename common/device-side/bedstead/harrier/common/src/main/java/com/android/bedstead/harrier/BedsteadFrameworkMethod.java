@@ -36,18 +36,20 @@ import javax.annotation.Nullable;
  */
 public final class BedsteadFrameworkMethod extends FrameworkMethod {
 
+    private final BedsteadJUnit4 mBedsteadJUnit4;
     private final Annotation mParameterizedAnnotation;
     private final Map<Class<? extends Annotation>, Annotation> mAnnotationsMap =
             new HashMap<>();
     private Annotation[] mAnnotations;
 
-    public BedsteadFrameworkMethod(Method method) {
-        this(method, /* parameterizedAnnotation= */ null);
+    public BedsteadFrameworkMethod(BedsteadJUnit4 bedsteadJUnit4, Method method) {
+        this(bedsteadJUnit4, method, /* parameterizedAnnotation= */ null);
     }
 
-    public BedsteadFrameworkMethod(Method method,
+    public BedsteadFrameworkMethod(BedsteadJUnit4 bedsteadJUnit4, Method method,
             @Nullable Annotation parameterizedAnnotation) {
         super(method);
+        mBedsteadJUnit4 = bedsteadJUnit4;
         mParameterizedAnnotation = parameterizedAnnotation;
 
         calculateAnnotations();
@@ -66,7 +68,7 @@ public final class BedsteadFrameworkMethod extends FrameworkMethod {
         BedsteadJUnit4.parsePermissionAnnotations(annotations);
         BedsteadJUnit4.parseUserAnnotations(annotations);
 
-        BedsteadJUnit4.resolveRecursiveAnnotations(annotations, mParameterizedAnnotation);
+        mBedsteadJUnit4.resolveRecursiveAnnotations(annotations, mParameterizedAnnotation);
 
         mAnnotations = annotations.toArray(new Annotation[0]);
         for (Annotation annotation : annotations) {
