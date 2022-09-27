@@ -489,7 +489,7 @@ public class UsersTest {
     @Test
     @RequireRunNotOnSecondaryUser
     @EnsureHasSecondaryUser
-    @RequireHeadlessSystemUserMode
+    @RequireHeadlessSystemUserMode(reason = "stopBgUsersOnSwitch is only for headless")
     public void switch_hasSetStopBgUsersOnSwitch_stopsUser() throws Exception {
         try {
             TestApis.users().setStopBgUsersOnSwitch(STOP_USER_ON_SWITCH_TRUE);

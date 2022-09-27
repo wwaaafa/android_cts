@@ -774,13 +774,13 @@ public class DeviceStateTest {
     }
 
     @Test
-    @RequireNotHeadlessSystemUserMode
+    @RequireNotHeadlessSystemUserMode(reason = "Test")
     public void requireNotHeadlessSystemUserModeAnnotation_notHeadlessSystemUserMode() {
         assertThat(TestApis.users().isHeadlessSystemUserMode()).isFalse();
     }
 
     @Test
-    @RequireHeadlessSystemUserMode
+    @RequireHeadlessSystemUserMode(reason = "Test")
     public void requireHeadlessSystemUserModeAnnotation_isHeadlessSystemUserMode() {
         assertThat(TestApis.users().isHeadlessSystemUserMode()).isTrue();
     }
