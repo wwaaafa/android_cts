@@ -53,6 +53,7 @@ import com.android.bedstead.harrier.annotations.EnsureCanGetPermission;
 import com.android.bedstead.harrier.annotations.EnsureDoesNotHaveAppOp;
 import com.android.bedstead.harrier.annotations.EnsureDoesNotHavePermission;
 import com.android.bedstead.harrier.annotations.EnsureGlobalSettingSet;
+import com.android.bedstead.harrier.annotations.EnsureHasAdditionalUser;
 import com.android.bedstead.harrier.annotations.EnsureHasAppOp;
 import com.android.bedstead.harrier.annotations.EnsureHasPermission;
 import com.android.bedstead.harrier.annotations.EnsurePackageNotInstalled;
@@ -155,6 +156,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 
 /**
@@ -422,6 +424,11 @@ public final class DeviceState extends HarrierRule {
                 ensureHasUser(
                         ensureHasUserAnnotation.value(), installInstrumentedApp,
                         switchedToUser);
+                continue;
+            }
+
+            if (annotation instanceof EnsureHasAdditionalUser) {
+                ensureHasAdditionalUser();
                 continue;
             }
 
@@ -1614,6 +1621,20 @@ public final class DeviceState extends HarrierRule {
         mUsers.put(resolvedUserType, user);
     }
 
+    private void ensureHasAdditionalUser() {
+        if (TestApis.users().isHeadlessSystemUserMode()) {
+            com.android.bedstead.nene.users.UserType resolvedUserType =
+                    requireUserSupported(SECONDARY_USER_TYPE_NAME, FailureMode.SKIP);
+
+            Collection<UserReference> users = TestApis.users().findUsersOfType(resolvedUserType);
+            if (users.size() < 2) {
+                createUser(resolvedUserType);
+            }
+        } else {
+            ensureHasUser(SECONDARY_USER_TYPE_NAME, OptionalBoolean.ANY, OptionalBoolean.ANY);
+        }
+    }
+
     /**
      * Ensure that there is no user of the given type.
      */
@@ -1836,11 +1857,38 @@ public final class DeviceState extends HarrierRule {
                 return dpc().user();
             case INITIAL_USER:
                 return TestApis.users().initial();
+            case ADDITIONAL_USER:
+                return additionalUser();
             case ANY:
                 throw new IllegalStateException("ANY UserType can not be used here");
             default:
                 throw new IllegalArgumentException("Unknown user type " + userType);
         }
+    }
+
+    public UserReference additionalUser() {
+        // TODO: Cache additional user at start of test
+        boolean skipFirstSecondaryUser = false;
+        if (TestApis.users().isHeadlessSystemUserMode()) {
+            skipFirstSecondaryUser = true;
+        }
+
+        for (UserReference secondaryUser :
+                TestApis.users().findUsersOfType(TestApis.users().supportedType(
+                        SECONDARY_USER_TYPE_NAME))
+                        .stream()
+                        .sorted(Comparator.comparing(UserReference::id))
+                        .collect(Collectors.toList())) {
+            if (skipFirstSecondaryUser) {
+                skipFirstSecondaryUser = false;
+                continue;
+            }
+
+            return secondaryUser;
+        }
+
+        throw new IllegalStateException("No additional user found. Ensure the correct annotations "
+                + "have been used to declare use of additional user.");
     }
 
     private void teardownNonShareableState() {

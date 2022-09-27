@@ -19,6 +19,7 @@ package com.android.bedstead.harrier;
 import com.android.bedstead.harrier.annotations.AnnotationRunPrecedence;
 import com.android.bedstead.harrier.annotations.CrossUserTest;
 import com.android.bedstead.harrier.annotations.EnsureDoesNotHavePermission;
+import com.android.bedstead.harrier.annotations.EnsureHasAdditionalUser;
 import com.android.bedstead.harrier.annotations.EnsureHasPermission;
 import com.android.bedstead.harrier.annotations.EnsureHasSecondaryUser;
 import com.android.bedstead.harrier.annotations.EnsureHasTvProfile;
@@ -28,6 +29,7 @@ import com.android.bedstead.harrier.annotations.IntTestParameter;
 import com.android.bedstead.harrier.annotations.OtherUser;
 import com.android.bedstead.harrier.annotations.PermissionTest;
 import com.android.bedstead.harrier.annotations.RequireNotHeadlessSystemUserMode;
+import com.android.bedstead.harrier.annotations.RequireRunOnAdditionalUser;
 import com.android.bedstead.harrier.annotations.RequireRunOnInitialUser;
 import com.android.bedstead.harrier.annotations.RequireRunOnPrimaryUser;
 import com.android.bedstead.harrier.annotations.RequireRunOnSecondaryUser;
@@ -113,6 +115,11 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
     }
 
     @AutoAnnotation
+    private static RequireRunOnAdditionalUser requireRunOnAdditionalUser() {
+        return new AutoAnnotation_BedsteadJUnit4_requireRunOnAdditionalUser();
+    }
+
+    @AutoAnnotation
     private static RequireRunOnWorkProfile requireRunOnWorkProfile() {
         return new AutoAnnotation_BedsteadJUnit4_requireRunOnWorkProfile();
     }
@@ -130,6 +137,11 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
     @AutoAnnotation
     private static EnsureHasSecondaryUser ensureHasSecondaryUser() {
         return new AutoAnnotation_BedsteadJUnit4_ensureHasSecondaryUser();
+    }
+
+    @AutoAnnotation
+    private static EnsureHasAdditionalUser ensureHasAdditionalUser() {
+        return new AutoAnnotation_BedsteadJUnit4_ensureHasAdditionalUser();
     }
 
     @AutoAnnotation
@@ -255,6 +267,12 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
                     return Stream.of(ensureHasSecondaryUser(), requireRunOnSecondaryUser());
                 } else {
                     return Stream.of(requireRunOnPrimaryUser());
+                }
+            }, RequireRunOnAdditionalUser.class, (harrierRule, a) -> {
+                if (harrierRule.isHeadlessSystemUserMode()) {
+                    return Stream.of(ensureHasSecondaryUser(), requireRunOnAdditionalUser());
+                } else {
+                    return Stream.of(requireRunOnSecondaryUser());
                 }
             }
     );
@@ -787,6 +805,8 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
                 return null; // No requirement, run on current user
             case INITIAL_USER:
                 return requireRunOnInitialUser();
+            case ADDITIONAL_USER:
+                return requireRunOnAdditionalUser();
             case PRIMARY_USER:
                 return requireRunOnPrimaryUser();
             case SECONDARY_USER:
@@ -809,6 +829,8 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
                 return null; // We always have a current user
             case INITIAL_USER:
                 return null; // We always have an initial user
+            case ADDITIONAL_USER:
+                return ensureHasAdditionalUser();
             case PRIMARY_USER:
                 return requireNotHeadlessSystemUserMode(
                         "Headless System User Mode Devices do not have a primary user");
