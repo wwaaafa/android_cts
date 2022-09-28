@@ -16,6 +16,8 @@
 
 package android.car.cts.utils;
 
+import static android.car.cts.utils.ShellPermissionUtils.runWithShellPermissionIdentity;
+
 import static com.google.common.truth.Truth.assertWithMessage;
 
 import static org.junit.Assume.assumeNotNull;
@@ -105,6 +107,8 @@ public class VehiclePropertyVerifier<T> {
     private final boolean mRequireMinValuesToBeZero;
     private final boolean mRequireZeroToBeContainedInMinMaxRanges;
     private final boolean mPossiblyDependentOnHvacPowerOn;
+    private final ImmutableSet<String> mReadPermissions;
+    private final ImmutableSet<String> mWritePermissions;
 
     private VehiclePropertyVerifier(
             int propertyId,
@@ -124,7 +128,9 @@ public class VehiclePropertyVerifier<T> {
             boolean requireMinMaxValues,
             boolean requireMinValuesToBeZero,
             boolean requireZeroToBeContainedInMinMaxRanges,
-            boolean possiblyDependentOnHvacPowerOn) {
+            boolean possiblyDependentOnHvacPowerOn,
+            ImmutableSet<String> readPermissions,
+            ImmutableSet<String> writePermissions) {
         mPropertyId = propertyId;
         mPropertyName = VehiclePropertyIds.toString(propertyId);
         mAccess = access;
@@ -144,6 +150,8 @@ public class VehiclePropertyVerifier<T> {
         mRequireMinValuesToBeZero = requireMinValuesToBeZero;
         mRequireZeroToBeContainedInMinMaxRanges = requireZeroToBeContainedInMinMaxRanges;
         mPossiblyDependentOnHvacPowerOn = possiblyDependentOnHvacPowerOn;
+        mReadPermissions = readPermissions;
+        mWritePermissions = writePermissions;
     }
 
     public static <T> Builder<T> newBuilder(
@@ -199,29 +207,41 @@ public class VehiclePropertyVerifier<T> {
     }
 
     public void verify(CarPropertyManager carPropertyManager) {
-        CarPropertyConfig<?> carPropertyConfig = carPropertyManager.getCarPropertyConfig(
-                mPropertyId);
-        if (mRequiredProperty) {
-            assertWithMessage("Must support " + mPropertyName).that(carPropertyConfig).isNotNull();
-        } else {
-            assumeNotNull(carPropertyConfig);
-        }
+        runWithShellPermissionIdentity(
+                () -> {
+                    CarPropertyConfig<?> carPropertyConfig =
+                            carPropertyManager.getCarPropertyConfig(mPropertyId);
+                    if (mRequiredProperty) {
+                        assertWithMessage("Must support " + mPropertyName)
+                                .that(carPropertyConfig)
+                                .isNotNull();
+                    } else {
+                        assumeNotNull(carPropertyConfig);
+                    }
 
-        verifyCarPropertyConfig(carPropertyConfig);
+                    verifyCarPropertyConfig(carPropertyConfig);
 
-        if (mPossiblyDependentOnHvacPowerOn) {
-            CarPropertyConfig<?> hvacPowerOnCarPropertyConfig =
-                    carPropertyManager.getCarPropertyConfig(VehiclePropertyIds.HVAC_POWER_ON);
-            if (hvacPowerOnCarPropertyConfig != null
-                    && hvacPowerOnCarPropertyConfig.getConfigArray().contains(mPropertyId)) {
-                turnOnHvacPower(carPropertyManager, hvacPowerOnCarPropertyConfig);
-            }
-        }
+                    if (mPossiblyDependentOnHvacPowerOn) {
+                        CarPropertyConfig<?> hvacPowerOnCarPropertyConfig =
+                                carPropertyManager.getCarPropertyConfig(
+                                        VehiclePropertyIds.HVAC_POWER_ON);
+                        if (hvacPowerOnCarPropertyConfig != null
+                                && hvacPowerOnCarPropertyConfig
+                                        .getConfigArray()
+                                        .contains(mPropertyId)) {
+                            turnOnHvacPower(carPropertyManager, hvacPowerOnCarPropertyConfig);
+                        }
+                    }
 
-        verifyCarPropertyValueGetter(carPropertyConfig, carPropertyManager);
-        verifyCarPropertyValueCallback(carPropertyConfig, carPropertyManager);
-        verifyCarPropertyValueSetter(carPropertyConfig, carPropertyManager);
-        verifyGetPropertiesAsync(carPropertyConfig, carPropertyManager);
+                    verifyCarPropertyValueGetter(carPropertyConfig, carPropertyManager);
+                    verifyCarPropertyValueCallback(carPropertyConfig, carPropertyManager);
+                    verifyCarPropertyValueSetter(carPropertyConfig, carPropertyManager);
+                    verifyGetPropertiesAsync(carPropertyConfig, carPropertyManager);
+                },
+                ImmutableSet.<String>builder()
+                        .addAll(mReadPermissions)
+                        .addAll(mWritePermissions)
+                        .build().toArray(new String[0]));
     }
 
     private void turnOnHvacPower(CarPropertyManager carPropertyManager,
@@ -798,6 +818,9 @@ public class VehiclePropertyVerifier<T> {
         private boolean mRequireMinValuesToBeZero = false;
         private boolean mRequireZeroToBeContainedInMinMaxRanges = false;
         private boolean mPossiblyDependentOnHvacPowerOn = false;
+        private final ImmutableSet.Builder<String> mReadPermissionsBuilder = ImmutableSet.builder();
+        private final ImmutableSet.Builder<String> mWritePermissionsBuilder =
+                ImmutableSet.builder();
 
         private Builder(int propertyId, int access, int areaType, int changeMode,
                 Class<T> propertyType) {
@@ -876,14 +899,38 @@ public class VehiclePropertyVerifier<T> {
             return this;
         }
 
+        public Builder<T> addReadPermission(String readPermission) {
+            mReadPermissionsBuilder.add(readPermission);
+            return this;
+        }
+
+        public Builder<T> addWritePermission(String writePermission) {
+            mWritePermissionsBuilder.add(writePermission);
+            return this;
+        }
+
         public VehiclePropertyVerifier<T> build() {
-            return new VehiclePropertyVerifier<>(mPropertyId, mAccess, mAreaType, mChangeMode,
-                    mPropertyType, mRequiredProperty, mConfigArrayVerifier,
-                    mCarPropertyValueVerifier, mAreaIdsVerifier, mCarPropertyConfigVerifier,
-                    mPossibleConfigArrayValues, mPossibleCarPropertyValues,
-                    mRequirePropertyValueToBeInConfigArray, mVerifySetterWithConfigArrayValues,
-                    mRequireMinMaxValues, mRequireMinValuesToBeZero,
-                    mRequireZeroToBeContainedInMinMaxRanges, mPossiblyDependentOnHvacPowerOn);
+            return new VehiclePropertyVerifier<>(
+                    mPropertyId,
+                    mAccess,
+                    mAreaType,
+                    mChangeMode,
+                    mPropertyType,
+                    mRequiredProperty,
+                    mConfigArrayVerifier,
+                    mCarPropertyValueVerifier,
+                    mAreaIdsVerifier,
+                    mCarPropertyConfigVerifier,
+                    mPossibleConfigArrayValues,
+                    mPossibleCarPropertyValues,
+                    mRequirePropertyValueToBeInConfigArray,
+                    mVerifySetterWithConfigArrayValues,
+                    mRequireMinMaxValues,
+                    mRequireMinValuesToBeZero,
+                    mRequireZeroToBeContainedInMinMaxRanges,
+                    mPossiblyDependentOnHvacPowerOn,
+                    mReadPermissionsBuilder.build(),
+                    mWritePermissionsBuilder.build());
         }
     }
 
