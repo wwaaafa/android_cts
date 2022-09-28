@@ -93,6 +93,9 @@ public class AccessibilityMagnificationTest {
     public static final String ACCESSIBILITY_DISPLAY_MAGNIFICATION_ENABLED =
             "accessibility_display_magnification_enabled";
 
+    /** Maximum timeout while waiting for a config to be updated */
+    public static final int TIMEOUT_CONFIG_SECONDS = 15;
+
     private static UiAutomation sUiAutomation;
 
     private StubMagnificationAccessibilityService mService;
@@ -954,7 +957,7 @@ public class AccessibilityMagnificationTest {
         try {
             waitOnMagnificationChanged(controller, scale, centerX, centerY);
 
-            TestUtils.waitUntil("node bounds is not changed:", /* timeoutSecond= */ 5 ,
+            TestUtils.waitUntil("node bounds is not changed:", TIMEOUT_CONFIG_SECONDS,
                     () -> {
                         buttonNode.refresh();
                         buttonNode.getBoundsInScreen(boundsAfterMagnify);
@@ -1051,7 +1054,7 @@ public class AccessibilityMagnificationTest {
             MagnificationConfig config) throws Exception {
         TestUtils.waitUntil(
                 "Failed to apply the config. expected: " + config + " , actual: "
-                        + controller.getMagnificationConfig(), 5,
+                        + controller.getMagnificationConfig(), TIMEOUT_CONFIG_SECONDS,
                 () -> {
                     final MagnificationConfig actualConfig = controller.getMagnificationConfig();
                     return actualConfig.getMode() == config.getMode()
