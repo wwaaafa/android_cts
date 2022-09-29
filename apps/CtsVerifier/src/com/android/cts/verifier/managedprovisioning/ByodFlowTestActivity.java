@@ -306,15 +306,6 @@ public class ByodFlowTestActivity extends DialogTestListActivity {
                     new Intent(Settings.ACTION_SETTINGS));
         }
 
-        Intent workStatusIcon = new Intent(WorkStatusTestActivity.ACTION_WORK_STATUS_ICON);
-        workStatusIcon.setFlags(FLAG_ACTIVITY_NEW_TASK);
-        mWorkStatusBarIconTest = new DialogTestListItemWithIcon(this,
-                R.string.provisioning_byod_work_status_icon,
-                "BYOD_WorkStatusBarIconTest",
-                R.string.provisioning_byod_work_status_icon_instruction,
-                workStatusIcon,
-                R.drawable.stat_sys_managed_profile_status);
-
         /* Disable due to b/111734436.
         Intent workStatusToast = new Intent(WorkStatusTestActivity.ACTION_WORK_STATUS_TOAST);
         workStatusToast.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

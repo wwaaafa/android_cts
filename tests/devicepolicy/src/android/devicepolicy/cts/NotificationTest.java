@@ -35,6 +35,7 @@ import com.android.bedstead.testapp.TestAppInstance;
 import com.android.compatibility.common.util.CddTest;
 import com.android.interactive.Step;
 import com.android.interactive.annotations.Interactive;
+import com.android.interactive.annotations.NotFullyAutomated;
 import com.android.interactive.steps.sysui.DoesTheNotificationTitledNotificationHaveAWorkBadgeStep;
 
 import org.junit.ClassRule;
@@ -62,6 +63,7 @@ public final class NotificationTest {
     @EnsureHasWorkProfile
     @RequireRunOnPrimaryUser
     @CddTest(requirements = "3.9.2/C-1-3")
+    @NotFullyAutomated(reason = "DoesTheNotificationTitledNotificationHaveAWorkBadgeStep")
     public void notification_fromPersonalProfile_isNotBadged() {
         try (TestAppInstance primaryUserApp = sTestApp.install(sDeviceState.primaryUser());
              PermissionContext p = primaryUserApp.permissions().withPermission(POST_NOTIFICATIONS)) {
@@ -79,6 +81,7 @@ public final class NotificationTest {
     @EnsureHasWorkProfile
     @RequireRunOnPrimaryUser
     @CddTest(requirements = "3.9.2/C-1-3")
+    @NotFullyAutomated(reason = "DoesTheNotificationTitledNotificationHaveAWorkBadgeStep")
     public void notification_fromWorkProfile_isBadged() throws Exception {
         try (TestAppInstance workProfileApp = sTestApp.install(sDeviceState.workProfile());
              PermissionContext p = workProfileApp.permissions().withPermission(POST_NOTIFICATIONS)) {
