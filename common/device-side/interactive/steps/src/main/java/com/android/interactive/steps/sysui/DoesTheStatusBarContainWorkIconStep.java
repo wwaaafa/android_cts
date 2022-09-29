@@ -20,9 +20,9 @@ import com.android.interactive.annotations.NotFullyAutomated;
 import com.android.interactive.steps.YesNoStep;
 
 /** See Step Instruction. */
-@NotFullyAutomated(reason="No current reasonable way of identifying the work icon on a notification")
-public class DoesTheNotificationTitledNotificationHaveAWorkBadgeStep extends YesNoStep {
-    public DoesTheNotificationTitledNotificationHaveAWorkBadgeStep() {
-        super("Find the notification with the title 'Notification'. Does it have a badge indicating it is related to work?");
+@NotFullyAutomated(reason = "UiAutomator cannot access the status bar")
+public class DoesTheStatusBarContainWorkIconStep extends YesNoStep {
+    public DoesTheStatusBarContainWorkIconStep() {
+        super("Does the status bar contain a work icon?");
     }
 }
