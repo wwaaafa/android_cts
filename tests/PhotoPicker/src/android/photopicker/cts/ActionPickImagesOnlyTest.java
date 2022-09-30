@@ -102,10 +102,10 @@ public class ActionPickImagesOnlyTest extends PhotoPickerBaseTest {
         assertThat(itemCount).isEqualTo(imageCount);
         // Select maxCount + 1 item
         for (int i = 0; i < itemCount; i++) {
-            clickAndWait(mDevice, itemList.get(i));
+            clickAndWait(sDevice, itemList.get(i));
         }
 
-        UiObject snackbarTextView = mDevice.findObject(new UiSelector().text(
+        UiObject snackbarTextView = sDevice.findObject(new UiSelector().text(
                 "Select up to 2 items"));
         assertWithMessage("Timed out while waiting for snackbar to appear").that(
                 snackbarTextView.waitForExists(SHORT_TIMEOUT)).isTrue();
@@ -113,7 +113,7 @@ public class ActionPickImagesOnlyTest extends PhotoPickerBaseTest {
         assertWithMessage("Timed out waiting for snackbar to disappear").that(
                 snackbarTextView.waitUntilGone(SHORT_TIMEOUT)).isTrue();
 
-        clickAndWait(mDevice, findAddButton());
+        clickAndWait(sDevice, findAddButton());
 
         final ClipData clipData = mActivity.getResult().data.getClipData();
         final int count = clipData.getItemCount();
@@ -132,7 +132,7 @@ public class ActionPickImagesOnlyTest extends PhotoPickerBaseTest {
         final int itemCount = itemList.size();
         assertThat(itemCount).isEqualTo(imageCount);
         // Select 1 item
-        clickAndWait(mDevice, itemList.get(0));
+        clickAndWait(sDevice, itemList.get(0));
 
         final Uri uri = mActivity.getResult().data.getData();
         assertPickerUriFormat(uri, mContext.getUserId());
