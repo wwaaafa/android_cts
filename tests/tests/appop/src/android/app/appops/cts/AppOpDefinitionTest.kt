@@ -21,6 +21,7 @@ import android.content.pm.PermissionInfo.PROTECTION_DANGEROUS
 import android.content.pm.PermissionInfo.PROTECTION_FLAG_APPOP
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.fail
+import org.junit.Ignore
 import org.junit.Test
 
 class AppOpDefinitionTest {
@@ -31,6 +32,7 @@ class AppOpDefinitionTest {
         private const val APPOP = "appop"
     }
 
+    @Ignore
     @Test
     fun ensureRuntimeAppOpMappingIsCorrect() {
         val missingPerms = mutableListOf<Triple<String, String, String>>()
