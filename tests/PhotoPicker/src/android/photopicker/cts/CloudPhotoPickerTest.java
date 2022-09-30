@@ -374,12 +374,12 @@ public class CloudPhotoPickerTest extends PhotoPickerBaseTest {
         for (int i = 0; i < itemList.size(); i++) {
             final UiObject item = itemList.get(i);
             item.click();
-            mDevice.waitForIdle();
+            sDevice.waitForIdle();
         }
 
         final UiObject addButton = findAddButton();
         addButton.click();
-        mDevice.waitForIdle();
+        sDevice.waitForIdle();
 
         return mActivity.getResult().data.getClipData();
     }
