@@ -40,6 +40,7 @@ import androidx.test.filters.SmallTest;
 
 import com.android.compatibility.common.util.ApiTest;
 import com.android.compatibility.common.util.CddTest;
+import com.android.compatibility.common.util.Preconditions;
 
 import org.junit.Assume;
 import org.junit.Before;
