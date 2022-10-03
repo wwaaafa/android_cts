@@ -18,13 +18,12 @@ package android.photopicker.cts;
 
 import static android.photopicker.cts.util.GetContentActivityAliasUtils.clearPackageData;
 import static android.photopicker.cts.util.GetContentActivityAliasUtils.getDocumentsUiPackageName;
-import static android.photopicker.cts.util.PhotoPickerAssertionsUtils.assertReadOnlyAccess;
 import static android.photopicker.cts.util.PhotoPickerFilesUtils.createImagesAndGetUriAndPath;
 import static android.photopicker.cts.util.PhotoPickerFilesUtils.deleteMedia;
 import static android.photopicker.cts.util.PhotoPickerUiUtils.SHORT_TIMEOUT;
 import static android.photopicker.cts.util.PhotoPickerUiUtils.clickAndWait;
 import static android.photopicker.cts.util.PhotoPickerUiUtils.findAndClickBrowse;
-
+import static android.photopicker.cts.util.ResultsAssertionsUtils.assertReadOnlyAccess;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
@@ -33,7 +32,7 @@ import android.content.ClipData;
 import android.content.Intent;
 import android.net.Uri;
 import android.photopicker.cts.util.GetContentActivityAliasUtils;
-import android.photopicker.cts.util.PhotoPickerUiUtils;
+import android.photopicker.cts.util.UiAssertionUtils;
 import android.util.Pair;
 
 import androidx.test.uiautomator.UiObject;
@@ -185,7 +184,7 @@ public class ActionGetContentOnlyTest extends PhotoPickerBaseTest {
         mActivity.startActivityForResult(Intent.createChooser(intent, TAG), REQUEST_CODE);
 
         // Should open Picker
-        assertThatShowsPickerUi();
+        UiAssertionUtils.assertThatShowsPickerUi();
     }
 
     @Test
@@ -207,7 +206,7 @@ public class ActionGetContentOnlyTest extends PhotoPickerBaseTest {
         findAndClickMediaIcon();
 
         // Should open Picker
-        assertThatShowsPickerUi();
+        UiAssertionUtils.assertThatShowsPickerUi();
     }
 
     private void findAndClickMediaIcon() throws Exception {
@@ -226,23 +225,6 @@ public class ActionGetContentOnlyTest extends PhotoPickerBaseTest {
         mDevice.waitForIdle();
 
         clickAndWait(mDevice, mediaButton);
-    }
-
-    private void assertThatShowsPickerUi() {
-        // Assert that Search bar for DocumentsUi shows
-        // Add a short timeout wait for DocumentsUi to show
-        assertThat(new UiObject(new UiSelector().resourceIdMatches(
-                PhotoPickerUiUtils.REGEX_PACKAGE_NAME + ":id/bottom_sheet"))
-                .waitForExists(SHORT_TIMEOUT)).isTrue();
-
-        // Assert that "Recent files" header for DocumentsUi shows
-        assertThat(new UiObject(new UiSelector().resourceIdMatches(
-                PhotoPickerUiUtils.REGEX_PACKAGE_NAME + ":id/privacy_text"))
-                .exists()).isTrue();
-
-        // Assert that Documents list UiObject for DocumentsUi shows
-        assertThat(new UiObject(new UiSelector().text("Photos")).exists()).isTrue();
-        assertThat(new UiObject(new UiSelector().text("Albums")).exists()).isTrue();
     }
 
     private void assertThatShowsDocumentsUiButtons() {
