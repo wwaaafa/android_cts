@@ -19,18 +19,17 @@ package android.virtualdevice.cts;
 import static android.Manifest.permission.ACTIVITY_EMBEDDING;
 import static android.Manifest.permission.ADD_ALWAYS_UNLOCKED_DISPLAY;
 import static android.Manifest.permission.CREATE_VIRTUAL_DEVICE;
+import static android.companion.virtual.VirtualDeviceManager.DEFAULT_DEVICE_ID;
 
 import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 
 import android.annotation.Nullable;
+import android.companion.virtual.VirtualDevice;
 import android.companion.virtual.VirtualDeviceManager;
-import android.companion.virtual.VirtualDeviceManager.VirtualDevice;
 import android.companion.virtual.VirtualDeviceParams;
 import android.content.Context;
 import android.platform.test.annotations.AppModeFull;
@@ -52,8 +51,14 @@ import org.mockito.MockitoAnnotations;
 @AppModeFull(reason = "VirtualDeviceManager cannot be accessed by instant apps")
 public class VirtualDeviceManagerBasicTest {
 
+    private static final String VIRTUAL_DEVICE_NAME = "VirtualDeviceName";
+
     private static final VirtualDeviceParams DEFAULT_VIRTUAL_DEVICE_PARAMS =
             new VirtualDeviceParams.Builder().build();
+    private static final VirtualDeviceParams NAMED_VIRTUAL_DEVICE_PARAMS =
+            new VirtualDeviceParams.Builder()
+                    .setName(VIRTUAL_DEVICE_NAME)
+                    .build();
 
     @Rule
     public AdoptShellPermissionsRule mAdoptShellPermissionsRule = new AdoptShellPermissionsRule(
@@ -68,7 +73,9 @@ public class VirtualDeviceManagerBasicTest {
 
     private VirtualDeviceManager mVirtualDeviceManager;
     @Nullable
-    private VirtualDevice mVirtualDevice;
+    private VirtualDeviceManager.VirtualDevice mVirtualDevice;
+    @Nullable
+    private VirtualDeviceManager.VirtualDevice mAnotherVirtualDevice;
 
     @Before
     public void setUp() throws Exception {
@@ -82,6 +89,9 @@ public class VirtualDeviceManagerBasicTest {
         if (mVirtualDevice != null) {
             mVirtualDevice.close();
         }
+        if (mAnotherVirtualDevice != null) {
+            mAnotherVirtualDevice.close();
+        }
     }
 
     @Test
@@ -91,7 +101,7 @@ public class VirtualDeviceManagerBasicTest {
                         mFakeAssociationRule.getAssociationInfo().getId(),
                         DEFAULT_VIRTUAL_DEVICE_PARAMS);
         assertThat(mVirtualDevice).isNotNull();
-        assertTrue(mVirtualDevice.getDeviceId() > VirtualDeviceManager.DEFAULT_DEVICE_ID);
+        assertThat(mVirtualDevice.getDeviceId()).isGreaterThan(DEFAULT_DEVICE_ID);
     }
 
     @Test
@@ -100,12 +110,12 @@ public class VirtualDeviceManagerBasicTest {
                 mVirtualDeviceManager.createVirtualDevice(
                         mFakeAssociationRule.getAssociationInfo(0).getId(),
                         DEFAULT_VIRTUAL_DEVICE_PARAMS);
-        VirtualDevice anotherVirtualDevice =
+        mAnotherVirtualDevice =
                 mVirtualDeviceManager.createVirtualDevice(
                         mFakeAssociationRule.getAssociationInfo(1).getId(),
                         DEFAULT_VIRTUAL_DEVICE_PARAMS);
-        assertThat(anotherVirtualDevice).isNotNull();
-        assertEquals(mVirtualDevice.getDeviceId() + 1, anotherVirtualDevice.getDeviceId());
+        assertThat(mAnotherVirtualDevice).isNotNull();
+        assertThat(mVirtualDevice.getDeviceId() + 1).isEqualTo(mAnotherVirtualDevice.getDeviceId());
     }
 
     @Test
@@ -127,6 +137,28 @@ public class VirtualDeviceManagerBasicTest {
                 () -> mVirtualDeviceManager.createVirtualDevice(
                         /* associationId= */ -1,
                         DEFAULT_VIRTUAL_DEVICE_PARAMS));
+    }
+
+    @Test
+    public void getVirtualDevices_noVirtualDevices_returnsEmptyList() {
+        assertThat(mVirtualDeviceManager.getVirtualDevices()).isEmpty();
+    }
+
+    @Test
+    public void getVirtualDevices_returnsAllVirtualDevices() {
+        mVirtualDevice =
+                mVirtualDeviceManager.createVirtualDevice(
+                        mFakeAssociationRule.getAssociationInfo(0).getId(),
+                        DEFAULT_VIRTUAL_DEVICE_PARAMS);
+        mAnotherVirtualDevice =
+                mVirtualDeviceManager.createVirtualDevice(
+                        mFakeAssociationRule.getAssociationInfo(1).getId(),
+                        NAMED_VIRTUAL_DEVICE_PARAMS);
+        assertThat(mAnotherVirtualDevice).isNotNull();
+
+        assertThat(mVirtualDeviceManager.getVirtualDevices()).containsExactly(
+                new VirtualDevice(mVirtualDevice.getDeviceId(), /* name= */ null),
+                new VirtualDevice(mAnotherVirtualDevice.getDeviceId(), VIRTUAL_DEVICE_NAME));
     }
 }
 
