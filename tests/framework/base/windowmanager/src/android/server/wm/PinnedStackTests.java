@@ -29,6 +29,7 @@ import static android.server.wm.CliIntentExtra.extraBool;
 import static android.server.wm.CliIntentExtra.extraString;
 import static android.server.wm.ComponentNameUtils.getActivityName;
 import static android.server.wm.ComponentNameUtils.getWindowName;
+import static android.server.wm.UiDeviceUtils.pressBackButton;
 import static android.server.wm.UiDeviceUtils.pressWindowButton;
 import static android.server.wm.WindowManagerState.STATE_PAUSED;
 import static android.server.wm.WindowManagerState.STATE_RESUMED;
@@ -60,6 +61,7 @@ import static android.server.wm.app.Components.PipActivity.EXTRA_CLOSE_ACTION;
 import static android.server.wm.app.Components.PipActivity.EXTRA_ENTER_PIP;
 import static android.server.wm.app.Components.PipActivity.EXTRA_ENTER_PIP_ASPECT_RATIO_DENOMINATOR;
 import static android.server.wm.app.Components.PipActivity.EXTRA_ENTER_PIP_ASPECT_RATIO_NUMERATOR;
+import static android.server.wm.app.Components.PipActivity.EXTRA_ENTER_PIP_ON_BACK_PRESSED;
 import static android.server.wm.app.Components.PipActivity.EXTRA_ENTER_PIP_ON_PAUSE;
 import static android.server.wm.app.Components.PipActivity.EXTRA_ENTER_PIP_ON_PIP_REQUESTED;
 import static android.server.wm.app.Components.PipActivity.EXTRA_ENTER_PIP_ON_USER_LEAVE_HINT;
@@ -328,6 +330,34 @@ public class PinnedStackTests extends ActivityManagerTestBase {
     }
 
     @Test
+    public void testEnterPipOnBackPressed() {
+        // Launch a PiP activity that calls enterPictureInPictureMode when it receives
+        // onBackPressed callback.
+        launchActivity(PIP_ACTIVITY, extraString(EXTRA_ENTER_PIP_ON_BACK_PRESSED, "true"));
+
+        assertEnterPipOnBackPressed(PIP_ACTIVITY);
+    }
+
+    @Test
+    public void testEnterPipOnBackPressedWithAutoPipEnabled() {
+        // Launch the PIP activity that calls enterPictureInPictureMode when it receives
+        // onBackPressed callback and set its pip params to allow auto-pip.
+        launchActivity(PIP_ACTIVITY,
+                extraString(EXTRA_ALLOW_AUTO_PIP, "true"),
+                extraString(EXTRA_ENTER_PIP_ON_BACK_PRESSED, "true"));
+
+        assertEnterPipOnBackPressed(PIP_ACTIVITY);
+    }
+
+    private void assertEnterPipOnBackPressed(ComponentName componentName) {
+        // Press the back button.
+        pressBackButton();
+        // Assert that we have entered PiP.
+        waitForEnterPipAnimationComplete(componentName);
+        assertPinnedStackExists();
+    }
+
+    @Test
     public void testEnterExpandedPipAspectRatio() {
         assumeTrue(supportsExpandedPip());
         launchActivity(PIP_ACTIVITY,
@@ -565,7 +595,7 @@ public class PinnedStackTests extends ActivityManagerTestBase {
     public void testDisallowPipLaunchFromStoppedActivity() {
         // Launch the bottom pip activity which will launch a new activity on top and attempt to
         // enter pip when it is stopped
-        launchActivity(PIP_ON_STOP_ACTIVITY);
+        launchActivityNoWait(PIP_ON_STOP_ACTIVITY);
 
         // Wait for the bottom pip activity to be stopped
         mWmState.waitForActivityState(PIP_ON_STOP_ACTIVITY, STATE_STOPPED);
@@ -694,7 +724,7 @@ public class PinnedStackTests extends ActivityManagerTestBase {
         // Launch the PIP activity on pause, and have it start another activity on
         // top of itself.  Wait for the new activity to be visible and ensure that the pinned stack
         // was not created in the process
-        launchActivity(PIP_ACTIVITY,
+        launchActivityNoWait(PIP_ACTIVITY,
                 extraString(EXTRA_ENTER_PIP_ON_PAUSE, "true"),
                 extraString(EXTRA_START_ACTIVITY, getActivityName(NON_RESIZEABLE_ACTIVITY)));
         mWmState.computeState(
@@ -714,9 +744,11 @@ public class PinnedStackTests extends ActivityManagerTestBase {
         // Launch the PIP activity on pause, and set it to finish itself after
         // some period.  Wait for the previous activity to be visible, and ensure that the pinned
         // stack was not created in the process
-        launchActivity(PIP_ACTIVITY,
+        launchActivityNoWait(PIP_ACTIVITY,
                 extraString(EXTRA_ENTER_PIP_ON_PAUSE, "true"),
                 extraString(EXTRA_FINISH_SELF_ON_RESUME, "true"));
+        mWmState.computeState(
+                new WaitForValidActivityState(TEST_ACTIVITY));
         assertPinnedStackDoesNotExist();
     }
 
@@ -1016,7 +1048,7 @@ public class PinnedStackTests extends ActivityManagerTestBase {
      */
     @Test
     public void testPipFromTaskWithAnotherFinishingActivity() {
-        launchActivity(LAUNCH_ENTER_PIP_ACTIVITY,
+        launchActivityNoWait(LAUNCH_ENTER_PIP_ACTIVITY,
                 extraString(EXTRA_FINISH_SELF_ON_RESUME, "true"));
 
         waitForEnterPip(PIP_ACTIVITY);
@@ -1117,8 +1149,7 @@ public class PinnedStackTests extends ActivityManagerTestBase {
                 waitForOrFail("Task in lock mode", () -> {
                     return mAm.getLockTaskModeState() != LOCK_TASK_MODE_NONE;
                 });
-                mBroadcastActionTrigger.doAction(ACTION_ENTER_PIP);
-                waitForEnterPip(PIP_ACTIVITY);
+                mBroadcastActionTrigger.enterPipAndWait();
                 assertPinnedStackDoesNotExist();
                 launchHomeActivityNoWait();
                 mWmState.computeState();

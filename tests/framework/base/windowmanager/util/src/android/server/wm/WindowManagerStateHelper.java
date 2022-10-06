@@ -190,6 +190,13 @@ public class WindowManagerStateHelper extends WindowManagerState {
                 "Keyguard showing and occluded");
     }
 
+    void waitAndAssertWindowShown(int windowType, boolean show) {
+        assertTrue(waitFor(state -> {
+            WindowState w = state.findFirstWindowWithType(windowType);
+            return w != null && w.isSurfaceShown() == show;
+        }, "wait for window surface " + (show ? "show" : "hide")));
+    }
+
     public void waitForAodShowing() {
         waitForWithAmState(state -> state.getKeyguardControllerState().aodShowing, "AOD showing");
     }
@@ -699,6 +706,8 @@ public class WindowManagerStateHelper extends WindowManagerState {
     public void assertKeyguardShowingAndOccluded() {
         assertTrue("Keyguard is showing",
                 getKeyguardControllerState().keyguardShowing);
+        assertFalse("keygaurd is not going away",
+                getKeyguardControllerState().mKeyguardGoingAway);
         assertTrue("Keyguard is occluded",
                 getKeyguardControllerState().isKeyguardOccluded(DEFAULT_DISPLAY));
     }
@@ -706,6 +715,8 @@ public class WindowManagerStateHelper extends WindowManagerState {
     public void assertKeyguardShowingAndNotOccluded() {
         assertTrue("Keyguard is showing",
                 getKeyguardControllerState().keyguardShowing);
+        assertFalse("keygaurd is not going away",
+                getKeyguardControllerState().mKeyguardGoingAway);
         assertFalse("Keyguard is not occluded",
                 getKeyguardControllerState().isKeyguardOccluded(DEFAULT_DISPLAY));
     }
