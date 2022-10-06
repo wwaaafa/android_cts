@@ -1015,6 +1015,7 @@ public class StrictJavaPackagesTest extends BaseHostJUnit4Test {
         HashMultimap<String, Multimap<String, String>> perApkClasspathDuplicates =
                 HashMultimap.create();
         Arrays.stream(collectApkInApexPaths())
+                .filter(apk -> apk != null && !apk.isEmpty())
                 .parallel()
                 .forEach(apk -> {
                     File apkFile = null;
