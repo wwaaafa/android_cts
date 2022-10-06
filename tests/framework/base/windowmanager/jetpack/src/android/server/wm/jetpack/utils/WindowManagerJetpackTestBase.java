@@ -59,6 +59,7 @@ public class WindowManagerJetpackTestBase {
 
     public static final String ACTIVITY_ID_LABEL = "ActivityID";
     public static final String EXTRA_EMBED_ACTIVITY = "EmbedActivity";
+    public static final String EXTRA_SPLIT_RATIO = "SplitRatio";
 
     public Instrumentation mInstrumentation;
     public Context mContext;
@@ -184,6 +185,11 @@ public class WindowManagerJetpackTestBase {
     public int getTaskWidth() {
         return mContext.getSystemService(WindowManager.class).getMaximumWindowMetrics().getBounds()
                 .width();
+    }
+
+    public int getTaskHeight() {
+        return mContext.getSystemService(WindowManager.class).getMaximumWindowMetrics().getBounds()
+                .height();
     }
 
     public static void setActivityOrientationActivityHandlesOrientationChanges(
