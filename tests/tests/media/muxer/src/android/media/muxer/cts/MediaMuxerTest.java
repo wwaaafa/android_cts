@@ -25,7 +25,6 @@ import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaMuxer;
-import android.media.cts.Preconditions;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.platform.test.annotations.AppModeFull;
@@ -33,6 +32,7 @@ import android.test.AndroidTestCase;
 import android.util.Log;
 
 import com.android.compatibility.common.util.MediaUtils;
+import com.android.compatibility.common.util.Preconditions;
 
 import com.google.android.exoplayer2.Format;
 import com.google.android.exoplayer2.MediaItem;
