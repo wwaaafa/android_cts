@@ -97,6 +97,10 @@ public class EncoderColorAspectsTest extends CodecEncoderTestBase {
             boolean surfaceMode, String allTestParams) {
         super(encoderName, mime, new int[]{64000}, new int[]{width}, new int[]{height},
                 allTestParams);
+        if (useHighBitDepth) {
+            mActiveRawRes = INPUT_VIDEO_FILE_HBD;
+            mBytesPerSample = mActiveRawRes.mBytesPerSample;
+        }
         mRange = range;
         mStandard = standard;
         mTransferCurve = transferCurve;
@@ -325,14 +329,11 @@ public class EncoderColorAspectsTest extends CodecEncoderTestBase {
         if (mSurfaceMode) {
             mConfigFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, COLOR_FormatSurface);
         } else {
-            String inputTestFile = mInputFile;
             if (mUseHighBitDepth) {
                 Assume.assumeTrue(hasSupportForColorFormat(mCodecName, mMime, COLOR_FormatYUVP010));
                 mConfigFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, COLOR_FormatYUVP010);
-                mBytesPerSample = 2;
-                inputTestFile = INPUT_VIDEO_FILE_HBD;
             }
-            setUpSource(inputTestFile);
+            setUpSource(mActiveRawRes.mFileName);
         }
 
         mOutputBuff = new OutputManager();
