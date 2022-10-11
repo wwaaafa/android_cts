@@ -406,17 +406,12 @@ public class EncoderColorAspectsTest extends CodecEncoderTestBase {
                     + " but not decoding it. \n" + mTestConfig + mTestEnv, decoder);
             CodecDecoderTestBase cdtb = new CodecDecoderTestBase(decoder, mMime,
                     tmpFile.getAbsolutePath(), mAllTestParams);
-            String parent = tmpFile.getParent();
-            if (parent != null) parent += File.separator;
-            else parent = "";
-            cdtb.validateColorAspects(decoder, parent, tmpFile.getName(), mRange, mStandard,
-                    mTransferCurve, false);
+            cdtb.validateColorAspects(mRange, mStandard, mTransferCurve, false);
 
             // if color metadata can also be signalled via elementary stream then verify if the
             // elementary stream contains color aspects as expected
             if (mCheckESList.contains(mMime)) {
-                cdtb.validateColorAspects(decoder, parent, tmpFile.getName(), mRange, mStandard,
-                        mTransferCurve, true);
+                cdtb.validateColorAspects(mRange, mStandard, mTransferCurve, true);
             }
             tmpFile.delete();
         }
