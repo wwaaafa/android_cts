@@ -73,6 +73,7 @@ public class VirtualTouchscreenTest extends VirtualDeviceTestCase {
                 .build());
         // Convert the input axis size to its equivalent fraction of the total screen.
         final float computedSize = inputSize / (DISPLAY_WIDTH - 1f);
+
         verifyEvents(Arrays.asList(
                 createMotionEvent(MotionEvent.ACTION_DOWN, /* x= */ x, /* y= */ y,
                         /* pressure= */ 1f, /* size= */ computedSize, /* axisSize= */ inputSize),

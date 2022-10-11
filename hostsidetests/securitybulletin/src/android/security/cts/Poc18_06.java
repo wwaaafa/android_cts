@@ -41,7 +41,7 @@ public class Poc18_06 extends NonRootSecurityTestCase {
             String result =
                     AdbUtils.runCommandLine(
                             "am broadcast -a qualcomm.intent.action.WIFI_DISPLAY_BITRATE --ei"
-                                + " format 3 --ei value 32",
+                                    + " format 3 --ei value 32",
                             getDevice());
             assertNotMatchesMultiLine("Broadcast completed", result);
         }

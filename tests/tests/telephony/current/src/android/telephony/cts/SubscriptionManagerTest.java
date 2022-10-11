@@ -776,6 +776,7 @@ public class SubscriptionManagerTest {
     }
 
     @Test
+    @ApiTest(apis = "android.telephony.SubscriptionManager#setOpportunistic")
     public void testSettingOpportunisticSubscription() throws Exception {
         // Set subscription to be opportunistic. This should fail
         // because we don't have MODIFY_PHONE_STATE or carrier privilege permission.
@@ -783,6 +784,12 @@ public class SubscriptionManagerTest {
             mSm.setOpportunistic(true, mSubId);
             fail();
         } catch (SecurityException expected) {
+            // Caller permission should not affect accessing SIMINFO table.
+            assertNotEquals(expected.getMessage(),
+                    "Access SIMINFO table from not phone/system UID");
+            // Caller does not have permission to manage mSubId.
+            assertEquals(expected.getMessage(),
+                    "Caller requires permission on sub " + mSubId);
         }
 
         // Shouldn't crash.

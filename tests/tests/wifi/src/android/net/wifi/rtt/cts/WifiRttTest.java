@@ -639,6 +639,8 @@ public class WifiRttTest extends TestBase {
         builder.setRttBurstSize(RangingRequest.getMaxRttBurstSize());
         RangingRequest request = builder.build();
 
+
+
         // Perform the request
         rangeNon11mcApRequest(request, testAp, MAX_NON11MC_VARIATION_FROM_AVERAGE_DISTANCE_MM);
     }
