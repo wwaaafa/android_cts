@@ -671,6 +671,8 @@ public class CodecEncoderTest extends CodecEncoderTestBase {
         final int ADAPTIVE_BR_INTERVAL = 3; // change br every 3 seconds.
         final int ADAPTIVE_BR_DUR_FRM = mFrameRate * ADAPTIVE_BR_INTERVAL;
         final int BR_CHANGE_REQUESTS = 7;
+        // TODO(b/251265293) Reduce the allowed deviation after improving the test conditions
+        final float MAX_BITRATE_DEVIATION = 60.0f; // allowed bitrate deviation in %
         mOutputBuff = new OutputManager();
         mSaveToMem = true;
         {
@@ -712,7 +714,7 @@ public class CodecEncoderTest extends CodecEncoderTestBase {
                 /* TODO: validate output br with sliding window constraints Sec 5.2 cdd */
                 int outSize = mOutputBuff.getOutStreamSize() * 8;
                 float brDev = Math.abs(expOutSize - outSize) * 100.0f / expOutSize;
-                if (brDev > 50) {
+                if (brDev > MAX_BITRATE_DEVIATION) {
                     fail("Relative Bitrate error is too large " + brDev + "\n" + mTestConfig
                             + mTestEnv);
                 }
