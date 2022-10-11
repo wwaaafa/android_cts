@@ -292,7 +292,7 @@ public class ConcurrencyTest extends WifiJUnit3TestBase {
             state = waitForNextNetworkState();
         }
         if (ApiLevelUtil.isAtLeast(Build.VERSION_CODES.TIRAMISU)
-                && state == NetworkInfo.DetailedState.CONNECTING) {
+            && state == NetworkInfo.DetailedState.CONNECTING) {
             state = waitForNextNetworkState();
         }
         return state == NetworkInfo.DetailedState.CONNECTED;

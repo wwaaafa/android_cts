@@ -433,6 +433,8 @@
 
         <activity android:name="android.server.wm.WindowInsetsAnimationTestBase$TestActivity"
              android:theme="@android:style/Theme.Material.NoActionBar"/>
+        <activity android:name="android.server.wm.WindowInsetsAnimationControllerTests$ControllerTestActivity"
+            android:theme="@android:style/Theme.Material.NoActionBar" />
 
         <activity android:name="android.server.wm.ForceRelayoutTestBase$TestActivity"
              android:exported="true"/>
@@ -455,6 +457,10 @@
             android:exported="true"
             android:colorMode="wideColorGamut"
             android:fitsSystemWindows="true" />
+
+        <activity android:name="android.server.wm.ActivityTransitionTests$CustomWindowAnimationActivity"
+            android:theme="@style/window_task_animation"
+            android:exported="true"/>
 
         <activity android:name="android.server.wm.WindowUntrustedTouchTest$TestActivity"
                   android:exported="true"

@@ -16,7 +16,6 @@
 package android.media.decoder.cts;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assume.assumeTrue;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
