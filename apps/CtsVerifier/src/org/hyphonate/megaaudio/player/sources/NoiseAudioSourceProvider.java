@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Android Open Source Project
+ * Copyright 2022 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,21 +19,18 @@ import org.hyphonate.megaaudio.player.AudioSource;
 import org.hyphonate.megaaudio.player.AudioSourceProvider;
 import org.hyphonate.megaaudio.player.NativeAudioSource;
 
-public class SinAudioSourceProvider implements AudioSourceProvider {
-    // Cache sources
-    AudioSource mJavaSource;
-    NativeAudioSource mNativeSource;
-
+/**
+ * An AudioSourceProvider for a noise source
+ */
+public class NoiseAudioSourceProvider implements AudioSourceProvider {
     @Override
     public AudioSource getJavaSource() {
-        return mJavaSource != null ? mJavaSource : (mJavaSource = new SinAudioSource());
+        return new NoiseAudioSource();
     }
 
     @Override
     public NativeAudioSource getNativeSource() {
-        return mNativeSource != null
-                ? mNativeSource
-                : (mNativeSource = new NativeAudioSource(allocNativeSource()));
+        return new NativeAudioSource(allocNativeSource());
     }
 
     private native long allocNativeSource();
