@@ -21,11 +21,9 @@ import android.annotation.CallSuper
 import android.app.role.RoleManager
 import android.companion.cts.common.AppHelper
 import android.companion.cts.common.TestBase
-import android.companion.cts.uicommon.ASSOCIATION_REVOKE_APP_APK_PATH
-import android.companion.cts.uicommon.ASSOCIATION_REVOKE_APP_NAME
-import android.companion.cts.uicommon.CompanionDeviceManagerUi
 import android.content.Context
 import androidx.test.uiautomator.UiDevice
+
 import kotlin.test.assertTrue
 
 open class AssociationRevokedTestBase : TestBase() {

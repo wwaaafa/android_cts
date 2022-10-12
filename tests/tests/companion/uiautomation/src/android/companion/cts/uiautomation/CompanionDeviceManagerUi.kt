@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package android.companion.cts.uicommon
+package android.companion.cts.uiautomation
 
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.BySelector
@@ -25,7 +25,7 @@ import androidx.test.uiautomator.Until
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-open class CompanionDeviceManagerUi(private val ui: UiDevice) {
+class CompanionDeviceManagerUi(private val ui: UiDevice) {
     val isVisible: Boolean
         get() = ui.hasObject(CONFIRMATION_UI)
 
@@ -65,8 +65,8 @@ open class CompanionDeviceManagerUi(private val ui: UiDevice) {
     fun waitUntilAppAppeared() = ui.wait(Until.hasObject(ASSOCIATION_REVOKE_APP_UI),
         "The test app has not appeared.")
 
-    protected fun click(selector: BySelector, description: String) = ui.waitShortAndFind(
-            Until.findObject(selector), "$description is not found")
+    private fun click(selector: BySelector, description: String) = ui.waitShortAndFind(
+            Until.findObject(selector), "$description  is not found")
             .click()
 
     companion object {
@@ -98,7 +98,7 @@ open class CompanionDeviceManagerUi(private val ui: UiDevice) {
                 .res(PACKAGE_NAME, "data_transfer_confirmation")
     }
 
-    protected fun UiDevice.wait(
+    private fun UiDevice.wait(
         condition: SearchCondition<Boolean>,
         message: String,
         timeout: Duration = 3.seconds
@@ -106,22 +106,22 @@ open class CompanionDeviceManagerUi(private val ui: UiDevice) {
         if (!wait(condition, timeout.inWholeMilliseconds)) error(message)
     }
 
-    protected fun UiDevice.waitShort(condition: SearchCondition<Boolean>, message: String) =
+    private fun UiDevice.waitShort(condition: SearchCondition<Boolean>, message: String) =
             wait(condition, message, 1.seconds)
 
-    protected fun UiDevice.waitAndFind(
+    private fun UiDevice.waitAndFind(
         condition: SearchCondition<UiObject2>,
         message: String,
         timeout: Duration = 3.seconds
     ): UiObject2 =
             wait(condition, timeout.inWholeMilliseconds) ?: error(message)
 
-    protected fun UiDevice.waitShortAndFind(
+    private fun UiDevice.waitShortAndFind(
         condition: SearchCondition<UiObject2>,
         message: String
     ): UiObject2 = waitAndFind(condition, message, 1.seconds)
 
-    protected fun UiDevice.waitLongAndFind(
+    private fun UiDevice.waitLongAndFind(
         condition: SearchCondition<UiObject2>,
         message: String
     ): UiObject2 = waitAndFind(condition, message, 10.seconds)
