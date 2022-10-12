@@ -1,4 +1,4 @@
-package android.companion.cts.uiautomation
+package android.companion.cts.uicommon
 
 import android.Manifest
 import android.annotation.CallSuper
@@ -86,18 +86,6 @@ open class UiAutomationTestBase(
         restoreDiscoveryTimeout()
 
         super.tearDown()
-    }
-
-    /**
-     * Execute UI flow to request user consent for permission transfer for a given association
-     * and grant permission.
-     */
-    fun requestPermissionTransferUserConsent(associationId: Int) {
-        val pendingUserConsent = cdm.buildPermissionTransferUserConsentIntent(associationId)
-        CompanionActivity.startIntentSender(pendingUserConsent!!)
-        confirmationUi.waitUntilSystemDataTransferConfirmationVisible()
-        confirmationUi.clickPositiveButton()
-        CompanionActivity.waitForActivityResult()
     }
 
     protected fun test_userRejected(
