@@ -8,14 +8,14 @@ import android.companion.cts.common.CompanionActivity
 import android.companion.cts.common.RecordingCallback.OnAssociationCreated
 import android.content.Intent
 import android.platform.test.annotations.AppModeFull
-import org.junit.Assume.assumeFalse
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
+import org.junit.Assume.assumeFalse
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 /**
  * Tests the Association Flow end-to-end.
