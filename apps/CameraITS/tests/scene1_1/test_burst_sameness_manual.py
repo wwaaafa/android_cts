@@ -60,6 +60,7 @@ class BurstSamenessManualTest(its_base_test.ItsBaseTest):
       props = cam.get_camera_properties()
       props = cam.override_with_hidden_physical_camera_props(props)
       log_path = self.log_path
+      name_with_path = os.path.join(log_path, NAME)
 
       # check SKIP conditions
       camera_properties_utils.skip_unless(
@@ -98,7 +99,7 @@ class BurstSamenessManualTest(its_base_test.ItsBaseTest):
 
       # Save first frame for setup debug
       image_processing_utils.write_image(
-          imgs[0], '%s_frame000.jpg' % os.path.join(log_path, NAME))
+          imgs[0], f'{name_with_path}_frame000.jpg')
 
       # Plot RGB means vs frames
       frames = range(NUM_FRAMES)
@@ -110,8 +111,7 @@ class BurstSamenessManualTest(its_base_test.ItsBaseTest):
       pylab.ylim([0, 1])
       pylab.xlabel('frame number')
       pylab.ylabel('RGB avg [0, 1]')
-      matplotlib.pyplot.savefig(
-          '%s_plot_means.png' % os.path.join(log_path, NAME))
+      matplotlib.pyplot.savefig(f'{name_with_path}_plot_means.png')
 
       # determine spread_thresh
       spread_thresh = SPREAD_THRESH
@@ -127,7 +127,7 @@ class BurstSamenessManualTest(its_base_test.ItsBaseTest):
           logging.debug('Dumping all images')
           for i in range(1, NUM_FRAMES):
             image_processing_utils.write_image(
-                imgs[i], '%s_frame%03d.jpg'%(os.path.join(log_path, NAME), i))
+                imgs[i], f'{name_with_path}_frame{i:03d}.jpg')
           raise AssertionError(f'{COLORS[plane]} spread > THRESH. spread: '
                                f'{spread}, THRESH: {spread_thresh:.2f}')
 
