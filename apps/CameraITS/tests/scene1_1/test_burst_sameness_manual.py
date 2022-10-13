@@ -100,13 +100,6 @@ class BurstSamenessManualTest(its_base_test.ItsBaseTest):
       image_processing_utils.write_image(
           imgs[0], '%s_frame000.jpg' % os.path.join(log_path, NAME))
 
-      # Save all frames if debug
-      if self.debug_mode:
-        logging.debug('Dumping all images')
-        for i in range(1, NUM_FRAMES):
-          image_processing_utils.write_image(
-              imgs[i], '%s_frame%03d.jpg'%(os.path.join(log_path, NAME), i))
-
       # Plot RGB means vs frames
       frames = range(NUM_FRAMES)
       pylab.figure(NAME)
@@ -125,11 +118,16 @@ class BurstSamenessManualTest(its_base_test.ItsBaseTest):
       if its_session_utils.get_first_api_level(self.dut.serial) >= API_LEVEL_30:
         spread_thresh = SPREAD_THRESH_API_LEVEL_30
 
-      # PASS/FAIL based on center patch similarity.
+      # PASS/FAIL based on center patch similarity
       for plane, means in enumerate([r_means, g_means, b_means]):
         spread = max(means) - min(means)
         logging.debug('%s spread: %.5f', COLORS[plane], spread)
         if spread > spread_thresh:
+          # Save all frames if FAIL
+          logging.debug('Dumping all images')
+          for i in range(1, NUM_FRAMES):
+            image_processing_utils.write_image(
+                imgs[i], '%s_frame%03d.jpg'%(os.path.join(log_path, NAME), i))
           raise AssertionError(f'{COLORS[plane]} spread > THRESH. spread: '
                                f'{spread}, THRESH: {spread_thresh:.2f}')
 
