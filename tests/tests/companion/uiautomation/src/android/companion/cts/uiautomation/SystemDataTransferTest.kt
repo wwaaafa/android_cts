@@ -221,6 +221,18 @@ class SystemDataTransferTest : UiAutomationTestBase(null, null) {
     }
 
     /**
+     * Execute UI flow to request user consent for permission transfer for a given association
+     * and grant permission.
+     */
+    private fun requestPermissionTransferUserConsent(associationId: Int) {
+        val pendingUserConsent = cdm.buildPermissionTransferUserConsentIntent(associationId)
+        CompanionActivity.startIntentSender(pendingUserConsent!!)
+        confirmationUi.waitUntilSystemDataTransferConfirmationVisible()
+        confirmationUi.clickPositiveButton()
+        CompanionActivity.waitForActivityResult()
+    }
+
+    /**
      * Start system data transfer synchronously.
      */
     private fun startSystemDataTransfer(
