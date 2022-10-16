@@ -973,6 +973,7 @@ public class MediaSessionTest extends AndroidTestCase {
      *
      * @param controller The controller for the session
      */
+    @SuppressWarnings("ReturnValueIgnored")
     private void verifyNewSession(MediaController controller) {
         assertEquals("New session has unexpected configuration", 0L, controller.getFlags());
         assertNull("New session has unexpected configuration", controller.getExtras());
