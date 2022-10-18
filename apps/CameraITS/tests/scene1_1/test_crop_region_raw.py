@@ -44,6 +44,7 @@ class CropRegionRawTest(its_base_test.ItsBaseTest):
       props = cam.get_camera_properties()
       props = cam.override_with_hidden_physical_camera_props(props)
       log_path = self.log_path
+      name_with_log_path = os.path.join(log_path, _NAME)
 
       # Check SKIP conditions
       camera_properties_utils.skip_unless(
@@ -110,8 +111,7 @@ class CropRegionRawTest(its_base_test.ItsBaseTest):
         # Convert the capture to RGB and dump to a file.
         img = image_processing_utils.convert_capture_to_rgb_image(cap,
                                                                   props=props)
-        image_processing_utils.write_image(
-            img, '%s_%s.jpg' % (os.path.join(log_path, _NAME), s))
+        image_processing_utils.write_image(img, f'{name_with_log_path}_{s}.jpg')
         imgs[s] = img
 
         # Get the crop region that is reported in the capture result.
@@ -168,7 +168,7 @@ class CropRegionRawTest(its_base_test.ItsBaseTest):
 
       for s, img in imgs2.items():
         image_processing_utils.write_image(
-            img, '%s_comp_%s.jpg' % (os.path.join(log_path, _NAME), s))
+            img, f'{name_with_log_path}_comp_{s}.jpg')
 
       # Compute diffs between images of the same type.
       # The raw_crop and raw_full shots should be identical (since the crop
@@ -180,11 +180,11 @@ class CropRegionRawTest(its_base_test.ItsBaseTest):
       logging.debug('RAW diff (crop vs. non-crop): %.3f', diff_raw)
 
       if diff_yuv <= _DIFF_THRESH:
-        raise AssertionError('YUV diff too small! '
-                             f'diff_yuv: {diff_yuv:.3f}, THRESH: {_DIFF_THRESH}')
+        raise AssertionError('YUV diff too small! diff_yuv: '
+                             f'{diff_yuv:.3f}, THRESH: {_DIFF_THRESH}')
       if diff_raw >= _DIFF_THRESH:
-        raise AssertionError('RAW diff too big! '
-                             f'diff_raw: {diff_raw:.3f}, THRESH: {_DIFF_THRESH}')
+        raise AssertionError('RAW diff too big! diff_raw: '
+                             f'{diff_raw:.3f}, THRESH: {_DIFF_THRESH}')
 
 if __name__ == '__main__':
   test_runner.main()
