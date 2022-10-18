@@ -37,7 +37,7 @@ _PATCH_Y = 0.5 - _PATCH_H/2
 _VGA_W, _VGA_H = 640, 480
 
 
-def test_flip_mirror_impl(cam, props, fmt, chart, debug, log_path):
+def test_flip_mirror_impl(cam, props, fmt, chart, debug, name_with_log_path):
 
   """Return if image is flipped or mirrored.
 
@@ -47,7 +47,7 @@ def test_flip_mirror_impl(cam, props, fmt, chart, debug, log_path):
    fmt : dict,Capture format.
    chart: Object with chart properties.
    debug: boolean,whether to run test in debug mode or not.
-   log_path: log_path to save the captured image.
+   name_with_log_path: file with log_path to save the captured image.
 
   Returns:
     boolean: True if flipped, False if not
@@ -73,14 +73,12 @@ def test_flip_mirror_impl(cam, props, fmt, chart, debug, log_path):
 
   # save full images if in debug
   if debug:
-    image_processing_utils.write_image(
-        template[:, :, np.newaxis] / 255.0,
-        '%s_template.jpg' % os.path.join(log_path, _NAME))
+    image_processing_utils.write_image(template[:, :, np.newaxis] / 255.0,
+                                       f'{name_with_log_path}_template.jpg')
 
   # save patch
-  image_processing_utils.write_image(
-      patch[:, :, np.newaxis] / 255.0,
-      '%s_scene_patch.jpg' % os.path.join(log_path, _NAME))
+  image_processing_utils.write_image(patch[:, :, np.newaxis] / 255.0,
+                                     f'{name_with_log_path}_scene_patch.jpg')
 
   # crop center areas and strip off any extra rows/columns
   template = image_processing_utils.get_image_patch(
@@ -103,8 +101,7 @@ def test_flip_mirror_impl(cam, props, fmt, chart, debug, log_path):
     correlation = cv2.matchTemplate(comp_chart, template, cv2.TM_CCOEFF)
     _, opt_val, _, _ = cv2.minMaxLoc(correlation)
     if debug:
-      cv2.imwrite('%s_%s.jpg' % (os.path.join(log_path, _NAME), orientation),
-                  comp_chart)
+      cv2.imwrite(f'{name_with_log_path}_{orientation}.jpg', comp_chart)
     logging.debug('%s correlation value: %d', orientation, opt_val)
     opts.append(opt_val)
 
@@ -132,6 +129,7 @@ class FlipMirrorTest(its_base_test.ItsBaseTest):
       props = cam.get_camera_properties()
       props = cam.override_with_hidden_physical_camera_props(props)
       debug = self.debug_mode
+      name_with_log_path = os.path.join(self.log_path, _NAME)
 
       # check SKIP conditions
       camera_properties_utils.skip_unless(
@@ -146,7 +144,7 @@ class FlipMirrorTest(its_base_test.ItsBaseTest):
       fmt = {'format': 'yuv', 'width': _VGA_W, 'height': _VGA_H}
 
       # test that image is not flipped, mirrored, or rotated
-      test_flip_mirror_impl(cam, props, fmt, chart, debug, self.log_path)
+      test_flip_mirror_impl(cam, props, fmt, chart, debug, name_with_log_path)
 
 
 if __name__ == '__main__':
