@@ -373,6 +373,17 @@ public class TvInteractiveAppServiceTest {
     }
 
     @Test
+    public void testNotifyRecordingStarted() throws Throwable {
+        final String recordingId = "testRecording";
+        assertNotNull(mSession);
+        mSession.resetValues();
+        mTvIAppView.notifyRecordingStarted(recordingId);
+        PollingCheck.waitFor(TIME_OUT_MS, () -> mSession.mRecordingStartedCount > 0);
+        assertThat(mSession.mRecordingStartedCount).isEqualTo(1);
+        assertThat(mSession.mRecordingId).isEqualTo(recordingId);
+    }
+
+    @Test
     public void testRequestSigning() throws Throwable {
         assertNotNull(mSession);
         mCallback.resetValues();
