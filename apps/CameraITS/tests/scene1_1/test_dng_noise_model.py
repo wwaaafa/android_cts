@@ -58,7 +58,7 @@ class DngNoiseModelTest(its_base_test.ItsBaseTest):
         hidden_physical_id=self.hidden_physical_id) as cam:
       props = cam.get_camera_properties()
       props = cam.override_with_hidden_physical_camera_props(props)
-      log_path = self.log_path
+      name_with_log_path = os.path.join(self.log_path, _NAME)
 
       # check SKIP conditions
       camera_properties_utils.skip_unless(
@@ -100,7 +100,7 @@ class DngNoiseModelTest(its_base_test.ItsBaseTest):
           img = image_processing_utils.convert_capture_to_rgb_image(
               cap, props=props)
           image_processing_utils.write_image(
-              img, '%s_%d.jpg' % (os.path.join(log_path, _NAME), sens))
+              img, f'{name_with_log_path}_{sens}.jpg')
 
         # Test each raw color channel (R, GR, GB, B)
         noise_profile = cap['metadata']['android.sensor.noiseProfile']
@@ -161,7 +161,7 @@ class DngNoiseModelTest(its_base_test.ItsBaseTest):
     pylab.ylabel('Center patch variance')
     pylab.ticklabel_format(axis='y', style='sci', scilimits=(-6, -6))
     pylab.legend(loc=2)
-    matplotlib.pyplot.savefig('%s_plot.png' % os.path.join(log_path, _NAME))
+    matplotlib.pyplot.savefig(f'{name_with_log_path}_plot.png')
 
     # PASS/FAIL check
     for i, ch in enumerate(_BAYER_LIST):

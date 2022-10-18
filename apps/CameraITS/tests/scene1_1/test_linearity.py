@@ -65,6 +65,7 @@ class LinearityTest(its_base_test.ItsBaseTest):
       camera_properties_utils.skip_unless(
           camera_properties_utils.compute_target_exposure(props))
       sync_latency = camera_properties_utils.sync_latency(props)
+      name_with_log_path = os.path.join(self.log_path, _NAME)
 
       # Load chart for scene
       its_session_utils.load_scene(
@@ -95,9 +96,8 @@ class LinearityTest(its_base_test.ItsBaseTest):
         cap = its_session_utils.do_capture_with_latency(
             cam, req, sync_latency, fmt)
         img = image_processing_utils.convert_capture_to_rgb_image(cap)
-        img_name = '%s_sens=%.04d.jpg' % (
-            os.path.join(self.log_path, _NAME), sens)
-        image_processing_utils.write_image(img, img_name)
+        image_processing_utils.write_image(
+            img, f'{name_with_log_path}_sens={sens:04d}.jpg')
         img = image_processing_utils.apply_lut_to_image(
             img, _INV_GAMMA_LUT[1::2] * _L)
         patch = image_processing_utils.get_image_patch(
@@ -117,8 +117,7 @@ class LinearityTest(its_base_test.ItsBaseTest):
       pylab.ylim([0, 1])
       pylab.xlabel('sensitivity(ISO)')
       pylab.ylabel('RGB avg [0, 1]')
-      matplotlib.pyplot.savefig(
-          '%s_plot_means.png' % os.path.join(self.log_path, _NAME))
+      matplotlib.pyplot.savefig(f'{name_with_log_path}_plot_means.png')
 
       # Assert plot curves are linear w/ + slope by examining polyfit residual
       for means in [r_means, g_means, b_means]:

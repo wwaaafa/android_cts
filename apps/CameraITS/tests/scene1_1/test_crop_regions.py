@@ -28,10 +28,10 @@ import target_exposure_utils
 
 # 5 regions specified in normalized (x, y, w, h) coords.
 _CROP_REGIONS = [(0.0, 0.0, 0.5, 0.5),  # top-left
-                (0.5, 0.0, 0.5, 0.5),  # top-right
-                (0.0, 0.5, 0.5, 0.5),  # bottom-left
-                (0.5, 0.5, 0.5, 0.5),  # bottom-right
-                (0.25, 0.25, 0.5, 0.5)]  # center
+                 (0.5, 0.0, 0.5, 0.5),  # top-right
+                 (0.0, 0.5, 0.5, 0.5),  # bottom-left
+                 (0.5, 0.5, 0.5, 0.5),  # bottom-right
+                 (0.25, 0.25, 0.5, 0.5)]  # center
 _MIN_DIGITAL_ZOOM_THRESH = 2
 _NAME = os.path.splitext(os.path.basename(__file__))[0]
 
@@ -48,6 +48,7 @@ class CropRegionsTest(its_base_test.ItsBaseTest):
       props = cam.get_camera_properties()
       props = cam.override_with_hidden_physical_camera_props(props)
       log_path = self.log_path
+      name_with_log_path = os.path.join(log_path, _NAME)
 
       # check SKIP conditions
       camera_properties_utils.skip_unless(
@@ -77,8 +78,8 @@ class CropRegionsTest(its_base_test.ItsBaseTest):
       cap_full = cam.do_capture(req)
       img_full = image_processing_utils.convert_capture_to_rgb_image(cap_full)
       wfull, hfull = cap_full['width'], cap_full['height']
-      image_processing_utils.write_image(img_full, '%s_full_%dx%d.jpg' % (
-          os.path.join(log_path, _NAME), wfull, hfull))
+      image_processing_utils.write_image(
+          img_full, f'{name_with_log_path}_full_{wfull}x{hfull}.jpg')
 
       # Capture a burst of crop region frames.
       # Note that each region is 1/2x1/2 of the full frame, and is digitally
@@ -106,8 +107,8 @@ class CropRegionsTest(its_base_test.ItsBaseTest):
         # the region that corresponds to this crop image).
         img_crop = image_processing_utils.convert_capture_to_rgb_image(cap)
         img_crop = image_processing_utils.downscale_image(img_crop, 2)
-        image_processing_utils.write_image(img_crop, '%s_crop%d.jpg' % (
-            os.path.join(log_path, _NAME), i))
+        image_processing_utils.write_image(
+            img_crop, f'{name_with_log_path}_crop{i}.jpg')
         min_diff = None
         min_diff_region = None
         for j, (x, y, w, h) in enumerate(_CROP_REGIONS):
@@ -118,8 +119,7 @@ class CropRegionsTest(its_base_test.ItsBaseTest):
           tile_full = tile_full[0:htest:, 0:wtest:, ::]
           tile_crop = img_crop[0:htest:, 0:wtest:, ::]
           image_processing_utils.write_image(
-              tile_full, '%s_fullregion%d.jpg' % (
-                  os.path.join(log_path, _NAME), j))
+              tile_full, f'{name_with_log_path}_fullregion{j}.jpg')
           diff = np.fabs(tile_full - tile_crop).mean()
           if min_diff is None or diff < min_diff:
             min_diff = diff
