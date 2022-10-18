@@ -34,13 +34,13 @@ _NUM_SAMPLES = 4
 _SHARPNESS_RTOL = 0.1
 
 
-def plot_results(modes, sharpness_values, log_path):
+def plot_results(modes, sharpness_values, name_with_log_path):
   """Plot the results.
 
   Args:
     modes: integer edge mode values
     sharpness_values: float values of sharpness
-    log_path: file save location
+    name_with_log_path: file name with log_path for save location
   """
   pylab.figure(_NAME)
   pylab.suptitle(_NAME)
@@ -49,11 +49,12 @@ def plot_results(modes, sharpness_values, log_path):
   pylab.ylabel('Image Sharpness')
   pylab.xticks(modes)
   pylab.plot(modes, sharpness_values, '-ro')
-  matplotlib.pyplot.savefig(f'{os.path.join(log_path, _NAME)}_plot.png')
+  matplotlib.pyplot.savefig(f'{name_with_log_path}_plot.png')
 
 
 def do_capture_and_determine_sharpness(
-    cam, edge_mode, sensitivity, exp, fd, out_surface, chart, log_path):
+    cam, edge_mode, sensitivity, exp, fd, out_surface, chart,
+    name_with_log_path):
   """Return sharpness of the output image and the capture result metadata.
 
      Processes a capture request with a given edge mode, sensitivity, exposure
@@ -70,7 +71,7 @@ def do_capture_and_determine_sharpness(
         android.lens.focusDistance
     out_surface: Specifications of the output image format and size.
     chart: object that contains chart information
-    log_path: path to write result images
+    name_with_log_path: file name with log_path to write result images
 
   Returns:
     Object containing reported edge mode and the sharpness of the output
@@ -91,8 +92,7 @@ def do_capture_and_determine_sharpness(
         y, chart.xnorm, chart.ynorm, chart.wnorm, chart.hnorm)
     if n == 0:
       image_processing_utils.write_image(
-          chart.img, '%s_edge=%d.jpg' % (
-              os.path.join(log_path, _NAME), edge_mode))
+          chart.img, f'{name_with_log_path}_edge={edge_mode}.jpg')
       edge_mode_res = cap['metadata']['android.edge.mode']
     sharpness_list.append(
         image_processing_utils.compute_image_sharpness(chart.img)*255)
@@ -115,7 +115,7 @@ class EdgeEnhancementTest(its_base_test.ItsBaseTest):
         hidden_physical_id=self.hidden_physical_id) as cam:
       props = cam.get_camera_properties()
       props = cam.override_with_hidden_physical_camera_props(props)
-      log_path = self.log_path
+      name_with_log_path = os.path.join(self.log_path, _NAME)
 
       # Check skip conditions
       camera_properties_utils.skip_unless(
@@ -128,7 +128,7 @@ class EdgeEnhancementTest(its_base_test.ItsBaseTest):
           cam, props, self.scene, self.tablet, self.chart_distance)
 
       # Initialize chart class and locate chart in scene
-      chart = opencv_processing_utils.Chart(cam, props, log_path)
+      chart = opencv_processing_utils.Chart(cam, props, name_with_log_path)
 
       # Define format
       fmt = 'yuv'
@@ -159,13 +159,15 @@ class EdgeEnhancementTest(its_base_test.ItsBaseTest):
       logging.debug('Reported edge modes: %s', edge_mode_reported_regular)
       logging.debug('Sharpness with EE mode [0,1,2,3]: %s',
                     str(sharpness_regular))
-      plot_results(edge_mode_reported_regular, sharpness_regular, log_path)
+      plot_results(
+          edge_mode_reported_regular, sharpness_regular, name_with_log_path)
 
       logging.debug('Verify HQ is sharper than OFF')
       if (sharpness_regular[_EDGE_MODES['HQ']] <=
           sharpness_regular[_EDGE_MODES['OFF']]):
-        raise AssertionError(f"HQ: {sharpness_regular[_EDGE_MODES['HQ']]:.3f}, "
-                             f"OFF: {sharpness_regular[_EDGE_MODES['OFF']]:.3f}")
+        raise AssertionError(
+            f"HQ: {sharpness_regular[_EDGE_MODES['HQ']]:.3f}, "
+            f"OFF: {sharpness_regular[_EDGE_MODES['OFF']]:.3f}")
 
       logging.debug('Verify OFF is not sharper than FAST')
       if (sharpness_regular[_EDGE_MODES['FAST']] <=
