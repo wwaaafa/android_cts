@@ -28,10 +28,10 @@ import image_processing_utils
 import its_session_utils
 import opencv_processing_utils
 
-EDGE_MODES = {'OFF': 0, 'FAST': 1, 'HQ': 2}
-NAME = os.path.splitext(os.path.basename(__file__))[0]
-NUM_SAMPLES = 4
-SHARPNESS_RTOL = 0.1
+_EDGE_MODES = {'OFF': 0, 'FAST': 1, 'HQ': 2}
+_NAME = os.path.splitext(os.path.basename(__file__))[0]
+_NUM_SAMPLES = 4
+_SHARPNESS_RTOL = 0.1
 
 
 def plot_results(modes, sharpness_values, log_path):
@@ -42,14 +42,14 @@ def plot_results(modes, sharpness_values, log_path):
     sharpness_values: float values of sharpness
     log_path: file save location
   """
-  pylab.figure(NAME)
-  pylab.suptitle(NAME)
-  pylab.title(str(EDGE_MODES))
+  pylab.figure(_NAME)
+  pylab.suptitle(_NAME)
+  pylab.title(str(_EDGE_MODES))
   pylab.xlabel('Edge Enhancement Mode')
   pylab.ylabel('Image Sharpness')
   pylab.xticks(modes)
   pylab.plot(modes, sharpness_values, '-ro')
-  matplotlib.pyplot.savefig(f'{os.path.join(log_path, NAME)}_plot.png')
+  matplotlib.pyplot.savefig(f'{os.path.join(log_path, _NAME)}_plot.png')
 
 
 def do_capture_and_determine_sharpness(
@@ -84,7 +84,7 @@ def do_capture_and_determine_sharpness(
   req['android.edge.mode'] = edge_mode
 
   sharpness_list = []
-  for n in range(NUM_SAMPLES):
+  for n in range(_NUM_SAMPLES):
     cap = cam.do_capture(req, out_surface, repeat_request=req)
     y, _, _ = image_processing_utils.convert_capture_to_planes(cap)
     chart.img = image_processing_utils.get_image_patch(
@@ -92,7 +92,7 @@ def do_capture_and_determine_sharpness(
     if n == 0:
       image_processing_utils.write_image(
           chart.img, '%s_edge=%d.jpg' % (
-              os.path.join(log_path, NAME), edge_mode))
+              os.path.join(log_path, _NAME), edge_mode))
       edge_mode_res = cap['metadata']['android.edge.mode']
     sharpness_list.append(
         image_processing_utils.compute_image_sharpness(chart.img)*255)
@@ -144,7 +144,7 @@ class EdgeEnhancementTest(its_base_test.ItsBaseTest):
       # Get the sharpness for each edge mode for regular requests
       sharpness_regular = []
       edge_mode_reported_regular = []
-      for edge_mode in EDGE_MODES.values():
+      for edge_mode in _EDGE_MODES.values():
         # Skip unavailable modes
         if not camera_properties_utils.edge_mode(props, edge_mode):
           edge_mode_reported_regular.append(edge_mode)
@@ -162,26 +162,26 @@ class EdgeEnhancementTest(its_base_test.ItsBaseTest):
       plot_results(edge_mode_reported_regular, sharpness_regular, log_path)
 
       logging.debug('Verify HQ is sharper than OFF')
-      if (sharpness_regular[EDGE_MODES['HQ']] <=
-          sharpness_regular[EDGE_MODES['OFF']]):
-        raise AssertionError(f"HQ: {sharpness_regular[EDGE_MODES['HQ']]:.3f}, "
-                             f"OFF: {sharpness_regular[EDGE_MODES['OFF']]:.3f}")
+      if (sharpness_regular[_EDGE_MODES['HQ']] <=
+          sharpness_regular[_EDGE_MODES['OFF']]):
+        raise AssertionError(f"HQ: {sharpness_regular[_EDGE_MODES['HQ']]:.3f}, "
+                             f"OFF: {sharpness_regular[_EDGE_MODES['OFF']]:.3f}")
 
       logging.debug('Verify OFF is not sharper than FAST')
-      if (sharpness_regular[EDGE_MODES['FAST']] <=
-          sharpness_regular[EDGE_MODES['OFF']]*(1.0-SHARPNESS_RTOL)):
+      if (sharpness_regular[_EDGE_MODES['FAST']] <=
+          sharpness_regular[_EDGE_MODES['OFF']]*(1.0-_SHARPNESS_RTOL)):
         raise AssertionError(
-            f"FAST: {sharpness_regular[EDGE_MODES['FAST']]:.3f}, "
-            f"OFF: {sharpness_regular[EDGE_MODES['OFF']]:.3f}, "
-            f"RTOL: {SHARPNESS_RTOL}")
+            f"FAST: {sharpness_regular[_EDGE_MODES['FAST']]:.3f}, "
+            f"OFF: {sharpness_regular[_EDGE_MODES['OFF']]:.3f}, "
+            f"RTOL: {_SHARPNESS_RTOL}")
 
       logging.debug('Verify FAST is not sharper than HQ')
-      if (sharpness_regular[EDGE_MODES['HQ']] <=
-          sharpness_regular[EDGE_MODES['FAST']]*(1.0-SHARPNESS_RTOL)):
+      if (sharpness_regular[_EDGE_MODES['HQ']] <=
+          sharpness_regular[_EDGE_MODES['FAST']]*(1.0-_SHARPNESS_RTOL)):
         raise AssertionError(
-            f"HQ: {sharpness_regular[EDGE_MODES['HQ']]:.3f}, "
-            f"FAST: {sharpness_regular[EDGE_MODES['FAST']]:.3f}, "
-            f"RTOL: {SHARPNESS_RTOL}")
+            f"HQ: {sharpness_regular[_EDGE_MODES['HQ']]:.3f}, "
+            f"FAST: {sharpness_regular[_EDGE_MODES['FAST']]:.3f}, "
+            f"RTOL: {_SHARPNESS_RTOL}")
 
 if __name__ == '__main__':
   test_runner.main()
