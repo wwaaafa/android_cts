@@ -30,6 +30,8 @@ public abstract class BaseVoiceInteractionService extends VoiceInteractionServic
     public static final String SERVICE_PACKAGE = "android.voiceinteraction.cts";
 
     private final String mTag = getClass().getSimpleName();
+    public static final int STATUS_NO_CALLBACK_CALLED = -1;
+
 
     // The service instance
     public static VoiceInteractionService sService;
@@ -37,8 +39,18 @@ public abstract class BaseVoiceInteractionService extends VoiceInteractionServic
     public static final long WAIT_TIMEOUT_IN_MS = 5_000;
     // The CountDownLatch waits for service connect
     public static CountDownLatch sConnectLatch;
+    // The CountDownLatch waits for a service init result
+    // TODO: rename to mHotwordDetectionServiceInitializedLatch, keep this name until the
+    //  refactor done. The original tests use trigger in many places. To make the mapping asier,
+    //  keep the current name now.
+    public CountDownLatch mServiceTriggerLatch;
 
     public static CountDownLatch sDisconnectLatch;
+
+    // the status of onHotwordDetectionServiceInitialized()
+    int mInitializedStatus = STATUS_NO_CALLBACK_CALLED;
+
+    int mAvailabilityStatus = STATUS_NO_CALLBACK_CALLED;
 
     @Override
     public void onReady() {
