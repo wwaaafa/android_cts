@@ -27,20 +27,20 @@ import numpy as np
 import target_exposure_utils
 
 # 5 regions specified in normalized (x, y, w, h) coords.
-CROP_REGIONS = [(0.0, 0.0, 0.5, 0.5),  # top-left
+_CROP_REGIONS = [(0.0, 0.0, 0.5, 0.5),  # top-left
                 (0.5, 0.0, 0.5, 0.5),  # top-right
                 (0.0, 0.5, 0.5, 0.5),  # bottom-left
                 (0.5, 0.5, 0.5, 0.5),  # bottom-right
                 (0.25, 0.25, 0.5, 0.5)]  # center
-MIN_DIGITAL_ZOOM_THRESH = 2
-NAME = os.path.splitext(os.path.basename(__file__))[0]
+_MIN_DIGITAL_ZOOM_THRESH = 2
+_NAME = os.path.splitext(os.path.basename(__file__))[0]
 
 
 class CropRegionsTest(its_base_test.ItsBaseTest):
   """Test that crop regions works."""
 
   def test_crop_regions(self):
-    logging.debug('Starting %s', NAME)
+    logging.debug('Starting %s', _NAME)
     with its_session_utils.ItsSession(
         device_id=self.dut.serial,
         camera_id=self.camera_id,
@@ -68,9 +68,9 @@ class CropRegionsTest(its_base_test.ItsBaseTest):
 
       # Uses a 2x digital zoom.
       max_digital_zoom = capture_request_utils.get_max_digital_zoom(props)
-      if max_digital_zoom < MIN_DIGITAL_ZOOM_THRESH:
+      if max_digital_zoom < _MIN_DIGITAL_ZOOM_THRESH:
         raise AssertionError(f'Max digital zoom: {max_digital_zoom}, '
-                             f'THRESH: {MIN_DIGITAL_ZOOM_THRESH}')
+                             f'THRESH: {_MIN_DIGITAL_ZOOM_THRESH}')
 
       # Capture a full frame.
       req = capture_request_utils.manual_capture_request(s, e)
@@ -78,14 +78,14 @@ class CropRegionsTest(its_base_test.ItsBaseTest):
       img_full = image_processing_utils.convert_capture_to_rgb_image(cap_full)
       wfull, hfull = cap_full['width'], cap_full['height']
       image_processing_utils.write_image(img_full, '%s_full_%dx%d.jpg' % (
-          os.path.join(log_path, NAME), wfull, hfull))
+          os.path.join(log_path, _NAME), wfull, hfull))
 
       # Capture a burst of crop region frames.
       # Note that each region is 1/2x1/2 of the full frame, and is digitally
       # zoomed into the full size output image, so must be downscaled (below)
       # by 2x when compared to a tile of the full image.
       reqs = []
-      for x, y, w, h in CROP_REGIONS:
+      for x, y, w, h in _CROP_REGIONS:
         req = capture_request_utils.manual_capture_request(s, e)
         req['android.scaler.cropRegion'] = {
             'top': int(ah * y),
@@ -107,10 +107,10 @@ class CropRegionsTest(its_base_test.ItsBaseTest):
         img_crop = image_processing_utils.convert_capture_to_rgb_image(cap)
         img_crop = image_processing_utils.downscale_image(img_crop, 2)
         image_processing_utils.write_image(img_crop, '%s_crop%d.jpg' % (
-            os.path.join(log_path, NAME), i))
+            os.path.join(log_path, _NAME), i))
         min_diff = None
         min_diff_region = None
-        for j, (x, y, w, h) in enumerate(CROP_REGIONS):
+        for j, (x, y, w, h) in enumerate(_CROP_REGIONS):
           tile_full = image_processing_utils.get_image_patch(
               img_full, x, y, w, h)
           wtest = min(tile_full.shape[1], aw)
@@ -119,7 +119,7 @@ class CropRegionsTest(its_base_test.ItsBaseTest):
           tile_crop = img_crop[0:htest:, 0:wtest:, ::]
           image_processing_utils.write_image(
               tile_full, '%s_fullregion%d.jpg' % (
-                  os.path.join(log_path, NAME), j))
+                  os.path.join(log_path, _NAME), j))
           diff = np.fabs(tile_full - tile_crop).mean()
           if min_diff is None or diff < min_diff:
             min_diff = diff
