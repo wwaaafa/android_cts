@@ -67,8 +67,8 @@ def check_edge_modes(sharpness):
 
 
 def do_capture_and_determine_sharpness(
-    cam, edge_mode, sensitivity, exp, fd, out_surface, chart, log_path,
-    reprocess_format=None):
+    cam, edge_mode, sensitivity, exp, fd, out_surface, chart,
+    name_with_log_path, reprocess_format=None):
   """Return sharpness of the output images and the capture result metadata.
 
    Processes a capture request with a given edge mode, sensitivity, exposure
@@ -86,7 +86,7 @@ def do_capture_and_determine_sharpness(
         android.lens.focusDistance
     out_surface: Specifications of the output image format and size.
     chart: object containing chart information
-    log_path: location to save files
+    name_with_log_path: file name & location to save files
     reprocess_format: (Optional) The reprocessing format. If not None,
                       reprocessing will be enabled.
 
@@ -111,8 +111,8 @@ def do_capture_and_determine_sharpness(
         y, chart.xnorm, chart.ynorm, chart.wnorm, chart.hnorm)
     if n == 0:
       image_processing_utils.write_image(
-          chart.img, '%s_reprocess_fmt_%s_edge=%d.jpg' % (
-              os.path.join(log_path, _NAME), reprocess_format, edge_mode))
+          chart.img,
+          f'{name_with_log_path}_reprocess_fmt_{reprocess_format}_edge={edge_mode}.jpg')
       edge_mode_res = caps[n]['metadata']['android.edge.mode']
     sharpness_list.append(
         image_processing_utils.compute_image_sharpness(chart.img)*255)
@@ -140,7 +140,7 @@ class ReprocessEdgeEnhancementTest(its_base_test.ItsBaseTest):
         hidden_physical_id=self.hidden_physical_id) as cam:
       props = cam.get_camera_properties()
       props = cam.override_with_hidden_physical_camera_props(props)
-      log_path = self.log_path
+      name_with_log_path = os.path.join(self.log_path, _NAME)
 
       # Check skip conditions
       camera_properties_utils.skip_unless(
@@ -185,7 +185,7 @@ class ReprocessEdgeEnhancementTest(its_base_test.ItsBaseTest):
           sharpness_regular.append(0)
           continue
         ret = do_capture_and_determine_sharpness(
-            cam, edge_mode, s, e, fd, out_surface, chart, log_path)
+            cam, edge_mode, s, e, fd, out_surface, chart, name_with_log_path)
         edge_mode_reported_regular.append(ret['edge_mode'])
         sharpness_regular.append(ret['sharpness'])
 
@@ -216,7 +216,7 @@ class ReprocessEdgeEnhancementTest(its_base_test.ItsBaseTest):
             continue
 
           ret = do_capture_and_determine_sharpness(
-              cam, edge_mode, s, e, fd, out_surface, chart, log_path,
+              cam, edge_mode, s, e, fd, out_surface, chart, name_with_log_path,
               reprocess_format)
           edge_mode_reported.append(ret['edge_mode'])
           sharpnesses.append(ret['sharpness'])
@@ -226,13 +226,13 @@ class ReprocessEdgeEnhancementTest(its_base_test.ItsBaseTest):
 
         # Add to plot and log results
         pylab.plot(_EDGE_MODES_VALUES, sharpnesses,
-                   f'-{_PLOT_COLORS[reprocess_format]}o', label=reprocess_format)
+                   f'-{_PLOT_COLORS[reprocess_format]}o',
+                   label=reprocess_format)
         logging.debug('Sharpness for edge modes w/ %s reprocess fmt: %s',
                       reprocess_format, str(sharpnesses))
       # Finalize plot
       pylab.legend(numpoints=1, fancybox=True)
-      matplotlib.pyplot.savefig('%s_plot.png' %
-                                os.path.join(log_path, _NAME))
+      matplotlib.pyplot.savefig(f'{name_with_log_path}_plot.png')
       logging.debug('Check regular requests')
       check_edge_modes(sharpness_regular)
 
