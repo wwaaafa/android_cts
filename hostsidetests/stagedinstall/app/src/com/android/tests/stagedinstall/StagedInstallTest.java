@@ -222,7 +222,7 @@ public class StagedInstallTest {
                 Log.e(TAG, "Failed to abandon session " + sessionInfo.getSessionId(), e);
             }
         }
-        Uninstall.packages(TestApp.A, TestApp.B);
+        Uninstall.packages(TestApp.A, TestApp.B, TestApp.S);
         Files.deleteIfExists(mTestStateFile.toPath());
     }
 
@@ -1515,11 +1515,46 @@ public class StagedInstallTest {
         assertThat(f2.join().isAllConstraintsSatisfied()).isTrue();
     }
 
+    @Test
+    public void testCheckInstallConstraints_BoundedService() throws Exception {
+        Install.single(TestApp.A1).commit();
+        Install.single(TestApp.B1).commit();
+        Install.single(TestApp.S1).commit();
+        // Start an activity which will bind a service
+        // Test app S is considered foreground as A is foreground
+        startActivity(TestApp.A, "com.android.cts.install.lib.testapp.TestServiceActivity");
+
+        var pi = InstallUtils.getPackageInstaller();
+        var f1 = new CompletableFuture<InstallConstraintsResult>();
+        var constraints = new InstallConstraints.Builder().requireAppNotForeground().build();
+        pi.checkInstallConstraints(
+                Arrays.asList(TestApp.S),
+                constraints,
+                result -> f1.complete(result));
+        assertThat(f1.join().isAllConstraintsSatisfied()).isFalse();
+
+        // Test app A is no longer foreground. So is test app S.
+        startActivity(TestApp.B);
+        PollingCheck.waitFor(() -> {
+            var importance = getPackageImportance(TestApp.A);
+            return importance > ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
+        });
+        var f2 = new CompletableFuture<InstallConstraintsResult>();
+        pi.checkInstallConstraints(
+                Arrays.asList(TestApp.S),
+                constraints,
+                result -> f2.complete(result));
+        assertThat(f2.join().isAllConstraintsSatisfied()).isTrue();
+    }
+
     private static void startActivity(String packageName) {
+        startActivity(packageName, "com.android.cts.install.lib.testapp.MainActivity");
+    }
+
+    private static void startActivity(String packageName, String className) {
         // The -W option waits for the activity launch to complete
-        SystemUtil.runShellCommand(
-                String.format("am start-activity -W -n %s/%s", packageName,
-                        "com.android.cts.install.lib.testapp.MainActivity"));
+        SystemUtil.runShellCommandOrThrow(
+                String.format("am start-activity -W -n %s/%s", packageName, className));
     }
 
     private int getPackageImportance(String packageName) {
