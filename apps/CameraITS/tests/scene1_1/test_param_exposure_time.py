@@ -52,6 +52,7 @@ class ParamExposureTimeTest(its_base_test.ItsBaseTest):
       props = cam.get_camera_properties()
       props = cam.override_with_hidden_physical_camera_props(props)
       log_path = self.log_path
+      name_with_log_path = os.path.join(log_path, _NAME)
 
       # check SKIP conditions
       camera_properties_utils.skip_unless(
@@ -78,7 +79,7 @@ class ParamExposureTimeTest(its_base_test.ItsBaseTest):
             cam, req, sync_latency, fmt)
         img = image_processing_utils.convert_capture_to_rgb_image(cap)
         image_processing_utils.write_image(
-            img, '%s_frame%d.jpg' % (os.path.join(log_path, _NAME), i))
+            img, f'{name_with_log_path}_frame{i}.jpg')
         patch = image_processing_utils.get_image_patch(
             img, _PATCH_X, _PATCH_Y, _PATCH_W, _PATCH_H)
         rgb_means = image_processing_utils.compute_image_means(patch)
@@ -96,8 +97,7 @@ class ParamExposureTimeTest(its_base_test.ItsBaseTest):
     pylab.title(_NAME)
     pylab.xlabel('Exposure times (ns)')
     pylab.ylabel('RGB means')
-    plot_name = '%s_plot_means.png' % os.path.join(log_path, _NAME)
-    matplotlib.pyplot.savefig(plot_name)
+    matplotlib.pyplot.savefig(f'{name_with_log_path}_plot_means.png')
 
     # Assert each shot is brighter than previous.
     for ch, means in enumerate([r_means, g_means, b_means]):
