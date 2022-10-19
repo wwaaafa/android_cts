@@ -88,7 +88,7 @@ class AutoVsManualTest(its_base_test.ItsBaseTest):
       # Converge 3A and get the estimates
       largest_yuv = capture_request_utils.get_largest_yuv_format(props)
       match_ar = (largest_yuv['width'], largest_yuv['height'])
-      fmt = capture_request_utils.get_smallest_yuv_format(
+      fmt = capture_request_utils.get_near_vga_yuv_format(
           props, match_ar=match_ar)
       s, e, awb_gains, awb_xform, fd = cam.do_3a(get_results=True,
                                                  mono_camera=mono_camera)
