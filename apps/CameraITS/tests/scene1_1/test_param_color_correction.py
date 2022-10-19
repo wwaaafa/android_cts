@@ -28,11 +28,11 @@ import its_session_utils
 import target_exposure_utils
 
 _CC_XFORM_BOOST_B = [1, 0, 0,
-                    0, 1, 0,
-                    0, 0, 2]  # blue channel 2x
+                     0, 1, 0,
+                     0, 0, 2]  # blue channel 2x
 _CC_XFORM_UNITY = [1, 0, 0,
-                  0, 1, 0,
-                  0, 0, 1]  # all channels equal
+                   0, 1, 0,
+                   0, 0, 1]  # all channels equal
 _NAME = os.path.splitext(os.path.basename(__file__))[0]
 _PATCH_H = 0.1  # center 10%
 _PATCH_W = 0.1
@@ -63,6 +63,7 @@ class ParamColorCorrectionTest(its_base_test.ItsBaseTest):
       props = cam.get_camera_properties()
       props = cam.override_with_hidden_physical_camera_props(props)
       log_path = self.log_path
+      name_with_log_path = os.path.join(log_path, _NAME)
 
       # check SKIP conditions
       camera_properties_utils.skip_unless(
@@ -110,8 +111,8 @@ class ParamColorCorrectionTest(its_base_test.ItsBaseTest):
         cap = its_session_utils.do_capture_with_latency(
             cam, req, sync_latency, fmt)
         img = image_processing_utils.convert_capture_to_rgb_image(cap)
-        image_processing_utils.write_image(img, '%s_req=%d.jpg' % (
-            os.path.join(log_path, _NAME), i))
+        image_processing_utils.write_image(
+            img, f'{name_with_log_path}_req={i}.jpg')
         patch = image_processing_utils.get_image_patch(
             img, _PATCH_X, _PATCH_Y, _PATCH_W, _PATCH_H)
         rgb_means = image_processing_utils.compute_image_means(patch)
@@ -130,8 +131,7 @@ class ParamColorCorrectionTest(its_base_test.ItsBaseTest):
       pylab.title(_NAME)
       pylab.xlabel('Cap Index [Unity, R boost, B boost]')
       pylab.ylabel('RGB patch means')
-      matplotlib.pyplot.savefig(
-          '%s_plot_means.png' % os.path.join(log_path, _NAME))
+      matplotlib.pyplot.savefig(f'{name_with_log_path}_plot_means.png')
       # Ensure that image is not clamped to white/black.
       if not all(_RGB_RANGE_THRESH < g_means[i] < 1.0-_RGB_RANGE_THRESH
                  for i in capture_idxs):
