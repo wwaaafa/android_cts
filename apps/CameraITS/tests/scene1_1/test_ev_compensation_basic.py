@@ -99,7 +99,7 @@ class EvCompensationBasicTest(its_base_test.ItsBaseTest):
       # Do captures and extract information
       largest_yuv = capture_request_utils.get_largest_yuv_format(props)
       match_ar = (largest_yuv['width'], largest_yuv['height'])
-      fmt = capture_request_utils.get_smallest_yuv_format(
+      fmt = capture_request_utils.get_near_vga_yuv_format(
           props, match_ar=match_ar)
       if fmt['width'] * fmt['height'] > _VGA_W * _VGA_H:
         fmt = {'format': 'yuv', 'width': _VGA_W, 'height': _VGA_H}
