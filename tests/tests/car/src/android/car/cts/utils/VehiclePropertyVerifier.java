@@ -55,8 +55,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class VehiclePropertyVerifier<T> {
-    private final static String CAR_PROPERTY_VALUE_SOURCE_GETTER = "Getter";
-    private final static String CAR_PROPERTY_VALUE_SOURCE_CALLBACK = "Callback";
+    private static final String CAR_PROPERTY_VALUE_SOURCE_GETTER = "Getter";
+    private static final String CAR_PROPERTY_VALUE_SOURCE_CALLBACK = "Callback";
     private static final float FLOAT_INEQUALITY_THRESHOLD = 0.00001f;
     private static final ImmutableSet<Integer> WHEEL_AREAS = ImmutableSet.of(
             VehicleAreaWheel.WHEEL_LEFT_FRONT, VehicleAreaWheel.WHEEL_LEFT_REAR,
@@ -106,8 +106,13 @@ public class VehiclePropertyVerifier<T> {
     private final boolean mRequireZeroToBeContainedInMinMaxRanges;
     private final boolean mPossiblyDependentOnHvacPowerOn;
 
-    private VehiclePropertyVerifier(int propertyId, int access, int areaType, int changeMode,
-            Class<T> propertyType, boolean requiredProperty,
+    private VehiclePropertyVerifier(
+            int propertyId,
+            int access,
+            int areaType,
+            int changeMode,
+            Class<T> propertyType,
+            boolean requiredProperty,
             Optional<ConfigArrayVerifier> configArrayVerifier,
             Optional<CarPropertyValueVerifier> carPropertyValueVerifier,
             Optional<AreaIdsVerifier> areaIdsVerifier,
@@ -141,9 +146,8 @@ public class VehiclePropertyVerifier<T> {
         mPossiblyDependentOnHvacPowerOn = possiblyDependentOnHvacPowerOn;
     }
 
-    public static <T> Builder<T> newBuilder(int propertyId, int access, int areaType,
-            int changeMode,
-            Class<T> propertyType) {
+    public static <T> Builder<T> newBuilder(
+            int propertyId, int access, int areaType, int changeMode, Class<T> propertyType) {
         return new Builder<>(propertyId, access, areaType, changeMode, propertyType);
     }
 
@@ -198,8 +202,7 @@ public class VehiclePropertyVerifier<T> {
         CarPropertyConfig<?> carPropertyConfig = carPropertyManager.getCarPropertyConfig(
                 mPropertyId);
         if (mRequiredProperty) {
-            assertWithMessage("Must support " + mPropertyName).that(carPropertyConfig)
-                    .isNotNull();
+            assertWithMessage("Must support " + mPropertyName).that(carPropertyConfig).isNotNull();
         } else {
             assumeNotNull(carPropertyConfig);
         }
@@ -313,8 +316,8 @@ public class VehiclePropertyVerifier<T> {
 
     private <T> void verifySetProperty(CarPropertyConfig<T> carPropertyConfig,
             CarPropertyManager carPropertyManager, int areaId, T valueToSet) {
-        CarPropertyValue<T> currentCarPropertyValue = carPropertyManager.getProperty(
-                mPropertyId, areaId);
+        CarPropertyValue<T> currentCarPropertyValue =
+                carPropertyManager.getProperty(mPropertyId, areaId);
         verifyCarPropertyValue(carPropertyConfig, currentCarPropertyValue, areaId,
                 CAR_PROPERTY_VALUE_SOURCE_GETTER);
         if (valueEquals(valueToSet, currentCarPropertyValue.getValue())) {
@@ -378,17 +381,26 @@ public class VehiclePropertyVerifier<T> {
                 .that(carPropertyConfig.getPropertyId())
                 .isEqualTo(mPropertyId);
         if (mAccess == CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE) {
-            assertWithMessage(mPropertyName + " must be " + accessToString(
-                    CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ) + ", " + accessToString(
-                    CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_WRITE) + ", or " + accessToString(
-                    CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE))
+            assertWithMessage(
+                            mPropertyName
+                                    + " must be "
+                                    + accessToString(CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ)
+                                    + ", "
+                                    + accessToString(
+                                            CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_WRITE)
+                                    + ", or "
+                                    + accessToString(
+                                            CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE))
                     .that(carPropertyConfig.getAccess())
-                    .isIn(ImmutableSet.of(CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ,
-                            CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_WRITE,
-                            CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE));
+                    .isIn(
+                            ImmutableSet.of(
+                                    CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ,
+                                    CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_WRITE,
+                                    CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE));
         } else {
             assertWithMessage(mPropertyName + " must be " + accessToString(mAccess))
-                    .that(carPropertyConfig.getAccess()).isEqualTo(mAccess);
+                    .that(carPropertyConfig.getAccess())
+                    .isEqualTo(mAccess);
         }
         assertWithMessage(mPropertyName + " must be " + areaTypeToString(mAreaType))
                 .that(carPropertyConfig.getAreaType())
@@ -397,7 +409,8 @@ public class VehiclePropertyVerifier<T> {
                 .that(carPropertyConfig.getChangeMode())
                 .isEqualTo(mChangeMode);
         assertWithMessage(mPropertyName + " must be " + mPropertyType + " type property")
-                .that(carPropertyConfig.getPropertyType()).isEqualTo(mPropertyType);
+                .that(carPropertyConfig.getPropertyType())
+                .isEqualTo(mPropertyType);
 
         assertWithMessage(mPropertyName + "'s must have at least 1 area ID defined").that(
                 carPropertyConfig.getAreaIds().length).isAtLeast(1);
@@ -408,9 +421,11 @@ public class VehiclePropertyVerifier<T> {
 
         if (mAreaType == VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL) {
             assertWithMessage(
-                    mPropertyName + "'s AreaIds must contain a single 0 since it is "
-                            + areaTypeToString(mAreaType))
-                    .that(carPropertyConfig.getAreaIds()).isEqualTo(new int[]{0});
+                            mPropertyName
+                                    + "'s AreaIds must contain a single 0 since it is "
+                                    + areaTypeToString(mAreaType))
+                    .that(carPropertyConfig.getAreaIds())
+                    .isEqualTo(new int[] {0});
         } else if (mAreaType == VehicleAreaType.VEHICLE_AREA_TYPE_WHEEL) {
             verifyValidAreaIdsForAreaType(carPropertyConfig, ALL_POSSIBLE_WHEEL_AREA_IDS);
             verifyNoAreaOverlapInAreaIds(carPropertyConfig, WHEEL_AREAS);
@@ -435,20 +450,21 @@ public class VehiclePropertyVerifier<T> {
             verifyNonContinuousCarPropertyConfig(carPropertyConfig);
         }
 
-        mCarPropertyConfigVerifier.ifPresent(carPropertyConfigVerifier ->
-                carPropertyConfigVerifier.verify(carPropertyConfig));
+        mCarPropertyConfigVerifier.ifPresent(
+                carPropertyConfigVerifier -> carPropertyConfigVerifier.verify(carPropertyConfig));
 
         if (!mPossibleConfigArrayValues.isEmpty()) {
-            assertWithMessage(
-                    mPropertyName + " configArray must specify supported values")
+            assertWithMessage(mPropertyName + " configArray must specify supported values")
                     .that(carPropertyConfig.getConfigArray().size())
                     .isGreaterThan(0);
             for (Integer supportedValue : carPropertyConfig.getConfigArray()) {
                 assertWithMessage(
-                        mPropertyName + " configArray value must be a defined "
-                                + "value: "
-                                + supportedValue).that(
-                        supportedValue).isIn(mPossibleConfigArrayValues);
+                                mPropertyName
+                                        + " configArray value must be a defined "
+                                        + "value: "
+                                        + supportedValue)
+                        .that(supportedValue)
+                        .isIn(mPossibleConfigArrayValues);
             }
         }
 
@@ -457,7 +473,8 @@ public class VehiclePropertyVerifier<T> {
 
         if (mPossibleConfigArrayValues.isEmpty() && !mConfigArrayVerifier.isPresent()) {
             assertWithMessage(mPropertyName + " configArray is undefined, so it must be empty")
-                    .that(carPropertyConfig.getConfigArray().size()).isEqualTo(0);
+                    .that(carPropertyConfig.getConfigArray().size())
+                    .isEqualTo(0);
         }
 
         for (int areaId : carPropertyConfig.getAreaIds()) {
@@ -484,8 +501,12 @@ public class VehiclePropertyVerifier<T> {
                 continue;
             }
             assertWithMessage(
-                    mPropertyName + " - areaId: " + areaId + "'s max value must be >= min value")
-                    .that(verifyMaxAndMin(areaIdMinValue, areaIdMaxValue)).isTrue();
+                            mPropertyName
+                                    + " - areaId: "
+                                    + areaId
+                                    + "'s max value must be >= min value")
+                    .that(verifyMaxAndMin(areaIdMinValue, areaIdMaxValue))
+                    .isTrue();
         }
     }
 
@@ -519,26 +540,35 @@ public class VehiclePropertyVerifier<T> {
 
     private void verifyContinuousCarPropertyConfig(CarPropertyConfig<?> carPropertyConfig) {
         assertWithMessage(
-                mPropertyName + " must define max sample rate since change mode is "
-                        + changeModeToString(mChangeMode))
-                .that(carPropertyConfig.getMaxSampleRate()).isGreaterThan(0);
+                        mPropertyName
+                                + " must define max sample rate since change mode is "
+                                + changeModeToString(mChangeMode))
+                .that(carPropertyConfig.getMaxSampleRate())
+                .isGreaterThan(0);
         assertWithMessage(
-                mPropertyName + " must define min sample rate since change mode is "
-                        + changeModeToString(mChangeMode))
-                .that(carPropertyConfig.getMinSampleRate()).isGreaterThan(0);
+                        mPropertyName
+                                + " must define min sample rate since change mode is "
+                                + changeModeToString(mChangeMode))
+                .that(carPropertyConfig.getMinSampleRate())
+                .isGreaterThan(0);
         assertWithMessage(mPropertyName + " max sample rate must be >= min sample rate")
-                .that(carPropertyConfig.getMaxSampleRate() >=
-                        carPropertyConfig.getMinSampleRate())
+                .that(carPropertyConfig.getMaxSampleRate() >= carPropertyConfig.getMinSampleRate())
                 .isTrue();
     }
 
     private void verifyNonContinuousCarPropertyConfig(CarPropertyConfig<?> carPropertyConfig) {
-        assertWithMessage(mPropertyName + " must define max sample rate as 0 since change mode is "
-                + changeModeToString(mChangeMode))
-                .that(carPropertyConfig.getMaxSampleRate()).isEqualTo(0);
-        assertWithMessage(mPropertyName + " must define min sample rate as 0 since change mode is "
-                + changeModeToString(mChangeMode))
-                .that(carPropertyConfig.getMinSampleRate()).isEqualTo(0);
+        assertWithMessage(
+                        mPropertyName
+                                + " must define max sample rate as 0 since change mode is "
+                                + changeModeToString(mChangeMode))
+                .that(carPropertyConfig.getMaxSampleRate())
+                .isEqualTo(0);
+        assertWithMessage(
+                        mPropertyName
+                                + " must define min sample rate as 0 since change mode is "
+                                + changeModeToString(mChangeMode))
+                .that(carPropertyConfig.getMinSampleRate())
+                .isEqualTo(0);
     }
 
     private void verifyCarPropertyValueGetter(CarPropertyConfig<?> carPropertyConfig,
@@ -548,8 +578,7 @@ public class VehiclePropertyVerifier<T> {
         }
         for (int areaId : carPropertyConfig.getAreaIds()) {
             CarPropertyValue<?> carPropertyValue =
-                    carPropertyManager.getProperty(
-                            mPropertyId, areaId);
+                    carPropertyManager.getProperty(mPropertyId, areaId);
 
             verifyCarPropertyValue(carPropertyConfig, carPropertyValue, areaId,
                     CAR_PROPERTY_VALUE_SOURCE_GETTER);
@@ -559,13 +588,22 @@ public class VehiclePropertyVerifier<T> {
     private void verifyCarPropertyValue(CarPropertyConfig<?> carPropertyConfig,
             CarPropertyValue<?> carPropertyValue, int areaId, String source) {
         assertWithMessage(
-                mPropertyName + " - areaId: " + areaId + " - source: " + source
-                        + " value must have correct property ID")
-                .that(carPropertyValue.getPropertyId()).isEqualTo(mPropertyId);
+                        mPropertyName
+                                + " - areaId: "
+                                + areaId
+                                + " - source: "
+                                + source
+                                + " value must have correct property ID")
+                .that(carPropertyValue.getPropertyId())
+                .isEqualTo(mPropertyId);
         assertWithMessage(
-                mPropertyName + " - areaId: " + areaId + " - source: " + source
-                        + " value must have correct area id: "
-                        + areaId)
+                        mPropertyName
+                                + " - areaId: "
+                                + areaId
+                                + " - source: "
+                                + source
+                                + " value must have correct area id: "
+                                + areaId)
                 .that(carPropertyValue.getAreaId())
                 .isEqualTo(areaId);
         assertWithMessage(mPropertyName + " - areaId: " + areaId + " - source: " + source
@@ -573,31 +611,60 @@ public class VehiclePropertyVerifier<T> {
                 carPropertyConfig.getAreaIds()).boxed().collect(Collectors.toList()).contains(
                 carPropertyValue.getAreaId())).isTrue();
         assertWithMessage(
-                mPropertyName + " - areaId: " + areaId + " - source: " + source
-                        + " value's status must be valid")
-                .that(carPropertyValue.getStatus()).isIn(
-                ImmutableSet.of(CarPropertyValue.STATUS_AVAILABLE,
-                        CarPropertyValue.STATUS_UNAVAILABLE, CarPropertyValue.STATUS_ERROR));
-        assertWithMessage(mPropertyName + " - areaId: " + areaId +
-                " - source: " + source
-                + " timestamp must use the SystemClock.elapsedRealtimeNanos() time base")
-                .that(carPropertyValue.getTimestamp()).isAtLeast(0);
-        assertWithMessage(mPropertyName + " - areaId: " + areaId +
-                " - source: " + source
-                + " timestamp must use the SystemClock.elapsedRealtimeNanos() time base")
-                .that(carPropertyValue.getTimestamp()).isLessThan(
-                SystemClock.elapsedRealtimeNanos());
+                        mPropertyName
+                                + " - areaId: "
+                                + areaId
+                                + " - source: "
+                                + source
+                                + " value's status must be valid")
+                .that(carPropertyValue.getStatus())
+                .isIn(
+                        ImmutableSet.of(
+                                CarPropertyValue.STATUS_AVAILABLE,
+                                CarPropertyValue.STATUS_UNAVAILABLE,
+                                CarPropertyValue.STATUS_ERROR));
         assertWithMessage(
-                mPropertyName + " - areaId: " + areaId + " - source: " + source + " must return "
-                        + mPropertyType
-                        + " type value")
-                .that(carPropertyValue.getValue().getClass()).isEqualTo(mPropertyType);
+                        mPropertyName
+                                + " - areaId: "
+                                + areaId
+                                + " - source: "
+                                + source
+                                + " timestamp must use the SystemClock.elapsedRealtimeNanos() time"
+                                + " base")
+                .that(carPropertyValue.getTimestamp())
+                .isAtLeast(0);
+        assertWithMessage(
+                        mPropertyName
+                                + " - areaId: "
+                                + areaId
+                                + " - source: "
+                                + source
+                                + " timestamp must use the SystemClock.elapsedRealtimeNanos() time"
+                                + " base")
+                .that(carPropertyValue.getTimestamp())
+                .isLessThan(SystemClock.elapsedRealtimeNanos());
+        assertWithMessage(
+                        mPropertyName
+                                + " - areaId: "
+                                + areaId
+                                + " - source: "
+                                + source
+                                + " must return "
+                                + mPropertyType
+                                + " type value")
+                .that(carPropertyValue.getValue().getClass())
+                .isEqualTo(mPropertyType);
 
         if (mRequirePropertyValueToBeInConfigArray) {
-            assertWithMessage(mPropertyName + " - areaId: " + areaId + " - source: " + source +
-                    " value must be listed in configArray")
-                    .that(carPropertyConfig.getConfigArray().contains(
-                            carPropertyValue.getValue())).isTrue();
+            assertWithMessage(
+                            mPropertyName
+                                    + " - areaId: "
+                                    + areaId
+                                    + " - source: "
+                                    + source
+                                    + " value must be listed in configArray")
+                    .that(carPropertyConfig.getConfigArray().contains(carPropertyValue.getValue()))
+                    .isTrue();
         }
 
         if (!mPossibleCarPropertyValues.isEmpty()) {
@@ -627,10 +694,13 @@ public class VehiclePropertyVerifier<T> {
         T areaIdMinValue = (T) carPropertyConfig.getMinValue(areaId);
         T areaIdMaxValue = (T) carPropertyConfig.getMaxValue(areaId);
         if (areaIdMinValue != null && areaIdMaxValue != null) {
-            assertWithMessage(
-                "carPropertyValue must be between the max and min values")
-                .that(verifyValueInRange(areaIdMinValue, areaIdMaxValue,
-                    (T) carPropertyValue.getValue())).isTrue();
+            assertWithMessage("carPropertyValue must be between the max and min values")
+                    .that(
+                            verifyValueInRange(
+                                    areaIdMinValue,
+                                    areaIdMaxValue,
+                                    (T) carPropertyValue.getValue()))
+                    .isTrue();
         }
     }
 
@@ -771,8 +841,7 @@ public class VehiclePropertyVerifier<T> {
             return this;
         }
 
-        public Builder<T> setPossibleCarPropertyValues(
-                ImmutableSet<T> possibleCarPropertyValues) {
+        public Builder<T> setPossibleCarPropertyValues(ImmutableSet<T> possibleCarPropertyValues) {
             mPossibleCarPropertyValues = possibleCarPropertyValues;
             return this;
         }
