@@ -256,6 +256,7 @@ public class MockInCallService extends InCallService {
 
     @Override
     public void onCallAdded(Call call) {
+        Log.i(LOG_TAG, String.format("onCallAdded: call=[%s]", call));
         super.onCallAdded(call);
         if (call.getDetails().hasProperty(Call.Details.PROPERTY_CONFERENCE) == true) {
             if (!mConferenceCalls.contains(call)) {
@@ -264,6 +265,7 @@ public class MockInCallService extends InCallService {
             }
         } else {
             if (!mCalls.contains(call)) {
+                Log.i(LOG_TAG, "added call to list");
                 mCalls.add(call);
                 call.registerCallback(mCallCallback);
                 VideoCall videoCall = call.getVideoCall();
@@ -279,6 +281,7 @@ public class MockInCallService extends InCallService {
 
     @Override
     public void onCallRemoved(Call call) {
+        Log.i(LOG_TAG, String.format("onCallRemoved: call=[%s]", call));
         super.onCallRemoved(call);
         if (call.getDetails().hasProperty(Call.Details.PROPERTY_CONFERENCE) == true) {
             mConferenceCalls.remove(call);
@@ -345,6 +348,23 @@ public class MockInCallService extends InCallService {
             return mCalls.get(mCalls.size() - 1);
         }
         return null;
+    }
+
+    public List<Call> getAllCalls() {
+        return mCalls;
+    }
+
+    public Call getCallWithId(String id) {
+        for (Call call : mCalls) {
+            if (call.getDetails().getTelecomCallId().equals(id)) {
+                return call;
+            }
+        }
+        return null;
+    }
+
+    public void clearCallList() {
+        mCalls.clear();
     }
 
     /**
