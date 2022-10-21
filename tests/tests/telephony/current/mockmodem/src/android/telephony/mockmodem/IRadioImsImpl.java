@@ -81,7 +81,8 @@ public class IRadioImsImpl extends IRadioIms.Stub {
     }
 
     @Override
-    public void startImsTraffic(int serial, int token, int imsTrafficType, int accessNetworkType) {
+    public void startImsTraffic(int serial,
+            int token, int imsTrafficType, int accessNetworkType, int trafficDirection) {
         Log.d(mTag, "startImsTraffic");
 
         android.hardware.radio.ims.ConnectionFailureInfo failureInfo = null;
@@ -174,6 +175,18 @@ public class IRadioImsImpl extends IRadioIms.Stub {
             }
         } else {
             Log.e(mTag, "null mRadioImsIndication");
+        }
+    }
+
+    @Override
+    public void updateImsCallStatus(int serial, android.hardware.radio.ims.ImsCall[] imsCalls) {
+        Log.d(mTag, "updateImsCallStatus");
+
+        RadioResponseInfo rsp = mService.makeSolRsp(serial, RadioError.REQUEST_NOT_SUPPORTED);
+        try {
+            mRadioImsResponse.updateImsCallStatusResponse(rsp);
+        } catch (RemoteException ex) {
+            Log.e(mTag, "Failed to updateImsCallStatus from AIDL. Exception" + ex);
         }
     }
 
