@@ -22,7 +22,6 @@ import static android.telecom.cts.TestUtils.WAIT_FOR_STATE_CHANGE_TIMEOUT_MS;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 
 import android.app.AppOpsManager;
@@ -30,8 +29,8 @@ import android.app.UiAutomation;
 import android.app.UiModeManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.media.AudioManager;
@@ -56,7 +55,6 @@ import android.telecom.TelecomManager;
 import android.telecom.VideoProfile;
 import android.telecom.cts.MockInCallService.InCallServiceCallbacks;
 import android.telecom.cts.carmodetestapp.ICtsCarModeInCallServiceControl;
-import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyCallback;
 import android.telephony.TelephonyManager;
 import android.telephony.emergency.EmergencyNumber;
@@ -1966,6 +1964,20 @@ public class BaseTelecomTestWithMockServices extends InstrumentationTestCase {
 
     MockInCallService getInCallService() {
         return (mInCallCallbacks == null) ? null : mInCallCallbacks.getService();
+    }
+
+    public void waitOnInCallService() {
+        waitUntilConditionIsTrueOrTimeout(new Condition() {
+            @Override
+            public Object expected() {
+                return true;
+            }
+
+            @Override
+            public Object actual() {
+                return mInCallCallbacks.getService() != null;
+            }
+        }, WAIT_FOR_STATE_CHANGE_TIMEOUT_MS, "MockInCallService failed to get Call");
     }
 
     /**
