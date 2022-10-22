@@ -66,6 +66,7 @@ import android.telephony.ims.RcsUceAdapter;
 import android.telephony.ims.RegistrationManager;
 import android.telephony.ims.RtpHeaderExtensionType;
 import android.telephony.ims.SipDelegateManager;
+import android.telephony.ims.SipDetails;
 import android.telephony.ims.feature.ImsFeature;
 import android.telephony.ims.feature.MmTelFeature;
 import android.telephony.ims.feature.RcsFeature;
@@ -2636,6 +2637,7 @@ public class ImsServiceTest {
                         ImsReasonInfo.CODE_UNSPECIFIED, ""));
 
         LinkedBlockingQueue<Integer> mQueue = new LinkedBlockingQueue<>();
+        LinkedBlockingQueue<SipDetails> mDeregiQueue = new LinkedBlockingQueue<>();
         RegistrationManager.RegistrationCallback callback =
                 new RegistrationManager.RegistrationCallback() {
                     @Override
@@ -2651,6 +2653,12 @@ public class ImsServiceTest {
                     @Override
                     public void onUnregistered(ImsReasonInfo info) {
                         mQueue.offer(info.getCode());
+                    }
+
+                    @Override
+                    public void onUnregistered(ImsReasonInfo info, SipDetails details) {
+                        mQueue.offer(info.getCode());
+                        mDeregiQueue.offer(details);
                     }
 
                     @Override
@@ -2675,6 +2683,7 @@ public class ImsServiceTest {
 
         // Verify it's not registered
         assertEquals(ImsReasonInfo.CODE_LOCAL_NOT_REGISTERED, waitForIntResult(mQueue));
+        assertTrue(mDeregiQueue.isEmpty());
 
         // Start registration
         sServiceConnector.getCarrierService().getImsRegistration().onRegistering(
@@ -2693,6 +2702,25 @@ public class ImsServiceTest {
                         ImsReasonInfo.CODE_UNSPECIFIED, ""));
         assertEquals(AccessNetworkConstants.TRANSPORT_TYPE_WLAN, waitForIntResult(mQueue));
         assertEquals(ImsReasonInfo.CODE_LOCAL_HO_NOT_FEASIBLE, waitForIntResult(mQueue));
+
+        int cSeq = 1;
+        int responseCode = 200;
+        String responsePhrase = "OK";
+        String callId = "testCall-Id";
+        sServiceConnector.getCarrierService().getImsRegistration().onDeregistered(
+                new ImsReasonInfo(ImsReasonInfo.CODE_LOCAL_NOT_REGISTERED,
+                        ImsReasonInfo.CODE_UNSPECIFIED, ""),
+                new SipDetails.Builder(SipDetails.METHOD_REGISTER)
+                                .setCSeq(cSeq).setSipResponseCode(responseCode, responsePhrase)
+                                .setCallId(callId).build()
+        );
+        assertEquals(ImsReasonInfo.CODE_LOCAL_NOT_REGISTERED, waitForIntResult(mQueue));
+        SipDetails details = waitForResult(mDeregiQueue);
+        assertEquals(SipDetails.METHOD_REGISTER, details.getMethod());
+        assertEquals(cSeq, details.getCSeq());
+        assertEquals(responseCode, details.getResponseCode());
+        assertEquals(responsePhrase, details.getResponsePhrase());
+        assertEquals(callId, details.getCallId());
 
         // Verify the unregisterImsRegistrationCallback should failure without the permission.
         try {
