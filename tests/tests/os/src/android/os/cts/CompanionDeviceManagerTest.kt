@@ -16,8 +16,12 @@
 
 package android.os.cts
 
+import android.app.ActivityManager
+import android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_TOP_SLEEPING
 import android.app.Instrumentation
+import android.app.UiAutomation
 import android.companion.CompanionDeviceManager
+import android.content.Context
 import android.content.pm.PackageManager
 import android.content.pm.PackageManager.FEATURE_AUTOMOTIVE
 import android.content.pm.PackageManager.FEATURE_COMPANION_DEVICE_SETUP
@@ -31,22 +35,30 @@ import android.platform.test.annotations.AppModeFull
 import android.util.Size
 import android.util.SizeF
 import android.util.SparseArray
+import android.view.accessibility.AccessibilityNodeInfo
 import androidx.test.InstrumentationRegistry
 import androidx.test.runner.AndroidJUnit4
-import androidx.test.uiautomator.By
-import androidx.test.uiautomator.BySelector
-import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.UiObject2
-import androidx.test.uiautomator.Until
+import android.support.test.uiautomator.By
+import android.support.test.uiautomator.BySelector
+import android.support.test.uiautomator.UiDevice
+import android.support.test.uiautomator.UiObject2
+import android.support.test.uiautomator.Until
 import com.android.compatibility.common.util.MatcherUtils.hasIdThat
+import com.android.compatibility.common.util.SystemUtil
 import com.android.compatibility.common.util.SystemUtil.getEventually
 import com.android.compatibility.common.util.SystemUtil.runShellCommand
 import com.android.compatibility.common.util.SystemUtil.runShellCommandOrThrow
 import com.android.compatibility.common.util.SystemUtil.runWithShellPermissionIdentity
 import com.android.compatibility.common.util.ThrowingSupplier
-import com.android.compatibility.common.util.UiAutomatorUtils.waitFindObject
+import com.android.compatibility.common.util.UI_ROOT
+import com.android.compatibility.common.util.UiAutomatorUtils
 import com.android.compatibility.common.util.click
+import com.android.compatibility.common.util.depthFirstSearch
+import com.android.compatibility.common.util.textAsString
+import com.android.compatibility.common.util.uiDump
 import org.hamcrest.CoreMatchers.containsString
+import org.hamcrest.Matcher
+import org.hamcrest.Matchers
 import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThat
@@ -58,6 +70,8 @@ import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.Serializable
+import java.util.concurrent.atomic.AtomicReference
+import java.util.regex.Pattern
 
 /**
  * Test for [CompanionDeviceManager]
@@ -226,14 +240,112 @@ class CompanionDeviceManagerTest {
                     MacAddress.fromString(macAddress), context.user)
         }, *permissions)
     }
-}
 
-private fun UiDevice.waitAndFind(selector: BySelector): UiObject2 =
-        wait(Until.findObject(selector), 1000)
+    private fun UiDevice.waitAndFind(selector: BySelector): UiObject2 =
+            wait(Until.findObject(selector), 1000)
 
-private fun click(label: String) {
-    waitFindObject(byTextIgnoreCase(label)).click()
-    waitForIdle()
+    private fun click(label: String) {
+        waitFindObject(byTextIgnoreCase(label)).click()
+        waitForIdle()
+    }
+
+    private fun uninstallAppWithoutAssertion(packageName: String) {
+        runShellCommandOrThrow("pm uninstall $packageName")
+    }
+
+    private fun installApk(apk: String) {
+        assertThat(runShellCommandOrThrow("pm install -r $apk"), containsString("Success"))
+    }
+
+    /**
+     * For some reason waitFindObject sometimes fails to find UI that is present in the view hierarchy
+     */
+    private fun waitFindNode(
+            matcher: Matcher<AccessibilityNodeInfo>,
+            failMsg: String? = null,
+            timeoutMs: Long = 10_000
+    ): AccessibilityNodeInfo {
+        return getEventually({
+            val ui = UI_ROOT
+            ui.depthFirstSearch { node ->
+                matcher.matches(node)
+            }.assertNotNull {
+                buildString {
+                    if (failMsg != null) {
+                        appendLine(failMsg)
+                    }
+                    appendLine("No view found matching $matcher:\n\n${uiDump(ui)}")
+                }
+            }
+        }, timeoutMs)
+    }
+
+    private fun waitFindObject(selector: BySelector): UiObject2 {
+        return waitFindObject(instrumentation.uiAutomation, selector)
+    }
+
+    private fun waitFindObject(uiAutomation: UiAutomation, selector: BySelector): UiObject2 {
+        try {
+            return UiAutomatorUtils.waitFindObject(selector)
+        } catch (e: RuntimeException) {
+            val ui = uiAutomation.rootInActiveWindow
+
+            val title = ui.depthFirstSearch { node ->
+                node.viewIdResourceName?.contains("alertTitle") == true
+            }
+            val okButton = ui.depthFirstSearch { node ->
+                node.textAsString?.equals("OK", ignoreCase = true) ?: false
+            }
+
+            if (title?.text?.toString() == "Android System" && okButton != null) {
+                // Auto dismiss occasional system dialogs to prevent interfering with the test
+                okButton.click()
+                return UiAutomatorUtils.waitFindObject(selector)
+            } else {
+                throw e
+            }
+        }
+    }
+
+    private fun byTextIgnoreCase(txt: String): BySelector {
+        return By.text(Pattern.compile(txt, Pattern.CASE_INSENSITIVE))
+    }
+
+    private fun waitForIdle() {
+        InstrumentationRegistry.getInstrumentation().uiAutomation.waitForIdle(1000, 10000)
+    }
+
+    private inline fun <T> eventually(crossinline action: () -> T): T {
+        val res = AtomicReference<T>()
+        SystemUtil.eventually {
+            res.set(action())
+        }
+        return res.get()
+    }
+
+    private fun awaitAppState(pkg: String, stateMatcher: Matcher<Int>) {
+        val context: Context = InstrumentationRegistry.getTargetContext()
+        eventually {
+            runWithShellPermissionIdentity {
+                val packageImportance = context
+                        .getSystemService(ActivityManager::class.java)!!
+                        .getPackageImportance(pkg)
+                assertThat(packageImportance, stateMatcher)
+            }
+        }
+    }
+
+    private fun startApp(packageName: String) {
+        val context = InstrumentationRegistry.getTargetContext()
+        val intent = context.packageManager.getLaunchIntentForPackage(packageName)
+        context.startActivity(intent)
+        awaitAppState(packageName, Matchers.lessThanOrEqualTo(IMPORTANCE_TOP_SLEEPING))
+        waitForIdle()
+    }
+
+    private inline fun <T> T?.assertNotNull(errorMsg: () -> String): T {
+        return if (this == null) throw AssertionError(errorMsg()) else this
+    }
 }
 
 operator fun Bundle.set(key: String, value: Any?) {
