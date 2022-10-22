@@ -1,8 +1,4 @@
-# Bug component: 24950
-
-per-file *AutoRevoke* = file:/tests/tests/os/AUTO_REVOKE_TEST_OWNERS
-per-file *AppHibernationUtils* = file:/tests/tests/os/AUTO_REVOKE_TEST_OWNERS
-per-file *AppHibernationIntegration* = file:platform/frameworks/base:/core/java/android/apphibernation/OWNERS
+# Bug component: 25692
 per-file *Companion* = file:platform/frameworks/base:/core/java/android/permission/OWNERS
 per-file *Vibrat* = file:platform/frameworks/base:/services/core/java/com/android/server/vibrator/OWNERS
 per-file *AndroidManifest.xml = file:platform/frameworks/base:/core/java/android/permission/OWNERS
