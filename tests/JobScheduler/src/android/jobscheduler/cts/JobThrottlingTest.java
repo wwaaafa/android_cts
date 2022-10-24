@@ -22,6 +22,7 @@ import static android.jobscheduler.cts.ConnectivityConstraintTest.ensureSavedWif
 import static android.jobscheduler.cts.ConnectivityConstraintTest.isWiFiConnected;
 import static android.jobscheduler.cts.ConnectivityConstraintTest.setWifiState;
 import static android.jobscheduler.cts.TestAppInterface.TEST_APP_PACKAGE;
+import static android.net.NetworkCapabilities.TRANSPORT_ETHERNET;
 import static android.os.PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED;
 
 import static com.android.compatibility.common.util.TestUtils.waitUntil;
@@ -46,6 +47,7 @@ import android.content.pm.PackageManager;
 import android.jobscheduler.cts.jobtestapp.TestJobSchedulerReceiver;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
+import android.net.Network;
 import android.net.wifi.WifiManager;
 import android.os.PowerManager;
 import android.os.SystemClock;
@@ -118,6 +120,8 @@ public class JobThrottlingTest {
     private boolean mHasWifi;
     /** Track whether WiFi was enabled in case we turn it off. */
     private boolean mInitialWiFiState;
+    /** Whether the device running these tests supports ethernet. */
+    private boolean mHasEthernet;
     private boolean mInitialAirplaneModeState;
     private String mInitialDisplayTimeout;
     private String mInitialRestrictedBucketEnabled;
@@ -175,6 +179,8 @@ public class JobThrottlingTest {
         mCm = mContext.getSystemService(ConnectivityManager.class);
         mHasWifi = mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WIFI);
         mInitialWiFiState = mWifiManager.isWifiEnabled();
+        mHasEthernet = mContext.getPackageManager()
+                .hasSystemFeature(PackageManager.FEATURE_ETHERNET);
         mInitialAirplaneModeState = isAirplaneModeOn();
         mInitialRestrictedBucketEnabled = Settings.Global.getString(mContext.getContentResolver(),
                 Settings.Global.ENABLE_RESTRICTED_BUCKET);
@@ -596,6 +602,7 @@ public class JobThrottlingTest {
         assumeTrue("app standby not enabled", mAppStandbyEnabled);
         assumeFalse("not testable in automotive device", mAutomotiveDevice);
         assumeFalse("not testable in leanback device", mLeanbackOnly);
+        assumeFalse("not testable, since ethernet is connected", hasEthernetConnection());
 
         setRestrictedBucketEnabled(true);
 
@@ -634,6 +641,7 @@ public class JobThrottlingTest {
         assumeTrue("app standby not enabled", mAppStandbyEnabled);
         assumeFalse("not testable in automotive device", mAutomotiveDevice);
         assumeFalse("not testable in leanback device", mLeanbackOnly);
+        assumeFalse("not testable, since ethernet is connected", hasEthernetConnection());
 
         assumeTrue(mHasWifi);
         ensureSavedWifiNetwork(mWifiManager);
@@ -977,6 +985,7 @@ public class JobThrottlingTest {
         assumeTrue("app standby not enabled", mAppStandbyEnabled);
         assumeFalse("not testable in automotive device", mAutomotiveDevice);
         assumeFalse("not testable in leanback device", mLeanbackOnly);
+        assumeFalse("not testable, since ethernet is connected", hasEthernetConnection());
 
         assumeTrue(mHasWifi);
         ensureSavedWifiNetwork(mWifiManager);
@@ -1365,6 +1374,17 @@ public class JobThrottlingTest {
         // will only get the job to run if the constraint is satisfied.
         mUiDevice.executeShellCommand("cmd jobscheduler run -s"
                 + " -u " + UserHandle.myUserId() + " " + TEST_APP_PACKAGE + " " + mTestJobId);
+    }
+
+    private boolean hasEthernetConnection() {
+        if (!mHasEthernet) return false;
+        Network[] networks = mCm.getAllNetworks();
+        for (Network network : networks) {
+            if (mCm.getNetworkCapabilities(network).hasTransport(TRANSPORT_ETHERNET)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean isAirplaneModeOn() throws IOException {
