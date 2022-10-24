@@ -45,6 +45,20 @@ public class JobWorkItemTest extends BaseJobSchedulerTest {
     public void testItemWithEstimatedBytes() {
         JobWorkItem jwi = new JobWorkItem(TEST_INTENT, 10, 20);
 
+        try {
+            new JobWorkItem(TEST_INTENT, -10, 20);
+            fail("Successfully created JobWorkItem with negative download bytes value");
+        } catch (IllegalArgumentException expected) {
+            // Success
+        }
+
+        try {
+            new JobWorkItem(TEST_INTENT, 10, -20);
+            fail("Successfully created JobWorkItem with negative upload bytes value");
+        } catch (IllegalArgumentException expected) {
+            // Success
+        }
+
         assertEquals(TEST_INTENT, jwi.getIntent());
         assertEquals(10, jwi.getEstimatedNetworkDownloadBytes());
         assertEquals(20, jwi.getEstimatedNetworkUploadBytes());
