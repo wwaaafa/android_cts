@@ -16,14 +16,14 @@
 
 package android.photopicker.cts;
 
-import static android.photopicker.cts.util.PhotoPickerAssertionsUtils.assertPickerUriFormat;
-import static android.photopicker.cts.util.PhotoPickerAssertionsUtils.assertRedactedReadOnlyAccess;
 import static android.photopicker.cts.util.PhotoPickerFilesUtils.createImagesAndGetUris;
 import static android.photopicker.cts.util.PhotoPickerFilesUtils.deleteMedia;
 import static android.photopicker.cts.util.PhotoPickerUiUtils.SHORT_TIMEOUT;
 import static android.photopicker.cts.util.PhotoPickerUiUtils.findAddButton;
 import static android.photopicker.cts.util.PhotoPickerUiUtils.findItemList;
 import static android.photopicker.cts.util.PhotoPickerUiUtils.findProfileButton;
+import static android.photopicker.cts.util.ResultsAssertionsUtils.assertPickerUriFormat;
+import static android.photopicker.cts.util.ResultsAssertionsUtils.assertRedactedReadOnlyAccess;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
