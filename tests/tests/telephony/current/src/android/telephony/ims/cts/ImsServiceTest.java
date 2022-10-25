@@ -60,6 +60,7 @@ import android.telephony.ims.ImsReasonInfo;
 import android.telephony.ims.ImsRegistrationAttributes;
 import android.telephony.ims.ImsStateCallback;
 import android.telephony.ims.ProvisioningManager;
+import android.telephony.ims.PublishAttributes;
 import android.telephony.ims.RcsClientConfiguration;
 import android.telephony.ims.RcsContactUceCapability;
 import android.telephony.ims.RcsUceAdapter;
@@ -1334,14 +1335,28 @@ public class ImsServiceTest {
                     }
                 };
 
+        // Another publish register callback to verify new added API.
+        // RcsUceAdapter#removeOnPublishStateChangedListener
+        LinkedBlockingQueue<PublishAttributes> addedNewPublishStateQueue =
+                new LinkedBlockingQueue<>();
+        RcsUceAdapter.OnPublishStateChangedListener addedNewPublishStateCallback =
+                new RcsUceAdapter.OnPublishStateChangedListener() {
+                    public void onPublishStateChange(int state) {
+                    }
+                    public void onPublishStateChange(PublishAttributes attributes) {
+                        addedNewPublishStateQueue.offer(attributes);
+                    }
+                };
         final UiAutomation automan = InstrumentationRegistry.getInstrumentation().getUiAutomation();
         try {
             automan.adoptShellPermissionIdentity();
-            // register two publish state callback
+            // register three publish state callback
             uceAdapter.addOnPublishStateChangedListener(getContext().getMainExecutor(),
                     publishStateCallback);
             uceAdapter.addOnPublishStateChangedListener(getContext().getMainExecutor(),
                     unregisteredPublishStateCallback);
+            uceAdapter.addOnPublishStateChangedListener(getContext().getMainExecutor(),
+                    addedNewPublishStateCallback);
         } finally {
             automan.dropShellPermissionIdentity();
         }
@@ -1351,8 +1366,13 @@ public class ImsServiceTest {
                 waitForIntResult(publishStateQueue));
         assertEquals(RcsUceAdapter.PUBLISH_STATE_NOT_PUBLISHED,
                 waitForIntResult(unregisteredPublishStateQueue));
+        PublishAttributes attr = waitForResult(addedNewPublishStateQueue);
+        assertNull(attr.getSipDetails());
+        assertTrue(attr.getPresenceTuples().isEmpty());
+        assertEquals(RcsUceAdapter.PUBLISH_STATE_NOT_PUBLISHED, attr.getPublishState());
         publishStateQueue.clear();
         unregisteredPublishStateQueue.clear();
+        addedNewPublishStateQueue.clear();
 
         // Verify the value of getting from the API is NOT_PUBLISHED
         try {
@@ -1410,14 +1430,32 @@ public class ImsServiceTest {
                 TestImsService.LATCH_UCE_REQUEST_PUBLISH));
 
         assertEquals(RcsUceAdapter.PUBLISH_STATE_PUBLISHING, waitForIntResult(publishStateQueue));
-        assertEquals(RcsUceAdapter.PUBLISH_STATE_OK, waitForIntResult(publishStateQueue));
-        publishStateQueue.clear();
+        attr = waitForResult(addedNewPublishStateQueue);
+        assertEquals(RcsUceAdapter.PUBLISH_STATE_PUBLISHING, attr.getPublishState());
+        assertNull(attr.getSipDetails());
+        assertTrue(attr.getPresenceTuples().isEmpty());
 
+        assertEquals(RcsUceAdapter.PUBLISH_STATE_OK, waitForIntResult(publishStateQueue));
+        attr = waitForResult(addedNewPublishStateQueue);
+        assertEquals(RcsUceAdapter.PUBLISH_STATE_OK, attr.getPublishState());
+        assertNotNull(attr.getSipDetails());
+        assertEquals(200, attr.getSipDetails().getResponseCode());
+        assertTrue(attr.getSipDetails().getResponsePhrase().isEmpty());
+        publishStateQueue.clear();
+        addedNewPublishStateQueue.clear();
         // Verify the value of getting from the API is PUBLISH_STATE_OK
         try {
             automan.adoptShellPermissionIdentity();
             int publishState = uceAdapter.getUcePublishState();
             assertEquals(RcsUceAdapter.PUBLISH_STATE_OK, publishState);
+        } finally {
+            automan.dropShellPermissionIdentity();
+        }
+
+        // Unregister the publish state callback
+        try {
+            automan.adoptShellPermissionIdentity();
+            uceAdapter.removeOnPublishStateChangedListener(addedNewPublishStateCallback);
         } finally {
             automan.dropShellPermissionIdentity();
         }
@@ -1433,6 +1471,10 @@ public class ImsServiceTest {
         assertEquals(RcsUceAdapter.PUBLISH_STATE_PUBLISHING, waitForIntResult(publishStateQueue));
         assertEquals(RcsUceAdapter.PUBLISH_STATE_OK, waitForIntResult(publishStateQueue));
         publishStateQueue.clear();
+
+        if (addedNewPublishStateQueue.poll() != null) {
+            fail("The de-registered publish callback should not be called");
+        }
 
         // ImsService triggers the unpublish notification
         eventListener.onUnpublish();
@@ -1491,6 +1533,226 @@ public class ImsServiceTest {
     }
 
     @Test
+    public void testRcsAttributesPublish() throws Exception {
+        TelephonyUtils.enableCompatCommand(InstrumentationRegistry.getInstrumentation(),
+                TelephonyUtils.CTS_APP_PACKAGE,
+                SUPPORT_PUBLISHING_STATE_STRING);
+
+        if (!ImsUtils.shouldTestImsService()) {
+            return;
+        }
+        // Trigger carrier config changed
+        PersistableBundle bundle = new PersistableBundle();
+        bundle.putBoolean(CarrierConfigManager.KEY_CARRIER_VOLTE_PROVISIONED_BOOL, false);
+        bundle.putBoolean(CarrierConfigManager.Ims.KEY_ENABLE_PRESENCE_PUBLISH_BOOL, true);
+        overrideCarrierConfig(bundle);
+
+        ImsManager imsManager = getContext().getSystemService(ImsManager.class);
+        if (imsManager == null) {
+            fail("Cannot find IMS service");
+        }
+
+        ImsRcsManager imsRcsManager = imsManager.getImsRcsManager(sTestSub);
+        RcsUceAdapter uceAdapter = imsRcsManager.getUceAdapter();
+
+        // Connect to device ImsService with MmTel feature and RCS feature
+        triggerFrameworkConnectToImsServiceBindMmTelAndRcsFeature();
+
+        TestRcsCapabilityExchangeImpl capExchangeImpl = sServiceConnector.getCarrierService()
+                .getRcsFeature().getRcsCapabilityExchangeImpl();
+
+        // Register the callback to listen to the publish state changed
+        LinkedBlockingQueue<PublishAttributes> publishStateQueue = new LinkedBlockingQueue<>();
+        RcsUceAdapter.OnPublishStateChangedListener publishStateCallback =
+                new RcsUceAdapter.OnPublishStateChangedListener() {
+                    public void onPublishStateChange(int state) {
+                    }
+                    public void onPublishStateChange(PublishAttributes attributes) {
+                        publishStateQueue.offer(attributes);
+                    }
+                };
+        final UiAutomation automan = InstrumentationRegistry.getInstrumentation().getUiAutomation();
+        try {
+            automan.adoptShellPermissionIdentity();
+            // register three publish state callback
+            uceAdapter.addOnPublishStateChangedListener(getContext().getMainExecutor(),
+                    publishStateCallback);
+        } finally {
+            automan.dropShellPermissionIdentity();
+        }
+
+        // Verify receiving the publish state callback immediately after registering the callback.
+        PublishAttributes attr = waitForResult(publishStateQueue);
+        assertNull(attr.getSipDetails());
+        assertTrue(attr.getPresenceTuples().isEmpty());
+        assertEquals(RcsUceAdapter.PUBLISH_STATE_NOT_PUBLISHED, attr.getPublishState());
+        publishStateQueue.clear();
+
+
+        // Verify the value of getting from the API is NOT_PUBLISHED
+        try {
+            automan.adoptShellPermissionIdentity();
+            int publishState = uceAdapter.getUcePublishState();
+            assertEquals(RcsUceAdapter.PUBLISH_STATE_NOT_PUBLISHED, publishState);
+        } finally {
+            automan.dropShellPermissionIdentity();
+        }
+
+        // Setup the operation of the publish request.
+        capExchangeImpl.setPublishOperator((listener, pidfXml, cb) -> {
+            int networkResp = 200;
+            String reason = "OK";
+            cb.onNetworkResponse(new SipDetails.Builder(SipDetails.METHOD_PUBLISH)
+                    .setCSeq(1).setSipResponseCode(networkResp, reason)
+                    .setCallId("TestCallId").build());
+            listener.onPublish();
+        });
+
+        // IMS registers
+        sServiceConnector.getCarrierService().getImsRegistration().onRegistered(
+                IMS_REGI_TECH_LTE);
+
+        // Framework should not trigger the device capabilities publish when the framework doesn't
+        // receive that the RcsUceAdapter.CAPABILITY_TYPE_PRESENCE_UCE is enabled.
+        if (publishStateQueue.poll() != null) {
+            fail("The publish callback should not be called because presence uce is not ready");
+        }
+
+        // Notify framework that the RCS capability status is changed and PRESENCE UCE is enabled.
+        RcsImsCapabilities capabilities =
+                new RcsImsCapabilities(RcsUceAdapter.CAPABILITY_TYPE_PRESENCE_UCE);
+        sServiceConnector.getCarrierService().getRcsFeature()
+                .notifyCapabilitiesStatusChanged(capabilities);
+
+        CapabilityExchangeEventListener eventListener =
+                sServiceConnector.getCarrierService().getRcsFeature().getEventListener();
+
+        // ImsService triggers to notify framework publish device's capabilities.
+        eventListener.onRequestPublishCapabilities(
+                RcsUceAdapter.CAPABILITY_UPDATE_TRIGGER_MOVE_TO_WLAN);
+
+        // Verify ImsService receive the publish request from framework.
+        assertTrue(sServiceConnector.getCarrierService().waitForLatchCountdown(
+                TestImsService.LATCH_UCE_REQUEST_PUBLISH));
+
+        attr = waitForResult(publishStateQueue);
+        assertEquals(RcsUceAdapter.PUBLISH_STATE_PUBLISHING, attr.getPublishState());
+        assertNull(attr.getSipDetails());
+
+        attr = waitForResult(publishStateQueue);
+        assertEquals(RcsUceAdapter.PUBLISH_STATE_OK, attr.getPublishState());
+        SipDetails details = attr.getSipDetails();
+        assertNotNull(details);
+        assertEquals(SipDetails.METHOD_PUBLISH, details.getMethod());
+        assertEquals(1, details.getCSeq());
+        assertEquals(200, details.getResponseCode());
+        assertEquals("OK", details.getResponsePhrase());
+        assertEquals(0, details.getReasonHeaderCause());
+        assertTrue(details.getReasonHeaderText().isEmpty());
+        assertEquals("TestCallId", details.getCallId());
+        publishStateQueue.clear();
+
+        // Verify the value of getting from the API is PUBLISH_STATE_OK
+        try {
+            automan.adoptShellPermissionIdentity();
+            int publishState = uceAdapter.getUcePublishState();
+            assertEquals(RcsUceAdapter.PUBLISH_STATE_OK, publishState);
+        } finally {
+            automan.dropShellPermissionIdentity();
+        }
+
+        // ImsService triggers to notify framework publish device's capabilities.
+        eventListener.onRequestPublishCapabilities(
+                RcsUceAdapter.CAPABILITY_UPDATE_TRIGGER_MOVE_TO_WLAN);
+
+        // Verify ImsService receive the publish request from framework.
+        assertTrue(sServiceConnector.getCarrierService().waitForLatchCountdown(
+                TestImsService.LATCH_UCE_REQUEST_PUBLISH));
+
+        attr = waitForResult(publishStateQueue);
+        assertEquals(RcsUceAdapter.PUBLISH_STATE_PUBLISHING, attr.getPublishState());
+        attr = waitForResult(publishStateQueue);
+        assertEquals(RcsUceAdapter.PUBLISH_STATE_OK, attr.getPublishState());
+        publishStateQueue.clear();
+
+        // ImsService triggers the unpublish notification
+        eventListener.onUnpublish();
+
+        // Verify the publish state callback will be called with the state "NOT_PUBLISHED"
+        attr = waitForResult(publishStateQueue);
+        assertEquals(RcsUceAdapter.PUBLISH_STATE_NOT_PUBLISHED, attr.getPublishState());
+        publishStateQueue.clear();
+
+        // Verify the value of getting from the API is NOT_PUBLISHED
+        try {
+            automan.adoptShellPermissionIdentity();
+            int publishState = uceAdapter.getUcePublishState();
+            assertEquals(RcsUceAdapter.PUBLISH_STATE_NOT_PUBLISHED, publishState);
+        } finally {
+            automan.dropShellPermissionIdentity();
+        }
+        publishStateQueue.clear();
+
+        // ImsService triggers to notify framework publish updated.
+        int sipCode = 200;
+        String reasonPharse = "OK";
+        int cSeq = 2;
+        int reasonCause = 0;
+        String reasonText = "headerText";
+        String callId = "TestCallId1";
+        eventListener.onPublishUpdated(new SipDetails.Builder(SipDetails.METHOD_PUBLISH)
+                .setCSeq(cSeq).setSipResponseCode(sipCode, reasonPharse)
+                .setSipResponseReasonHeader(reasonCause, reasonText).setCallId(callId).build());
+        attr = waitForResult(publishStateQueue);
+        assertEquals(RcsUceAdapter.PUBLISH_STATE_OK, attr.getPublishState());
+        details = attr.getSipDetails();
+        assertNotNull(details);
+        assertEquals(SipDetails.METHOD_PUBLISH, details.getMethod());
+        assertEquals(cSeq, details.getCSeq());
+        assertEquals(sipCode, details.getResponseCode());
+        assertEquals(reasonPharse, details.getResponsePhrase());
+        assertEquals(reasonCause, details.getReasonHeaderCause());
+        assertEquals(reasonText, details.getReasonHeaderText());
+        assertEquals(callId, details.getCallId());
+        publishStateQueue.clear();
+
+        // Setup the operation of the publish request.
+        capExchangeImpl.setPublishOperator((listener, pidfXml, cb) -> {
+            // The response code 999 means the PIDF is same as before.
+            int networkResp = 999;
+            String reason = "";
+            cb.onNetworkResponse(new SipDetails.Builder(SipDetails.METHOD_PUBLISH)
+                    .setCSeq(10).setSipResponseCode(networkResp, reason)
+                    .setCallId("TestCallId3").build());
+            listener.onPublish();
+        });
+        eventListener.onRequestPublishCapabilities(
+                RcsUceAdapter.CAPABILITY_UPDATE_TRIGGER_MOVE_TO_WLAN);
+
+        assertTrue(sServiceConnector.getCarrierService().waitForLatchCountdown(
+                TestImsService.LATCH_UCE_REQUEST_PUBLISH));
+
+        attr = waitForResult(publishStateQueue);
+        assertEquals(RcsUceAdapter.PUBLISH_STATE_PUBLISHING, attr.getPublishState());
+        attr = waitForResult(publishStateQueue);
+        assertEquals(RcsUceAdapter.PUBLISH_STATE_OK, attr.getPublishState());
+        // Verify that the sip info is set to null because the response code 999 is treated
+        // as a command error.
+        assertNull(attr.getSipDetails());
+        publishStateQueue.clear();
+
+        // Trigger RcsFeature is unavailable
+        sServiceConnector.getCarrierService().getRcsFeature()
+                .setFeatureState(ImsFeature.STATE_UNAVAILABLE);
+
+        // Verify the RcsCapabilityExchangeImplBase will be removed.
+        assertTrue(sServiceConnector.getCarrierService().waitForLatchCountdown(
+                TestImsService.LATCH_UCE_LISTENER_SET));
+
+        overrideCarrierConfig(null);
+    }
+
+    @Test
     public void testPublishImsReg() throws Exception {
         TelephonyUtils.enableCompatCommand(InstrumentationRegistry.getInstrumentation(),
                 TelephonyUtils.CTS_APP_PACKAGE,
@@ -1521,7 +1783,11 @@ public class ImsServiceTest {
         // Register the callback to listen to the publish state changed
         LinkedBlockingQueue<Integer> publishStateQueue = new LinkedBlockingQueue<>();
         RcsUceAdapter.OnPublishStateChangedListener publishStateCallback =
-                publishStateQueue::offer;
+                new RcsUceAdapter.OnPublishStateChangedListener() {
+                    public void onPublishStateChange(int state) {
+                        publishStateQueue.offer(state);
+                    }
+                };
 
         final UiAutomation automan = InstrumentationRegistry.getInstrumentation().getUiAutomation();
         try {
