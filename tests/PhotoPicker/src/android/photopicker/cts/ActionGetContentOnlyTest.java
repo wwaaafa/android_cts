@@ -90,7 +90,7 @@ public class ActionGetContentOnlyTest extends PhotoPickerBaseTest {
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("audio/*");
         mActivity.startActivityForResult(intent, REQUEST_CODE);
-        mDevice.waitForIdle();
+        sDevice.waitForIdle();
         // Should open documentsUi
         assertThatShowsDocumentsUiButtons();
 
@@ -106,7 +106,7 @@ public class ActionGetContentOnlyTest extends PhotoPickerBaseTest {
         intent.setType("image/*");
         intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"video/*", "audio/*"});
         mActivity.startActivityForResult(intent, REQUEST_CODE);
-        mDevice.waitForIdle();
+        sDevice.waitForIdle();
         // Should open documentsUi
         assertThatShowsDocumentsUiButtons();
 
@@ -130,7 +130,7 @@ public class ActionGetContentOnlyTest extends PhotoPickerBaseTest {
         intent.setType("image/*");
         mActivity.startActivityForResult(intent, REQUEST_CODE);
 
-        findAndClickBrowse(mDevice);
+        findAndClickBrowse(sDevice);
 
         findAndClickFilesInDocumentsUi(fileNameList);
 
@@ -156,7 +156,7 @@ public class ActionGetContentOnlyTest extends PhotoPickerBaseTest {
         intent.setType("image/*");
         mActivity.startActivityForResult(intent, REQUEST_CODE);
 
-        findAndClickBrowse(mDevice);
+        findAndClickBrowse(sDevice);
 
         findAndClickFilesInDocumentsUi(fileNameList);
 
@@ -209,13 +209,13 @@ public class ActionGetContentOnlyTest extends PhotoPickerBaseTest {
                 new UiObject(appList).waitForExists(SHORT_TIMEOUT)).isTrue();
 
         String photoPickerAppName = "Media";
-        UiObject mediaButton = mDevice.findObject(new UiSelector().text(photoPickerAppName));
+        UiObject mediaButton = sDevice.findObject(new UiSelector().text(photoPickerAppName));
 
         assertWithMessage("Timed out waiting for " + photoPickerAppName + " app icon to appear")
                 .that(new UiScrollable(appList).scrollIntoView(mediaButton)).isTrue();
-        mDevice.waitForIdle();
+        sDevice.waitForIdle();
 
-        clickAndWait(mDevice, mediaButton);
+        clickAndWait(sDevice, mediaButton);
     }
 
     private void assertThatShowsDocumentsUiButtons() {
@@ -241,7 +241,7 @@ public class ActionGetContentOnlyTest extends PhotoPickerBaseTest {
     private void findAndClickSelect() throws Exception {
         final UiObject selectButton = new UiObject(new UiSelector().resourceId(
                 sDocumentsUiPackageName + ":id/action_menu_select"));
-        clickAndWait(mDevice, selectButton);
+        clickAndWait(sDevice, selectButton);
     }
 
     private void findAndClickFileInDocumentsUi(String fileName) throws Exception {
@@ -257,7 +257,7 @@ public class ActionGetContentOnlyTest extends PhotoPickerBaseTest {
             // Enforce to set the list mode
             // Because UiScrollable can't reach the real bottom (when WEB_LINKABLE_FILE item)
             // in grid mode when screen landscape mode
-            clickAndWait(mDevice, new UiObject(new UiSelector().resourceId(sDocumentsUiPackageName
+            clickAndWait(sDevice, new UiObject(new UiSelector().resourceId(sDocumentsUiPackageName
                     + ":id/sub_menu_list")));
         } catch (UiObjectNotFoundException ignored) {
             // Do nothing, already be in list mode.
@@ -279,9 +279,9 @@ public class ActionGetContentOnlyTest extends PhotoPickerBaseTest {
                 }
             }
 
-            mDevice.swipe(/* startX= */ mDevice.getDisplayWidth() / 2,
-                    /* startY= */ mDevice.getDisplayHeight() / 2,
-                    /* endX= */ mDevice.getDisplayWidth() / 2,
+            sDevice.swipe(/* startX= */ sDevice.getDisplayWidth() / 2,
+                    /* startY= */ sDevice.getDisplayHeight() / 2,
+                    /* endX= */ sDevice.getDisplayWidth() / 2,
                     /* endY= */ 0,
                     /* steps= */ 40);
         }
