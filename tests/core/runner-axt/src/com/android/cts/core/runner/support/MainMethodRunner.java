@@ -30,7 +30,7 @@ import java.util.List;
 
 public class MainMethodRunner extends BlockJUnit4ClassRunner {
 
-    private MainMethodRunner(Class<?> clazz) throws InitializationError {
+    private MainMethodRunner(TestClass clazz) throws InitializationError {
         super(clazz);
     }
 
@@ -64,19 +64,26 @@ public class MainMethodRunner extends BlockJUnit4ClassRunner {
             return null;
         }
 
-        MainMethodRunner runner;
+        TestClass testClass;
         try {
-            runner = new MainMethodRunner(clazz);
+            testClass = new TestClass(clazz);
+        } catch (IllegalArgumentException e) {
+            // Ignore and this class isn't a valid for running the main method.
+            // Usually, It means that the class doesn't have one exact constructor.
+            return null;
+        }
+        // Do not try to run test using other test frameworks.
+        if (useOtherTestFrameworks(testClass)) {
+            return null;
+        }
+        try {
+            return new MainMethodRunner(testClass);
         } catch (InitializationError e) {
             throw new IllegalArgumentException("Class: " + clazz.getName(), e);
         }
-
-        // Do not try to run test using other test frameworks.
-        return runner.useOtherTestFrameworks() ? null : runner;
     }
 
-    private boolean useOtherTestFrameworks() {
-        TestClass testClass = getTestClass();
+    private static boolean useOtherTestFrameworks(TestClass testClass) {
         if (TestCase.class.isAssignableFrom(testClass.getJavaClass())) {
             return true;
         }
