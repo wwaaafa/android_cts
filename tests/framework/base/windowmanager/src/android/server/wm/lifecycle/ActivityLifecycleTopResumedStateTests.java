@@ -484,7 +484,7 @@ public class ActivityLifecycleTopResumedStateTests extends ActivityLifecycleClie
         final Activity secondActivity = new Launcher(SingleTopActivity.class)
                 .setFlags(FLAG_ACTIVITY_NEW_TASK | FLAG_ACTIVITY_MULTIPLE_TASK)
                 .launch();
-
+        waitAndAssertActivityStates(state(SideActivity.class,ON_STOP));
         // Tap on first activity to switch the focus
         getTransitionLog().clear();
         final Task dockedTask = getRootTaskForLeafTaskId(firstActivity.getTaskId());
