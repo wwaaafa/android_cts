@@ -11,35 +11,26 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
-android_test {
-    name: "CtsSdkSandboxWebkitTestCases",
-    defaults: ["cts_defaults"],
-    libs: [
-        "android.test.runner",
-        "android.test.base",
-    ],
-    static_libs: [
-        "compatibility-device-util-axt",
-        "ctstestrunner-axt",
-        "CtsSdkSandboxTestScenario",
-        "ctswebkitsharedenv",
-    ],
-    data: [
-        ":EmptySdkProviderApp",
-        ":WebViewSandboxTestSdk",
-    ],
+java_library {
+    name: "ctswebkitsharedenv",
     srcs: [
         "src/**/*.java",
         "src/**/*.aidl",
     ],
-    test_suites: [
-        "cts",
-        "general-tests",
+    libs: [
+        "android.test.base",
     ],
-    sdk_version: "current",
+    static_libs: [
+        "compatibility-device-util-axt",
+        "ctsdeviceutillegacy-axt",
+        "platform-test-annotations",
+    ],
+    visibility: [
+        "//cts/tests/tests/webkit:__subpackages__",
+        "//cts/tests/tests/sdksandbox/webkit:__subpackages__",
+    ],
 }
