@@ -25,6 +25,8 @@ import android.hardware.cts.helpers.SensorStats;
 import android.hardware.cts.helpers.TestSensorEnvironment;
 import android.hardware.cts.helpers.sensoroperations.TestSensorOperation;
 
+import com.android.compatibility.common.util.CddTest;
+
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -106,6 +108,7 @@ public class SingleSensorTests extends SensorTestCase {
      * required by the CDD.
      * </p>
      */
+    @CddTest(requirement = "7.3.4/A-4-3")
     public void testSensorProperties() {
         // An initial size of 11 is used to avoid rehashing
         Map<Integer, Integer> expectedProperties = new HashMap<>(11);
@@ -123,6 +126,7 @@ public class SingleSensorTests extends SensorTestCase {
         expectedProperties.put(Sensor.TYPE_GYROSCOPE_LIMITED_AXES, 10000);
         expectedProperties.put(Sensor.TYPE_GYROSCOPE_LIMITED_AXES_UNCALIBRATED,
                 10000);
+        expectedProperties.put(Sensor.TYPE_HEADING, 1000000);
 
         SensorManager sensorManager =
                 (SensorManager) getContext().getSystemService(Context.SENSOR_SERVICE);
@@ -744,6 +748,16 @@ public class SingleSensorTests extends SensorTestCase {
 
     public void testGyroscopeLimitedAxesUncalibrated_1hz() throws Throwable {
         runSensorTest(Sensor.TYPE_GYROSCOPE_LIMITED_AXES_UNCALIBRATED, RATE_1HZ);
+    }
+
+    @CddTest(requirement = "7.3.4/A-4-3")
+    public void testHeading_1hz() throws Throwable {
+        runSensorTest(Sensor.TYPE_HEADING, RATE_1HZ);
+    }
+
+    @CddTest(requirement = "7.3.4/A-4-3")
+    public void testHeading_automotive() throws Throwable {
+        runSensorTest(Sensor.TYPE_HEADING, RATE_1HZ, true);
     }
 
     private void runSensorTest(int sensorType, int rateUs) throws Throwable {
