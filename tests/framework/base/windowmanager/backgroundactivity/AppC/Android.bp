@@ -16,37 +16,44 @@ package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
-android_test {
-    name: "CtsActivityManagerBackgroundActivityTestCases",
-    defaults: ["cts_defaults"],
+android_test_helper_app {
+    name: "CtsBackgroundActivityAppC",
+    defaults: ["cts_support_defaults"],
 
-    // TODO(b/129909356): Consolidate this to CtsWindowManagerDeviceTestCases.apk
+    static_libs: [
+        "cts-wm-app-base",
+        "cts-background-activity-common",
+    ],
 
     srcs: ["src/**/*.java"],
 
-    sdk_version: "test_current",
-
-    static_libs: [
-        "androidx.appcompat_appcompat",
-        "androidx.test.core",
-        "androidx.test.rules",
-        "androidx.test.uiautomator_uiautomator",
-        "cts-wm-util",
-        "cts-wm-app-base",
-        "cts-core-test-runner-axt",
-        "cts-background-activity-common",
-    ],
+    target_sdk_version: "test_current",
 
     test_suites: [
         "cts",
         "general-tests",
     ],
-    data: [
-        ":CtsBackgroundActivityAppA",
-        ":CtsBackgroundActivityAppB",
-        ":CtsBackgroundActivityAppB33",
-        ":CtsBackgroundActivityAppC",
-        ":CtsBackgroundActivityAppC33",
+}
+
+android_test_helper_app {
+    name: "CtsBackgroundActivityAppC33",
+    defaults: ["cts_support_defaults"],
+
+    static_libs: [
+        "cts-wm-app-base",
+        "cts-background-activity-common",
     ],
-    per_testcase_directory: true,
+
+    srcs: ["src/**/*.java"],
+
+    target_sdk_version: "33",
+
+    test_suites: [
+        "cts",
+        "general-tests",
+    ],
+
+    aaptflags: [
+        "--rename-manifest-package android.server.wm.backgroundactivity.appc33",
+    ],
 }
