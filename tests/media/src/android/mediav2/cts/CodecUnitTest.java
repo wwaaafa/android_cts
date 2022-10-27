@@ -33,7 +33,7 @@ import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 
 import com.android.compatibility.common.util.ApiTest;
-import com.android.compatibility.common.util.NonMediaMainlineTest;
+import com.android.compatibility.common.util.NonMainlineTest;
 
 import org.junit.After;
 import org.junit.Ignore;
@@ -54,9 +54,9 @@ public class CodecUnitTest {
 
     @SmallTest
     // Following tests were added in Android R and are not limited to c2.android.* codecs.
-    // Hence limit the tests to Android R and above and also annotate as NonMediaMainlineTest
+    // Hence limit the tests to Android R and above and also annotate as NonMainlineTest
     @SdkSuppress(minSdkVersion = 30)
-    @NonMediaMainlineTest
+    @NonMainlineTest
     public static class TestApi extends CodecTestBase {
         @Rule
         public Timeout timeout = new Timeout(PER_TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
@@ -2076,9 +2076,9 @@ public class CodecUnitTest {
 
     @SmallTest
     // Following tests were added in Android R and are not limited to c2.android.* codecs.
-    // Hence limit the tests to Android R and above and also annotate as NonMediaMainlineTest
+    // Hence limit the tests to Android R and above and also annotate as NonMainlineTest
     @SdkSuppress(minSdkVersion = 30)
-    @NonMediaMainlineTest
+    @NonMainlineTest
     public static class TestApiNative {
         @Rule
         public Timeout timeout = new Timeout(PER_TEST_TIMEOUT_MS, TimeUnit.MILLISECONDS);
