@@ -1548,7 +1548,7 @@ public class StylusHandwritingTest extends EndToEndImeTestBase {
         SystemUtil.runWithShellPermissionIdentity(() -> {
             mContext.getSystemService(InputMethodManager.class)
                     .addVirtualStylusIdForTestSession();
-        }, Manifest.permission.INJECT_EVENTS);
+        }, Manifest.permission.TEST_INPUT_METHOD);
     }
 
     private static final class CustomEditorView extends View {
