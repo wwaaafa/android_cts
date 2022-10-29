@@ -414,7 +414,7 @@ public class ExactAlarmsTest {
                 alarmLatch.countDown();
             }
         };
-        sContext.registerReceiver(receiver, filter);
+        sContext.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED_UNAUDITED);
         try {
             Thread.sleep(5_000);
             assertTrue("AlarmClock expiration not reported",
@@ -643,7 +643,7 @@ public class ExactAlarmsTest {
                 latch.countDown();
             }
         };
-        sContext.registerReceiver(receiver, filter);
+        sContext.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED_UNAUDITED);
         try {
             Log.d(TAG, "Granting the appop");
             setAppOp(TEST_APP_PACKAGE, AppOpsManager.MODE_ALLOWED);
@@ -684,7 +684,7 @@ public class ExactAlarmsTest {
                 latch.countDown();
             }
         };
-        sContext.registerReceiver(receiver, filter);
+        sContext.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED_UNAUDITED);
         try {
             Log.d(TAG, "Removing from deny list");
             mDeviceConfigHelper.without("exact_alarm_deny_list").commitAndAwaitPropagation();
