@@ -43,6 +43,8 @@ import android.support.test.uiautomator.UiSelector
 import androidx.test.InstrumentationRegistry
 import androidx.test.filters.SdkSuppress
 import androidx.test.runner.AndroidJUnit4
+import com.android.compatibility.common.util.ApiTest
+import com.android.compatibility.common.util.CddTest
 import com.android.compatibility.common.util.DisableAnimationRule
 import com.android.compatibility.common.util.FreezeRotationRule
 import com.android.compatibility.common.util.SystemUtil
@@ -74,6 +76,7 @@ import org.junit.runner.RunWith
  */
 @RunWith(AndroidJUnit4::class)
 @AppModeFull(reason = "Instant apps cannot access app hibernation")
+@CddTest(requirements = ["3.5.2"])
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.S, codeName = "S")
 class AppHibernationIntegrationTest {
     companion object {
@@ -138,6 +141,7 @@ class AppHibernationIntegrationTest {
     }
 
     @Test
+    @CddTest(requirement = "3.5.2/C-1-2")
     @Ignore("b/201545116")
     fun testUnusedApp_getsForceStopped() {
         withUnusedThresholdMs(TEST_UNUSED_THRESHOLD) {
@@ -170,6 +174,7 @@ class AppHibernationIntegrationTest {
     }
 
     @Test
+    @CddTest(requirement = "3.5.2/C-1-2")
     fun testPreSVersionUnusedApp_doesntGetForceStopped() {
         assumeFalse(
             "TV may have different behaviour for Pre-S version apps",
@@ -197,6 +202,7 @@ class AppHibernationIntegrationTest {
     }
 
     @Test
+    @ApiTest(apis = ["android.permission.PermissionControllerManager#getUnusedAppCount"])
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU, codeName = "Tiramisu")
     fun testUnusedAppCount() {
         withUnusedThresholdMs(TEST_UNUSED_THRESHOLD) {
@@ -232,6 +238,7 @@ class AppHibernationIntegrationTest {
     }
 
     @Test
+    @ApiTest(apis = ["android.permission.PermissionControllerManager#getHibernationEligibility"])
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU, codeName = "Tiramisu")
     fun testGetHibernationEligibility_eligibleByDefault() {
         withApp(APK_PATH_S_APP, APK_PACKAGE_NAME_S_APP) {
@@ -255,6 +262,7 @@ class AppHibernationIntegrationTest {
     }
 
     @Test
+    @ApiTest(apis = ["android.apphibernation.AppHibernationManager#getHibernationStatsForUser"])
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU, codeName = "Tiramisu")
     fun testGetHibernationStatsForUser_getsStatsForIndividualPackages() {
         val appHibernationManager = context.getSystemService(AppHibernationManager::class.java)!!
@@ -271,6 +279,7 @@ class AppHibernationIntegrationTest {
     }
 
     @Test
+    @ApiTest(apis = ["android.apphibernation.AppHibernationManager#getHibernationStatsForUser"])
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU, codeName = "Tiramisu")
     fun testGetHibernationStatsForUser_getsStatsForAllPackages() {
         val appHibernationManager = context.getSystemService(AppHibernationManager::class.java)!!
@@ -286,6 +295,7 @@ class AppHibernationIntegrationTest {
     }
 
     @Test
+    @ApiTest(apis = ["android.apphibernation.AppHibernationManager#isOatArtifactDeletionEnabled"])
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
         codeName = "UpsideDownCake")
     fun testIsOatArtifactDeletionEnabled_verifyConfigWithRuntimeValue() {
@@ -305,6 +315,7 @@ class AppHibernationIntegrationTest {
     }
 
     @Test
+    @CddTest(requirements = ["3.5.1/C-1-2, C-1-4"])
     fun testAppInfo_RemovePermissionsAndFreeUpSpaceToggleExists() {
         assumeFalse(
             "Remove permissions and free up space toggle may be unavailable on TV",
