@@ -41,6 +41,8 @@ import android.view.accessibility.AccessibilityNodeInfo
 import androidx.test.InstrumentationRegistry
 import androidx.test.filters.SdkSuppress
 import androidx.test.runner.AndroidJUnit4
+import com.android.compatibility.common.util.ApiTest
+import com.android.compatibility.common.util.CddTest
 import com.android.compatibility.common.util.DeviceConfigStateChangerRule
 import com.android.compatibility.common.util.DisableAnimationRule
 import com.android.compatibility.common.util.FreezeRotationRule
@@ -88,6 +90,7 @@ private const val BLUETOOTH_CONNECT = "android.permission.BLUETOOTH_CONNECT"
  * Test for auto revoke
  */
 @RunWith(AndroidJUnit4::class)
+@CddTest(requirements = ["3.5.2"])
 class AutoRevokeTest {
     private val context: Context = InstrumentationRegistry.getTargetContext()
     private val instrumentation: Instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -159,6 +162,7 @@ class AutoRevokeTest {
 
     @AppModeFull(reason = "Uses separate apps for testing")
     @Test
+    @CddTest(requirement = "3.5.2/C-1-2")
     @Ignore("b/201545116")
     fun testUnusedApp_getsPermissionRevoked() {
         assumeFalse(
@@ -191,6 +195,7 @@ class AutoRevokeTest {
 
     @AppModeFull(reason = "Uses separate apps for testing")
     @Test
+    @CddTest(requirement = "3.5.1/C-1-1")
     @Ignore("b/201545116")
     fun testUnusedApp_uninstallApp() {
         assumeFalse(
@@ -247,6 +252,7 @@ class AutoRevokeTest {
     }
 
     @AppModeFull(reason = "Uses separate apps for testing")
+    @CddTest(requirement = "3.5.2/C-1-2")
     @Test
     fun testUsedApp_doesntGetPermissionRevoked() {
         withUnusedThresholdMs(100_000L) {
@@ -347,6 +353,7 @@ class AutoRevokeTest {
     }
 
     @AppModeFull(reason = "Uses separate apps for testing")
+    @CddTest(requirements = ["3.5.1/C-1-2,C-1-4"])
     @Test
     fun testAutoRevoke_userAllowlisting() {
         assumeFalse(context.packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE))
@@ -404,6 +411,8 @@ class AutoRevokeTest {
     }
 
     @AppModeFull(reason = "Uses separate apps for testing")
+    @ApiTest(apis = ["android.content.pm.PackageManager#isAutoRevokeWhitelisted",
+        "android.content.pm.PackageManager#setAutoRevokeWhitelisted"])
     @Test
     fun testAutoRevoke_allowlistingApis() {
         withDummyApp {
