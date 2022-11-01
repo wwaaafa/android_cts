@@ -31,7 +31,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.IBinder;
 import android.os.PersistableBundle;
 import android.os.RemoteException;
@@ -61,8 +60,6 @@ import java.util.stream.Collectors;
  */
 public class CreateAndManageUserTest extends BaseDeviceOwnerTest {
     private static final String TAG = "CreateAndManageUserTest";
-
-    private static final int BROADCAST_TIMEOUT = 300_000;
 
     private static final String AFFILIATION_ID = "affiliation.id";
     private static final String EXTRA_AFFILIATION_ID = "affiliationIdExtra";
@@ -238,23 +235,6 @@ public class CreateAndManageUserTest extends BaseDeviceOwnerTest {
         assertWithMessage("users on broadcast").that(users).containsExactly(currentUser);
         assertWithMessage("final logout user").that(mDevicePolicyManager.getLogoutUser())
                 .isNull();
-    }
-
-    public void testCreateAndManageUser_newUserDisclaimer() throws Exception {
-        if (Build.IS_USER) {
-            Log.i(TAG, "Skipping testCreateAndManageUser_newUserDisclaimer on user build");
-            // TODO(b/220386262): STOPSHIP re-enable once fixed and/or migrated to new testing infra
-            return;
-        }
-
-        // First check that the current user doesn't need it
-        UserHandle currentUser = getCurrentUser();
-        Log.d(TAG, "Checking if current user (" + currentUser + ") is acked");
-        assertWithMessage("isNewUserDisclaimerAcknowledged() for current user %s", currentUser)
-                .that(mDevicePolicyManager.isNewUserDisclaimerAcknowledged()).isTrue();
-
-        UserHandle newUser = runCrossUserVerificationSwitchingUser("newUserDisclaimer");
-        PrimaryUserService.assertCrossUserCallArrived();
     }
 
     @SuppressWarnings("unused")
