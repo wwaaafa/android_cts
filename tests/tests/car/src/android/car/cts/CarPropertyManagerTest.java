@@ -1251,6 +1251,34 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     }
 
     @Test
+    public void testMirrorAutoFoldEnabledIfSupported() {
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.MIRROR_AUTO_FOLD_ENABLED,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_MIRROR,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Boolean.class)
+                .addReadPermission(Car.PERMISSION_CONTROL_CAR_MIRRORS)
+                .addWritePermission(Car.PERMISSION_CONTROL_CAR_MIRRORS)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
+    public void testMirrorAutoTiltEnabledIfSupported() {
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.MIRROR_AUTO_TILT_ENABLED,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_MIRROR,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Boolean.class)
+                .addReadPermission(Car.PERMISSION_CONTROL_CAR_MIRRORS)
+                .addWritePermission(Car.PERMISSION_CONTROL_CAR_MIRRORS)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
     @ApiTest(
             apis = {
                 "android.car.hardware.property.CarPropertyManager#getCarPropertyConfig",
