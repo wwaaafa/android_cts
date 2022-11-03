@@ -24,7 +24,7 @@
     <application>
         <uses-library android:name="android.test.runner" />
 
-        <service android:name="android.app.cts.wallpapers.LiveWallpaper"
+        <service android:name="android.app.cts.wallpapers.TestLiveWallpaper"
                  android:icon="@drawable/robot"
                  android:label="@string/wallpaper_title"
                  android:permission="android.permission.BIND_WALLPAPER"
@@ -38,7 +38,7 @@
             </meta-data>
         </service>
 
-        <service android:name="android.app.cts.wallpapers.LiveWallpaperNoUnfoldTransition"
+        <service android:name="android.app.cts.wallpapers.TestLiveWallpaperNoUnfoldTransition"
                  android:icon="@drawable/robot"
                  android:label="@string/wallpaper_title"
                  android:permission="android.permission.BIND_WALLPAPER"
