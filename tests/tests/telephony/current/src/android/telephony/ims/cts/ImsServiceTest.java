@@ -937,11 +937,44 @@ public class ImsServiceTest {
     }
 
     @Test
+    public void testMmTelSendMemoryAvailabilityNotification() throws Exception {
+        if (!ImsUtils.shouldRunSmsImsTests(sTestSub)) {
+            return;
+        }
+        InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                .adoptShellPermissionIdentity("android.permission.MODIFY_PHONE_STATE");
+        try {
+            setupImsServiceForSms();
+
+            SmsManager.getSmsManagerForSubscriptionId(sTestSub)
+                        .setStorageMonitorMemoryStatusOverride(false);
+
+            //Message received
+            sServiceConnector.getCarrierService().getMmTelFeature().getSmsImplementation()
+                    .receiveSmsWaitForAcknowledgeMemoryFull(123456789, SmsMessage.FORMAT_3GPP,
+                            Base64.decode(RECEIVED_MESSAGE, Base64.DEFAULT));
+
+            SmsManager.getSmsManagerForSubscriptionId(sTestSub)
+                        .setStorageMonitorMemoryStatusOverride(true);
+            assertTrue(sServiceConnector.getCarrierService().getMmTelFeature()
+                    .getSmsImplementation().waitForOnMemoryAvailableLatch());
+            assertTrue(sServiceConnector.getCarrierService().getMmTelFeature()
+                    .getSmsImplementation().mMemoryEventReceived);
+        } catch (SecurityException se) {
+            fail("Caller with MODIFY_PHONE_STATE should be able to call API");
+        } finally {
+            SmsManager.getSmsManagerForSubscriptionId(sTestSub)
+                        .clearStorageMonitorMemoryStatusOverride();
+            InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                    .dropShellPermissionIdentity();
+        }
+    }
+
+    @Test
     public void testMmTelReceiveSms() throws Exception {
         if (!ImsUtils.shouldRunSmsImsTests(sTestSub)) {
             return;
         }
-
         setupImsServiceForSms();
 
         // Message received
