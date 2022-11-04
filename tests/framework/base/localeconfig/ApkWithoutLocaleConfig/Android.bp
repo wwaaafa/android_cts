@@ -17,7 +17,7 @@ package {
 }
 
 android_test_helper_app {
-    name: "CtsNoLocaleConfigTagTests",
+    name: "ApkWithoutLocaleConfig",
     defaults: ["cts_support_defaults"],
     sdk_version: "test_current",
     srcs: ["src/**/*.java"],
@@ -29,6 +29,6 @@ android_test_helper_app {
     ],
     certificate: ":cts-testkey1",
     dex_preopt: {
-            enabled: false,
-        },
+        enabled: false,
+    },
 }
