@@ -144,19 +144,6 @@ public class CodecEncoderTestBase extends CodecTestBase {
         mInputOffsetPts = 0;
     }
 
-    @Override
-    protected void flushCodec() {
-        super.flushCodec();
-        if (mIsAudio) {
-            mInputOffsetPts = (mNumBytesSubmitted + 1024) * 1000000L
-                    / ((long) mBytesPerSample * mChannels * mSampleRate);
-        } else {
-            mInputOffsetPts = (mInputCount + 5) * 1000000L / mFrameRate;
-        }
-        mPrevOutputPts = mInputOffsetPts - 1;
-        mNumBytesSubmitted = 0;
-    }
-
     protected void setUpSource(String inpPath) throws IOException {
         Preconditions.assertTestFileExists(inpPath);
         try (FileInputStream fInp = new FileInputStream(inpPath)) {
