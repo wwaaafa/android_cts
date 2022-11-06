@@ -109,7 +109,6 @@ public class NotificationListenerCheckTest extends BaseNotificationListenerCheck
         eventually(() -> assertNotNull(getNotification(true)), UNEXPECTED_TIMEOUT_MILLIS);
 
         runNotificationListenerCheck();
-
         ensure(() -> assertNull("Expected no notifications", getNotification(false)),
                 ENSURE_NOTIFICATION_NOT_SHOWN_EXPECTED_TIMEOUT_MILLIS);
     }
@@ -117,11 +116,9 @@ public class NotificationListenerCheckTest extends BaseNotificationListenerCheck
     @Test
     public void notificationIsShownAgainAfterClear() throws Throwable {
         runNotificationListenerCheck();
-
         eventually(() -> assertNotNull(getNotification(true)), UNEXPECTED_TIMEOUT_MILLIS);
 
         clearAppState(TEST_APP_PKG);
-
         // Wait until package is cleared and permission controller has cleared the state
         Thread.sleep(2000);
 
