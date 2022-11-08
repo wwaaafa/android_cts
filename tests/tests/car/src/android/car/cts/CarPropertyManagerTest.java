@@ -236,7 +236,8 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
             ImmutableList.<Integer>builder()
                     .add(
                             VehiclePropertyIds.STEERING_WHEEL_DEPTH_POS,
-                            VehiclePropertyIds.STEERING_WHEEL_DEPTH_MOVE)
+                            VehiclePropertyIds.STEERING_WHEEL_DEPTH_MOVE,
+                            VehiclePropertyIds.STEERING_WHEEL_HEIGHT_POS)
                     .build();
 
     /** contains property Ids for the properties required by CDD */
@@ -1354,6 +1355,21 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                         Integer.class)
                 .requireMinMaxValues()
                 .requireZeroToBeContainedInMinMaxRanges()
+                .addReadPermission(Car.PERMISSION_CONTROL_STEERING_WHEEL)
+                .addWritePermission(Car.PERMISSION_CONTROL_STEERING_WHEEL)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
+    public void testSteeringWheelHeightPosIfSupported() {
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.STEERING_WHEEL_HEIGHT_POS,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Integer.class)
+                .requireMinMaxValues()
                 .addReadPermission(Car.PERMISSION_CONTROL_STEERING_WHEEL)
                 .addWritePermission(Car.PERMISSION_CONTROL_STEERING_WHEEL)
                 .build()
