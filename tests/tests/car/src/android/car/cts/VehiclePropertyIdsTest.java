@@ -300,6 +300,8 @@ public class VehiclePropertyIdsTest extends AbstractCarLessTestCase {
                 .isEqualTo("STEERING_WHEEL_DEPTH_MOVE");
         assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.STEERING_WHEEL_DEPTH_POS))
                 .isEqualTo("STEERING_WHEEL_DEPTH_POS");
+        assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.STEERING_WHEEL_HEIGHT_MOVE))
+                .isEqualTo("STEERING_WHEEL_HEIGHT_MOVE");
         assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.STEERING_WHEEL_HEIGHT_POS))
                 .isEqualTo("STEERING_WHEEL_HEIGHT_POS");
         assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.VEHICLE_MAP_SERVICE))
