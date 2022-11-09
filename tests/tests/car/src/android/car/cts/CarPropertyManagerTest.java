@@ -3198,6 +3198,20 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     }
 
     @Test
+    public void testSeatAirbagEnabledIfSupported() {
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.SEAT_AIRBAG_ENABLED,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_SEAT,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Boolean.class)
+                .addReadPermission(Car.PERMISSION_CONTROL_CAR_AIRBAGS)
+                .addWritePermission(Car.PERMISSION_CONTROL_CAR_AIRBAGS)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
     public void testSeatCushionSideSupportPosIfSupported() {
         VehiclePropertyVerifier.newBuilder(
                         VehiclePropertyIds.SEAT_CUSHION_SIDE_SUPPORT_POS,
