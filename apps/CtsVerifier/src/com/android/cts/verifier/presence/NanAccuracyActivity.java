@@ -25,6 +25,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -40,6 +41,7 @@ import com.android.cts.verifier.presence.nan.WifiAwarePeer.WifiAwarePeerListener
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Random;
 
 /** Tests Wi-Fi Neighbor Awareness Networking (Wi-Fi NAN) Presence calibration requirements. */
 public class NanAccuracyActivity extends PassFailButtons.Activity {
@@ -60,6 +62,8 @@ public class NanAccuracyActivity extends PassFailButtons.Activity {
     private LinearLayout mRefModeLayout;
     private TextView mDeviceFoundTextView;
     private TextView mTestStatusTextView;
+    private TextView mServiceIdInfoTextView;
+    private EditText mServiceIdInputEditText;
     private RadioGroup mTestDistanceRadioGroup;
     private String mReferenceDeviceName = "";
     private final WifiAwarePeerListener mWifiAwarePeerListener = new WifiAwarePeerListener() {
@@ -100,6 +104,8 @@ public class NanAccuracyActivity extends PassFailButtons.Activity {
         mRefModeLayout = findViewById(R.id.ref_mode_layout);
         mDeviceFoundTextView = findViewById(R.id.device_found_info);
         mTestStatusTextView = findViewById(R.id.test_status_info);
+        mServiceIdInfoTextView = findViewById(R.id.service_id_info);
+        mServiceIdInputEditText = findViewById(R.id.service_id_input);
         mTestDistanceRadioGroup = findViewById(R.id.test_distance_radio_group);
         setUpActivity();
         mReferenceDeviceCheckbox.setOnCheckedChangeListener(
@@ -112,6 +118,7 @@ public class NanAccuracyActivity extends PassFailButtons.Activity {
         stopPublishingButton.setOnClickListener((view) -> stopPublishing());
         mTestDistanceRadioGroup.setOnCheckedChangeListener(
                 (group, checkedId) -> updateCurrentTestDistance());
+        mServiceIdInfoTextView.setVisibility(View.GONE);
         updateCurrentTestDistance();
     }
 
@@ -126,8 +133,14 @@ public class NanAccuracyActivity extends PassFailButtons.Activity {
     }
 
     private void startTest() {
+        if (mServiceIdInputEditText.getText().toString().isEmpty()) {
+            makeToast(
+                    "Input the service ID shown on the publishing device before commencing test");
+            return;
+        }
         mReceivedSamples.clear();
-        mWifiAwarePeer.subscribe(mWifiAwarePeerListener, this::nanResultListener);
+        mWifiAwarePeer.subscribe(mWifiAwarePeerListener, this::nanResultListener,
+                mServiceIdInputEditText.getText().toString());
         mStartTestButton.setEnabled(false);
     }
 
@@ -137,13 +150,19 @@ public class NanAccuracyActivity extends PassFailButtons.Activity {
     }
 
     private void startPublishing() {
-        mWifiAwarePeer.publish();
+        byte randomServiceId = getRandomServiceId();
+        String serviceIdInfoText = getString(R.string.service_id_info_presence,
+                randomServiceId);
+        mServiceIdInfoTextView.setText(serviceIdInfoText);
+        mServiceIdInfoTextView.setVisibility(View.VISIBLE);
+        mWifiAwarePeer.publish(randomServiceId);
         mStartPublishingButton.setEnabled(false);
     }
 
     private void stopPublishing() {
         mWifiAwarePeer.stop();
         mStartPublishingButton.setEnabled(true);
+        mServiceIdInfoTextView.setVisibility(View.GONE);
     }
 
     private void nanResultListener(RangingResult result) {
@@ -205,15 +224,22 @@ public class NanAccuracyActivity extends PassFailButtons.Activity {
         mTestStatusTextView.setText(mTestResult.getTestStatus());
     }
 
+    private static byte getRandomServiceId() {
+        Random random = new Random();
+        byte[] randomDeviceIdArray = new byte[1];
+        random.nextBytes(randomDeviceIdArray);
+        return randomDeviceIdArray[0];
+    }
+
     private void makeToast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
     }
 
     @Override
     public void recordTestResults() {
-            getReportLog().addValue(KEY_REFERENCE_DEVICE, mReferenceDeviceName,
-                    ResultType.NEUTRAL, ResultUnit.NONE);
-            getReportLog().submit();
+        getReportLog().addValue(KEY_REFERENCE_DEVICE, mReferenceDeviceName,
+                ResultType.NEUTRAL, ResultUnit.NONE);
+        getReportLog().submit();
     }
 
     enum TestDistance {
