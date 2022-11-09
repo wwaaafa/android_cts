@@ -40,7 +40,7 @@ public class MockImsService {
 
     /**
      * Sets SRVCC call information.
-     * @param call The list of call information.
+     * @param srvccCalls The list of call information.
      */
     public void setSrvccCallInfo(android.hardware.radio.ims.SrvccCall[] srvccCalls) {
         mSrvccCalls.clear();
