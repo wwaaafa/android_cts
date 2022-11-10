@@ -192,8 +192,7 @@ public class GameManagerTest {
     }
 
     /**
-     * Test that GameManager::getGameMode() returns the correct value when forcing the Game Mode to
-     * GAME_MODE_UNSUPPORTED.
+     * Test that GAME_MODE_UNSUPPORTED is not forcible for game.
      */
     @Test
     public void testGetGameModeUnsupported() {
@@ -204,7 +203,7 @@ public class GameManagerTest {
         int gameMode = mActivity.getGameMode();
 
         assertEquals("Game Manager returned incorrect value.",
-                GameManager.GAME_MODE_UNSUPPORTED, gameMode);
+                GameManager.GAME_MODE_STANDARD, gameMode);
     }
 
     /**
