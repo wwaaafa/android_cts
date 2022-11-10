@@ -327,7 +327,7 @@ public class GameManagerTest {
                         (gameManager) -> gameManager.getGameModeInfo(GAME_TEST_APP_PACKAGE_NAME),
                         "android.permission.MANAGE_GAME_MODE");
         assertEquals("GameManager#getGameModeInfo returned incorrect available game modes.",
-                3, gameModeInfo.getAvailableGameModes().length);
+                4, gameModeInfo.getAvailableGameModes().length);
         assertEquals("GameManager#getGameModeInfo returned incorrect active game mode.",
                 GameManager.GAME_MODE_STANDARD, gameModeInfo.getActiveGameMode());
 
@@ -339,7 +339,7 @@ public class GameManagerTest {
                 (gameManager) -> gameManager.getGameModeInfo(GAME_TEST_APP_PACKAGE_NAME),
                 "android.permission.MANAGE_GAME_MODE");
         assertEquals("GameManager#getGameModeInfo returned incorrect available game modes.",
-                3, gameModeInfo.getAvailableGameModes().length);
+                4, gameModeInfo.getAvailableGameModes().length);
         assertEquals("GameManager#getGameModeInfo returned incorrect active game mode.",
                 GameManager.GAME_MODE_STANDARD, gameModeInfo.getActiveGameMode());
 
@@ -351,7 +351,7 @@ public class GameManagerTest {
                 (gameManager) -> gameManager.getGameModeInfo(GAME_TEST_APP_PACKAGE_NAME),
                 "android.permission.MANAGE_GAME_MODE");
         assertEquals("GameManager#getGameModeInfo returned incorrect available game modes.",
-                3, gameModeInfo.getAvailableGameModes().length);
+                4, gameModeInfo.getAvailableGameModes().length);
         assertEquals("GameManager#getGameModeInfo returned incorrect active game mode.",
                 GameManager.GAME_MODE_PERFORMANCE, gameModeInfo.getActiveGameMode());
 
@@ -363,7 +363,7 @@ public class GameManagerTest {
                 (gameManager) -> gameManager.getGameModeInfo(GAME_TEST_APP_PACKAGE_NAME),
                 "android.permission.MANAGE_GAME_MODE");
         assertEquals("GameManager#getGameModeInfo returned incorrect available game modes.",
-                3, gameModeInfo.getAvailableGameModes().length);
+                4, gameModeInfo.getAvailableGameModes().length);
         assertEquals("GameManager#getGameModeInfo returned incorrect active game mode.",
                 GameManager.GAME_MODE_BATTERY, gameModeInfo.getActiveGameMode());
 
@@ -387,7 +387,7 @@ public class GameManagerTest {
                         (gameManager) -> gameManager.getGameModeInfo(packageName),
                         "android.permission.MANAGE_GAME_MODE");
         assertEquals("GameManager#getGameModeInfo returned incorrect available game modes.",
-                2, gameModeInfo.getAvailableGameModes().length);
+                3, gameModeInfo.getAvailableGameModes().length);
         assertEquals("GameManager#getGameModeInfo returned incorrect active game mode.",
                 GameManager.GAME_MODE_STANDARD, gameModeInfo.getActiveGameMode());
 
@@ -399,7 +399,7 @@ public class GameManagerTest {
                 (gameManager) -> gameManager.getGameModeInfo(packageName),
                 "android.permission.MANAGE_GAME_MODE");
         assertEquals("GameManager#getGameModeInfo returned incorrect available game modes.",
-                2, gameModeInfo.getAvailableGameModes().length);
+                3, gameModeInfo.getAvailableGameModes().length);
         assertEquals("GameManager#getGameModeInfo returned incorrect active game mode.",
                 GameManager.GAME_MODE_BATTERY, gameModeInfo.getActiveGameMode());
 
