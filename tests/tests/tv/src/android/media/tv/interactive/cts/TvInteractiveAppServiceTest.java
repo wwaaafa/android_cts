@@ -116,7 +116,8 @@ public class TvInteractiveAppServiceTest {
         private int mStateChangedCount = 0;
         private int mBiIAppCreatedCount = 0;
         private int mRequestSigningCount = 0;
-        private int mRequestStartRecordingCount;
+        private int mRequestStartRecordingCount = 0;
+        private int mRequestStopRecordingCount = 0;
 
         private String mIAppServiceId = null;
         private Integer mState = null;
@@ -124,10 +125,12 @@ public class TvInteractiveAppServiceTest {
         private Uri mBiIAppUri = null;
         private String mBiIAppId = null;
         private Uri mProgramUri = null;
+        private String mRecordingId = null;
 
         private void resetValues() {
             mRequestCurrentChannelUriCount = 0;
             mRequestStartRecordingCount = 0;
+            mRequestStopRecordingCount = 0;
             mStateChangedCount = 0;
             mBiIAppCreatedCount = 0;
             mRequestSigningCount = 0;
@@ -138,6 +141,7 @@ public class TvInteractiveAppServiceTest {
             mBiIAppUri = null;
             mBiIAppId = null;
             mProgramUri = null;
+            mRecordingId = null;
         }
 
         @Override
@@ -214,6 +218,12 @@ public class TvInteractiveAppServiceTest {
             mProgramUri = programUri;
         }
 
+        @Override
+        public void onRequestStopRecording(String id, String recordingId) {
+            super.onRequestStopRecording(id, recordingId);
+            mRequestStopRecordingCount++;
+            mRecordingId = recordingId;
+        }
     }
 
     public static class MockTvInputCallback extends TvView.TvInputCallback {
@@ -718,6 +728,18 @@ public class TvInteractiveAppServiceTest {
 
         assertThat(mCallback.mRequestStartRecordingCount).isEqualTo(1);
         assertThat(mCallback.mProgramUri).isEqualTo(testUri);
+    }
+
+    @Test
+    public void testRequestStopRecording() throws Throwable {
+        final String testRecordingId = "testRecordingId";
+        mSession.requestStopRecording(testRecordingId);
+        mCallback.resetValues();
+        mInstrumentation.waitForIdleSync();
+        PollingCheck.waitFor(TIME_OUT_MS, () -> mCallback.mRequestStopRecordingCount > 0);
+
+        assertThat(mCallback.mRequestStopRecordingCount).isEqualTo(1);
+        assertThat(mCallback.mRecordingId).isEqualTo(testRecordingId);
     }
 
     @Test
