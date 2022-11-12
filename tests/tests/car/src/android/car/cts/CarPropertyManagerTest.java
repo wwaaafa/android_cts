@@ -3213,6 +3213,22 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     }
 
     @Test
+    public void testSeatCushionSideSupportMoveIfSupported() {
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.SEAT_CUSHION_SIDE_SUPPORT_MOVE,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_SEAT,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Integer.class)
+                .requireMinMaxValues()
+                .requireZeroToBeContainedInMinMaxRanges()
+                .addReadPermission(Car.PERMISSION_CONTROL_CAR_SEATS)
+                .addWritePermission(Car.PERMISSION_CONTROL_CAR_SEATS)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
     @ApiTest(
             apis = {
                 "android.car.hardware.property.CarPropertyManager#getCarPropertyConfig",
