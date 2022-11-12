@@ -430,6 +430,21 @@ def get_max_digital_zoom(props):
   return z_max
 
 
+def get_ae_target_fps_ranges(props):
+  """Returns the AE target FPS ranges supported by the camera device.
+
+  Args:
+    props: Camera properties object.
+
+  Returns:
+    A list of AE target FPS ranges supported by the camera device.
+  """
+  ranges = []  # return empty list instead of Boolean if no FPS range in props
+  if 'android.control.aeAvailableTargetFpsRanges' in props:
+    ranges = props['android.control.aeAvailableTargetFpsRanges']
+  return ranges
+
+
 def ae_lock(props):
   """Returns whether a device supports AE lock.
 
@@ -516,7 +531,7 @@ def noise_reduction_mode(props, mode):
     mode: Integer indicating noise reduction mode to check for availability.
 
   Returns:
-    Boolean. Ture if devices supports noise reduction mode(s).
+    Boolean. True if devices supports noise reduction mode(s).
   """
   return ('android.noiseReduction.availableNoiseReductionModes' in props and
           mode in props['android.noiseReduction.availableNoiseReductionModes'])
