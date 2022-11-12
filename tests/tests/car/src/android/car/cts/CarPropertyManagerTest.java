@@ -232,6 +232,11 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.VEHICLE_SPEED_DISPLAY_UNITS,
                             VehiclePropertyIds.FUEL_CONSUMPTION_UNITS_DISTANCE_OVER_VOLUME)
                     .build();
+    private static final ImmutableList<Integer> PERMISSION_CONTROL_CAR_STEERING_WHEEL_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.STEERING_WHEEL_DEPTH_POS)
+                    .build();
 
     /** contains property Ids for the properties required by CDD */
     private final ArraySet<Integer> mPropertyIds = new ArraySet<>();
@@ -1319,6 +1324,21 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                         Boolean.class)
                 .addReadPermission(Car.PERMISSION_CONTROL_CAR_WINDOWS)
                 .addWritePermission(Car.PERMISSION_CONTROL_CAR_WINDOWS)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
+    public void testSteeringWheelDepthPosIfSupported() {
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.STEERING_WHEEL_DEPTH_POS,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Integer.class)
+                .requireMinMaxValues()
+                .addReadPermission(Car.PERMISSION_CONTROL_STEERING_WHEEL)
+                .addWritePermission(Car.PERMISSION_CONTROL_STEERING_WHEEL)
                 .build()
                 .verify(mCarPropertyManager);
     }
@@ -4365,6 +4385,23 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     }
                 },
                 Car.PERMISSION_READ_DISPLAY_UNITS);
+    }
+
+    @Test
+    public void testPermissionControlSteeringWheelGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                        "%s",
+                                        VehiclePropertyIds.toString(
+                                                carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_CONTROL_CAR_STEERING_WHEEL_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_CONTROL_STEERING_WHEEL);
     }
 
     private int getCounterBySampleRate(float maxSampleRateHz) {
