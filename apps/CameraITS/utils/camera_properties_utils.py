@@ -667,11 +667,11 @@ def get_intrinsic_calibration(props, debug, fd=None):
     fd_h_pix = pixel_h * fd / sensor_h
 
     if not math.isclose(fd_w_pix, ical[0], rel_tol=FD_CAL_RTOL):
-      raise ValueError('fd_w(pixels): %.2f\tcal[0](pixels): %.2f\tTOL=20%%' % (
-          fd_w_pix, ical[0]))
+      raise ValueError(f'fd_w(pixels): {fd_w_pix:.2f}\tcal[0](pixels): '
+                       f'{ical[0]:.2f}\tTOL=20%')
     if not math.isclose(fd_h_pix, ical[1], rel_tol=FD_CAL_RTOL):
-      raise ValueError('fd_h(pixels): %.2f\tcal[1](pixels): %.2f\tTOL=20%%' % (
-          fd_h_pix, ical[0]))
+      raise ValueError(f'fd_h(pixels): {fd_h_pix:.2f}\tcal[1](pixels): '
+                       f'{ical[1]:.2f}\tTOL=20%')
 
   # generate instrinsic matrix
   k = np.array([[ical[0], ical[4], ical[2]],
