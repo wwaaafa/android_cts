@@ -22,7 +22,6 @@ import static android.telecom.cts.TestUtils.WAIT_FOR_STATE_CHANGE_TIMEOUT_MS;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 
 import android.app.AppOpsManager;
@@ -30,8 +29,8 @@ import android.app.UiAutomation;
 import android.app.UiModeManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.media.AudioManager;
@@ -40,8 +39,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
-import android.os.RemoteException;
 import android.os.Process;
+import android.os.RemoteException;
 import android.os.UserHandle;
 import android.provider.CallLog;
 import android.telecom.Call;
@@ -56,7 +55,6 @@ import android.telecom.TelecomManager;
 import android.telecom.VideoProfile;
 import android.telecom.cts.MockInCallService.InCallServiceCallbacks;
 import android.telecom.cts.carmodetestapp.ICtsCarModeInCallServiceControl;
-import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyCallback;
 import android.telephony.TelephonyManager;
 import android.telephony.emergency.EmergencyNumber;
@@ -1316,7 +1314,7 @@ public class BaseTelecomTestWithMockServices extends InstrumentationTestCase {
         );
     }
 
-    void assertMuteState(final MockConnection connection, final boolean isMuted) {
+    void assertMuteState(final Connection connection, final boolean isMuted) {
         waitUntilConditionIsTrueOrTimeout(
                 new Condition() {
                     @Override
@@ -1332,6 +1330,30 @@ public class BaseTelecomTestWithMockServices extends InstrumentationTestCase {
                 },
                 WAIT_FOR_STATE_CHANGE_TIMEOUT_MS,
                 "Connection's mute state should be: " + isMuted
+        );
+    }
+
+    /**
+     * Asserts that a call video state is as expected.
+     *
+     * @param call The call.
+     * @param videoState The expected video state.
+     */
+    void assertVideoState(final Call call, final int videoState) {
+        waitUntilConditionIsTrueOrTimeout(
+                new Condition() {
+                    @Override
+                    public Object expected() {
+                        return videoState;
+                    }
+
+                    @Override
+                    public Object actual() {
+                        return call.getDetails().getVideoState();
+                    }
+                },
+                TestUtils.WAIT_FOR_STATE_CHANGE_TIMEOUT_MS,
+                "Call should be in videoState " + videoState
         );
     }
 

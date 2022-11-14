@@ -37,6 +37,7 @@ import android.provider.ContactsContract;
 import android.telecom.PhoneAccount;
 import android.telecom.PhoneAccountHandle;
 import android.telecom.TelecomManager;
+import android.telecom.VideoProfile;
 
 import androidx.test.InstrumentationRegistry;
 
@@ -604,9 +605,29 @@ public class TestUtils {
     public static void placeOutgoingCall(Instrumentation instrumentation,
                                           TelecomManager telecomManager, PhoneAccountHandle handle,
                                           Uri address) {
+        placeOutgoingCall(instrumentation, telecomManager, handle, address,
+                VideoProfile.STATE_AUDIO_ONLY);
+    }
+
+    /**
+     * Places a new outgoing call.
+     *
+     * @param telecomManager the TelecomManager.
+     * @param handle the PhoneAccountHandle associated with the call.
+     * @param address outgoing call address.
+     * @return the new self-managed outgoing call.
+     */
+    public static void placeOutgoingCall(Instrumentation instrumentation,
+                                          TelecomManager telecomManager, PhoneAccountHandle handle,
+                                          Uri address, int videoState) {
         // Inform telecom of new incoming self-managed connection.
         Bundle extras = new Bundle();
         extras.putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, handle);
+
+        if (!VideoProfile.isAudioOnly(videoState)) {
+            extras.putInt(TelecomManager.EXTRA_START_CALL_WITH_VIDEO_STATE, videoState);
+        }
+
         telecomManager.placeCall(address, extras);
 
         // Wait for Telecom to finish creating the new connection.
