@@ -14,23 +14,15 @@
  * limitations under the License.
  */
 
-package com.android.cts.verifier;
+package com.android.interactive.annotations;
 
-import com.android.interactive.annotations.Interactive;
-import com.android.interactive.annotations.SupportMultiDisplayMode;
-import com.android.tradefed.testtype.DeviceJUnit4ClassRunner;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-@RunWith(DeviceJUnit4ClassRunner.class)
-public final class LogcatTest extends CtsVerifierTest {
-
-    @Interactive
-    @Test
-    @SupportMultiDisplayMode
-    // MultiDisplayMode
-    public void ReadLogsTest() throws Exception {
-        runTest(".logcat.ReadLogsTestActivity");
-    }
+/** Indicates that a test needs to support to be run in fold mode on a fold-able device. */
+@Target({ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface SupportMultiDisplayMode {
 }
