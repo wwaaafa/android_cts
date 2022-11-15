@@ -2631,6 +2631,21 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     }
 
     @Test
+    public void testSteeringWheelLightsSwitchIfSupported() {
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.STEERING_WHEEL_LIGHTS_SWITCH,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Integer.class)
+                .setPossibleCarPropertyValues(VEHICLE_LIGHT_SWITCHES)
+                .addReadPermission(Car.PERMISSION_CONTROL_INTERIOR_LIGHTS)
+                .addWritePermission(Car.PERMISSION_CONTROL_INTERIOR_LIGHTS)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
     @ApiTest(apis = {"android.car.hardware.property.CarPropertyManager#getCarPropertyConfig"})
     public void testSeatMemorySelectIfSupported() {
         VehiclePropertyVerifier.newBuilder(
