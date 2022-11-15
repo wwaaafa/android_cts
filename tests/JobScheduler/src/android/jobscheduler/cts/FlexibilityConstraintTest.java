@@ -19,6 +19,7 @@ package android.jobscheduler.cts;
 import android.app.job.JobInfo;
 import android.content.pm.PackageManager;
 import android.os.UserHandle;
+import android.platform.test.annotations.RequiresDevice;
 import android.provider.DeviceConfig;
 import android.provider.Settings;
 import android.support.test.uiautomator.UiDevice;
@@ -252,6 +253,7 @@ public class FlexibilityConstraintTest extends BaseJobSchedulerTest {
      * Schedule a job that requires any network, wait for one constraint to be required,
      * verify the job runs if the device is connected to wifi.
      */
+    @RequiresDevice // Emulators don't always have access to wifi/network
     public void testUnmeteredConnectionSatisfiesFlexibleConstraints() throws Exception {
         if (!deviceSupportsFlexConstraints()) {
             return;
@@ -307,6 +309,7 @@ public class FlexibilityConstraintTest extends BaseJobSchedulerTest {
      * Schedule a job that requires an unmetered network.
      * Verify it only requires 3 flexible constraints.
      */
+    @RequiresDevice // Emulators don't always have access to wifi/network
     public void testPreferUnMetered_RequiredUnMetered() throws Exception {
         if (!deviceSupportsFlexConstraints()) {
             return;
