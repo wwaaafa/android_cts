@@ -541,6 +541,15 @@ public class ProxyVoiceInteractionService extends VoiceInteractionService {
                 }
             }
 
+            @Override
+            public void onError() {
+                try {
+                    mDelegate.onError();
+                } catch (RemoteException e) {
+                    e.rethrowAsRuntimeException();
+                }
+            }
+
             private AlwaysOnHotwordDetector.Callback createDetectorCallback(
                     HotwordDetectorCallbackAdapter callback) {
                 return new AlwaysOnHotwordDetector.Callback() {
@@ -560,6 +569,7 @@ public class ProxyVoiceInteractionService extends VoiceInteractionService {
                     @Override
                     public void onError() {
                         Log.i(TAG, "onError");
+                        callback.onError();
                     }
 
                     @Override
@@ -581,5 +591,4 @@ public class ProxyVoiceInteractionService extends VoiceInteractionService {
             }
         }
     }
-
 }
