@@ -16,12 +16,6 @@
 
 package com.android.cts.voiceinteraction;
 
-import static android.Manifest.permission.BIND_VOICE_INTERACTION;
-import static android.Manifest.permission.CAPTURE_AUDIO_HOTWORD;
-import static android.Manifest.permission.MANAGE_HOTWORD_DETECTION;
-import static android.Manifest.permission.MANAGE_SOUND_TRIGGER;
-import static android.Manifest.permission.RECORD_AUDIO;
-
 import static com.android.cts.voiceinteraction.ProxyVoiceInteractionService.EXCEPTION_HOTWORD_DETECTOR_ILLEGAL_STATE;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -30,109 +24,30 @@ import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.expectThrows;
 
 import android.app.compat.CompatChanges;
-import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
-import android.hardware.soundtrigger.SoundTrigger;
-import android.os.ConditionVariable;
 import android.os.PersistableBundle;
 import android.os.RemoteException;
 import android.os.ServiceSpecificException;
 import android.os.SharedMemory;
-import android.provider.Settings;
 import android.service.voice.AlwaysOnHotwordDetector;
 import android.util.Log;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.rule.ServiceTestRule;
 
-import com.android.compatibility.common.util.SettingsStateChangerRule;
-import com.android.compatibility.common.util.SettingsUtils;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.time.Duration;
 import java.util.Locale;
-import java.util.UUID;
 
 /**
  * Tests covering the System API compatibility changes in
  * {@link android.service.voice.AlwaysOnHotwordDetector}
  */
 @RunWith(AndroidJUnit4.class)
-public class AlwaysOnHotwordDetectorCompatTests {
+public class AlwaysOnHotwordDetectorCompatTests extends AbstractVoiceInteractionServiceTest {
     private static final String TAG = AlwaysOnHotwordDetectorCompatTests.class.getSimpleName();
-    private static final Duration TEST_SERVICE_TIMEOUT = Duration.ofSeconds(5);
     private static final long HOTWORD_DETECTOR_THROW_CHECKED_EXCEPTION = 226355112L;
-
-    @Rule
-    public final SettingsStateChangerRule mServiceSetterRule = new SettingsStateChangerRule(
-            InstrumentationRegistry.getInstrumentation().getTargetContext(),
-            Settings.Secure.VOICE_INTERACTION_SERVICE,
-            ProxyVoiceInteractionService.class.getPackageName() + "/"
-                    + ProxyVoiceInteractionService.class.getName());
-    private final ConditionVariable mIsTestServiceReady = new ConditionVariable();
-    private final ConditionVariable mIsTestServiceShutdown = new ConditionVariable();
-    @Rule
-    public ServiceTestRule mServiceTestRule = new ServiceTestRule();
-    private ITestVoiceInteractionService mTestServiceInterface = null;
-
-    @Before
-    public void setUp() throws Exception {
-        InstrumentationRegistry.getInstrumentation().getUiAutomation()
-                .adoptShellPermissionIdentity("android.permission.LOG_COMPAT_CHANGE",
-                        "android.permission.READ_COMPAT_CHANGE_CONFIG",
-                        RECORD_AUDIO, CAPTURE_AUDIO_HOTWORD, BIND_VOICE_INTERACTION,
-                        "android.permission.MANAGE_VOICE_KEYPHRASES",
-                        MANAGE_HOTWORD_DETECTION, MANAGE_SOUND_TRIGGER);
-
-        // Start the ProxyVoiceInteractionService
-        Intent serviceIntent = new Intent();
-        serviceIntent.setAction(ProxyVoiceInteractionService.ACTION_BIND_TEST_VOICE_INTERACTION);
-        serviceIntent.setComponent(
-                new ComponentName(InstrumentationRegistry.getInstrumentation().getTargetContext(),
-                        ProxyVoiceInteractionService.class));
-        mTestServiceInterface = ITestVoiceInteractionService.Stub.asInterface(
-                mServiceTestRule.bindService(serviceIntent)
-        );
-
-        mTestServiceInterface.registerListener(new ITestVoiceInteractionServiceListener.Stub() {
-            @Override
-            public void onReady() {
-                Log.i(TAG, "ITestVoiceInteractionServiceListener: onReady");
-                mIsTestServiceReady.open();
-                mIsTestServiceShutdown.close();
-            }
-
-            @Override
-            public void onShutdown() {
-                Log.i(TAG, "ITestVoiceInteractionServiceListener: onShutdown");
-                mIsTestServiceReady.close();
-                mIsTestServiceShutdown.open();
-            }
-        });
-        assertThat(mIsTestServiceReady.block(TEST_SERVICE_TIMEOUT.toMillis())).isTrue();
-    }
-
-    @After
-    public void tearDown() {
-        Log.i(TAG, "tearDown: clearing settings value");
-        SettingsUtils.syncSet(InstrumentationRegistry.getInstrumentation().getTargetContext(),
-                SettingsUtils.NAMESPACE_SECURE, Settings.Secure.VOICE_INTERACTION_SERVICE,
-                "dummy_service");
-        Log.i(TAG, "tearDown: waiting for shutdown");
-        assertThat(mIsTestServiceShutdown.block(TEST_SERVICE_TIMEOUT.toMillis())).isTrue();
-        mServiceTestRule.unbindService();
-        mIsTestServiceReady.close();
-        mIsTestServiceShutdown.close();
-        InstrumentationRegistry.getInstrumentation()
-                .getUiAutomation().dropShellPermissionIdentity();
-    }
 
     @Test
     public void testChangeThrowCheckedException_verifyChangeEnabled() {
@@ -603,6 +518,11 @@ public class AlwaysOnHotwordDetectorCompatTests {
                         Log.i(TAG,
                                 "onHotwordDetectionServiceInitialized: status=" + status);
                     }
+
+                    @Override
+                    public void onError() {
+                        Log.i(TAG, "onError");
+                    }
                 };
         IProxyAlwaysOnHotwordDetector detector;
         if (useTrustedProcess) {
@@ -622,29 +542,10 @@ public class AlwaysOnHotwordDetectorCompatTests {
         // again
         detector.waitForNextAvailabilityUpdate((int) TEST_SERVICE_TIMEOUT.toMillis());
 
-        enrollFakeSoundModel(detector, locale);
+        enrollFakeSoundModelWithDetector(detector, locale);
         assertThat(detector.waitForNextAvailabilityUpdate(
                 (int) TEST_SERVICE_TIMEOUT.toMillis())).isEqualTo(
                 AlwaysOnHotwordDetector.STATE_KEYPHRASE_ENROLLED);
         return detector;
-    }
-
-    private void enrollFakeSoundModel(IProxyAlwaysOnHotwordDetector detector, Locale locale)
-            throws RemoteException {
-        // enroll a fake sound model and wait for enrolled state in detector
-        if (mTestServiceInterface.getDspModuleProperties() != null) {
-            IProxyKeyphraseModelManager keyphraseModelManager =
-                    mTestServiceInterface.createKeyphraseModelManager();
-            SoundTrigger.Keyphrase testKeyphrase = new SoundTrigger.Keyphrase(1 /* id */,
-                    AlwaysOnHotwordDetector.RECOGNITION_MODE_VOICE_TRIGGER,
-                    locale, "test keyphrase", new int[]{0});
-            SoundTrigger.KeyphraseSoundModel soundModel = new SoundTrigger.KeyphraseSoundModel(
-                    UUID.randomUUID(),
-                    UUID.randomUUID(), null /* data */,
-                    new SoundTrigger.Keyphrase[]{testKeyphrase});
-            keyphraseModelManager.updateKeyphraseSoundModel(soundModel);
-        } else {
-            detector.overrideAvailability(AlwaysOnHotwordDetector.STATE_KEYPHRASE_ENROLLED);
-        }
     }
 }

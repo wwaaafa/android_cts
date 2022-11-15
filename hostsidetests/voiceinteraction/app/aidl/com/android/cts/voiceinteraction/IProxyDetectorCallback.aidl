@@ -22,4 +22,5 @@ interface IProxyDetectorCallback {
     void onAvailabilityChanged(int status);
     void onDetected(in EventPayloadParcelable eventPayload);
     void onHotwordDetectionServiceInitialized(int status);
+    void onError();
 }
