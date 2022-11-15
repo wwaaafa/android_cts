@@ -418,7 +418,7 @@ public class WallpaperManagerTest {
     public void wallpaperCallbackMainThreadTest() {
 
         ComponentName componentName = new ComponentName(
-                LiveWallpaper.class.getPackageName(), LiveWallpaper.class.getName());
+                TestLiveWallpaper.class.getPackageName(), TestLiveWallpaper.class.getName());
         runWithShellPermissionIdentity(() ->
                 mWallpaperManager.setWallpaperComponent(componentName));
 
