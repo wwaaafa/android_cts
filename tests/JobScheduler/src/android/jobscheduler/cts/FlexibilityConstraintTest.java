@@ -267,6 +267,7 @@ public class FlexibilityConstraintTest extends BaseJobSchedulerTest {
             Log.d(TAG, "Skipping test that requires the device be WiFi enabled.");
             return;
         }
+        mNetworkingHelper.ensureSavedWifiNetwork();
         mNetworkingHelper.setWifiMeteredState(true);
 
         mBuilder.setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY);
@@ -319,6 +320,7 @@ public class FlexibilityConstraintTest extends BaseJobSchedulerTest {
             Log.d(TAG, "Skipping test that requires WiFi.");
             return;
         }
+        mNetworkingHelper.ensureSavedWifiNetwork();
         mNetworkingHelper.setWifiMeteredState(false);
         mBuilder.setRequiredNetworkType(JobInfo.NETWORK_TYPE_UNMETERED);
         scheduleJobToExecute();
