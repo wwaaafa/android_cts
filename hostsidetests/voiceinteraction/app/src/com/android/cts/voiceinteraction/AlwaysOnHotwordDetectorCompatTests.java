@@ -43,8 +43,8 @@ import android.provider.Settings;
 import android.service.voice.AlwaysOnHotwordDetector;
 import android.util.Log;
 
-import androidx.test.InstrumentationRegistry;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.ServiceTestRule;
 
 import com.android.compatibility.common.util.SettingsStateChangerRule;
@@ -66,8 +66,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * {@link android.service.voice.AlwaysOnHotwordDetector}
  */
 @RunWith(AndroidJUnit4.class)
-public class AlwaysOnHotwordDetectorChangesTest {
-    private static final String TAG = AlwaysOnHotwordDetectorChangesTest.class.getSimpleName();
+public class AlwaysOnHotwordDetectorCompatTests {
+    private static final String TAG = AlwaysOnHotwordDetectorCompatTests.class.getSimpleName();
     private static final Duration TEST_SERVICE_TIMEOUT = Duration.ofSeconds(5);
     private static final long HOTWORD_DETECTOR_THROW_CHECKED_EXCEPTION = 226355112L;
 
@@ -139,7 +139,7 @@ public class AlwaysOnHotwordDetectorChangesTest {
     public void testChangeThrowCheckedException_verifyChangeEnabled() {
         assertThat(CompatChanges.isChangeEnabled(
                 HOTWORD_DETECTOR_THROW_CHECKED_EXCEPTION)).isTrue();
-        Context context = InstrumentationRegistry.getTargetContext();
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         assertThat(CompatChanges.isChangeEnabled(HOTWORD_DETECTOR_THROW_CHECKED_EXCEPTION,
                 ProxyVoiceInteractionService.class.getPackageName(),
                 context.getUser())).isTrue();
@@ -149,7 +149,7 @@ public class AlwaysOnHotwordDetectorChangesTest {
     public void testChangeThrowCheckedException_verifyChangeDisabled() {
         assertThat(CompatChanges.isChangeEnabled(
                 HOTWORD_DETECTOR_THROW_CHECKED_EXCEPTION)).isFalse();
-        Context context = InstrumentationRegistry.getTargetContext();
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         assertThat(CompatChanges.isChangeEnabled(HOTWORD_DETECTOR_THROW_CHECKED_EXCEPTION,
                 ProxyVoiceInteractionService.class.getPackageName(),
                 context.getUser())).isFalse();
