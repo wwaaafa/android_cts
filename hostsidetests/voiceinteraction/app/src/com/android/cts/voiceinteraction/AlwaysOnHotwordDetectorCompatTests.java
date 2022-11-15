@@ -33,10 +33,10 @@ import android.app.compat.CompatChanges;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.hardware.soundtrigger.SoundTrigger.Keyphrase;
-import android.hardware.soundtrigger.SoundTrigger.KeyphraseSoundModel;
+import android.hardware.soundtrigger.SoundTrigger;
 import android.os.ConditionVariable;
 import android.os.PersistableBundle;
+import android.os.RemoteException;
 import android.os.ServiceSpecificException;
 import android.os.SharedMemory;
 import android.provider.Settings;
@@ -59,7 +59,6 @@ import org.junit.runner.RunWith;
 import java.time.Duration;
 import java.util.Locale;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Tests covering the System API compatibility changes in
@@ -158,41 +157,9 @@ public class AlwaysOnHotwordDetectorCompatTests {
     @Test
     public void startRecognitionThrowCheckedExceptionEnabled_verifyCheckedThrown()
             throws Exception {
-        final ConditionVariable availabilityChanged = new ConditionVariable();
-        final AtomicInteger availability = new AtomicInteger(0);
-
         // create first detector successfully
         IProxyAlwaysOnHotwordDetector alwaysOnHotwordDetectorEnglish =
-                mTestServiceInterface.createAlwaysOnHotwordDetector("test keyphrase",
-                        Locale.ENGLISH.toLanguageTag(),
-                        new IProxyDetectorCallback.Stub() {
-                            @Override
-                            public void onAvailabilityChanged(int status) {
-                                availability.set(status);
-                                availabilityChanged.open();
-                            }
-                        });
-        assertThat(alwaysOnHotwordDetectorEnglish).isNotNull();
-        assertThat(availabilityChanged.block(TEST_SERVICE_TIMEOUT.toMillis())).isTrue();
-
-        // enroll a fake sound model and wait for enrolled state in detector
-        availabilityChanged.close();
-        if (mTestServiceInterface.getDspModuleProperties() != null) {
-            IProxyKeyphraseModelManager keyphraseModelManager =
-                    mTestServiceInterface.createKeyphraseModelManager();
-            Keyphrase testKeyphrase = new Keyphrase(1 /* id */,
-                    AlwaysOnHotwordDetector.RECOGNITION_MODE_VOICE_TRIGGER,
-                    Locale.ENGLISH, "test keyphrase", new int[]{0});
-            KeyphraseSoundModel soundModel = new KeyphraseSoundModel(UUID.randomUUID(),
-                    UUID.randomUUID(), null /* data */, new Keyphrase[]{testKeyphrase});
-            keyphraseModelManager.updateKeyphraseSoundModel(soundModel);
-        } else {
-            alwaysOnHotwordDetectorEnglish.overrideAvailability(
-                    AlwaysOnHotwordDetector.STATE_KEYPHRASE_ENROLLED);
-        }
-        assertThat(availabilityChanged.block(TEST_SERVICE_TIMEOUT.toMillis())).isTrue();
-        assertThat(availability.get()).isEqualTo(
-                AlwaysOnHotwordDetector.STATE_KEYPHRASE_ENROLLED);
+                createBasicDetector(Locale.ENGLISH, /* useTrustedService */ false);
 
         // when state is enrolled, ensure that no exceptions are thrown
         assertThat(alwaysOnHotwordDetectorEnglish.startRecognition()).isFalse();
@@ -304,40 +271,9 @@ public class AlwaysOnHotwordDetectorCompatTests {
     @Test
     public void startRecognitionThrowCheckedExceptionDisabled_verifyRuntimeThrown()
             throws Exception {
-        final ConditionVariable availabilityChanged = new ConditionVariable();
-        final AtomicInteger availability = new AtomicInteger(0);
-
         // create first detector successfully
         IProxyAlwaysOnHotwordDetector alwaysOnHotwordDetectorEnglish =
-                mTestServiceInterface.createAlwaysOnHotwordDetector("test keyphrase",
-                        Locale.ENGLISH.toLanguageTag(),
-                        new IProxyDetectorCallback.Stub() {
-                            @Override
-                            public void onAvailabilityChanged(int status) {
-                                availability.set(status);
-                                availabilityChanged.open();
-                            }
-                        });
-        assertThat(alwaysOnHotwordDetectorEnglish).isNotNull();
-        assertThat(availabilityChanged.block(TEST_SERVICE_TIMEOUT.toMillis())).isTrue();
-
-        // enroll a fake sound model and wait for enrolled state in detector
-        availabilityChanged.close();
-        if (mTestServiceInterface.getDspModuleProperties() != null) {
-            IProxyKeyphraseModelManager keyphraseModelManager =
-                    mTestServiceInterface.createKeyphraseModelManager();
-            Keyphrase testKeyphrase = new Keyphrase(1 /* id */,
-                    AlwaysOnHotwordDetector.RECOGNITION_MODE_VOICE_TRIGGER,
-                    Locale.ENGLISH, "test keyphrase", new int[]{0});
-            KeyphraseSoundModel soundModel = new KeyphraseSoundModel(UUID.randomUUID(),
-                    UUID.randomUUID(), null /* data */, new Keyphrase[]{testKeyphrase});
-            keyphraseModelManager.updateKeyphraseSoundModel(soundModel);
-        } else {
-            alwaysOnHotwordDetectorEnglish.overrideAvailability(
-                    AlwaysOnHotwordDetector.STATE_KEYPHRASE_ENROLLED);
-        }
-        assertThat(availabilityChanged.block(TEST_SERVICE_TIMEOUT.toMillis())).isTrue();
-        assertThat(availability.get()).isEqualTo(AlwaysOnHotwordDetector.STATE_KEYPHRASE_ENROLLED);
+                createBasicDetector(Locale.ENGLISH, /* useTrustedService */ false);
 
         // when state is enrolled, ensure that no exceptions are thrown
         assertThat(alwaysOnHotwordDetectorEnglish.startRecognition()).isFalse();
@@ -431,40 +367,9 @@ public class AlwaysOnHotwordDetectorCompatTests {
     @Test
     public void stopRecognitionThrowCheckedExceptionEnabled_verifyCheckedThrown()
             throws Exception {
-        final ConditionVariable availabilityChanged = new ConditionVariable();
-        final AtomicInteger availability = new AtomicInteger(0);
-
         // create first detector successfully
         IProxyAlwaysOnHotwordDetector alwaysOnHotwordDetectorEnglish =
-                mTestServiceInterface.createAlwaysOnHotwordDetector("test keyphrase",
-                        Locale.ENGLISH.toLanguageTag(),
-                        new IProxyDetectorCallback.Stub() {
-                            @Override
-                            public void onAvailabilityChanged(int status) {
-                                availability.set(status);
-                                availabilityChanged.open();
-                            }
-                        });
-        assertThat(alwaysOnHotwordDetectorEnglish).isNotNull();
-        assertThat(availabilityChanged.block(TEST_SERVICE_TIMEOUT.toMillis())).isTrue();
-
-        // enroll a fake sound model and wait for enrolled state in detector
-        availabilityChanged.close();
-        if (mTestServiceInterface.getDspModuleProperties() != null) {
-            IProxyKeyphraseModelManager keyphraseModelManager =
-                    mTestServiceInterface.createKeyphraseModelManager();
-            Keyphrase testKeyphrase = new Keyphrase(1 /* id */,
-                    AlwaysOnHotwordDetector.RECOGNITION_MODE_VOICE_TRIGGER,
-                    Locale.ENGLISH, "test keyphrase", new int[]{0});
-            KeyphraseSoundModel soundModel = new KeyphraseSoundModel(UUID.randomUUID(),
-                    UUID.randomUUID(), null /* data */, new Keyphrase[]{testKeyphrase});
-            keyphraseModelManager.updateKeyphraseSoundModel(soundModel);
-        } else {
-            alwaysOnHotwordDetectorEnglish.overrideAvailability(
-                    AlwaysOnHotwordDetector.STATE_KEYPHRASE_ENROLLED);
-        }
-        assertThat(availabilityChanged.block(TEST_SERVICE_TIMEOUT.toMillis())).isTrue();
-        assertThat(availability.get()).isEqualTo(AlwaysOnHotwordDetector.STATE_KEYPHRASE_ENROLLED);
+                createBasicDetector(Locale.ENGLISH, /* useTrustedService */ false);
 
         // Testing for STATE_ENROLLED
         // verify that stopRecognition does not throw an exception
@@ -515,40 +420,9 @@ public class AlwaysOnHotwordDetectorCompatTests {
     @Test
     public void stopRecognitionThrowCheckedExceptionDisabled_verifyRuntimeThrown()
             throws Exception {
-        final ConditionVariable availabilityChanged = new ConditionVariable();
-        final AtomicInteger availability = new AtomicInteger(0);
-
         // create first detector successfully
         IProxyAlwaysOnHotwordDetector alwaysOnHotwordDetectorEnglish =
-                mTestServiceInterface.createAlwaysOnHotwordDetector("test keyphrase",
-                        Locale.ENGLISH.toLanguageTag(),
-                        new IProxyDetectorCallback.Stub() {
-                            @Override
-                            public void onAvailabilityChanged(int status) {
-                                availability.set(status);
-                                availabilityChanged.open();
-                            }
-                        });
-        assertThat(alwaysOnHotwordDetectorEnglish).isNotNull();
-        assertThat(availabilityChanged.block(TEST_SERVICE_TIMEOUT.toMillis())).isTrue();
-
-        // enroll a fake sound model and wait for enrolled state in detector
-        availabilityChanged.close();
-        if (mTestServiceInterface.getDspModuleProperties() != null) {
-            IProxyKeyphraseModelManager keyphraseModelManager =
-                    mTestServiceInterface.createKeyphraseModelManager();
-            Keyphrase testKeyphrase = new Keyphrase(1 /* id */,
-                    AlwaysOnHotwordDetector.RECOGNITION_MODE_VOICE_TRIGGER,
-                    Locale.ENGLISH, "test keyphrase", new int[]{0});
-            KeyphraseSoundModel soundModel = new KeyphraseSoundModel(UUID.randomUUID(),
-                    UUID.randomUUID(), null /* data */, new Keyphrase[]{testKeyphrase});
-            keyphraseModelManager.updateKeyphraseSoundModel(soundModel);
-        } else {
-            alwaysOnHotwordDetectorEnglish.overrideAvailability(
-                    AlwaysOnHotwordDetector.STATE_KEYPHRASE_ENROLLED);
-        }
-        assertThat(availabilityChanged.block(TEST_SERVICE_TIMEOUT.toMillis())).isTrue();
-        assertThat(availability.get()).isEqualTo(AlwaysOnHotwordDetector.STATE_KEYPHRASE_ENROLLED);
+                createBasicDetector(Locale.ENGLISH, /* useTrustedService */ false);
 
         // Testing for STATE_ENROLLED
         // verify that stopRecognition does not throw an exception
@@ -592,45 +466,11 @@ public class AlwaysOnHotwordDetectorCompatTests {
 
     @Test
     public void updateStateThrowCheckedExceptionEnabled_verifyCheckedThrown() throws Exception {
-        final ConditionVariable availabilityChanged = new ConditionVariable();
-        final AtomicInteger availability = new AtomicInteger(0);
-
         // create first detector successfully
         final SharedMemory testSharedMemory = SharedMemory.create(null, 1);
         final PersistableBundle testOptions = new PersistableBundle();
         IProxyAlwaysOnHotwordDetector alwaysOnHotwordDetectorUsingTrustedService =
-                mTestServiceInterface.createAlwaysOnHotwordDetectorWithTrustedService(
-                        "test keyphrase",
-                        Locale.ENGLISH.toLanguageTag(),
-                        testOptions,
-                        testSharedMemory,
-                        new IProxyDetectorCallback.Stub() {
-                            @Override
-                            public void onAvailabilityChanged(int status) {
-                                availability.set(status);
-                                availabilityChanged.open();
-                            }
-                        });
-        assertThat(alwaysOnHotwordDetectorUsingTrustedService).isNotNull();
-        assertThat(availabilityChanged.block(TEST_SERVICE_TIMEOUT.toMillis())).isTrue();
-
-        // enroll a fake sound model and wait for enrolled state in detector
-        availabilityChanged.close();
-        if (mTestServiceInterface.getDspModuleProperties() != null) {
-            IProxyKeyphraseModelManager keyphraseModelManager =
-                    mTestServiceInterface.createKeyphraseModelManager();
-            Keyphrase testKeyphrase = new Keyphrase(1 /* id */,
-                    AlwaysOnHotwordDetector.RECOGNITION_MODE_VOICE_TRIGGER,
-                    Locale.ENGLISH, "test keyphrase", new int[]{0});
-            KeyphraseSoundModel soundModel = new KeyphraseSoundModel(UUID.randomUUID(),
-                    UUID.randomUUID(), null /* data */, new Keyphrase[]{testKeyphrase});
-            keyphraseModelManager.updateKeyphraseSoundModel(soundModel);
-        } else {
-            alwaysOnHotwordDetectorUsingTrustedService.overrideAvailability(
-                    AlwaysOnHotwordDetector.STATE_KEYPHRASE_ENROLLED);
-        }
-        assertThat(availabilityChanged.block(TEST_SERVICE_TIMEOUT.toMillis())).isTrue();
-        assertThat(availability.get()).isEqualTo(AlwaysOnHotwordDetector.STATE_KEYPHRASE_ENROLLED);
+                createBasicDetector(Locale.ENGLISH, /* useTrustedService */ true);
 
         // Testing for STATE_ENROLLED
         alwaysOnHotwordDetectorUsingTrustedService.updateState(testOptions, testSharedMemory);
@@ -673,20 +513,8 @@ public class AlwaysOnHotwordDetectorCompatTests {
                 EXCEPTION_HOTWORD_DETECTOR_ILLEGAL_STATE);
 
         // Testing for detector not using trusted service
-        availabilityChanged.close();
         IProxyAlwaysOnHotwordDetector alwaysOnHotwordDetectorNotUsingTrustedService =
-                mTestServiceInterface.createAlwaysOnHotwordDetector(
-                        "test keyphrase",
-                        Locale.ENGLISH.toLanguageTag(),
-                        new IProxyDetectorCallback.Stub() {
-                            @Override
-                            public void onAvailabilityChanged(int status) {
-                                availability.set(status);
-                                availabilityChanged.open();
-                            }
-                        });
-        assertThat(alwaysOnHotwordDetectorNotUsingTrustedService).isNotNull();
-        assertThat(availabilityChanged.block(TEST_SERVICE_TIMEOUT.toMillis())).isTrue();
+                createBasicDetector(Locale.ENGLISH, /* useTrustedService */ false);
 
         assertThrows(IllegalStateException.class,
                 () -> alwaysOnHotwordDetectorNotUsingTrustedService.updateState(testOptions,
@@ -697,45 +525,11 @@ public class AlwaysOnHotwordDetectorCompatTests {
 
     @Test
     public void updateStateThrowCheckedExceptionDisabled_verifyRuntimeThrown() throws Exception {
-        final ConditionVariable availabilityChanged = new ConditionVariable();
-        final AtomicInteger availability = new AtomicInteger(0);
-
         // create first detector successfully
         final SharedMemory testSharedMemory = SharedMemory.create(null, 1);
         final PersistableBundle testOptions = new PersistableBundle();
         IProxyAlwaysOnHotwordDetector alwaysOnHotwordDetectorUsingTrustedService =
-                mTestServiceInterface.createAlwaysOnHotwordDetectorWithTrustedService(
-                        "test keyphrase",
-                        Locale.ENGLISH.toLanguageTag(),
-                        testOptions,
-                        testSharedMemory,
-                        new IProxyDetectorCallback.Stub() {
-                            @Override
-                            public void onAvailabilityChanged(int status) {
-                                availability.set(status);
-                                availabilityChanged.open();
-                            }
-                        });
-        assertThat(alwaysOnHotwordDetectorUsingTrustedService).isNotNull();
-        assertThat(availabilityChanged.block(TEST_SERVICE_TIMEOUT.toMillis())).isTrue();
-
-        // enroll a fake sound model and wait for enrolled state in detector
-        availabilityChanged.close();
-        if (mTestServiceInterface.getDspModuleProperties() != null) {
-            IProxyKeyphraseModelManager keyphraseModelManager =
-                    mTestServiceInterface.createKeyphraseModelManager();
-            Keyphrase testKeyphrase = new Keyphrase(1 /* id */,
-                    AlwaysOnHotwordDetector.RECOGNITION_MODE_VOICE_TRIGGER,
-                    Locale.ENGLISH, "test keyphrase", new int[]{0});
-            KeyphraseSoundModel soundModel = new KeyphraseSoundModel(UUID.randomUUID(),
-                    UUID.randomUUID(), null /* data */, new Keyphrase[]{testKeyphrase});
-            keyphraseModelManager.updateKeyphraseSoundModel(soundModel);
-        } else {
-            alwaysOnHotwordDetectorUsingTrustedService.overrideAvailability(
-                    AlwaysOnHotwordDetector.STATE_KEYPHRASE_ENROLLED);
-        }
-        assertThat(availabilityChanged.block(TEST_SERVICE_TIMEOUT.toMillis())).isTrue();
-        assertThat(availability.get()).isEqualTo(AlwaysOnHotwordDetector.STATE_KEYPHRASE_ENROLLED);
+                createBasicDetector(Locale.ENGLISH, /* useTrustedService */ true);
 
         // Testing for STATE_ENROLLED
         alwaysOnHotwordDetectorUsingTrustedService.updateState(testOptions, testSharedMemory);
@@ -775,25 +569,82 @@ public class AlwaysOnHotwordDetectorCompatTests {
                         testSharedMemory));
 
         // Testing for detector not using trusted service
-        availabilityChanged.close();
         IProxyAlwaysOnHotwordDetector alwaysOnHotwordDetectorNotUsingTrustedService =
-                mTestServiceInterface.createAlwaysOnHotwordDetector(
-                        "test keyphrase",
-                        Locale.ENGLISH.toLanguageTag(),
-                        new IProxyDetectorCallback.Stub() {
-                            @Override
-                            public void onAvailabilityChanged(int status) {
-                                availability.set(status);
-                                availabilityChanged.open();
-                            }
-                        });
-        assertThat(alwaysOnHotwordDetectorNotUsingTrustedService).isNotNull();
-        assertThat(availabilityChanged.block(TEST_SERVICE_TIMEOUT.toMillis())).isTrue();
+                createBasicDetector(Locale.ENGLISH, /* useTrustedService */ false);
 
         assertThrows(IllegalStateException.class,
                 () -> alwaysOnHotwordDetectorNotUsingTrustedService.updateState(testOptions,
                         testSharedMemory));
 
         alwaysOnHotwordDetectorNotUsingTrustedService.destroy();
+    }
+
+    /**
+     * Test helper method that does the following in order:
+     * 1. Create AlwaysOnHotwordDetector based on the useTrustedProcess param
+     * 2. Enroll a fake SoundTrigger model with the HotwordDetector session
+     */
+    private IProxyAlwaysOnHotwordDetector createBasicDetector(Locale locale,
+            boolean useTrustedProcess) throws RemoteException {
+        IProxyDetectorCallback callback =
+                new IProxyDetectorCallback.Stub() {
+                    @Override
+                    public void onAvailabilityChanged(int status) {
+                        Log.i(TAG, "onAvailabilityChanged: status=" + status);
+                    }
+
+                    @Override
+                    public void onDetected(EventPayloadParcelable eventPayload) {
+                        Log.i(TAG, "onDetected: eventPayload=" + eventPayload);
+                    }
+
+                    @Override
+                    public void onHotwordDetectionServiceInitialized(int status) {
+                        Log.i(TAG,
+                                "onHotwordDetectionServiceInitialized: status=" + status);
+                    }
+                };
+        IProxyAlwaysOnHotwordDetector detector;
+        if (useTrustedProcess) {
+            detector = mTestServiceInterface.createAlwaysOnHotwordDetectorWithTrustedService(
+                    "test keyphrase",
+                    locale.toLanguageTag(),
+                    /* sharedMemory */ null,
+                    /* options */ null,
+                    callback);
+        } else {
+            detector = mTestServiceInterface.createAlwaysOnHotwordDetector(
+                    "test keyphrase",
+                    locale.toLanguageTag(),
+                    callback);
+        }
+        // wait for initial result, but we do not care what the value is because we will enroll
+        // again
+        detector.waitForNextAvailabilityUpdate((int) TEST_SERVICE_TIMEOUT.toMillis());
+
+        enrollFakeSoundModel(detector, locale);
+        assertThat(detector.waitForNextAvailabilityUpdate(
+                (int) TEST_SERVICE_TIMEOUT.toMillis())).isEqualTo(
+                AlwaysOnHotwordDetector.STATE_KEYPHRASE_ENROLLED);
+        return detector;
+    }
+
+    private void enrollFakeSoundModel(IProxyAlwaysOnHotwordDetector detector, Locale locale)
+            throws RemoteException {
+        // enroll a fake sound model and wait for enrolled state in detector
+        if (mTestServiceInterface.getDspModuleProperties() != null) {
+            IProxyKeyphraseModelManager keyphraseModelManager =
+                    mTestServiceInterface.createKeyphraseModelManager();
+            SoundTrigger.Keyphrase testKeyphrase = new SoundTrigger.Keyphrase(1 /* id */,
+                    AlwaysOnHotwordDetector.RECOGNITION_MODE_VOICE_TRIGGER,
+                    locale, "test keyphrase", new int[]{0});
+            SoundTrigger.KeyphraseSoundModel soundModel = new SoundTrigger.KeyphraseSoundModel(
+                    UUID.randomUUID(),
+                    UUID.randomUUID(), null /* data */,
+                    new SoundTrigger.Keyphrase[]{testKeyphrase});
+            keyphraseModelManager.updateKeyphraseSoundModel(soundModel);
+        } else {
+            detector.overrideAvailability(AlwaysOnHotwordDetector.STATE_KEYPHRASE_ENROLLED);
+        }
     }
 }

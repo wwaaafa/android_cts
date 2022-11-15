@@ -16,6 +16,10 @@
 
 package com.android.cts.voiceinteraction;
 
+import com.android.cts.voiceinteraction.EventPayloadParcelable;
+
 interface IProxyDetectorCallback {
     void onAvailabilityChanged(int status);
+    void onDetected(in EventPayloadParcelable eventPayload);
+    void onHotwordDetectionServiceInitialized(int status);
 }
