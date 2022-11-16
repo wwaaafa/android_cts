@@ -166,8 +166,6 @@ public class ImsCallingTest extends ImsCallingBase {
                 .getImsCallsession();
 
         isCallActive(call, callSession);
-
-        callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_DISCONNECT);
         call.disconnect();
 
         assertTrue(callingTestLatchCountdown(LATCH_IS_CALL_DISCONNECTING, WAIT_FOR_CALL_STATE));
@@ -239,7 +237,6 @@ public class ImsCallingTest extends ImsCallingBase {
 
         Call call = getCall(mCurrentCallId);
         if (call.getDetails().getState() == Call.STATE_RINGING) {
-            callingTestLatchCountdown(LATCH_WAIT, 5000);
             call.answer(0);
         }
 
@@ -247,8 +244,6 @@ public class ImsCallingTest extends ImsCallingBase {
                 .getImsCallsession();
 
         isCallActive(call, callSession);
-
-        callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_DISCONNECT);
         callSession.terminateIncomingCall();
 
         isCallDisconnected(call, callSession);
@@ -285,8 +280,6 @@ public class ImsCallingTest extends ImsCallingBase {
                 .getImsCallsession();
 
         isCallActive(call, callSession);
-
-        callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_DISCONNECT);
         call.disconnect();
 
         assertTrue(callingTestLatchCountdown(LATCH_IS_CALL_DISCONNECTING, WAIT_FOR_CALL_STATE));
@@ -322,17 +315,15 @@ public class ImsCallingTest extends ImsCallingBase {
                 .getImsCallsession();
 
         isCallActive(call, callSession);
-        callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_STATE_HOLD);
+
         // Put on hold
         call.hold();
         assertTrue(callingTestLatchCountdown(LATCH_IS_CALL_HOLDING, WAIT_FOR_CALL_STATE));
 
-        callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_STATE_RESUME);
+        ImsUtils.waitInCurrentState(WAIT_IN_CURRENT_STATE);
         // Put on resume
         call.unhold();
         isCallActive(call, callSession);
-
-        callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_DISCONNECT);
         call.disconnect();
 
         assertTrue(callingTestLatchCountdown(LATCH_IS_CALL_DISCONNECTING, WAIT_FOR_CALL_STATE));
@@ -370,12 +361,11 @@ public class ImsCallingTest extends ImsCallingBase {
         isCallActive(call, callSession);
         callSession.addTestType(TestImsCallSessionImpl.TEST_TYPE_HOLD_FAILED);
 
-        callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_STATE_HOLD);
+        ImsUtils.waitInCurrentState(WAIT_IN_CURRENT_STATE);
         call.hold();
         assertTrue("call is not in Active State", (call.getDetails().getState()
                 == call.STATE_ACTIVE));
 
-        callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_DISCONNECT);
         call.disconnect();
 
         assertTrue(callingTestLatchCountdown(LATCH_IS_CALL_DISCONNECTING, WAIT_FOR_CALL_STATE));
@@ -413,20 +403,16 @@ public class ImsCallingTest extends ImsCallingBase {
 
         isCallActive(call, callSession);
 
-        callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_STATE_HOLD);
         // Put on hold
         call.hold();
         assertTrue(callingTestLatchCountdown(LATCH_IS_CALL_HOLDING, WAIT_FOR_CALL_STATE));
 
         callSession.addTestType(TestImsCallSessionImpl.TEST_TYPE_RESUME_FAILED);
-        callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_STATE_RESUME);
+        ImsUtils.waitInCurrentState(WAIT_IN_CURRENT_STATE);
         call.unhold();
-        callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_STATE_HOLD);
         assertTrue("Call is not in Hold State", (call.getDetails().getState()
                 == call.STATE_HOLDING));
 
-
-        callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_DISCONNECT);
         call.disconnect();
 
         assertTrue(callingTestLatchCountdown(LATCH_IS_CALL_DISCONNECTING, WAIT_FOR_CALL_STATE));
@@ -475,7 +461,6 @@ public class ImsCallingTest extends ImsCallingBase {
         if (mCurrentCallId != null) {
             mtCall = getCall(mCurrentCallId);
             if (mtCall.getDetails().getState() == Call.STATE_RINGING) {
-                callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_CONNECT);
                 mtCall.answer(0);
             }
         }
@@ -487,7 +472,6 @@ public class ImsCallingTest extends ImsCallingBase {
         assertTrue("Call is not in Active State", (mtCall.getDetails().getState()
                 == Call.STATE_ACTIVE));
 
-        callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_DISCONNECT);
         mtCall.disconnect();
         assertTrue(callingTestLatchCountdown(LATCH_IS_CALL_DISCONNECTING, WAIT_FOR_CALL_STATE));
         isCallDisconnected(mtCall, mtCallSession);
@@ -549,12 +533,10 @@ public class ImsCallingTest extends ImsCallingBase {
         if (mCurrentCallId != null) {
             mtCall = getCall(mCurrentCallId);
             if (mtCall.getDetails().getState() == Call.STATE_RINGING) {
-                callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_CONNECT);
                 mtCall.answer(0);
             }
         }
 
-        callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_CONNECT);
         // simulate user hanging up the MT call at the same time as accept.
         mtCallSession.terminateIncomingCall();
         isCallDisconnected(mtCall, mtCallSession);
@@ -588,7 +570,7 @@ public class ImsCallingTest extends ImsCallingBase {
         addOutgoingCalls();
 
         // Swap the call
-        callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_STATE_RESUME);
+        ImsUtils.waitInCurrentState(WAIT_IN_CURRENT_STATE);
         mCall1.unhold();
         assertTrue(callingTestLatchCountdown(LATCH_IS_CALL_HOLDING, WAIT_FOR_CALL_STATE));
         assertTrue("Call is not in Hold State", (mCall2.getDetails().getState()
@@ -596,7 +578,6 @@ public class ImsCallingTest extends ImsCallingBase {
         isCallActive(mCall1, mCallSession1);
 
         // After successful call swap disconnect the call
-        callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_DISCONNECT);
         mCall1.disconnect();
         assertTrue(callingTestLatchCountdown(LATCH_IS_CALL_DISCONNECTING, WAIT_FOR_CALL_STATE));
         isCallDisconnected(mCall1, mCallSession1);
@@ -640,7 +621,7 @@ public class ImsCallingTest extends ImsCallingBase {
 
         mCallSession1.addTestType(TestImsCallSessionImpl.TEST_TYPE_RESUME_FAILED);
         // Swap the call
-        callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_STATE_RESUME);
+        ImsUtils.waitInCurrentState(WAIT_IN_CURRENT_STATE);
         mCall1.unhold();
         assertTrue(callingTestLatchCountdown(LATCH_IS_CALL_HOLDING, WAIT_FOR_CALL_STATE));
         assertTrue("Call is not in Hold State", (mCall1.getDetails().getState()
@@ -692,6 +673,8 @@ public class ImsCallingTest extends ImsCallingBase {
         addConferenceCall(mCall1, mCall2);
 
         assertTrue(callingTestLatchCountdown(LATCH_IS_ON_CALL_ADDED, WAIT_FOR_CALL_STATE));
+        // Wait to add participants in conference
+        ImsUtils.waitInCurrentState(WAIT_IN_CURRENT_STATE);
         assertTrue("Conference call is not added", mServiceCallBack.getService()
                 .getConferenceCallCount() > 0);
 
@@ -712,7 +695,6 @@ public class ImsCallingTest extends ImsCallingBase {
         assertParticiapantAddedToConference(2);
 
         //Disconnect the conference call.
-        callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_DISCONNECT);
         conferenceCall.disconnect();
 
         //Verify conference participant connections are disconnected.
@@ -736,7 +718,7 @@ public class ImsCallingTest extends ImsCallingBase {
         mCallSession2.addTestType(TestImsCallSessionImpl.TEST_TYPE_CONFERENCE_FAILED);
         addConferenceCall(mCall1, mCall2);
 
-        callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_CONNECT);
+        ImsUtils.waitInCurrentState(WAIT_IN_CURRENT_STATE);
         //Verify foreground call is in Active state after merge failed.
         assertTrue("Call is not in Active State", (mCall2.getDetails().getState()
                 == Call.STATE_ACTIVE));
@@ -744,7 +726,6 @@ public class ImsCallingTest extends ImsCallingBase {
         assertTrue("Call is not in Holding State", (mCall1.getDetails().getState()
                 == Call.STATE_HOLDING));
 
-        callingTestLatchCountdown(LATCH_WAIT, WAIT_FOR_CALL_DISCONNECT);
         mCall2.disconnect();
         assertTrue(callingTestLatchCountdown(LATCH_IS_CALL_DISCONNECTING, WAIT_FOR_CALL_STATE));
         isCallDisconnected(mCall2, mCallSession2);
@@ -763,10 +744,6 @@ public class ImsCallingTest extends ImsCallingBase {
 
     void addConferenceCall(Call call1, Call call2) {
         InCallServiceStateValidator inCallService = mServiceCallBack.getService();
-        int currentConfCallCount = 0;
-        if (inCallService != null) {
-            currentConfCallCount = inCallService.getConferenceCallCount();
-        }
 
         // Verify that the calls have each other on their conferenceable list before proceeding
         List<Call> callConfList = new ArrayList<>();
@@ -809,7 +786,7 @@ public class ImsCallingTest extends ImsCallingBase {
                     public Object actual() {
                         return ((call.getState() == Call.STATE_DISCONNECTED)) ? true : false;
                     }
-                }, WAIT_FOR_CALL_DISCONNECT, "Call Disconnected");
+                }, WAIT_FOR_CONDITION, "Call Disconnected");
     }
 
     private void assertParticiapantAddedToConference(int count) {
@@ -824,7 +801,7 @@ public class ImsCallingTest extends ImsCallingBase {
                     public Object actual() {
                         return (mParticipantCount == count) ? true : false;
                     }
-                }, WAIT_FOR_CALL_CONNECT, "Call Added");
+                }, WAIT_FOR_CONDITION, "Call Added");
     }
 
     private void addOutgoingCalls() throws Exception {
