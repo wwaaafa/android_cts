@@ -65,7 +65,7 @@ public final class CarRotaryImeTest {
         String rotaryInputMethod = dumpsysRotaryServiceProto().getRotaryInputMethod();
 
         assumeTrue("Rotary input method not specified, skipping test",
-                rotaryInputMethod != null && !rotaryInputMethod.isEmpty());
+                !rotaryInputMethod.isEmpty());
         assertWithMessage("isValidIme(" + rotaryInputMethod + ")")
                 .that(isValidIme(rotaryInputMethod)).isTrue();
     }
