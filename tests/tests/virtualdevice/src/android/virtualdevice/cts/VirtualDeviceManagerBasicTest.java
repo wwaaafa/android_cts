@@ -48,6 +48,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.MockitoAnnotations;
 
+import java.util.List;
+
 @RunWith(AndroidJUnit4.class)
 @AppModeFull(reason = "VirtualDeviceManager cannot be accessed by instant apps")
 public class VirtualDeviceManagerBasicTest {
@@ -157,9 +159,16 @@ public class VirtualDeviceManagerBasicTest {
                         NAMED_VIRTUAL_DEVICE_PARAMS);
         assertThat(mAnotherVirtualDevice).isNotNull();
 
-        assertThat(mVirtualDeviceManager.getVirtualDevices()).containsExactly(
-                new VirtualDevice(mVirtualDevice.getDeviceId(), /* name= */ null),
-                new VirtualDevice(mAnotherVirtualDevice.getDeviceId(), VIRTUAL_DEVICE_NAME));
+        List<VirtualDevice> virtualDevices = mVirtualDeviceManager.getVirtualDevices();
+        assertThat(virtualDevices).hasSize(2);
+
+        VirtualDevice device = virtualDevices.get(0);
+        assertThat(device.getDeviceId()).isEqualTo(mVirtualDevice.getDeviceId());
+        assertThat(device.getName()).isNull();
+
+        VirtualDevice anotherDevice = virtualDevices.get(1);
+        assertThat(anotherDevice.getDeviceId()).isEqualTo(mAnotherVirtualDevice.getDeviceId());
+        assertThat(anotherDevice.getName()).isEqualTo(VIRTUAL_DEVICE_NAME);
     }
 
     @Test
