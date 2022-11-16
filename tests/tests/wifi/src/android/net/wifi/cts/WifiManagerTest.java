@@ -1192,7 +1192,9 @@ public class WifiManagerTest extends WifiJUnit3TestBase {
             return;
         }
         WifiNetworkSelectionConfig nsConfig = new WifiNetworkSelectionConfig.Builder()
-                .setSufficiencyCheckEnabledWhenScreenOff(true).build();
+                .setSufficiencyCheckEnabledWhenScreenOff(true)
+                .setUserConnectChoiceOverrideEnabled(true).build();
+        assertTrue(nsConfig.isUserConnectChoiceOverrideEnabled());
         assertThrows(SecurityException.class,
                 () -> mWifiManager.setNetworkSelectionConfig(nsConfig));
         ShellIdentityUtils.invokeWithShellPermissions(
