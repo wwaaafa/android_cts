@@ -1865,7 +1865,7 @@ public class ExtendedCameraCharacteristicsTest extends Camera2AndroidTestCase {
                         dynamicProfiles.getProfileCaptureRequestConstraints(profile);
                 boolean isSameProfilePresent = false;
                 for (Long concurrentProfile : currentConstraints) {
-                    if (concurrentProfile == profile) {
+                    if (Objects.equals(concurrentProfile, profile)) {
                         isSameProfilePresent = true;
                         continue;
                     }
@@ -2371,7 +2371,7 @@ public class ExtendedCameraCharacteristicsTest extends Camera2AndroidTestCase {
                         // [previewFps, fps_max] in the high speed range list; if it's variable FPS
                         // range, the corresponding fixed FPS Range must be included in the range
                         // list.
-                        if (range.getLower() == range.getUpper()) {
+                        if (Objects.equals(range.getLower(), range.getUpper())) {
                             Range<Integer> variableRange = new Range<Integer>(previewFps,
                                     range.getUpper());
                             assertTrue("The variable FPS range " + variableRange +
