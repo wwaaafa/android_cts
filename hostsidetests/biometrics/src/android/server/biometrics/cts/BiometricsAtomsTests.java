@@ -62,8 +62,7 @@ public class BiometricsAtomsTests extends BiometricDeviceTestCase {
     }
 
     public void testEnrollAtom() throws Exception {
-        // TODO(b/259451434): temporarily disable, tests fails on some gsi builds
-        if (!hasBiometrics() || true) {
+        if (!hasBiometrics()) {
             return;
         }
 
