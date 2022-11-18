@@ -3355,23 +3355,25 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                                                                 powerDependentProperty))
                                         .that(powerDependentCarPropertyConfig.getAreaType())
                                         .isEqualTo(VehicleAreaType.VEHICLE_AREA_TYPE_SEAT);
-                                assertWithMessage(
-                                                "HVAC_POWER_ON's area IDs must match the area IDs"
+
+                                for (int powerDependentAreaId :
+                                        powerDependentCarPropertyConfig.getAreaIds()) {
+                                    boolean powerDependentAreaIdIsContained = false;
+                                    for (int hvacPowerOnAreaId :
+                                            hvacPowerOnCarPropertyConfig.getAreaIds()) {
+                                        if ((powerDependentAreaId & hvacPowerOnAreaId)
+                                                == powerDependentAreaId) {
+                                            powerDependentAreaIdIsContained = true;
+                                            break;
+                                        }
+                                    }
+                                    assertWithMessage(
+                                            "HVAC_POWER_ON's area IDs must contain the area IDs"
                                                     + " of power dependent property: "
-                                                        + VehiclePropertyIds.toString(
-                                                                powerDependentProperty))
-                                        .that(
-                                                Arrays.stream(
-                                                                powerDependentCarPropertyConfig
-                                                                        .getAreaIds())
-                                                        .boxed()
-                                                        .collect(Collectors.toList()))
-                                        .containsExactlyElementsIn(
-                                                Arrays.stream(
-                                                                hvacPowerOnCarPropertyConfig
-                                                                        .getAreaIds())
-                                                        .boxed()
-                                                        .collect(Collectors.toList()));
+                                                    + VehiclePropertyIds.toString(
+                                                    powerDependentProperty)).that(
+                                            powerDependentAreaIdIsContained).isTrue();
+                                }
                             }
                         })
                 .addReadPermission(Car.PERMISSION_CONTROL_CAR_CLIMATE)
