@@ -16,9 +16,6 @@
 
 package com.android.bedstead.harrier.annotations;
 
-import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.PRECEDENCE_NOT_IMPORTANT;
-
-import com.android.bedstead.harrier.UserType;
 import com.android.bedstead.harrier.annotations.meta.RequiresBedsteadJUnit4;
 
 import java.lang.annotation.ElementType;
@@ -27,24 +24,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * A test which runs on multiple users.
+ * A test which runs once with a feature flag enabled and once disabled.
  */
 // TODO(b/217858437): Enable indirect usage
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @RequiresBedsteadJUnit4
-public @interface UserTest {
-    UserType[] value();
-
-    /**
-     * Weight sets the order that annotations will be resolved.
-     *
-     * <p>Annotations with a lower weight will be resolved before annotations with a higher weight.
-     *
-     * <p>If there is an order requirement between annotations, ensure that the weight of the
-     * annotation which must be resolved first is lower than the one which must be resolved later.
-     *
-     * <p>Weight can be set to a {@link AnnotationRunPrecedence} constant, or to any {@link int}.
-     */
-    int weight() default PRECEDENCE_NOT_IMPORTANT;
+public @interface RunWithFeatureFlagEnabledAndDisabled {
+    String namespace();
+    String key();
 }
