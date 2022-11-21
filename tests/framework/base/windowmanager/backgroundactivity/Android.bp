@@ -17,7 +17,7 @@ package {
 }
 
 android_test {
-    name: "CtsActivityManagerBackgroundActivityTestCases",
+    name: "CtsWindowManagerBackgroundActivityTestCases",
     defaults: ["cts_defaults"],
 
     // TODO(b/129909356): Consolidate this to CtsWindowManagerDeviceTestCases.apk
@@ -43,6 +43,7 @@ android_test {
     ],
     data: [
         ":CtsBackgroundActivityAppA",
+        ":CtsBackgroundActivityAppA33",
         ":CtsBackgroundActivityAppB",
         ":CtsBackgroundActivityAppB33",
         ":CtsBackgroundActivityAppC",

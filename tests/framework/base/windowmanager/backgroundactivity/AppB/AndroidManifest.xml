@@ -20,7 +20,6 @@
 
     <!-- To enable the app to start activities from the background. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
-
     <application>
         <receiver
             android:name=".StartPendingIntentReceiver"

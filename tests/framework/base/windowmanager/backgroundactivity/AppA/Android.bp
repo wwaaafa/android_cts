@@ -34,3 +34,26 @@ android_test_helper_app {
         "general-tests",
     ],
 }
+
+android_test_helper_app {
+    name: "CtsBackgroundActivityAppA33",
+    defaults: ["cts_support_defaults"],
+
+    static_libs: [
+        "cts-wm-app-base",
+        "cts-background-activity-common",
+    ],
+
+    srcs: ["src/**/*.java"],
+
+    target_sdk_version: "33",
+
+    test_suites: [
+        "cts",
+        "general-tests",
+    ],
+
+    aaptflags: [
+        "--rename-manifest-package android.server.wm.backgroundactivity.appa33",
+    ],
+}
