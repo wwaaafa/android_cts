@@ -165,7 +165,7 @@ public class AlertDialog_BuilderTest  {
        runOnUiThread(new Runnable() {
             public void run() {
                 mBuilder = new AlertDialog.Builder(mContext);
-                mBuilder.setPositiveButton(android.R.string.yes, mOnClickListener);
+                mBuilder.setPositiveButton(android.R.string.ok, mOnClickListener);
                 mBuilder.setOnDismissListener(mOnDismissListener);
                 mDialog = mBuilder.show();
                 mButton = mDialog.getButton(DialogInterface.BUTTON_POSITIVE);
@@ -174,7 +174,7 @@ public class AlertDialog_BuilderTest  {
         });
         mInstrumentation.waitForIdleSync();
 
-        assertEquals(mContext.getText(android.R.string.yes), mButton.getText());
+        assertEquals(mContext.getText(android.R.string.ok), mButton.getText());
         verify(mOnClickListener, times(1)).onClick(mDialog, DialogInterface.BUTTON_POSITIVE);
         verifyNoMoreInteractions(mOnClickListener);
         // Button click should also dismiss the dialog and notify the listener
@@ -187,7 +187,7 @@ public class AlertDialog_BuilderTest  {
         runOnUiThread(new Runnable() {
             public void run() {
                 mBuilder = new AlertDialog.Builder(mContext);
-                mBuilder.setPositiveButton(android.R.string.yes, mOnClickListener);
+                mBuilder.setPositiveButton(android.R.string.ok, mOnClickListener);
                 mBuilder.setOnDismissListener(mOnDismissListener);
                 mDialog = mBuilder.show();
                 mButton = mDialog.getButton(DialogInterface.BUTTON_POSITIVE);
@@ -195,7 +195,7 @@ public class AlertDialog_BuilderTest  {
             }
         });
         mInstrumentation.waitForIdleSync();
-        assertEquals(mContext.getText(android.R.string.yes), mButton.getText());
+        assertEquals(mContext.getText(android.R.string.ok), mButton.getText());
         verify(mOnClickListener, times(1)).onClick(mDialog, DialogInterface.BUTTON_POSITIVE);
         verifyNoMoreInteractions(mOnClickListener);
         // Button click should also dismiss the dialog and notify the listener
