@@ -69,7 +69,7 @@ public class AlwaysOnHotwordDetectorTest {
             new VoiceInteractionServiceConnectedRule(mContext, getTestVoiceInteractionService());
 
     public String getTestVoiceInteractionService() {
-        Log.d(TAG, "getVoiceInteractionService()");
+        Log.d(TAG, "getTestVoiceInteractionService()");
         return CTS_SERVICE_PACKAGE + "/" + SERVICE_COMPONENT;
     }
 
@@ -96,6 +96,7 @@ public class AlwaysOnHotwordDetectorTest {
         mService.waitHotwordDetectionServiceInitializedResult();
         assertThat(mService.getHotwordDetectionServiceInitializedResult()).isEqualTo(
                 HotwordDetectionService.INITIALIZATION_STATUS_SUCCESS);
+
         // The AlwaysOnHotwordDetector should be created correctly
         AlwaysOnHotwordDetector alwaysOnHotwordDetector = mService.getAlwaysOnHotwordDetector();
         Objects.requireNonNull(alwaysOnHotwordDetector);
