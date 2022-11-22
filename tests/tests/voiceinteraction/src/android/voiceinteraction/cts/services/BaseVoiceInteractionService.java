@@ -16,9 +16,17 @@
 
 package android.voiceinteraction.cts.services;
 
+import static android.voiceinteraction.cts.testcore.Helper.WAIT_TIMEOUT_IN_MS;
+
+import android.service.voice.AlwaysOnHotwordDetector;
+import android.service.voice.HotwordRejectedResult;
 import android.service.voice.VoiceInteractionService;
 import android.util.Log;
+import android.voiceinteraction.cts.testcore.Helper;
 
+import androidx.annotation.NonNull;
+
+import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -27,25 +35,71 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class BaseVoiceInteractionService extends VoiceInteractionService {
 
-    public static final String SERVICE_PACKAGE = "android.voiceinteraction.cts";
-
     private final String mTag = getClass().getSimpleName();
     public static final int STATUS_NO_CALLBACK_CALLED = -1;
 
-
     // The service instance
     public static VoiceInteractionService sService;
-    // The timeout to wait for async result
-    public static final long WAIT_TIMEOUT_IN_MS = 5_000;
     // The CountDownLatch waits for service connect
     public static CountDownLatch sConnectLatch;
+    public static CountDownLatch sDisconnectLatch;
+
     // The CountDownLatch waits for a service init result
     // TODO: rename to mHotwordDetectionServiceInitializedLatch, keep this name until the
     //  refactor done. The original tests use trigger in many places. To make the mapping asier,
     //  keep the current name now.
     public CountDownLatch mServiceTriggerLatch;
 
-    public static CountDownLatch sDisconnectLatch;
+    // The AlwaysOnHotwordDetector created by createAlwaysOnHotwordDetector() API
+    AlwaysOnHotwordDetector mAlwaysOnHotwordDetector = null;
+    // Throws IllegalStateException when calling createAlwaysOnHotwordDetector() API
+    private boolean mIsCreateDetectorIllegalStateExceptionThrow;
+    // Throws SecurityException when calling createAlwaysOnHotwordDetector() API
+    private boolean mIsCreateDetectorSecurityExceptionThrow;
+
+    // An AlwaysOnHotwordDetector.Callback no nothing on callback methods
+    final AlwaysOnHotwordDetector.Callback mNoOpHotwordDetectorCallback =
+            new AlwaysOnHotwordDetector.Callback() {
+                @Override
+                public void onAvailabilityChanged(int status) {
+                    // no-op
+                }
+
+                @Override
+                public void onDetected(AlwaysOnHotwordDetector.EventPayload eventPayload) {
+                    // no-op
+                }
+
+                @Override
+                public void onRejected(@NonNull HotwordRejectedResult result) {
+                    // no-op
+                }
+
+                @Override
+                public void onError() {
+                    // no-op
+                }
+
+                @Override
+                public void onRecognitionPaused() {
+                    // no-op
+                }
+
+                @Override
+                public void onRecognitionResumed() {
+                    // no-op
+                }
+
+                @Override
+                public void onHotwordDetectionServiceInitialized(int status) {
+                    Log.i(mTag, "onHotwordDetectionServiceInitialized status = " + status);
+                }
+
+                @Override
+                public void onHotwordDetectionServiceRestarted() {
+                    // no-op
+                }
+            };
 
     // the status of onHotwordDetectionServiceInitialized()
     int mInitializedStatus = STATUS_NO_CALLBACK_CALLED;
@@ -116,5 +170,73 @@ public abstract class BaseVoiceInteractionService extends VoiceInteractionServic
 
     public static VoiceInteractionService getService() {
         return sService;
+    }
+
+    /**
+     * Returns if createAlwaysOnHotwordDetector throws IllegalStateException.
+     */
+    public boolean isCreateDetectorIllegalStateExceptionThrow() {
+        return mIsCreateDetectorIllegalStateExceptionThrow;
+    }
+
+    /**
+     * Returns if createAlwaysOnHotwordDetector throws SecurityException.
+     */
+    public boolean isCreateDetectorSecurityExceptionThrow() {
+        return mIsCreateDetectorSecurityExceptionThrow;
+    }
+
+    /**
+     * Returns the Service's AlwaysOnHotwordDetector.
+     */
+    public AlwaysOnHotwordDetector getAlwaysOnHotwordDetector() {
+        return mAlwaysOnHotwordDetector;
+    }
+
+    /**
+     * Wait for onHotwordDetectionServiceInitialized() be called or exception throws when creating
+     * AlwaysOnHotwordDetector.
+     */
+    public void waitHotwordDetectionServiceInitializedResult() throws InterruptedException {
+        Log.d(mTag, "waitHotwordServiceInitializedCalledOrException(), latch="
+                + mServiceTriggerLatch);
+        if (mServiceTriggerLatch == null
+                || !mServiceTriggerLatch.await(WAIT_TIMEOUT_IN_MS, TimeUnit.MILLISECONDS)) {
+            Log.w(mTag, "waitAndGetHotwordServiceInitializedResult()");
+            mServiceTriggerLatch = null;
+            throw new AssertionError("HotwordService initialized fail.");
+        }
+        mServiceTriggerLatch = null;
+    }
+
+
+    /**
+     * Return the result for onHotwordDetectionServiceInitialized().
+     */
+    public int getHotwordDetectionServiceInitializedResult() {
+        return mInitializedStatus;
+    }
+
+    AlwaysOnHotwordDetector callCreateAlwaysOnHotwordDetector(
+            AlwaysOnHotwordDetector.Callback callback) {
+        Log.i(mTag, "callCreateAlwaysOnHotwordDetector()");
+        try {
+            return createAlwaysOnHotwordDetector(/* keyphrase */ "Hello Android",
+                    Locale.forLanguageTag("en-US"),
+                    Helper.createFakePersistableBundleData(),
+                    Helper.createFakeSharedMemoryData(),
+                    callback);
+        } catch (IllegalStateException | SecurityException e) {
+            Log.w(mTag, "callCreateAlwaysOnHotwordDetector() exception: " + e);
+            if (mServiceTriggerLatch != null) {
+                mServiceTriggerLatch.countDown();
+            }
+            if (e instanceof IllegalStateException) {
+                mIsCreateDetectorIllegalStateExceptionThrow = true;
+            } else {
+                mIsCreateDetectorSecurityExceptionThrow = true;
+            }
+        }
+        return null;
     }
 }

@@ -17,6 +17,7 @@
 package android.voiceinteraction.cts.services;
 
 import static android.Manifest.permission.MANAGE_HOTWORD_DETECTION;
+import static android.voiceinteraction.cts.testcore.Helper.WAIT_TIMEOUT_IN_MS;
 
 import static com.android.compatibility.common.util.SystemUtil.runWithShellPermissionIdentity;
 
@@ -27,11 +28,9 @@ import android.service.voice.HotwordDetectionService;
 import android.service.voice.HotwordRejectedResult;
 import android.service.voice.VoiceInteractionService;
 import android.util.Log;
-import android.voiceinteraction.cts.testcore.Helper;
 
 import androidx.annotation.NonNull;
 
-import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -42,7 +41,7 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
     private static final String TAG = "CtsBasicVoiceInteractionService";
 
     private final Handler mHandler;
-    private AlwaysOnHotwordDetector mAlwaysOnHotwordDetector = null;
+
     // The CountDownLatch waits for a service Availability change result
     private CountDownLatch mAvailabilityChangeLatch;
 
@@ -58,15 +57,60 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
     public void createAlwaysOnHotwordDetector() {
         mServiceTriggerLatch = new CountDownLatch(1);
         mHandler.post(() -> runWithShellPermissionIdentity(() -> {
-            mAlwaysOnHotwordDetector = callCreateAlwaysOnHotwordDetector();
-        }, MANAGE_HOTWORD_DETECTION));
-    }
+            AlwaysOnHotwordDetector.Callback callback = new AlwaysOnHotwordDetector.Callback() {
+                @Override
+                public void onAvailabilityChanged(int status) {
+                    Log.i(TAG, "onAvailabilityChanged(" + status + ")");
+                    mAvailabilityStatus = status;
+                    if (mAvailabilityChangeLatch != null) {
+                        mAvailabilityChangeLatch.countDown();
+                    }
+                }
 
-    /**
-     * Returns the Service's AlwaysOnHotwordDetector.
-     */
-    public AlwaysOnHotwordDetector getAlwaysOnHotwordDetector() {
-        return mAlwaysOnHotwordDetector;
+                @Override
+                public void onDetected(AlwaysOnHotwordDetector.EventPayload eventPayload) {
+                    Log.i(TAG, "onDetected");
+                }
+
+                @Override
+                public void onRejected(@NonNull HotwordRejectedResult result) {
+                    Log.i(TAG, "onRejected");
+                }
+
+                @Override
+                public void onError() {
+                    Log.i(TAG, "onError");
+                }
+
+                @Override
+                public void onRecognitionPaused() {
+                    Log.i(TAG, "onRecognitionPaused");
+                }
+
+                @Override
+                public void onRecognitionResumed() {
+                    Log.i(TAG, "onRecognitionResumed");
+                }
+
+                @Override
+                public void onHotwordDetectionServiceInitialized(int status) {
+                    Log.i(TAG, "onHotwordDetectionServiceInitialized status = " + status);
+                    if (status != HotwordDetectionService.INITIALIZATION_STATUS_SUCCESS) {
+                        return;
+                    }
+                    mInitializedStatus = status;
+                    if (mServiceTriggerLatch != null) {
+                        mServiceTriggerLatch.countDown();
+                    }
+                }
+
+                @Override
+                public void onHotwordDetectionServiceRestarted() {
+                    Log.i(TAG, "onHotwordDetectionServiceRestarted");
+                }
+            };
+            mAlwaysOnHotwordDetector = callCreateAlwaysOnHotwordDetector(callback);
+        }, MANAGE_HOTWORD_DETECTION));
     }
 
     /**
@@ -74,28 +118,6 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
      */
     public void initAvailabilityChangeLatch() {
         mAvailabilityChangeLatch = new CountDownLatch(1);
-    }
-
-    /**
-     * Wait for onHotwordDetectionServiceInitialized() and return the result.
-     */
-    public void waitHotwordDetectionServiceInitializedResult()
-            throws InterruptedException {
-        Log.d(TAG, "waitAndGetHotwordDetectionServiceInitializedResult(), latch="
-                + mServiceTriggerLatch);
-        if (mServiceTriggerLatch == null
-                || !mServiceTriggerLatch.await(WAIT_TIMEOUT_IN_MS, TimeUnit.MILLISECONDS)) {
-            mServiceTriggerLatch = null;
-            throw new AssertionError("HotwordDetectionService initialized fail.");
-        }
-        mServiceTriggerLatch = null;
-    }
-
-    /**
-     * Return the result for onHotwordDetectionServiceInitialized().
-     */
-    public int getHotwordDetectionServiceInitializedResult() {
-        return mInitializedStatus;
     }
 
     /**
@@ -116,73 +138,5 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
      */
     public int getHotwordDetectionServiceAvailabilityResult() {
         return mAvailabilityStatus;
-    }
-
-    private AlwaysOnHotwordDetector callCreateAlwaysOnHotwordDetector() {
-        Log.i(TAG, "callCreateAlwaysOnHotwordDetector()");
-        try {
-            return createAlwaysOnHotwordDetector(/* keyphrase */ "Hello Android",
-                    Locale.forLanguageTag("en-US"),
-                    Helper.createFakePersistableBundleData(),
-                    Helper.createFakeSharedMemoryData(),
-                    new AlwaysOnHotwordDetector.Callback() {
-                        @Override
-                        public void onAvailabilityChanged(int status) {
-                            Log.i(TAG, "onAvailabilityChanged(" + status + ")");
-                            mAvailabilityStatus = status;
-                            if (mAvailabilityChangeLatch != null) {
-                                mAvailabilityChangeLatch.countDown();
-                            }
-                        }
-
-                        @Override
-                        public void onDetected(AlwaysOnHotwordDetector.EventPayload eventPayload) {
-                            Log.i(TAG, "onDetected");
-                        }
-
-                        @Override
-                        public void onRejected(@NonNull HotwordRejectedResult result) {
-                            super.onRejected(result);
-                            Log.i(TAG, "onRejected");
-                        }
-
-                        @Override
-                        public void onError() {
-                            Log.i(TAG, "onError");
-                        }
-
-                        @Override
-                        public void onRecognitionPaused() {
-                            Log.i(TAG, "onRecognitionPaused");
-                        }
-
-                        @Override
-                        public void onRecognitionResumed() {
-                            Log.i(TAG, "onRecognitionResumed");
-                        }
-
-                        @Override
-                        public void onHotwordDetectionServiceInitialized(int status) {
-                            super.onHotwordDetectionServiceInitialized(status);
-                            Log.i(TAG, "onHotwordDetectionServiceInitialized status = " + status);
-                            if (status != HotwordDetectionService.INITIALIZATION_STATUS_SUCCESS) {
-                                return;
-                            }
-                            mInitializedStatus = status;
-                            if (mServiceTriggerLatch != null) {
-                                mServiceTriggerLatch.countDown();
-                            }
-                        }
-
-                        @Override
-                        public void onHotwordDetectionServiceRestarted() {
-                            super.onHotwordDetectionServiceRestarted();
-                            Log.i(TAG, "onHotwordDetectionServiceRestarted");
-                        }
-                    });
-        } catch (IllegalStateException | SecurityException e) {
-            Log.w(TAG, "callCreateAlwaysOnHotwordDetector() exception: " + e);
-        }
-        return null;
     }
 }
