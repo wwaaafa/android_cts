@@ -213,7 +213,13 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.CURRENT_GEAR,
                             VehiclePropertyIds.PARKING_BRAKE_ON,
                             VehiclePropertyIds.PARKING_BRAKE_AUTO_APPLY,
-                            VehiclePropertyIds.IGNITION_STATE)
+                            VehiclePropertyIds.IGNITION_STATE,
+                            VehiclePropertyIds.EV_BRAKE_REGENERATION_LEVEL)
+                    .build();
+    private static final ImmutableList<Integer> PERMISSION_CONTROL_CAR_POWERTRAIN_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.EV_BRAKE_REGENERATION_LEVEL)
                     .build();
     private static final ImmutableList<Integer> PERMISSION_CAR_SPEED_PROPERTIES =
             ImmutableList.<Integer>builder()
@@ -1029,6 +1035,21 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                 .verify(mCarPropertyManager);
     }
 
+    @Test
+    public void testEvBrakeRegenerationLevelIfSupported() {
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.EV_BRAKE_REGENERATION_LEVEL,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Integer.class)
+                .requireMinMaxValues()
+                .requireMinValuesToBeZero()
+                .addReadPermission(Car.PERMISSION_POWERTRAIN)
+                .addWritePermission(Car.PERMISSION_CONTROL_POWERTRAIN)
+                .build()
+                .verify(mCarPropertyManager);
+    }
     @Test
     public void testAbsActiveIfSupported() {
         VehiclePropertyVerifier.newBuilder(
@@ -4552,6 +4573,23 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     }
                 },
                 Car.PERMISSION_POWERTRAIN);
+    }
+
+    @Test
+    public void testPermissionControlCarPowertrainGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                        "%s",
+                                        VehiclePropertyIds.toString(
+                                                carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_CONTROL_CAR_POWERTRAIN_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_CONTROL_POWERTRAIN);
     }
 
     @Test
