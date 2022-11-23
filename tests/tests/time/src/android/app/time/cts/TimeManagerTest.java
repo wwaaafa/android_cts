@@ -586,19 +586,24 @@ public class TimeManagerTest {
                 assertFalse(timeZoneState.getUserShouldConfirmId());
             }
 
-            // Now turn on automatic detection.
-            boolean success = setAutoTimeZoneDetectionEnabledAndSleep(true);
-            assertTrue("Test requires being able to turn on auto detection", success);
+            // This part of the test is optional: What happens to setManualTimeZone() when automatic
+            // detection is ON can only be tested if the device supports automatic time zone
+            // detection.
+            if (capabilities.getConfigureAutoDetectionEnabledCapability() == CAPABILITY_POSSESSED) {
+                // Turn on automatic detection.
+                boolean success = setAutoTimeZoneDetectionEnabledAndSleep(true);
+                assertTrue("Test requires being able to turn on auto detection", success);
 
-            // Try to set the time zone again.
-            String testTimeZone2 = "Europe/Paris";
-            assertFalse(mTimeManager.setManualTimeZone(testTimeZone2));
+                // Try to set the time zone again.
+                String testTimeZone2 = "Europe/Paris";
+                assertFalse(mTimeManager.setManualTimeZone(testTimeZone2));
 
-            // Confirm the call failed completely and time zone state has stayed the same.
-            {
-                TimeZoneState timeZoneState = mTimeManager.getTimeZoneState();
-                assertEquals(testTimeZone1, timeZoneState.getId());
-                assertFalse(timeZoneState.getUserShouldConfirmId());
+                // Confirm the call failed completely and time zone state has stayed the same.
+                {
+                    TimeZoneState timeZoneState = mTimeManager.getTimeZoneState();
+                    assertEquals(testTimeZone1, timeZoneState.getId());
+                    assertFalse(timeZoneState.getUserShouldConfirmId());
+                }
             }
         } finally {
             // Try to return the device to its original time and config state.
