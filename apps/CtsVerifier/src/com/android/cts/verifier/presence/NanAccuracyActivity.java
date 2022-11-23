@@ -16,6 +16,7 @@
 
 package com.android.cts.verifier.presence;
 
+import android.content.pm.PackageManager;
 import android.net.wifi.aware.PeerHandle;
 import android.net.wifi.rtt.RangingResult;
 import android.os.Bundle;
@@ -91,10 +92,6 @@ public class NanAccuracyActivity extends PassFailButtons.Activity {
         setContentView(R.layout.nan_accuracy);
         setPassFailButtonClickListeners();
         getPassButton().setEnabled(false);
-        Handler handler = new Handler(Looper.getMainLooper());
-        mWifiAwarePeer = new WifiAwarePeer(this, handler);
-        mReceivedSamples = new HashMap<>();
-        mTestResult = new TestResult();
         mReferenceDeviceCheckbox = findViewById(R.id.is_reference_device);
         mStartTestButton = findViewById(R.id.start_test);
         Button stopTestButton = findViewById(R.id.stop_test);
@@ -107,6 +104,12 @@ public class NanAccuracyActivity extends PassFailButtons.Activity {
         mServiceIdInfoTextView = findViewById(R.id.service_id_info);
         mServiceIdInputEditText = findViewById(R.id.service_id_input);
         mTestDistanceRadioGroup = findViewById(R.id.test_distance_radio_group);
+        DeviceFeatureChecker.checkFeatureSupported(this, getPassButton(),
+                PackageManager.FEATURE_WIFI_AWARE);
+        Handler handler = new Handler(Looper.getMainLooper());
+        mWifiAwarePeer = new WifiAwarePeer(this, handler);
+        mReceivedSamples = new HashMap<>();
+        mTestResult = new TestResult();
         setUpActivity();
         mReferenceDeviceCheckbox.setOnCheckedChangeListener(
                 (buttonView, isChecked) -> setUpActivity());
