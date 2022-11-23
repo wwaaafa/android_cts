@@ -26,18 +26,15 @@ import android.media.TimedMetaData;
 import android.media.cts.MediaPlayerTestBase;
 import android.media.cts.Preconditions;
 import android.net.Uri;
-import android.os.Bundle;
 import android.os.Looper;
 import android.os.PowerManager;
 import android.os.SystemClock;
 import android.platform.test.annotations.AppModeFull;
-import android.test.InstrumentationTestRunner;
 import android.util.Log;
 import android.webkit.cts.CtsTestServer;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
-import com.android.compatibility.common.util.DynamicConfigDeviceSide;
 import com.android.compatibility.common.util.MediaUtils;
 import com.android.compatibility.common.util.NonMainlineTest;
 
@@ -65,32 +62,12 @@ public class StreamingMediaPlayerTest extends MediaPlayerTestBase {
 
     private static final String MODULE_NAME = "CtsMediaPlayerTestCases";
 
-    private DynamicConfigDeviceSide dynamicConfig;
-
     private CtsTestServer mServer;
-
-    private String mInputUrl;
 
     @Before
     @Override
     public void setUp() throws Throwable {
-        // if launched with InstrumentationTestRunner to pass a command line argument
-        // TODO(b/194655325#comment3): Replace the following code snippet with non-deprecated
-        // components.
-        if (getInstrumentation() instanceof InstrumentationTestRunner) {
-            InstrumentationTestRunner testRunner =
-                    (InstrumentationTestRunner)getInstrumentation();
-
-            Bundle arguments = testRunner.getArguments();
-            mInputUrl = arguments.getString("url");
-            Log.v(TAG, "setUp: arguments: " + arguments);
-            if (mInputUrl != null) {
-                Log.v(TAG, "setUp: arguments[url] " + mInputUrl);
-            }
-        }
-
         super.setUp();
-        dynamicConfig = new DynamicConfigDeviceSide(MODULE_NAME);
         mServer = new CtsTestServer(mContext);
     }
 
@@ -230,15 +207,7 @@ public class StreamingMediaPlayerTest extends MediaPlayerTestBase {
         if (!MediaUtils.checkDecoder(MediaFormat.MIMETYPE_VIDEO_AVC)) {
             return; // skip
         }
-
-        // Play stream for 60 seconds
-        if (mInputUrl != null) {
-            // if url override provided
-            playLiveAudioOnlyTest(mInputUrl, 60 * 1000);
-        } else {
-            localHlsTest("audio_only/index.m3u8", 60 * 1000, true /*isAudioOnly*/);
-        }
-
+        localHlsTest("audio_only/index.m3u8", 60 * 1000, true /*isAudioOnly*/);
     }
 
     @Test
