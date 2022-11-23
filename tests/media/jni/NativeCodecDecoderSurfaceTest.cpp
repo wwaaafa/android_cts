@@ -15,33 +15,28 @@
  */
 
 //#define LOG_NDEBUG 0
-#define LOG_TAG "NativeCodecDecoderTest"
+#define LOG_TAG "NativeCodecDecoderSurfaceTest"
 #include <log/log.h>
 
 #include "NativeCodecDecoderTestCommon.h"
 
-int registerAndroidMediaV2CtsDecoderTest(JNIEnv* env) {
+int registerAndroidMediaV2CtsDecoderSurfaceTest(JNIEnv* env) {
     const JNINativeMethod methodTable[] = {
             {"nativeTestSimpleDecode",
              "(Ljava/lang/String;Landroid/view/Surface;Ljava/lang/String;Ljava/lang/String;Ljava/"
              "lang/String;IFJ)Z",
              (void*)nativeTestSimpleDecode},
-            {"nativeTestOnlyEos", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)Z",
-             (void*)nativeTestOnlyEos},
             {"nativeTestFlush",
              "(Ljava/lang/String;Landroid/view/Surface;Ljava/lang/String;Ljava/lang/String;I)Z",
              (void*)nativeTestFlush},
-            {"nativeTestSimpleDecodeQueueCSD",
-             "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)Z",
-             (void*)nativeTestSimpleDecodeQueueCSD},
     };
-    jclass c = env->FindClass("android/mediav2/cts/CodecDecoderTest");
+    jclass c = env->FindClass("android/mediav2/cts/CodecDecoderSurfaceTest");
     return env->RegisterNatives(c, methodTable, sizeof(methodTable) / sizeof(JNINativeMethod));
 }
 
 extern "C" JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void*) {
     JNIEnv* env;
     if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) return JNI_ERR;
-    if (registerAndroidMediaV2CtsDecoderTest(env) != JNI_OK) return JNI_ERR;
+    if (registerAndroidMediaV2CtsDecoderSurfaceTest(env) != JNI_OK) return JNI_ERR;
     return JNI_VERSION_1_6;
 }
