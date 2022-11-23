@@ -167,6 +167,7 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     .add(
                             VehiclePropertyIds.FUEL_LEVEL,
                             VehiclePropertyIds.EV_BATTERY_LEVEL,
+                            VehiclePropertyIds.EV_CURRENT_BATTERY_CAPACITY,
                             VehiclePropertyIds.EV_BATTERY_INSTANTANEOUS_CHARGE_RATE,
                             VehiclePropertyIds.RANGE_REMAINING,
                             VehiclePropertyIds.FUEL_LEVEL_LOW,
@@ -1727,6 +1728,45 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             assertWithMessage(
                                             "EV_BATTERY_LEVEL Float value must not exceed "
                                                     + "INFO_EV_BATTERY_CAPACITY Float "
+                                                    + "value")
+                                    .that((Float) carPropertyValue.getValue())
+                                    .isAtMost((Float) infoEvBatteryCapacityValue.getValue());
+                        })
+                .addReadPermission(Car.PERMISSION_ENERGY)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
+    public void testEvCurrentBatteryCapacityIfSupported() {
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.EV_CURRENT_BATTERY_CAPACITY,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Float.class)
+                .setCarPropertyValueVerifier(
+                        (carPropertyConfig, carPropertyValue) -> {
+                            assertWithMessage(
+                                            "EV_CURRENT_BATTERY_CAPACITY Float value must be"
+                                                    + "greater than or equal 0")
+                                    .that((Float) carPropertyValue.getValue())
+                                    .isAtLeast(0);
+
+                            if (mCarPropertyManager.getCarPropertyConfig(
+                                            VehiclePropertyIds.INFO_EV_BATTERY_CAPACITY)
+                                    == null) {
+                                return;
+                            }
+
+                            CarPropertyValue<?> infoEvBatteryCapacityValue =
+                                    mCarPropertyManager.getProperty(
+                                            VehiclePropertyIds.INFO_EV_BATTERY_CAPACITY,
+                                            /*areaId=*/0);
+
+                            assertWithMessage(
+                                            "EV_CURRENT_BATTERY_CAPACITY Float value must not"
+                                                    + "exceed INFO_EV_BATTERY_CAPACITY Float "
                                                     + "value")
                                     .that((Float) carPropertyValue.getValue())
                                     .isAtMost((Float) infoEvBatteryCapacityValue.getValue());
