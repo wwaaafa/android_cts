@@ -572,4 +572,25 @@ public class HdmiControlManagerTest {
             }
         }
     }
+
+    @Test
+    public void testHdmiCecConfig_EarcEnabled() throws Exception {
+        // Save original value
+        int originalValue = mHdmiControlManager.getEarcEnabled();
+        if (!mHdmiControlManager.getUserCecSettings().contains(
+                HdmiControlManager.SETTING_NAME_EARC_ENABLED)) {
+            return;
+        }
+        try {
+            for (int value : mHdmiControlManager.getAllowedCecSettingIntValues(
+                    HdmiControlManager.SETTING_NAME_EARC_ENABLED)) {
+                mHdmiControlManager.setEarcEnabled(value);
+                assertThat(mHdmiControlManager.getEarcEnabled()).isEqualTo(value);
+            }
+        } finally {
+            // Restore original value
+            mHdmiControlManager.setEarcEnabled(originalValue);
+            assertThat(mHdmiControlManager.getEarcEnabled()).isEqualTo(originalValue);
+        }
+    }
 }
