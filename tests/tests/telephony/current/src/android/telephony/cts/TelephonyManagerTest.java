@@ -39,7 +39,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
 import android.Manifest.permission;
@@ -5992,33 +5991,41 @@ public class TelephonyManagerTest {
     }
 
     /**
-     * verify the valid response of the getCarrierRestrictionStatus.
+     * Verifies that {@link TelephonyManager#getImsPrivateUserIdentity()} does not throw any
+     * exception when called and has the correct permissions.
      */
+    @Ignore("TelephonyManager#getImsPrivateUserIdentity()" + " is hidden. Internal use only.")
     @Test
-    public void getCarrierRestrictionStatus_ReadPhoneState() throws InterruptedException {
-        final int TIMEOUT_FOR_MODEM_QUERY = 5;
-        if (!mPackageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {
-            Log.d(TAG, "skipping test on device without FEATURE_TELEPHONY present");
-            return;
-        }
-        Set<Integer> validCarrierRestrictionStatus = new HashSet<Integer>();
-        validCarrierRestrictionStatus.add(TelephonyManager.CARRIER_RESTRICTION_STATUS_UNKNOWN);
-        validCarrierRestrictionStatus.add(
-                TelephonyManager.CARRIER_RESTRICTION_STATUS_NOT_RESTRICTED);
-        validCarrierRestrictionStatus.add(TelephonyManager.CARRIER_RESTRICTION_STATUS_RESTRICTED);
-        validCarrierRestrictionStatus.add(
-                TelephonyManager.CARRIER_RESTRICTION_STATUS_RESTRICTED_TO_CALLER);
-        LinkedBlockingQueue<Integer> carrierRestrictionStatusResult = new LinkedBlockingQueue<>(1);
-
+    public void getImsPrivateUserIdentity() {
+        assumeTrue(hasFeature(PackageManager.FEATURE_TELEPHONY_SUBSCRIPTION));
+        // make sure not to face any permission problem while calling the API
         try {
-            ShellIdentityUtils.invokeMethodWithShellPermissionsNoReturn(mTelephonyManager,
-                    tm -> tm.getCarrierRestrictionStatus(getContext().getMainExecutor(),
-                            carrierRestrictionStatusResult::offer), permission.READ_PHONE_STATE);
-        } catch (SecurityException ex) {
-            assumeFalse(ex.getMessage().contains("Not an authorized caller"));
+            setAppOpsPermissionAllowed(true, OPSTR_USE_ICC_AUTH_WITH_DEVICE_IDENTIFIER);
+            mTelephonyManager.getImsPrivateUserIdentity();
+        } catch (IllegalStateException e) {
+            // expected in case SIM do not support ISIM
+        } catch (SecurityException secExp) {
+            fail();
+        } finally {
+            setAppOpsPermissionAllowed(false, OPSTR_USE_ICC_AUTH_WITH_DEVICE_IDENTIFIER);
         }
-        assertTrue(validCarrierRestrictionStatus.contains(
-                carrierRestrictionStatusResult.poll(TIMEOUT_FOR_MODEM_QUERY,
-                        TimeUnit.SECONDS)));
+    }
+
+    /**
+     * Verifies that {@link TelephonyManager#getImsPrivateUserIdentity()} does throw
+     * SecurityException when required permissions are not granted.
+     */
+    @Ignore("TelephonyManager#getImsPrivateUserIdentity()" + " is hidden. Internal use only.")
+    @Test
+    public void getImsPrivateUserIdentity_NoPermissionGranted() {
+        assumeTrue(hasFeature(PackageManager.FEATURE_TELEPHONY_SUBSCRIPTION));
+        try {
+            mTelephonyManager.getImsPrivateUserIdentity();
+            fail(); // if no SecurityException then it fails()
+        } catch (IllegalStateException e) {
+            // expected in case SIM do not support ISIM
+        } catch (SecurityException secExp) {
+            // expected as API has no permission to fetch ISIM
+        }
     }
 }
