@@ -141,7 +141,7 @@ public final class CrossProfileSharingTest {
 
     @Test
     @Postsubmit(reason = "new test")
-    @EnsureHasWorkProfile(forUser = PRIMARY_USER)
+    @EnsureHasWorkProfile
     public void sharingFromPersonalToWork_disallowShareIntoProfile_restrictionApplied() {
         ResolveInfo personalToWorkForwarder = getPersonalToWorkForwarder();
 
@@ -160,7 +160,7 @@ public final class CrossProfileSharingTest {
 
     @Test
     @Postsubmit(reason = "new test")
-    @EnsureHasWorkProfile(forUser = PRIMARY_USER)
+    @EnsureHasWorkProfile
     public void sharingFromPersonalToWork_disallowShareIntoProfile_restrictionRemoved() {
         try (TestAppInstance testApp = sTestApp.install(sDeviceState.workProfile())) {
             ResolveInfo personalToWorkForwarder = getPersonalToWorkForwarder();

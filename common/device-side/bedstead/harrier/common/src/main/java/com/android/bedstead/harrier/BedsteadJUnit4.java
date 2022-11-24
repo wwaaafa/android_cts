@@ -19,6 +19,8 @@ package com.android.bedstead.harrier;
 import com.android.bedstead.harrier.annotations.AnnotationRunPrecedence;
 import com.android.bedstead.harrier.annotations.CrossUserTest;
 import com.android.bedstead.harrier.annotations.EnsureDoesNotHavePermission;
+import com.android.bedstead.harrier.annotations.EnsureFeatureFlagEnabled;
+import com.android.bedstead.harrier.annotations.EnsureHasAdditionalUser;
 import com.android.bedstead.harrier.annotations.EnsureHasPermission;
 import com.android.bedstead.harrier.annotations.EnsureHasSecondaryUser;
 import com.android.bedstead.harrier.annotations.EnsureHasTvProfile;
@@ -27,11 +29,15 @@ import com.android.bedstead.harrier.annotations.EnumTestParameter;
 import com.android.bedstead.harrier.annotations.IntTestParameter;
 import com.android.bedstead.harrier.annotations.OtherUser;
 import com.android.bedstead.harrier.annotations.PermissionTest;
+import com.android.bedstead.harrier.annotations.RequireNotHeadlessSystemUserMode;
+import com.android.bedstead.harrier.annotations.RequireRunOnAdditionalUser;
+import com.android.bedstead.harrier.annotations.RequireRunOnInitialUser;
 import com.android.bedstead.harrier.annotations.RequireRunOnPrimaryUser;
 import com.android.bedstead.harrier.annotations.RequireRunOnSecondaryUser;
 import com.android.bedstead.harrier.annotations.RequireRunOnSystemUser;
 import com.android.bedstead.harrier.annotations.RequireRunOnTvProfile;
 import com.android.bedstead.harrier.annotations.RequireRunOnWorkProfile;
+import com.android.bedstead.harrier.annotations.RunWithFeatureFlagEnabledAndDisabled;
 import com.android.bedstead.harrier.annotations.StringTestParameter;
 import com.android.bedstead.harrier.annotations.UserPair;
 import com.android.bedstead.harrier.annotations.UserTest;
@@ -43,16 +49,22 @@ import com.android.bedstead.harrier.annotations.enterprise.PolicyDoesNotApplyTes
 import com.android.bedstead.harrier.annotations.meta.ParameterizedAnnotation;
 import com.android.bedstead.harrier.annotations.meta.RepeatingAnnotation;
 import com.android.bedstead.harrier.annotations.parameterized.IncludeNone;
+import com.android.bedstead.harrier.exceptions.RestartTestException;
 import com.android.bedstead.nene.annotations.Nullable;
 import com.android.bedstead.nene.exceptions.NeneException;
+import com.android.bedstead.nene.types.OptionalBoolean;
 
 import com.google.auto.value.AutoAnnotation;
+import com.google.common.collect.ImmutableMap;
 
 import org.junit.Test;
 import org.junit.rules.TestRule;
+import org.junit.runner.Description;
+import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
+import org.junit.runners.model.Statement;
 import org.junit.runners.model.TestClass;
 
 import java.lang.annotation.Annotation;
@@ -67,6 +79,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -74,6 +87,8 @@ import java.util.stream.Stream;
  * A JUnit test runner for use with Bedstead.
  */
 public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
+
+    private static final String LOG_TAG = "BedsteadJUnit4";
 
     private static final String BEDSTEAD_PACKAGE_NAME = "com.android.bedstead";
 
@@ -92,14 +107,28 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
         return new AutoAnnotation_BedsteadJUnit4_requireRunOnSystemUser();
     }
 
-    @AutoAnnotation
     private static RequireRunOnPrimaryUser requireRunOnPrimaryUser() {
-        return new AutoAnnotation_BedsteadJUnit4_requireRunOnPrimaryUser();
+        return requireRunOnPrimaryUser(OptionalBoolean.ANY);
     }
 
     @AutoAnnotation
+    private static RequireRunOnPrimaryUser requireRunOnPrimaryUser(OptionalBoolean switchedToUser) {
+        return new AutoAnnotation_BedsteadJUnit4_requireRunOnPrimaryUser(switchedToUser);
+    }
+
     private static RequireRunOnSecondaryUser requireRunOnSecondaryUser() {
-        return new AutoAnnotation_BedsteadJUnit4_requireRunOnSecondaryUser();
+        return requireRunOnSecondaryUser(OptionalBoolean.ANY);
+    }
+
+    @AutoAnnotation
+    private static RequireRunOnSecondaryUser requireRunOnSecondaryUser(
+            OptionalBoolean switchedToUser) {
+        return new AutoAnnotation_BedsteadJUnit4_requireRunOnSecondaryUser(switchedToUser);
+    }
+
+    @AutoAnnotation
+    private static RequireRunOnAdditionalUser requireRunOnAdditionalUser() {
+        return new AutoAnnotation_BedsteadJUnit4_requireRunOnAdditionalUser();
     }
 
     @AutoAnnotation
@@ -113,8 +142,22 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
     }
 
     @AutoAnnotation
+    static RequireRunOnInitialUser requireRunOnInitialUser(OptionalBoolean switchedToUser) {
+        return new AutoAnnotation_BedsteadJUnit4_requireRunOnInitialUser(switchedToUser);
+    }
+
+    static RequireRunOnInitialUser requireRunOnInitialUser() {
+        return requireRunOnInitialUser(OptionalBoolean.TRUE);
+    }
+
+    @AutoAnnotation
     private static EnsureHasSecondaryUser ensureHasSecondaryUser() {
         return new AutoAnnotation_BedsteadJUnit4_ensureHasSecondaryUser();
+    }
+
+    @AutoAnnotation
+    private static EnsureHasAdditionalUser ensureHasAdditionalUser() {
+        return new AutoAnnotation_BedsteadJUnit4_ensureHasAdditionalUser();
     }
 
     @AutoAnnotation
@@ -130,6 +173,22 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
     @AutoAnnotation
     private static OtherUser otherUser(UserType value) {
         return new AutoAnnotation_BedsteadJUnit4_otherUser(value);
+    }
+
+    @AutoAnnotation
+    private static RequireNotHeadlessSystemUserMode requireNotHeadlessSystemUserMode(String reason) {
+        return new AutoAnnotation_BedsteadJUnit4_requireNotHeadlessSystemUserMode(reason);
+    }
+
+    @AutoAnnotation
+    private static EnsureFeatureFlagEnabled ensureFeatureFlagEnabled(String namespace, String key) {
+        return new AutoAnnotation_BedsteadJUnit4_ensureFeatureFlagEnabled(namespace, key);
+    }
+
+    @AutoAnnotation
+    private static EnsureFeatureFlagEnabled ensureFeatureFlagNotEnabled(
+            String namespace, String key) {
+        return new AutoAnnotation_BedsteadJUnit4_ensureFeatureFlagNotEnabled(namespace, key);
     }
 
     // These are annotations which are not included indirectly
@@ -174,18 +233,29 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
     }
 
     /**
-     * Resolve annotations recursively.
+     * Resolves annotations recursively.
      *
      * @param parameterizedAnnotation The class of the parameterized annotation to expand, if any
      */
-    public static void resolveRecursiveAnnotations(List<Annotation> annotations,
+    public void resolveRecursiveAnnotations(List<Annotation> annotations,
+            @Nullable Annotation parameterizedAnnotation) {
+        resolveRecursiveAnnotations(getHarrierRule(), annotations, parameterizedAnnotation);
+    }
+
+    /**
+     * Resolves annotations recursively.
+     *
+     * @param parameterizedAnnotation The class of the parameterized annotation to expand, if any
+     */
+    public static void resolveRecursiveAnnotations(HarrierRule harrierRule,
+            List<Annotation> annotations,
             @Nullable Annotation parameterizedAnnotation) {
         int index = 0;
         while (index < annotations.size()) {
             Annotation annotation = annotations.get(index);
             annotations.remove(index);
             List<Annotation> replacementAnnotations =
-                    getReplacementAnnotations(annotation, parameterizedAnnotation);
+                    getReplacementAnnotations(harrierRule, annotation, parameterizedAnnotation);
             replacementAnnotations.sort(BedsteadJUnit4::annotationSorter);
             annotations.addAll(index, replacementAnnotations);
             index += replacementAnnotations.size();
@@ -215,8 +285,62 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
         return annotation.annotationType().getAnnotation(RepeatingAnnotation.class) != null;
     }
 
-    private static List<Annotation> getReplacementAnnotations(Annotation annotation,
+    private HarrierRule mHarrierRule;
+
+    private static final ImmutableMap<
+                    Class<? extends Annotation>,
+                    BiFunction<HarrierRule, Annotation, Stream<Annotation>>>
+            ANNOTATION_REPLACEMENTS =
+                    ImmutableMap.of(
+                            RequireRunOnInitialUser.class,
+                            (harrierRule, a) -> {
+                                RequireRunOnInitialUser requireRunOnInitialUserAnnotation =
+                                        (RequireRunOnInitialUser) a;
+
+                                if (harrierRule.isHeadlessSystemUserMode()) {
+                                    return Stream.of(
+                                            a,
+                                            ensureHasSecondaryUser(),
+                                            requireRunOnSecondaryUser(
+                                                    requireRunOnInitialUserAnnotation
+                                                            .switchedToUser()));
+                                } else {
+                                    return Stream.of(
+                                            a,
+                                            requireRunOnPrimaryUser(
+                                                    requireRunOnInitialUserAnnotation
+                                                            .switchedToUser()));
+                                }
+                            },
+                            RequireRunOnAdditionalUser.class,
+                            (harrierRule, a) -> {
+                                RequireRunOnAdditionalUser requireRunOnAdditionalUserAnnotation =
+                                        (RequireRunOnAdditionalUser) a;
+                                if (harrierRule.isHeadlessSystemUserMode()) {
+                                    return Stream.of(ensureHasSecondaryUser(), a);
+                                } else {
+                                    return Stream.of(
+                                            a,
+                                            requireRunOnSecondaryUser(
+                                                    requireRunOnAdditionalUserAnnotation
+                                                            .switchedToUser()));
+                                }
+                            });
+
+    static List<Annotation> getReplacementAnnotations(
+            HarrierRule harrierRule,
+            Annotation annotation,
             @Nullable Annotation parameterizedAnnotation) {
+        BiFunction<HarrierRule, Annotation, Stream<Annotation>> specialReplaceFunction =
+                ANNOTATION_REPLACEMENTS.get(annotation.annotationType());
+
+        if (specialReplaceFunction != null) {
+            List<Annotation> replacement =
+                    specialReplaceFunction.apply(harrierRule, annotation)
+                            .collect(Collectors.toList());
+            return replacement;
+        }
+
         List<Annotation> replacementAnnotations = new ArrayList<>();
 
         if (isRepeatingAnnotation(annotation)) {
@@ -241,7 +365,7 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
             }
 
             replacementAnnotations.addAll(getReplacementAnnotations(
-                    indirectAnnotation, parameterizedAnnotation));
+                    harrierRule, indirectAnnotation, parameterizedAnnotation));
         }
 
         if (!(annotation instanceof DynamicParameterizedAnnotation)) {
@@ -310,7 +434,7 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
 
             if (parameterizedAnnotations.isEmpty()) {
                 // Unparameterized, just add the original
-                modifiedTests.add(new BedsteadFrameworkMethod(m.getMethod()));
+                modifiedTests.add(new BedsteadFrameworkMethod(this, m.getMethod()));
             }
 
             for (Annotation annotation : parameterizedAnnotations) {
@@ -319,7 +443,7 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
                     continue;
                 }
                 modifiedTests.add(
-                        new BedsteadFrameworkMethod(m.getMethod(), annotation));
+                        new BedsteadFrameworkMethod(this, m.getMethod(), annotation));
             }
         }
 
@@ -330,14 +454,14 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
         return modifiedTests;
     }
 
-    private static List<FrameworkMethod> generateGeneralParameterisationMethods(
+    private List<FrameworkMethod> generateGeneralParameterisationMethods(
             List<FrameworkMethod> modifiedTests) {
         return modifiedTests.stream()
-                .flatMap(BedsteadJUnit4::generateGeneralParameterisationMethods)
+                .flatMap(this::generateGeneralParameterisationMethods)
                 .collect(Collectors.toList());
     }
 
-    private static Stream<FrameworkMethod> generateGeneralParameterisationMethods(
+    private Stream<FrameworkMethod> generateGeneralParameterisationMethods(
             FrameworkMethod method) {
         Stream<FrameworkMethod> expandedMethods = Stream.of(method);
         if (method.getMethod().getParameterCount() == 0) {
@@ -479,6 +603,7 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
         parseEnterpriseAnnotations(annotations);
         parsePermissionAnnotations(annotations);
         parseUserAnnotations(annotations);
+        parseFlagAnnotations(annotations);
 
         for (Annotation annotation : annotations) {
             if (isParameterizedAnnotation(annotation)) {
@@ -487,6 +612,63 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
         }
 
         return parameterizedAnnotations;
+    }
+
+    /**
+     * Create a new {@link EnterprisePolicy} by merging a group of policies.
+     *
+     * <p>Each policy will have flags validated.
+     *
+     * <p>If policies support different delegation scopes, then they cannot be merged and an
+     * exception will be thrown. These policies require separate tests.
+     */
+    private static EnterprisePolicy mergePolicies(Class<?>[] policies) {
+        if (policies.length == 0) {
+            throw new IllegalStateException("Cannot merge 0 policies");
+        } else if (policies.length == 1) {
+            // Nothing to merge, just return the only one
+            return policies[0].getAnnotation(EnterprisePolicy.class);
+        }
+
+        Set<Integer> dpc = new HashSet<>();
+        Set<EnterprisePolicy.Permission> permissions = new HashSet<>();
+        Set<EnterprisePolicy.AppOp> appOps = new HashSet<>();
+        Set<String> delegatedScopes = new HashSet<>();
+
+        for (Class<?> policy : policies) {
+            EnterprisePolicy enterprisePolicy = policy.getAnnotation(EnterprisePolicy.class);
+            Policy.validateFlags(policy.getName(), enterprisePolicy.dpc());
+
+            for (int dpcPolicy : enterprisePolicy.dpc()) {
+                dpc.add(dpcPolicy);
+            }
+
+            for (EnterprisePolicy.Permission permission : enterprisePolicy.permissions()) {
+                permissions.add(permission);
+            }
+
+            for (EnterprisePolicy.AppOp appOp : enterprisePolicy.appOps()) {
+                appOps.add(appOp);
+            }
+
+            if (enterprisePolicy.delegatedScopes().length > 0) {
+                Set<String> newDelegatedScopes = Set.of(enterprisePolicy.delegatedScopes());
+                if (!delegatedScopes.isEmpty()
+                        && !delegatedScopes.containsAll(newDelegatedScopes)) {
+                    throw new IllegalStateException("Cannot merge multiple policies which define "
+                            + "different delegated scopes. You should separate this into multiple "
+                            + "tests.");
+                }
+
+                delegatedScopes = newDelegatedScopes;
+            }
+        }
+
+        return Policy.enterprisePolicy(dpc.stream().mapToInt(Integer::intValue).toArray(),
+                permissions.toArray(new EnterprisePolicy.Permission[0]),
+                appOps.toArray(new EnterprisePolicy.AppOp[0]),
+                delegatedScopes.toArray(new String[0]));
+
     }
 
     /**
@@ -500,36 +682,30 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
             Annotation annotation = annotations.get(index);
             if (annotation instanceof PolicyAppliesTest) {
                 annotations.remove(index);
-                Class<?> policy = ((PolicyAppliesTest) annotation).policy();
 
-                EnterprisePolicy enterprisePolicy =
-                        policy.getAnnotation(EnterprisePolicy.class);
                 List<Annotation> replacementAnnotations =
-                        Policy.policyAppliesStates(policy.getName(), enterprisePolicy);
+                        Policy.policyAppliesStates(
+                                mergePolicies(((PolicyAppliesTest) annotation).policy()));
                 replacementAnnotations.sort(BedsteadJUnit4::annotationSorter);
 
                 annotations.addAll(index, replacementAnnotations);
                 index += replacementAnnotations.size();
             } else if (annotation instanceof PolicyDoesNotApplyTest) {
                 annotations.remove(index);
-                Class<?> policy = ((PolicyDoesNotApplyTest) annotation).policy();
 
-                EnterprisePolicy enterprisePolicy =
-                        policy.getAnnotation(EnterprisePolicy.class);
                 List<Annotation> replacementAnnotations =
-                        Policy.policyDoesNotApplyStates(policy.getName(), enterprisePolicy);
+                        Policy.policyDoesNotApplyStates(
+                                mergePolicies(((PolicyDoesNotApplyTest) annotation).policy()));
                 replacementAnnotations.sort(BedsteadJUnit4::annotationSorter);
 
                 annotations.addAll(index, replacementAnnotations);
                 index += replacementAnnotations.size();
             } else if (annotation instanceof CannotSetPolicyTest) {
                 annotations.remove(index);
-                Class<?> policy = ((CannotSetPolicyTest) annotation).policy();
 
-                EnterprisePolicy enterprisePolicy =
-                        policy.getAnnotation(EnterprisePolicy.class);
                 List<Annotation> replacementAnnotations =
-                        Policy.cannotSetPolicyStates(policy.getName(), enterprisePolicy,
+                        Policy.cannotSetPolicyStates(
+                                mergePolicies(((CannotSetPolicyTest) annotation).policy()),
                                 ((CannotSetPolicyTest) annotation).includeDeviceAdminStates(),
                                 ((CannotSetPolicyTest) annotation).includeNonDeviceAdminStates());
                 replacementAnnotations.sort(BedsteadJUnit4::annotationSorter);
@@ -538,14 +714,12 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
                 index += replacementAnnotations.size();
             } else if (annotation instanceof CanSetPolicyTest) {
                 annotations.remove(index);
-                Class<?> policy = ((CanSetPolicyTest) annotation).policy();
                 boolean singleTestOnly = ((CanSetPolicyTest) annotation).singleTestOnly();
 
-                EnterprisePolicy enterprisePolicy =
-                        policy.getAnnotation(EnterprisePolicy.class);
                 List<Annotation> replacementAnnotations =
                         Policy.canSetPolicyStates(
-                                policy.getName(), enterprisePolicy, singleTestOnly);
+                                mergePolicies(((CanSetPolicyTest) annotation).policy()),
+                                singleTestOnly);
                 replacementAnnotations.sort(BedsteadJUnit4::annotationSorter);
 
                 annotations.addAll(index, replacementAnnotations);
@@ -675,10 +849,56 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
         return replacementAnnotations;
     }
 
+    /**
+     * Parse @RunWithFeatureFlagEnabledAndDisabled annotations.
+     *
+     * <p>To be used before general annotation processing.
+     */
+    static void parseFlagAnnotations(List<Annotation> annotations) {
+        int index = 0;
+        while (index < annotations.size()) {
+            Annotation annotation = annotations.get(index);
+            if (annotation instanceof RunWithFeatureFlagEnabledAndDisabled) {
+                annotations.remove(index);
+
+                RunWithFeatureFlagEnabledAndDisabled a =
+                        ((RunWithFeatureFlagEnabledAndDisabled) annotation);
+
+                List<Annotation> replacementAnnotations = generateFeatureFlagAnnotations(
+                        a.namespace(), a.key());
+                replacementAnnotations.sort(BedsteadJUnit4::annotationSorter);
+
+                annotations.addAll(index, replacementAnnotations);
+                index += replacementAnnotations.size();
+            } else {
+                index++;
+            }
+        }
+    }
+
+    private static List<Annotation> generateFeatureFlagAnnotations(String namespace, String key) {
+        List<Annotation> replacementAnnotations = new ArrayList<>();
+
+        replacementAnnotations.add(
+                new DynamicParameterizedAnnotation(namespace + "_" + key + "_true",
+                        new Annotation[]{ensureFeatureFlagEnabled(namespace, key)}));
+        replacementAnnotations.add(
+                new DynamicParameterizedAnnotation(namespace + "_" + key + "_false",
+                        new Annotation[]{ensureFeatureFlagNotEnabled(namespace, key)}));
+
+        return replacementAnnotations;
+    }
+
     private static Annotation getRunOnAnnotation(UserType userType, String annotationName) {
         switch (userType) {
             case SYSTEM_USER:
                 return requireRunOnSystemUser();
+            case CURRENT_USER:
+                return null; // No requirement, run on current user
+            case INITIAL_USER:
+                return requireRunOnInitialUser();
+            case ADDITIONAL_USER:
+                return requireRunOnAdditionalUser();
             case PRIMARY_USER:
                 return requireRunOnPrimaryUser();
             case SECONDARY_USER:
@@ -697,8 +917,15 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
         switch (userType) {
             case SYSTEM_USER:
                 return null; // We always have a system user
+            case CURRENT_USER:
+                return null; // We always have a current user
+            case INITIAL_USER:
+                return null; // We always have an initial user
+            case ADDITIONAL_USER:
+                return ensureHasAdditionalUser();
             case PRIMARY_USER:
-                return null; // We assume we always have a primary user (this may change)
+                return requireNotHeadlessSystemUserMode(
+                        "Headless System User Mode Devices do not have a primary user");
             case SECONDARY_USER:
                 return ensureHasSecondaryUser();
             case WORK_PROFILE:
@@ -711,19 +938,42 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
         }
     }
 
+    HarrierRule getHarrierRule() {
+        if (mHarrierRule == null) {
+            classRules();
+        }
+        return mHarrierRule;
+    }
+
     @Override
     protected List<TestRule> classRules() {
         List<TestRule> rules = super.classRules();
 
         for (TestRule rule : rules) {
             if (rule instanceof HarrierRule) {
-                HarrierRule harrierRule = (HarrierRule) rule;
-
-                harrierRule.setSkipTestTeardown(true);
-                harrierRule.setUsingBedsteadJUnit4(true);
-
+                mHarrierRule = (HarrierRule) rule;
                 break;
             }
+        }
+
+        if (mHarrierRule == null) {
+            try {
+                mHarrierRule =
+                        (HarrierRule)
+                                Class.forName("com.android.bedstead.harrier.DeviceState")
+                                        .newInstance();
+                rules = new ArrayList<>(rules);
+                rules.add(mHarrierRule);
+            } catch (ClassNotFoundException e) {
+                // Must be running on the host - for now we don't add anything
+            } catch (InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException("Error initialising Harrier Rule", e);
+            }
+        }
+
+        if (mHarrierRule != null) {
+            mHarrierRule.setSkipTestTeardown(true);
+            mHarrierRule.setUsingBedsteadJUnit4(true);
         }
 
         return rules;
@@ -757,5 +1007,28 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
     @Override
     protected void validateTestMethods(List<Throwable> errors) {
         // We do allow arguments - they will fail validation later on if not properly annotated
+    }
+
+    @Override
+    protected void runChild(final FrameworkMethod method, RunNotifier notifier) {
+        Description description = describeChild(method);
+        if (isIgnored(method)) {
+            notifier.fireTestIgnored(description);
+        } else {
+            Statement statement = new Statement() {
+                @Override
+                public void evaluate() throws Throwable {
+                    while (true) {
+                        try {
+                            methodBlock(method).evaluate();
+                            return;
+                        } catch (RestartTestException e) {
+                            System.out.println(LOG_TAG + ": Restarting test(" + e.toString() + ")");
+                        }
+                    }
+                }
+            };
+            runLeaf(statement, description, notifier);
+        }
     }
 }

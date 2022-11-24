@@ -16,18 +16,37 @@
 
 package com.android.bedstead.harrier.annotations;
 
+import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.FIRST;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation to indicate that a test requires multi-user support.
+ * Mark that a test requires multi-user support.
  *
- * <p>This can be enforced by using {@code DeviceState}.
+ * <p>Your test configuration may be configured so that this test is only run on a device with
+ * multi-user support. Otherwise, you can use {@code DeviceState} to ensure that the device enters
+ * the correct state for the method.
  */
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 //@Experimental
 public @interface RequireMultiUserSupport {
+
+    /** Behaviour if the device does not support multiple users */
+    FailureMode failureMode() default FailureMode.SKIP;
+
+    /**
+     * Weight sets the order that annotations will be resolved.
+     *
+     * <p>Annotations with a lower weight will be resolved before annotations with a higher weight.
+     *
+     * <p>If there is an order requirement between annotations, ensure that the weight of the
+     * annotation which must be resolved first is lower than the one which must be resolved later.
+     *
+     * <p>Weight can be set to a {@link AnnotationRunPrecedence} constant, or to any {@link int}.
+     */
+    int weight() default FIRST;
 }

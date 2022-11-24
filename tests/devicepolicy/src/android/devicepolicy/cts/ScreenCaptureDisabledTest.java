@@ -20,11 +20,14 @@ import static com.android.bedstead.metricsrecorder.truth.MetricQueryBuilderSubje
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.testng.Assert.assertThrows;
+
 import android.app.UiAutomation;
 import android.app.admin.DevicePolicyManager;
 import android.app.admin.RemoteDevicePolicyManager;
 import android.content.ComponentName;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.stats.devicepolicy.EventId;
 
 import androidx.test.InstrumentationRegistry;
@@ -34,8 +37,8 @@ import com.android.bedstead.harrier.DeviceState;
 import com.android.bedstead.harrier.annotations.EnsureScreenIsOn;
 import com.android.bedstead.harrier.annotations.EnsureUnlocked;
 import com.android.bedstead.harrier.annotations.Postsubmit;
-import com.android.bedstead.harrier.annotations.SlowApiTest;
 import com.android.bedstead.harrier.annotations.enterprise.CanSetPolicyTest;
+import com.android.bedstead.harrier.annotations.enterprise.CannotSetPolicyTest;
 import com.android.bedstead.harrier.annotations.enterprise.PolicyAppliesTest;
 import com.android.bedstead.harrier.annotations.enterprise.PolicyDoesNotApplyTest;
 import com.android.bedstead.harrier.policies.ScreenCaptureDisabled;
@@ -98,6 +101,13 @@ public final class ScreenCaptureDisabledTest {
         assertThat(mDevicePolicyManager.getScreenCaptureDisabled(mAdmin)).isFalse();
     }
 
+    @CannotSetPolicyTest(policy = ScreenCaptureDisabled.class, includeNonDeviceAdminStates = false)
+    @Postsubmit(reason = "new test")
+    public void setScreenCaptureDisabled_true_throwsSecurityException() {
+        assertThrows(SecurityException.class,
+                () -> mDevicePolicyManager.setScreenCaptureDisabled(mAdmin, false));
+    }
+
     @PolicyAppliesTest(policy = ScreenCaptureDisabled.class)
     @Postsubmit(reason = "new test")
     public void setScreenCaptureDisabled_true_works() {
@@ -126,31 +136,30 @@ public final class ScreenCaptureDisabledTest {
     @Postsubmit(reason = "new test")
     @EnsureScreenIsOn
     @EnsureUnlocked
-    public void setScreenCaptureDisabled_true_screenCaptureWorks() {
+    public void setScreenCaptureDisabled_true_screenCaptureNoRedactionOrNull() {
         mDevicePolicyManager.setScreenCaptureDisabled(mAdmin, true);
 
-        assertThat(takeScreenshotExpectingSuccess()).isNotNull();
-    }
-
-    @PolicyAppliesTest(policy = ScreenCaptureDisabled.class)
-    @Postsubmit(reason = "new test")
-    @SlowApiTest("Screenshot policy can take minutes to propagate")
-    @EnsureScreenIsOn
-    @EnsureUnlocked
-    public void setScreenCaptureDisabled_true_screenCaptureFails() {
-        mDevicePolicyManager.setScreenCaptureDisabled(mAdmin, true);
-
-        assertThat(takeScreenshotExpectingFailure()).isNull();
+        assertThat(takeScreenshotExpectingNoRedactionOrNull()).isFalse();
     }
 
     @PolicyAppliesTest(policy = ScreenCaptureDisabled.class)
     @Postsubmit(reason = "new test")
     @EnsureScreenIsOn
     @EnsureUnlocked
-    public void setScreenCaptureDisabled_false_screenCaptureWorks() {
+    public void setScreenCaptureDisabled_true_screenCaptureRedactedOrNull() {
+        mDevicePolicyManager.setScreenCaptureDisabled(mAdmin, true);
+
+        assertThat(takeScreenshotExpectingRedactionOrNull()).isTrue();
+    }
+
+    @PolicyAppliesTest(policy = ScreenCaptureDisabled.class)
+    @Postsubmit(reason = "new test")
+    @EnsureScreenIsOn
+    @EnsureUnlocked
+    public void setScreenCaptureDisabled_false_screenCaptureNoRedactionOrNull() {
         mDevicePolicyManager.setScreenCaptureDisabled(mAdmin, false);
 
-        assertThat(takeScreenshotExpectingSuccess()).isNotNull();
+        assertThat(takeScreenshotExpectingNoRedactionOrNull()).isFalse();
     }
 
     @CanSetPolicyTest(policy = ScreenCaptureDisabled.class)
@@ -179,22 +188,48 @@ public final class ScreenCaptureDisabledTest {
         }
     }
 
-    private Bitmap takeScreenshotExpectingFailure() {
+    private boolean takeScreenshotExpectingRedactionOrNull() {
         try (TestAppInstance testApp = sTestApp.install()) {
+            // We show an activity on the current user, which should be redacted if the screen
+            // capture disabled policy is applying to this user.
             testApp.activities().any().start();
-            return Poll.forValue(mUiAutomation::takeScreenshot)
-                    .timeout(Duration.ofMinutes(5))
-                    .toBeNull()
-                    .await();
+            return Poll.forValue(
+                    () -> checkScreenshotIsRedactedOrNull(mUiAutomation.takeScreenshot())).timeout(
+                    Duration.ofMinutes(5)).toBeEqualTo(true).await();
         }
     }
 
-    private Bitmap takeScreenshotExpectingSuccess() {
+    private boolean takeScreenshotExpectingNoRedactionOrNull() {
         try (TestAppInstance testApp = sTestApp.install()) {
+            // We show an activity on the current user, which should be redacted if the screen
+            // capture disabled policy is applying to this user.
             testApp.activities().any().start();
-            return Poll.forValue(mUiAutomation::takeScreenshot)
-                    .toNotBeNull()
-                    .await();
+            return Poll.forValue(
+                    () -> checkScreenshotIsRedactedOrNull(mUiAutomation.takeScreenshot())).timeout(
+                    Duration.ofMinutes(5)).toBeEqualTo(false).await();
         }
+    }
+
+    private boolean checkScreenshotIsRedactedOrNull(Bitmap screenshot) {
+        if (screenshot == null) {
+            return true;
+        }
+        int width = screenshot.getWidth();
+        int height = screenshot.getHeight();
+
+        // Getting pixels of only the middle part(from y  = height/4 to 3/4(height)) of the
+        // screenshot to check(screenshot is redacted) for only the middle part of the screen,
+        // as there could be notifications in the top part and white line(navigation bar) at bottom
+        // which are included in the screenshot and are not redacted(black). It's not perfect, but
+        // seems best option to avoid any flakiness at this point.
+        int[] pixels = new int[width * (height / 2)];
+        screenshot.getPixels(pixels, 0, width, 0, height / 4, width, height / 2);
+
+        for (int pixel : pixels) {
+            if (!(pixel == Color.BLACK)) {
+                return false;
+            }
+        }
+        return true;
     }
 }
