@@ -408,6 +408,14 @@ public class TestAppInstanceTest {
     }
 
     @Test
+    public void notificationManager_returnsUsableInstance() {
+        try (TestAppInstance testAppInstance = sTestApp.install();
+             PermissionContext p = testAppInstance.permissions().withPermission(BLUETOOTH_CONNECT)) {
+            testAppInstance.notificationManager().areNotificationsEnabled();
+        }
+    }
+
+    @Test
     public void bluetoothManager_getAdapter_returnsUsableInstance() {
         try (TestAppInstance testAppInstance = sTestApp.install()) {
             // No exception
@@ -481,6 +489,16 @@ public class TestAppInstanceTest {
              PermissionContext p = testApp.permissions().withAppOp(OPSTR_START_FOREGROUND);
              PermissionContext p2 = testApp.permissions().withoutAppOp(OPSTR_START_FOREGROUND)) {
             assertThat(sTestApp.pkg().appOps().get(OPSTR_START_FOREGROUND)).isNotEqualTo(ALLOWED);
+        }
+    }
+
+    @Test
+    public void callThrowsException_doesNotBlockUsage() {
+        try (TestAppInstance testApp = sTestApp.install()) {
+            for (int i = 0; i < 1000; i++) {
+                assertThrows(NullPointerException.class,
+                        () -> testApp.devicePolicyManager().hasGrantedPolicy(null, 0));
+            }
         }
     }
 }

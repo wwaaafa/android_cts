@@ -205,7 +205,7 @@ public class UserRestrictionsTest extends BaseDevicePolicyTest {
         setPoAsUser(mDeviceOwnerUserId);
 
         // Create another user and set PO.
-        final int secondaryUserId = createUserAndWaitStart();
+        final int secondaryUserId = createUser();
         setPoAsUser(secondaryUserId);
 
         // Let user-0 PO sets all restrictions.
