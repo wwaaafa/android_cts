@@ -20,7 +20,11 @@ import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePoli
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_AFFILIATED_PROFILE_OWNER_PROFILE;
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_AFFILIATED_PROFILE_OWNER_USER;
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_DEVICE_OWNER;
-import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_PARENT_INSTANCE_OF_PROFILE_OWNER;
+import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_FINANCED_DEVICE_OWNER;
+import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_ORGANIZATION_OWNED_PROFILE_OWNER_PROFILE;
+import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_PARENT_INSTANCE_OF_NON_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE;
+import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_PARENT_INSTANCE_OF_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE;
+import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_PARENT_INSTANCE_OF_PROFILE_OWNER_USER;
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_PROFILE_OWNER_USER_WITH_NO_DO;
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_UNAFFILIATED_PROFILE_OWNER_PROFILE;
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_UNAFFILIATED_PROFILE_OWNER_USER;
@@ -50,13 +54,17 @@ import com.android.bedstead.harrier.annotations.EnsureTestAppInstalled;
 import com.android.bedstead.harrier.annotations.enterprise.EnsureHasDelegate;
 import com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy;
 import com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.AppOp;
+import com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.Permission;
 import com.android.bedstead.harrier.annotations.meta.ParameterizedAnnotation;
 import com.android.bedstead.harrier.annotations.parameterized.IncludeNone;
 import com.android.bedstead.harrier.annotations.parameterized.IncludeRunOnAffiliatedDeviceOwnerSecondaryUser;
 import com.android.bedstead.harrier.annotations.parameterized.IncludeRunOnAffiliatedProfileOwnerSecondaryUser;
 import com.android.bedstead.harrier.annotations.parameterized.IncludeRunOnBackgroundDeviceOwnerUser;
 import com.android.bedstead.harrier.annotations.parameterized.IncludeRunOnDeviceOwnerUser;
-import com.android.bedstead.harrier.annotations.parameterized.IncludeRunOnParentOfCorporateOwnedProfileOwner;
+import com.android.bedstead.harrier.annotations.parameterized.IncludeRunOnFinancedDeviceOwnerUser;
+import com.android.bedstead.harrier.annotations.parameterized.IncludeRunOnOrganizationOwnedProfileOwner;
+import com.android.bedstead.harrier.annotations.parameterized.IncludeRunOnParentOfOrganizationOwnedProfileOwner;
+import com.android.bedstead.harrier.annotations.parameterized.IncludeRunOnParentOfOrganizationOwnedProfileOwnerUsingParentInstance;
 import com.android.bedstead.harrier.annotations.parameterized.IncludeRunOnParentOfProfileOwnerUsingParentInstance;
 import com.android.bedstead.harrier.annotations.parameterized.IncludeRunOnParentOfProfileOwnerWithNoDeviceOwner;
 import com.android.bedstead.harrier.annotations.parameterized.IncludeRunOnProfileOwnerPrimaryUser;
@@ -87,6 +95,7 @@ import java.util.stream.Collectors;
 public final class Policy {
 
     // TODO(b/219750042): If we leave over appops and permissions then the delegate will have them
+    private static final String DELEGATE_KEY = "delegate";
     private static final String DELEGATE_PACKAGE_NAME = "com.android.Delegate";
 
     // Delegate scopes to be used for a "CannotSet" state. All delegate scopes except the ones which
@@ -129,13 +138,23 @@ public final class Policy {
 
                     .put(APPLIED_BY_UNAFFILIATED_PROFILE_OWNER_PROFILE | APPLIES_TO_OWN_USER, singleAnnotation(includeRunOnProfileOwnerProfileWithNoDeviceOwner()))
                     .put(APPLIED_BY_UNAFFILIATED_PROFILE_OWNER_PROFILE | APPLIES_TO_OWN_USER | CAN_BE_DELEGATED, generateDelegateAnnotation(includeRunOnProfileOwnerProfileWithNoDeviceOwner(), /* isPrimary= */ true))
+                    .put(APPLIED_BY_ORGANIZATION_OWNED_PROFILE_OWNER_PROFILE | APPLIES_TO_OWN_USER, singleAnnotation(includeRunOnOrganizationOwnedProfileOwner()))
+                    .put(APPLIED_BY_ORGANIZATION_OWNED_PROFILE_OWNER_PROFILE | APPLIES_TO_OWN_USER | CAN_BE_DELEGATED, generateDelegateAnnotation(includeRunOnOrganizationOwnedProfileOwner(), /* isPrimary= */ true))
+
                     .put(APPLIED_BY_UNAFFILIATED_PROFILE_OWNER_PROFILE | APPLIES_TO_PARENT, singleAnnotation(includeRunOnParentOfProfileOwnerWithNoDeviceOwner()))
                     .put(APPLIED_BY_UNAFFILIATED_PROFILE_OWNER_PROFILE | APPLIES_TO_PARENT | CAN_BE_DELEGATED, generateDelegateAnnotation(includeRunOnParentOfProfileOwnerWithNoDeviceOwner(), /* isPrimary= */ true))
+                    .put(APPLIED_BY_ORGANIZATION_OWNED_PROFILE_OWNER_PROFILE | APPLIES_TO_PARENT, singleAnnotation(includeRunOnParentOfOrganizationOwnedProfileOwner()))
+                    .put(APPLIED_BY_ORGANIZATION_OWNED_PROFILE_OWNER_PROFILE | APPLIES_TO_PARENT | CAN_BE_DELEGATED, generateDelegateAnnotation(includeRunOnParentOfOrganizationOwnedProfileOwner(), /* isPrimary= */ true))
 
                     .put(APPLIED_BY_UNAFFILIATED_PROFILE_OWNER_PROFILE | APPLIES_TO_UNAFFILIATED_OTHER_USERS, singleAnnotation(includeRunOnSecondaryUserInDifferentProfileGroupToProfileOwnerProfile()))
                     .put(APPLIED_BY_UNAFFILIATED_PROFILE_OWNER_PROFILE | APPLIES_TO_UNAFFILIATED_OTHER_USERS | CAN_BE_DELEGATED, generateDelegateAnnotation(includeRunOnSecondaryUserInDifferentProfileGroupToProfileOwnerProfile(), /* isPrimary= */ true))
 
-                    .put(APPLIED_BY_PARENT_INSTANCE_OF_PROFILE_OWNER | APPLIES_TO_OWN_USER, singleAnnotation(includeRunOnParentOfProfileOwnerUsingParentInstance()))
+                    // The model here is that APPLIED_BY_PARENT + APPLIES_TO_OWN_USER means it applies to the parent of the DPC - I'm not sure this is the best model (APPLIES_TO_PARENT would also be reasonable)
+                    .put(APPLIED_BY_PARENT_INSTANCE_OF_NON_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE
+                            | APPLIES_TO_OWN_USER, singleAnnotation(includeRunOnParentOfProfileOwnerUsingParentInstance()))
+                    .put(APPLIED_BY_PARENT_INSTANCE_OF_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE | APPLIES_TO_OWN_USER, singleAnnotation(includeRunOnParentOfOrganizationOwnedProfileOwnerUsingParentInstance()))
+
+                    .put(APPLIED_BY_FINANCED_DEVICE_OWNER | APPLIES_TO_OWN_USER, singleAnnotation(includeRunOnFinancedDeviceOwnerUser()))
 
                     .build();
     // This must contain one key for every APPLIED_BY that is being used, and maps to the
@@ -148,7 +167,9 @@ public final class Policy {
                     .put(APPLIED_BY_AFFILIATED_PROFILE_OWNER, singleAnnotation(includeRunOnAffiliatedProfileOwnerSecondaryUser()))
                     .put(APPLIED_BY_UNAFFILIATED_PROFILE_OWNER_USER, singleAnnotation(includeRunOnProfileOwnerPrimaryUser()))
                     .put(APPLIED_BY_PROFILE_OWNER_USER_WITH_NO_DO, singleAnnotation(includeRunOnProfileOwnerPrimaryUser()))
+                    .put(APPLIED_BY_ORGANIZATION_OWNED_PROFILE_OWNER_PROFILE, singleAnnotation(includeRunOnOrganizationOwnedProfileOwner()))
                     .put(APPLIED_BY_UNAFFILIATED_PROFILE_OWNER_PROFILE, singleAnnotation(includeRunOnProfileOwnerProfileWithNoDeviceOwner()))
+                    .put(APPLIED_BY_FINANCED_DEVICE_OWNER, singleAnnotation(includeRunOnFinancedDeviceOwnerUser()))
                     .build();
     private static final Map<Integer, Function<EnterprisePolicy, Set<Annotation>>>
             DPC_STATE_ANNOTATIONS = DPC_STATE_ANNOTATIONS_BASE.entrySet().stream()
@@ -158,7 +179,11 @@ public final class Policy {
                     | APPLIED_BY_AFFILIATED_PROFILE_OWNER_PROFILE
                     | APPLIED_BY_UNAFFILIATED_PROFILE_OWNER_USER
                     | APPLIED_BY_AFFILIATED_PROFILE_OWNER_USER
-                    | APPLIED_BY_PARENT_INSTANCE_OF_PROFILE_OWNER;
+                    | APPLIED_BY_PARENT_INSTANCE_OF_PROFILE_OWNER_USER
+                    | APPLIED_BY_FINANCED_DEVICE_OWNER
+                    | APPLIED_BY_ORGANIZATION_OWNED_PROFILE_OWNER_PROFILE
+                    | APPLIED_BY_PARENT_INSTANCE_OF_NON_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE
+                    | APPLIED_BY_PARENT_INSTANCE_OF_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE;
     private static final Map<Function<EnterprisePolicy, Set<Annotation>>, Set<Integer>>
             ANNOTATIONS_MAP = calculateAnnotationsMap(STATE_ANNOTATIONS);
 
@@ -167,9 +192,17 @@ public final class Policy {
     }
 
     @AutoAnnotation
+    public static EnterprisePolicy enterprisePolicy(int[] dpc, Permission[] permissions,
+            AppOp[] appOps, String[] delegatedScopes) {
+        return new AutoAnnotation_Policy_enterprisePolicy(
+                dpc, permissions, appOps, delegatedScopes);
+    }
+
+    @AutoAnnotation
     private static EnsureTestAppInstalled ensureTestAppInstalled(
-            String packageName, UserType onUser, boolean isPrimary) {
-        return new AutoAnnotation_Policy_ensureTestAppInstalled(packageName, onUser, isPrimary);
+            String key, String packageName, UserType onUser, boolean isPrimary) {
+        return new AutoAnnotation_Policy_ensureTestAppInstalled(
+                key, packageName, onUser, isPrimary);
     }
 
     @AutoAnnotation
@@ -228,8 +261,13 @@ public final class Policy {
     }
 
     @AutoAnnotation
-    private static IncludeRunOnParentOfCorporateOwnedProfileOwner includeRunOnParentOfCorporateOwnedProfileOwner() {
-        return new AutoAnnotation_Policy_includeRunOnParentOfCorporateOwnedProfileOwner();
+    private static IncludeRunOnOrganizationOwnedProfileOwner includeRunOnOrganizationOwnedProfileOwner() {
+        return new AutoAnnotation_Policy_includeRunOnOrganizationOwnedProfileOwner();
+    }
+
+    @AutoAnnotation
+    private static IncludeRunOnParentOfOrganizationOwnedProfileOwner includeRunOnParentOfOrganizationOwnedProfileOwner() {
+        return new AutoAnnotation_Policy_includeRunOnParentOfOrganizationOwnedProfileOwner();
     }
 
     @AutoAnnotation
@@ -253,6 +291,17 @@ public final class Policy {
         return new AutoAnnotation_Policy_includeRunOnParentOfProfileOwnerUsingParentInstance();
     }
 
+    @AutoAnnotation
+    private static IncludeRunOnParentOfOrganizationOwnedProfileOwnerUsingParentInstance includeRunOnParentOfOrganizationOwnedProfileOwnerUsingParentInstance() {
+        return new AutoAnnotation_Policy_includeRunOnParentOfOrganizationOwnedProfileOwnerUsingParentInstance();
+    }
+
+
+    @AutoAnnotation
+    private static IncludeRunOnFinancedDeviceOwnerUser includeRunOnFinancedDeviceOwnerUser() {
+        return new AutoAnnotation_Policy_includeRunOnFinancedDeviceOwnerUser();
+    }
+
     private static Function<EnterprisePolicy, Set<Annotation>> singleAnnotation(
             Annotation annotation) {
         return (i) -> ImmutableSet.of(annotation);
@@ -271,7 +320,7 @@ public final class Policy {
                                 isPrimary);
 
                         return new DynamicParameterizedAnnotation(
-                                annotation.annotationType().getSimpleName() + "Delegate:" + scope,
+                                annotation.annotationType().getSimpleName() + "Delegate_" + scope,
                                 newAnnotations);
                     }).collect(Collectors.toSet());
         };
@@ -315,11 +364,8 @@ public final class Policy {
      *
      * <p>These are states which should be run where the policy is able to be applied.
      */
-    public static List<Annotation> policyAppliesStates(String policyName,
-            EnterprisePolicy enterprisePolicy) {
+    public static List<Annotation> policyAppliesStates(EnterprisePolicy enterprisePolicy) {
         Set<Annotation> annotations = new HashSet<>();
-
-        validateFlags(policyName, enterprisePolicy.dpc());
 
         for (Map.Entry<Function<EnterprisePolicy, Set<Annotation>>, Set<Integer>> annotation :
                 ANNOTATIONS_MAP.entrySet()) {
@@ -331,7 +377,7 @@ public final class Policy {
         for (AppOp appOp : enterprisePolicy.appOps()) {
             // TODO(b/219750042): Currently we only test that app ops apply to the current user
             Annotation[] withAppOpAnnotations = new Annotation[]{
-                    ensureTestAppInstalled(DELEGATE_PACKAGE_NAME,
+                    ensureTestAppInstalled(DELEGATE_KEY, DELEGATE_PACKAGE_NAME,
                             UserType.INSTRUMENTED_USER, /* isPrimary= */ true),
                     ensureTestAppHasAppOp(new String[]{appOp.appliedWith()})
             };
@@ -382,11 +428,8 @@ public final class Policy {
      *
      * <p>These are states which should be run where the policy is not able to be applied.
      */
-    public static List<Annotation> policyDoesNotApplyStates(String policyName,
-            EnterprisePolicy enterprisePolicy) {
+    public static List<Annotation> policyDoesNotApplyStates(EnterprisePolicy enterprisePolicy) {
         Set<Annotation> annotations = new HashSet<>();
-
-        validateFlags(policyName, enterprisePolicy.dpc());
 
         for (Map.Entry<Function<EnterprisePolicy, Set<Annotation>>, Set<Integer>> annotation :
                 ANNOTATIONS_MAP.entrySet()) {
@@ -408,13 +451,10 @@ public final class Policy {
     /**
      * Get parameterized test runs where the policy cannot be set for the given policy.
      */
-    public static List<Annotation> cannotSetPolicyStates(String policyName,
-            EnterprisePolicy enterprisePolicy, boolean includeDeviceAdminStates,
-            boolean includeNonDeviceAdminStates) {
+    public static List<Annotation> cannotSetPolicyStates(
+            EnterprisePolicy enterprisePolicy,
+            boolean includeDeviceAdminStates, boolean includeNonDeviceAdminStates) {
         Set<Annotation> annotations = new HashSet<>();
-
-        validateFlags(policyName, enterprisePolicy.dpc());
-
         if (includeDeviceAdminStates) {
             int allFlags = 0;
             for (int p : enterprisePolicy.dpc()) {
@@ -479,10 +519,8 @@ public final class Policy {
      * Get state annotations where the policy can be set for the given policy.
      */
     public static List<Annotation> canSetPolicyStates(
-            String policyName, EnterprisePolicy enterprisePolicy, boolean singleTestOnly) {
+            EnterprisePolicy enterprisePolicy, boolean singleTestOnly) {
         Set<Annotation> annotations = new HashSet<>();
-
-        validateFlags(policyName, enterprisePolicy.dpc());
 
         int allFlags = 0;
         for (int p : enterprisePolicy.dpc()) {
@@ -504,7 +542,7 @@ public final class Policy {
         for (AppOp appOp : enterprisePolicy.appOps()) {
             // TODO(b/219750042): Currently we only test that app ops can be set as the primary user
             Annotation[] withAppOpAnnotations = new Annotation[]{
-                    ensureTestAppInstalled(
+                    ensureTestAppInstalled(DELEGATE_KEY,
                             DELEGATE_PACKAGE_NAME, UserType.INSTRUMENTED_USER,
                             /* isPrimary= */ true),
                     ensureTestAppHasAppOp(new String[]{appOp.appliedWith()})
@@ -536,7 +574,8 @@ public final class Policy {
         return annotationList;
     }
 
-    private static void validateFlags(String policyName, int[] values) {
+    /** Validate flags used by a DPC policy. */
+    public static void validateFlags(String policyName, int[] values) {
         int usedAppliedByFlags = 0;
 
         for (int value : values) {
