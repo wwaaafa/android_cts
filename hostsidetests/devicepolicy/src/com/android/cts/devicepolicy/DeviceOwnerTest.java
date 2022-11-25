@@ -32,7 +32,6 @@ import android.stats.devicepolicy.EventId;
 
 import com.android.compatibility.common.tradefed.build.CompatibilityBuildHelper;
 import com.android.cts.devicepolicy.DeviceAdminFeaturesCheckerRule.RequiresAdditionalFeatures;
-import com.android.cts.devicepolicy.DeviceAdminFeaturesCheckerRule.TemporarilyIgnoreOnHeadlessSystemUserMode;
 import com.android.cts.devicepolicy.metrics.DevicePolicyEventWrapper;
 import com.android.tradefed.log.LogUtil.CLog;
 
@@ -342,57 +341,6 @@ public class DeviceOwnerTest extends BaseDeviceOwnerTest {
         assumeCanCreateOneManagedUser();
 
         executeCreateAndManageUserTest("testCreateAndManageUser_RemoveRestrictionSet");
-    }
-
-    @TemporarilyIgnoreOnHeadlessSystemUserMode(bugId = "220386262",
-            reason = "Often fails on automotive due to race condition")
-    @Test
-    public void testCreateAndManageUser_newUserDisclaimer() throws Exception {
-        assumeCanStartNewUser();
-
-        // TODO(b/217367529) - we need to grant INTERACT_ACROSS_USERS to the test app in the new
-        // user, so the test is retrying until it gets it, which is done in this thread - not the
-        // best approach, but given that the test cases are being migrated to the new infra,
-        // it's good enough enough...
-        int waitingTimeMs = 5_000;
-        final int maxAttempts = 10;
-        new Thread(() -> {
-            try {
-                int attempt = 0;
-                boolean granted = false;
-                while (!granted && ++attempt <= maxAttempts) {
-                    List<Integer> newUsers = getUsersCreatedByTests();
-                    if (!newUsers.isEmpty()) {
-                        for (int userId : newUsers) {
-                            CLog.i("Checking if user %d is current user", userId);
-                            int currentUser = getCurrentUser();
-                            if (currentUser != userId) continue;
-                            CLog.i("Checking if user %d has the package", userId);
-                            if (!isPackageInstalledForUser(DEVICE_OWNER_PKG, userId)) continue;
-                            grantPermission(DEVICE_OWNER_PKG, PERMISSION_INTERACT_ACROSS_USERS,
-                                    userId, "to call isNewUserDisclaimerAcknowledged() and "
-                                    + "acknowledgeNewUserDisclaimer()");
-                            granted = true;
-                            // Needed to access isNewUserDisclaimerAcknowledged()
-                            allowTestApiAccess(DEVICE_OWNER_PKG);
-                        }
-                    }
-
-                    if (!granted) {
-                        CLog.i("Waiting %dms until new user is switched and package installed "
-                                + "to grant INTERACT_ACROSS_USERS", waitingTimeMs);
-                        sleep(waitingTimeMs);
-                    }
-                }
-                CLog.i("%s says: Good Bye, and thanks for all the fish! BTW, granted=%b in "
-                        + "%d attempts", Thread.currentThread(), granted, attempt);
-            } catch (Exception e) {
-                CLog.e(e);
-                return;
-            }
-        }, "testCreateAndManageUser_newUserDisclaimer_Thread").start();
-
-        executeCreateAndManageUserTest("testCreateAndManageUser_newUserDisclaimer");
     }
 
     @FlakyTest(bugId = 126955083)
@@ -813,28 +761,6 @@ public class DeviceOwnerTest extends BaseDeviceOwnerTest {
                     .setAdminPackageName(DEVICE_OWNER_PKG)
                     .setBoolean(true)
                     .build());
-    }
-
-    @Test
-    public void testNoHiddenActivityFoundTest() throws Exception {
-        try {
-            // Install app to primary user
-            installAppAsUser(BaseLauncherAppsTest.LAUNCHER_TESTS_APK, mPrimaryUserId);
-            installAppAsUser(BaseLauncherAppsTest.LAUNCHER_TESTS_SUPPORT_APK, mPrimaryUserId);
-            installAppAsUser(LAUNCHER_TESTS_HAS_LAUNCHER_ACTIVITY_APK, mPrimaryUserId);
-
-            // Run test to check if launcher api shows hidden app
-            String mSerialNumber = Integer.toString(getUserSerialNumber(mPrimaryUserId));
-            runDeviceTestsAsUser(BaseLauncherAppsTest.LAUNCHER_TESTS_PKG,
-                    BaseLauncherAppsTest.LAUNCHER_TESTS_CLASS,
-                    "testDoPoNoTestAppInjectedActivityFound",
-                    mPrimaryUserId, Collections.singletonMap(BaseLauncherAppsTest.PARAM_TEST_USER,
-                            mSerialNumber));
-        } finally {
-            getDevice().uninstallPackage(LAUNCHER_TESTS_HAS_LAUNCHER_ACTIVITY_APK);
-            getDevice().uninstallPackage(BaseLauncherAppsTest.LAUNCHER_TESTS_SUPPORT_APK);
-            getDevice().uninstallPackage(BaseLauncherAppsTest.LAUNCHER_TESTS_APK);
-        }
     }
 
     @Test
