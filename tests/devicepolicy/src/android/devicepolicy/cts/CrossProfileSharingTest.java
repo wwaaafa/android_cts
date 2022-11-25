@@ -67,7 +67,8 @@ public final class CrossProfileSharingTest {
             .whereActivities().contains(
                     activity().intentFilters().contains(
                             intentFilter().actions().contains("com.android.testapp.SOME_ACTION"),
-                            intentFilter().actions().contains("android.intent.action.PICK")
+                            intentFilter().actions().contains("android.intent.action.PICK"),
+                            intentFilter().actions().contains("android.intent.action.SEND_MULTIPLE")
                     )).get();
 
     // Known action that is handled in the opposite profile, used to query forwarder activity.
@@ -140,7 +141,7 @@ public final class CrossProfileSharingTest {
 
     @Test
     @Postsubmit(reason = "new test")
-    @EnsureHasWorkProfile(forUser = PRIMARY_USER)
+    @EnsureHasWorkProfile
     public void sharingFromPersonalToWork_disallowShareIntoProfile_restrictionApplied() {
         ResolveInfo personalToWorkForwarder = getPersonalToWorkForwarder();
 
@@ -159,17 +160,19 @@ public final class CrossProfileSharingTest {
 
     @Test
     @Postsubmit(reason = "new test")
-    @EnsureHasWorkProfile(forUser = PRIMARY_USER)
+    @EnsureHasWorkProfile
     public void sharingFromPersonalToWork_disallowShareIntoProfile_restrictionRemoved() {
-        ResolveInfo personalToWorkForwarder = getPersonalToWorkForwarder();
+        try (TestAppInstance testApp = sTestApp.install(sDeviceState.workProfile())) {
+            ResolveInfo personalToWorkForwarder = getPersonalToWorkForwarder();
 
-        // Enforce the restriction and wait for it to be applied, then remove it and wait again.
-        setSharingIntoProfileEnabled(false);
-        setSharingIntoProfileEnabled(true);
+            // Enforce the restriction and wait for it to be applied, then remove it and wait again.
+            setSharingIntoProfileEnabled(false);
+            setSharingIntoProfileEnabled(true);
 
-        // Verify that sharing intent gets resolved into profile forwarder successfully.
-        assertCrossProfileIntentsResolvability(
-                SHARING_INTENTS, personalToWorkForwarder, /* expectForwardable */ true);
+            // Verify that sharing intent gets resolved into profile forwarder successfully.
+            assertCrossProfileIntentsResolvability(
+                    SHARING_INTENTS, personalToWorkForwarder, /* expectForwardable */ true);
+        }
     }
 
     private ResolveInfo getPersonalToWorkForwarder() {

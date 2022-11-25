@@ -61,9 +61,6 @@ public class OrgOwnedProfileOwnerTest extends BaseDevicePolicyTest {
     private static final String TEST_IME_COMPONENT = TEST_IME_PKG + "/.TestIme";
     private static final String SIMPLE_SMS_APP_PKG = "android.telephony.cts.sms.simplesmsapp";
     private static final String SIMPLE_SMS_APP_APK = "SimpleSmsApp.apk";
-    private static final String TEST_LAUNCHER_APK = "TestLauncher.apk";
-    private static final String TEST_LAUNCHER_COMPONENT =
-            "com.android.cts.testlauncher/android.app.Activity";
     public static final String SUSPENSION_CHECKER_CLASS =
             "com.android.cts.suspensionchecker.ActivityLaunchTest";
 
@@ -281,20 +278,6 @@ public class OrgOwnedProfileOwnerTest extends BaseDevicePolicyTest {
         }
     }
 
-    @Test
-    public void testSetTime() throws Exception {
-        runDeviceTestsAsUser(DEVICE_ADMIN_PKG, ".TimeManagementTest", "testSetTime", mUserId);
-        runDeviceTestsAsUser(DEVICE_ADMIN_PKG, ".TimeManagementTest",
-                "testSetTime_failWhenAutoTimeEnabled", mUserId);
-    }
-
-    @Test
-    public void testSetTimeZone() throws Exception {
-        runDeviceTestsAsUser(DEVICE_ADMIN_PKG, ".TimeManagementTest", "testSetTimeZone", mUserId);
-        runDeviceTestsAsUser(DEVICE_ADMIN_PKG, ".TimeManagementTest",
-                "testSetTimeZone_failIfAutoTimeZoneEnabled", mUserId);
-    }
-
     @FlakyTest(bugId = 137088260)
     @Test
     public void testWifi() throws Exception {
@@ -345,11 +328,6 @@ public class OrgOwnedProfileOwnerTest extends BaseDevicePolicyTest {
     @Test
     public void testAdminConfiguredNetworks() throws Exception {
         runDeviceTestsAsUser(DEVICE_ADMIN_PKG, ".AdminConfiguredNetworksTest", mUserId);
-    }
-
-    @Test
-    public void testApplicationHiddenParent() throws Exception {
-        runDeviceTestsAsUser(DEVICE_ADMIN_PKG, ".ApplicationHiddenParentTest", mUserId);
     }
 
     @Test
