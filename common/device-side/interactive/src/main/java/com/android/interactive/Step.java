@@ -19,6 +19,7 @@ package com.android.interactive;
 import static com.android.bedstead.nene.permissions.CommonPermissions.INTERNAL_SYSTEM_WINDOW;
 import static com.android.bedstead.nene.permissions.CommonPermissions.SYSTEM_ALERT_WINDOW;
 import static com.android.bedstead.nene.permissions.CommonPermissions.SYSTEM_APPLICATION_OVERLAY;
+import static com.android.interactive.Automator.AUTOMATION_FILE;
 
 import android.graphics.PixelFormat;
 import android.util.Log;
@@ -69,7 +70,7 @@ public abstract class Step<E> {
                             "timeout_msec", "600000")) - 10000);
 
     private static final Automator sAutomator =
-            new Automator("/sdcard/InteractiveAutomation.apk");
+            new Automator(AUTOMATION_FILE);
 
     private View mInstructionView;
 
@@ -235,7 +236,7 @@ public abstract class Step<E> {
      * reason for failure.
      */
     protected void addFailButton() {
-        addButton("Fail", () -> mFailed = true); // TODO: Record failure reason
+        addButton("Fail", () -> mFailed = true);
     }
 
     /**
