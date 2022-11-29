@@ -30,6 +30,8 @@ import static android.os.Build.VERSION_CODES.P;
 import static android.os.Build.VERSION_CODES.S;
 import static android.os.Process.myUid;
 
+import static com.android.bedstead.nene.permissions.CommonPermissions.CHANGE_COMPONENT_ENABLED_STATE;
+
 import static com.google.common.truth.Truth.assertWithMessage;
 
 import android.annotation.TargetApi;
@@ -779,6 +781,16 @@ public final class Package {
         return stringBuilder.toString();
     }
 
+    /** {@code true} if the package exists on any user on the device as is not uninstalled. */
+    @TargetApi(S)
+    public boolean isInstalled() {
+        Versions.requireMinimumVersion(S);
+
+        try (PermissionContext p = TestApis.permissions().withPermission(QUERY_ALL_PACKAGES)) {
+            return packageInfoFromAnyUser(0) != null;
+        }
+    }
+
     /** {@code true} if the package exists on the device. */
     public boolean exists() {
         if (Versions.meetsMinimumSdkVersionRequirement(S)) {
@@ -837,6 +849,43 @@ public final class Package {
         }
 
         return packageInfo.sharedUserId;
+    }
+
+    /**
+     * See {@link PackageManager#setSyntheticAppDetailsActivityEnabled(String, boolean)}.
+     */
+    @Experimental
+    public void setSyntheticAppDetailsActivityEnabled(UserReference user, boolean enabled) {
+        try (PermissionContext p = TestApis.permissions()
+                .withPermission(CHANGE_COMPONENT_ENABLED_STATE)) {
+            TestApis.context().androidContextAsUser(user).getPackageManager()
+                    .setSyntheticAppDetailsActivityEnabled(packageName(), enabled);
+        }
+    }
+
+    /**
+     * See {@link PackageManager#setSyntheticAppDetailsActivityEnabled(String, boolean)}.
+     */
+    @Experimental
+    public void setSyntheticAppDetailsActivityEnabled(boolean enabled) {
+        setSyntheticAppDetailsActivityEnabled(TestApis.users().instrumented(), enabled);
+    }
+
+    /**
+     * See {@link PackageManager#getSyntheticAppDetailsActivityEnabled(String)}.
+     */
+    @Experimental
+    public boolean syntheticAppDetailsActivityEnabled(UserReference user) {
+        return TestApis.context().androidContextAsUser(user).getPackageManager()
+                .getSyntheticAppDetailsActivityEnabled(packageName());
+    }
+
+    /**
+     * See {@link PackageManager#getSyntheticAppDetailsActivityEnabled(String)}.
+     */
+    @Experimental
+    public boolean syntheticAppDetailsActivityEnabled() {
+        return syntheticAppDetailsActivityEnabled(TestApis.users().instrumented());
     }
 
     private static final class ProcessInfo {
