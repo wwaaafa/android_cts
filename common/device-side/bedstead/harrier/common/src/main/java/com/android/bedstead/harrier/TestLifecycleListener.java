@@ -14,27 +14,22 @@
  * limitations under the License.
  */
 
-package com.android.interactive.steps;
-
-import com.android.interactive.Nothing;
-import com.android.interactive.Step;
+package com.android.bedstead.harrier;
 
 /**
- * A {@link Step} where the user is asked to perform some action and confirm that it has been done.
+ * Listener for test lifecycle events.
+ *
+ * The flow is:
+ *   testStarted
+ *   (0 or more) testRestarted
+ *   testFinished
  */
-public abstract class ActAndConfirmStep extends Step<Nothing> {
+public interface TestLifecycleListener {
 
-    private final String mInstruction;
-
-    protected ActAndConfirmStep(String instruction) {
-        mInstruction = instruction;
-    }
-
-    @Override
-    public void interact() {
-        show(mInstruction);
-        addButton("Done", this::pass);
-
-        addFailButton();
-    }
+    /** Called when a test has started. */
+    default void testStarted(String testName) {}
+    /** Called when a test has finished. */
+    default void testFinished(String testName) {}
+    /** Called when a test is restarted. */
+    default void testRestarted(String testName, String reason) {}
 }

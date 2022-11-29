@@ -14,37 +14,46 @@
  * limitations under the License.
  */
 
-package com.android.interactive.steps;
-
-import com.android.interactive.Step;
-
-import java.util.List;
+package com.android.interactive;
 
 /**
- * A {@link Step} where the user is asked to pick one from multiple options.
- *
- * <p>Each option is presented as a button
+ * A {@link Step} used when automation has failed.
  */
-public abstract class MultipleChoiceStep extends Step<String> {
+final class AutomatingFailedStep extends Step<Integer> {
+
+    public static final int CONTINUE_MANUALLY = 1;
+    public static final int RETRY = 2;
+    public static final int RESTART_MANUALLY = 3;
+    public static final int FAIL = 4;
 
     private final String mInstruction;
-    private final List<String> mChoices;
 
-    protected MultipleChoiceStep(String instruction, List<String> choices) {
+    public AutomatingFailedStep(String instruction) {
         mInstruction = instruction;
-        mChoices = choices;
     }
 
     @Override
     public void interact() {
         show(mInstruction);
 
-        for (String choice : mChoices) {
-            addButton(choice, () -> {
-                pass(choice);
-                close();
-            });
-        }
-        addFailButton();
+        addButton("Retry", () -> {
+            pass(RETRY);
+            close();
+        });
+
+        addButton("Continue Manually", () -> {
+            pass(CONTINUE_MANUALLY);
+            close();
+        });
+
+        addButton("Restart Manually", () -> {
+            pass(RESTART_MANUALLY);
+            close();
+        });
+
+        addButton("Fail", () -> {
+            pass(FAIL);
+            close();
+        });
     }
 }

@@ -27,15 +27,19 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.LinearLayout;
+import android.widget.GridLayout;
 import android.widget.TextView;
 
+import com.android.bedstead.harrier.BedsteadJUnit4;
+import com.android.bedstead.harrier.TestLifecycleListener;
+import com.android.bedstead.harrier.exceptions.RestartTestException;
 import com.android.bedstead.nene.TestApis;
 import com.android.bedstead.nene.permissions.PermissionContext;
 import com.android.bedstead.nene.utils.Poll;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * An atomic manual interaction step.
@@ -45,7 +49,18 @@ import java.util.Optional;
  */
 public abstract class Step<E> {
 
+    private static final TestLifecycleListener sLifecycleListener = new TestLifecycleListener() {
+        @Override
+        public void testFinished(String testName) {
+            sForceManual.set(false);
+        }
+    };
+
     private static final String LOG_TAG = "Interactive.Step";
+
+    // If set to true, we will skip automation for one test run - then reset it to false
+    private static final AtomicBoolean sForceManual = new AtomicBoolean(false);
+    // TODO: We need to reset mForceManual after the test run
 
     // We timeout 10 seconds before the infra would timeout
     private static final Duration MAX_STEP_DURATION =
@@ -70,7 +85,7 @@ public abstract class Step<E> {
      * <p>This will first try to execute the step automatically, falling back to manual
      * interaction if that fails.
      */
-    public static <E> E execute(Class<? extends Step<E>> stepClass) {
+    public static <E> E execute(Class<? extends Step<E>> stepClass) throws Exception {
         Step<E> step;
         try {
             step = stepClass.newInstance();
@@ -78,20 +93,55 @@ public abstract class Step<E> {
             throw new AssertionError("Error preparing step", e);
         }
 
-        if (TestApis.instrumentation().arguments().getBoolean("ENABLE_AUTOMATION", true)) {
+        if (!sForceManual.get()
+                && TestApis.instrumentation().arguments().getBoolean(
+                        "ENABLE_AUTOMATION", true)) {
             if (sAutomator.canAutomate(step)) {
+                AutomatingStep automatingStep = new AutomatingStep("Automating " + stepClass.getCanonicalName());
                 try {
+                    automatingStep.interact();
+
                     E returnValue = sAutomator.automate(step);
 
                     // If it reaches this point then it has passed
                     Log.i(LOG_TAG, "Succeeded with automatic resolution of " + step);
                     return returnValue;
-                } catch (Throwable t) {
+                } catch (Exception t) {
                     Log.e(LOG_TAG, "Error attempting automation of " + step, t);
-                    // TODO: If an automation fails we might be in a bad state so should re-run the
-                    // entire test fully manually - we need to store the fact that the current test
-                    // is manual only - and reset that at the end of the test - and throw a
-                    // RestartTestException
+
+                    if (TestApis.instrumentation().arguments().getBoolean(
+                            "ENABLE_MANUAL", false)) {
+                        AutomatingFailedStep automatingFailedStep =
+                                new AutomatingFailedStep("Automation "
+                                        + stepClass.getCanonicalName()
+                                        + " Failed due to " + t.toString());
+                        automatingFailedStep.interact();
+
+                        Integer value = Poll.forValue("value", automatingFailedStep::getValue)
+                                .toMeet(Optional::isPresent)
+                                .terminalValue((b) -> step.hasFailed())
+                                .errorOnFail("Expected value from step. No value provided or step failed.")
+                                .timeout(MAX_STEP_DURATION)
+                                .await()
+                                .get();
+
+                        if (value == AutomatingFailedStep.FAIL) {
+                            throw(t);
+                        } else if (value == AutomatingFailedStep.CONTINUE_MANUALLY) {
+                            // Do nothing - we will fall through to the manual resolution
+                        } else if (value == AutomatingFailedStep.RETRY) {
+                            throw new RestartTestException("Retrying after automatic failure");
+                        } else if (value == AutomatingFailedStep.RESTART_MANUALLY) {
+                            sForceManual.set(true);
+                            BedsteadJUnit4.addLifecycleListener(sLifecycleListener);
+                            throw new RestartTestException(
+                                    "Restarting manually after automatic failure");
+                        }
+                    } else {
+                        throw(t);
+                    }
+                } finally {
+                    automatingStep.close();
                 }
             } else {
                 Log.i(LOG_TAG, "No automation for " + step);
@@ -104,13 +154,20 @@ public abstract class Step<E> {
 
             // Wait until we've reached a valid ending point
             try {
-                E value = Poll.forValue("value", step::getValue)
+                Optional<E> valueOptional = Poll.forValue("value", step::getValue)
                         .toMeet(Optional::isPresent)
                         .terminalValue((b) -> step.hasFailed())
-                        .errorOnFail("Expected value from step. No value provided or step failed.")
                         .timeout(MAX_STEP_DURATION)
-                        .await()
-                        .get();
+                        .await();
+
+                if (step.hasFailed()) {
+                    throw new StepFailedException(stepClass);
+                }
+                if (!valueOptional.isPresent()) {
+                    throw new StepTimeoutException(stepClass);
+                }
+
+                E value = valueOptional.get();
 
                 // After the test has been marked passed, we validate ourselves
                 return Poll.forValue("validated", () -> step.validate(value))
@@ -148,7 +205,7 @@ public abstract class Step<E> {
     }
 
     /**
-     * Returns true if the manual step has concluded successfully.
+     * Returns present if the manual step has concluded successfully.
      */
     public Optional<E> getValue() {
         return mValue;
@@ -169,7 +226,7 @@ public abstract class Step<E> {
         btn.setText(title);
         btn.setOnClickListener(v -> onClick.run());
 
-        LinearLayout layout = mInstructionView.findViewById(R.id.buttons);
+        GridLayout layout = mInstructionView.findViewById(R.id.buttons);
         layout.addView(btn);
     }
 
