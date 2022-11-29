@@ -1555,6 +1555,51 @@ public class StagedInstallTest {
         assertThat(f2.join().isAllConstraintsSatisfied()).isTrue();
     }
 
+    @Test
+    public void testWaitForInstallConstraints_AppIsForeground() throws Exception {
+        Install.single(TestApp.A1).commit();
+        Install.single(TestApp.B1).commit();
+        // We will have a foreground app
+        startActivity(TestApp.A);
+
+        var pi = InstallUtils.getPackageInstaller();
+        var inputConstraints = new InstallConstraints.Builder().requireAppNotInteracting().build();
+
+        // Timeout == 0, constraints not satisfied
+        var sender = new LocalIntentSender();
+        pi.waitForInstallConstraints(Arrays.asList(TestApp.A), inputConstraints,
+                sender.getIntentSender(), 0);
+        var intent = sender.getResult();
+        var packageNames = intent.getStringArrayExtra(Intent.EXTRA_PACKAGES);
+        var receivedConstraints = intent.getParcelableExtra(
+                PackageInstaller.EXTRA_INSTALL_CONSTRAINTS, InstallConstraints.class);
+        var result = intent.getParcelableExtra(
+                PackageInstaller.EXTRA_INSTALL_CONSTRAINTS_RESULT, InstallConstraintsResult.class);
+        assertThat(packageNames).asList().containsExactly(TestApp.A);
+        assertThat(receivedConstraints).isEqualTo(inputConstraints);
+        assertThat(result.isAllConstraintsSatisfied()).isFalse();
+
+        // Timeout == one day, constraints not satisfied
+        sender = new LocalIntentSender();
+        pi.waitForInstallConstraints(Arrays.asList(TestApp.A), inputConstraints,
+                sender.getIntentSender(), TimeUnit.DAYS.toMillis(1));
+        // Wait for a while and check the callback is not invoked yet
+        intent = sender.pollResult(3, TimeUnit.SECONDS);
+        assertThat(intent).isNull();
+
+        // Test app A is no longer foreground. The callback will be invoked soon.
+        startActivity(TestApp.B);
+        intent = sender.getResult();
+        packageNames = intent.getStringArrayExtra(Intent.EXTRA_PACKAGES);
+        receivedConstraints = intent.getParcelableExtra(
+                PackageInstaller.EXTRA_INSTALL_CONSTRAINTS, InstallConstraints.class);
+        result = intent.getParcelableExtra(
+                PackageInstaller.EXTRA_INSTALL_CONSTRAINTS_RESULT, InstallConstraintsResult.class);
+        assertThat(packageNames).asList().containsExactly(TestApp.A);
+        assertThat(receivedConstraints).isEqualTo(inputConstraints);
+        assertThat(result.isAllConstraintsSatisfied()).isTrue();
+    }
+
     private static void startActivity(String packageName) {
         startActivity(packageName, "com.android.cts.install.lib.testapp.MainActivity");
     }
