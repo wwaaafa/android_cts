@@ -764,7 +764,7 @@ def main():
         states = [m(args) for m in supported_modules[args.module][STATES]]
 
         if not args.headless:
-            states.remove(RUN_ON_ADDITIONAL_USER)
+            states = [t for t in states if not t.name() == "RUN_ON_ADDITIONAL_USER"]
 
         if RUN_ON_CURRENT_USER in args.states and len(args.states) > 1:
             for state in states:
