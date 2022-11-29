@@ -19,6 +19,9 @@ package com.android.bedstead.testapp;
 import android.accounts.AccountManager;
 import android.accounts.RemoteAccountManager;
 import android.accounts.RemoteAccountManagerWrapper;
+import android.app.NotificationManager;
+import android.app.RemoteNotificationManager;
+import android.app.RemoteNotificationManagerWrapper;
 import android.app.admin.DevicePolicyManager;
 import android.app.admin.RemoteDevicePolicyManager;
 import android.app.admin.RemoteDevicePolicyManagerWrapper;
@@ -57,7 +60,7 @@ import com.android.bedstead.nene.packages.ProcessReference;
 import com.android.bedstead.nene.users.UserReference;
 
 import com.google.android.enterprise.connectedapps.ConnectionListener;
-import com.google.android.enterprise.connectedapps.CrossProfileConnector;
+import com.google.android.enterprise.connectedapps.ProfileConnectionHolder;
 import com.google.android.enterprise.connectedapps.exceptions.UnavailableProfileException;
 
 import java.util.HashMap;
@@ -76,11 +79,12 @@ public class TestAppInstance implements AutoCloseable, ConnectionListener {
 
     private final TestApp mTestApp;
     private final UserReference mUser;
-    private final CrossProfileConnector mConnector;
+    private final TestAppConnector mConnector;
     private final Map<IntentFilter, Long> mRegisteredBroadcastReceivers = new HashMap<>();
     private final ProfileTestAppController mTestAppController;
     private final TestAppActivities mTestAppActivities;
     private boolean mKeepAliveManually = false;
+    private ProfileConnectionHolder mConnectionHolder = null;
     private final TestAppInstancePermissions mTestAppInstancePermissions =
             new TestAppInstancePermissions(this);
 
@@ -94,16 +98,15 @@ public class TestAppInstance implements AutoCloseable, ConnectionListener {
         }
         mTestApp = testApp;
         mUser = user;
-        mConnector = CrossProfileConnector.builder(TestApis.context().instrumentedContext())
-                .setBinder(new TestAppBinder(this))
-                .build();
-        mConnector.registerConnectionListener(this);
+        mConnector = TestAppConnector.create(TestApis.context().instrumentedContext(),
+                new TestAppBinder(this));
+        mConnector.addConnectionListener(this);
         mTestAppController =
                 ProfileTestAppController.create(mConnector);
         mTestAppActivities = TestAppActivities.create(this);
     }
 
-    CrossProfileConnector connector() {
+    TestAppConnector connector() {
         return mConnector;
     }
 
@@ -177,14 +180,11 @@ public class TestAppInstance implements AutoCloseable, ConnectionListener {
     }
 
     private void registerReceiver(IntentFilter intentFilter, long receiverId, int flags) {
-        try {
-            mConnector.connect();
+        try (ProfileConnectionHolder h = mConnector.connect()){
             mTestAppController.other().registerReceiver(receiverId, intentFilter, flags);
             mRegisteredBroadcastReceivers.put(intentFilter, receiverId);
         } catch (UnavailableProfileException e) {
             throw new IllegalStateException("Could not connect to test app", e);
-        } finally {
-            mConnector.stopManualConnectionManagement();
         }
     }
 
@@ -198,14 +198,11 @@ public class TestAppInstance implements AutoCloseable, ConnectionListener {
 
         long receiverId = mRegisteredBroadcastReceivers.remove(intentFilter);
 
-        try {
-            mConnector.connect();
+        try (ProfileConnectionHolder h = mConnector.connect()){
             mTestAppController.other().unregisterReceiver(receiverId);
             mRegisteredBroadcastReceivers.put(intentFilter, receiverId);
         } catch (UnavailableProfileException e) {
             throw new IllegalStateException("Could not connect to test app", e);
-        } finally {
-            mConnector.stopManualConnectionManagement();
         }
 
         if (mRegisteredBroadcastReceivers.isEmpty() && !mKeepAliveManually) {
@@ -234,7 +231,12 @@ public class TestAppInstance implements AutoCloseable, ConnectionListener {
     private void keepAlive(boolean manualKeepAlive) {
         mKeepAliveManually = manualKeepAlive;
         try {
-            connector().connect();
+            if (mConnectionHolder != null) {
+                mConnectionHolder.close();
+                mConnectionHolder = null;
+            }
+
+            mConnectionHolder = connector().connect();
         } catch (UnavailableProfileException e) {
             throw new IllegalStateException("Could not connect to test app. Is it installed?", e);
         }
@@ -247,7 +249,10 @@ public class TestAppInstance implements AutoCloseable, ConnectionListener {
      */
     public TestAppInstance stopKeepAlive() {
         mKeepAliveManually = false;
-        connector().stopManualConnectionManagement();
+        if (mConnectionHolder != null) {
+            mConnectionHolder.close();
+            mConnectionHolder = null;
+        }
         return this;
     }
 
@@ -397,6 +402,15 @@ public class TestAppInstance implements AutoCloseable, ConnectionListener {
      */
     public RemoteBluetoothManager bluetoothManager() {
         return new RemoteBluetoothManagerWrapper(mConnector);
+    }
+
+    /**
+     * Access the {@link NotificationManager} using this test app.
+     *
+     * <p>Almost all methods are available. Those that are not will be missing from the interface.
+     */
+    public RemoteNotificationManager notificationManager() {
+        return new RemoteNotificationManagerWrapper(mConnector);
     }
 
     /**

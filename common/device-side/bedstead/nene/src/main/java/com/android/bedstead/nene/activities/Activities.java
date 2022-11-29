@@ -17,10 +17,22 @@
 package com.android.bedstead.nene.activities;
 
 import static android.Manifest.permission.REAL_GET_TASKS;
+import static android.app.WindowConfiguration.ACTIVITY_TYPE_ASSISTANT;
+import static android.app.WindowConfiguration.ACTIVITY_TYPE_DREAM;
+import static android.app.WindowConfiguration.ACTIVITY_TYPE_RECENTS;
+import static android.app.WindowConfiguration.ACTIVITY_TYPE_STANDARD;
+import static android.app.WindowConfiguration.ACTIVITY_TYPE_UNDEFINED;
 import static android.os.Build.VERSION_CODES.Q;
 
+import static com.android.bedstead.nene.permissions.CommonPermissions.MANAGE_ACTIVITY_TASKS;
+
+import android.annotation.TargetApi;
 import android.app.ActivityManager;
+import android.app.ActivityTaskManager;
 import android.content.ComponentName;
+import android.view.Display;
+
+import androidx.annotation.Nullable;
 
 import com.android.bedstead.nene.TestApis;
 import com.android.bedstead.nene.annotations.Experimental;
@@ -32,6 +44,7 @@ import com.android.bedstead.nene.utils.ShellCommand;
 import com.android.bedstead.nene.utils.Versions;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public final class Activities {
 
@@ -56,24 +69,38 @@ public final class Activities {
     }
 
     /**
-     * Get the {@link ComponentReference} of the activity currently in the foreground.
+     * Get the {@link ComponentReference} instances for each activity at the top of a recent task.
+     *
+     * <p>This is ordered from most recent to least recent and only includes tasks on the
+     * default display.
      */
     @Experimental
-    public ComponentReference foregroundActivity() {
-        if (!Versions.meetsMinimumSdkVersionRequirement(Q)) {
-            return foregroundActivityPreQ();
-        }
+    @TargetApi(Q)
+    public List<ComponentReference> recentActivities() {
+        Versions.requireMinimumVersion(Q);
+
         try (PermissionContext p = TestApis.permissions().withPermission(REAL_GET_TASKS)) {
             ActivityManager activityManager =
                     TestApis.context().instrumentedContext().getSystemService(
                             ActivityManager.class);
-            List<ActivityManager.RunningTaskInfo> runningTasks = activityManager.getRunningTasks(1);
-            if (runningTasks.isEmpty()) {
-                return null;
-            }
-
-            return new ComponentReference(runningTasks.get(0).topActivity);
+            return activityManager.getRunningTasks(100).stream()
+//                    .filter(r -> r.getDisplayId() == Display.DEFAULT_DISPLAY)
+                    .map(r -> new ComponentReference(r.topActivity))
+                    .collect(Collectors.toList());
         }
+    }
+
+    /**
+     * Get the {@link ComponentReference} of the activity currently in the foreground of the default
+     * display.
+     */
+    @Experimental
+    @Nullable
+    public ComponentReference foregroundActivity() {
+        if (!Versions.meetsMinimumSdkVersionRequirement(Q)) {
+            return foregroundActivityPreQ();
+        }
+        return recentActivities().stream().findFirst().orElse(null);
     }
 
     private ComponentReference foregroundActivityPreQ() {
@@ -105,5 +132,21 @@ public final class Activities {
                         ActivityManager.class);
 
         return activityManager.getLockTaskModeState();
+    }
+
+    private final int[] ALL_ACTIVITY_TYPE_BUT_HOME = {
+            ACTIVITY_TYPE_STANDARD, ACTIVITY_TYPE_ASSISTANT, ACTIVITY_TYPE_RECENTS,
+            ACTIVITY_TYPE_DREAM, ACTIVITY_TYPE_UNDEFINED
+    };
+
+    /**
+     * Clear activities.
+     */
+    @Experimental
+    public void clearAllActivities() {
+        try (PermissionContext p = TestApis.permissions().withPermission(MANAGE_ACTIVITY_TASKS)) {
+            TestApis.context().instrumentedContext().getSystemService(ActivityTaskManager.class)
+                    .removeRootTasksWithActivityTypes(ALL_ACTIVITY_TYPE_BUT_HOME);
+        }
     }
 }
