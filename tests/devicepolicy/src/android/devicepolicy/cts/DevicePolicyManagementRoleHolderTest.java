@@ -49,13 +49,12 @@ import com.android.bedstead.deviceadminapp.DeviceAdminApp;
 import com.android.bedstead.harrier.BedsteadJUnit4;
 import com.android.bedstead.harrier.DeviceState;
 import com.android.bedstead.harrier.annotations.EnsureDoesNotHavePermission;
-import com.android.bedstead.harrier.annotations.EnsureHasNoSecondaryUser;
-import com.android.bedstead.harrier.annotations.EnsureHasNoWorkProfile;
 import com.android.bedstead.harrier.annotations.EnsureHasPermission;
 import com.android.bedstead.harrier.annotations.Postsubmit;
 import com.android.bedstead.harrier.annotations.RequireFeature;
 import com.android.bedstead.harrier.annotations.RequireMultiUserSupport;
-import com.android.bedstead.harrier.annotations.RequireRunOnPrimaryUser;
+import com.android.bedstead.harrier.annotations.RequireRunOnInitialUser;
+import com.android.bedstead.harrier.annotations.RequireRunOnSystemUser;
 import com.android.bedstead.harrier.annotations.enterprise.EnsureHasDeviceOwner;
 import com.android.bedstead.harrier.annotations.enterprise.EnsureHasNoDpc;
 import com.android.bedstead.nene.TestApis;
@@ -138,9 +137,8 @@ public class DevicePolicyManagementRoleHolderTest {
     @Postsubmit(reason = "new test")
     @RequireFeature(FEATURE_MANAGED_USERS)
     @EnsureHasPermission(MANAGE_PROFILE_AND_DEVICE_OWNERS)
-    @RequireRunOnPrimaryUser
+    @RequireRunOnInitialUser
     @EnsureHasNoDpc
-    @EnsureHasNoSecondaryUser
     @Test
     @CddTest(requirements = {"3.9.4/C-3-1"})
     public void createAndProvisionManagedProfile_roleHolderIsInWorkProfile()
@@ -173,8 +171,7 @@ public class DevicePolicyManagementRoleHolderTest {
     @Postsubmit(reason = "new test")
     @RequireFeature(FEATURE_MANAGED_USERS)
     @EnsureHasDeviceOwner
-    @RequireRunOnPrimaryUser
-    @EnsureHasNoSecondaryUser
+    @RequireRunOnSystemUser
     @RequireMultiUserSupport
     @Test
     @CddTest(requirements = {"3.9.4/C-3-1"})
@@ -211,9 +208,8 @@ public class DevicePolicyManagementRoleHolderTest {
     @Postsubmit(reason = "new test")
     @RequireFeature(FEATURE_MANAGED_USERS)
     @EnsureHasPermission(MANAGE_PROFILE_AND_DEVICE_OWNERS)
-    @RequireRunOnPrimaryUser
+    @RequireRunOnInitialUser
     @EnsureHasNoDpc
-    @EnsureHasNoSecondaryUser
     @Test
     public void profileRemoved_roleHolderReceivesBroadcast() throws Exception {
         String roleHolderPackageName = null;
@@ -239,11 +235,10 @@ public class DevicePolicyManagementRoleHolderTest {
     @Postsubmit(reason = "new test")
     @RequireFeature(FEATURE_MANAGED_USERS)
     @EnsureHasPermission(MANAGE_PROFILE_AND_DEVICE_OWNERS)
-    @RequireRunOnPrimaryUser
+    @RequireRunOnInitialUser
     @EnsureHasNoDpc
-    @EnsureHasNoSecondaryUser
     @Test
-    public void profilePaused_roleHolderReceivesBroadcast() throws Exception {
+    public void profileEntersQuietMode_roleHolderReceivesBroadcast() throws Exception {
         String roleHolderPackageName = null;
         try (TestAppInstance roleHolderApp = sRoleHolderApp.install()) {
             roleHolderPackageName = roleHolderApp.packageName();
@@ -267,9 +262,8 @@ public class DevicePolicyManagementRoleHolderTest {
     @Postsubmit(reason = "new test")
     @RequireFeature(FEATURE_MANAGED_USERS)
     @EnsureHasPermission(MANAGE_PROFILE_AND_DEVICE_OWNERS)
-    @RequireRunOnPrimaryUser
+    @RequireRunOnInitialUser
     @EnsureHasNoDpc
-    @EnsureHasNoSecondaryUser
     @Test
     public void profileStarted_roleHolderReceivesBroadcast() throws Exception {
         String roleHolderPackageName = null;
@@ -296,9 +290,7 @@ public class DevicePolicyManagementRoleHolderTest {
     @Postsubmit(reason = "New test")
     @Test
     @EnsureHasPermission(MANAGE_ROLE_HOLDERS)
-    @EnsureHasNoSecondaryUser
-    @EnsureHasNoWorkProfile
-    @RequireRunOnPrimaryUser
+    @RequireRunOnInitialUser
     @EnsureHasNoDpc
     public void shouldAllowBypassingDevicePolicyManagementRoleQualification_noUsersAndAccounts_returnsTrue()
             throws Exception {
@@ -314,9 +306,7 @@ public class DevicePolicyManagementRoleHolderTest {
     @Postsubmit(reason = "New test")
     @Test
     @EnsureHasPermission(MANAGE_ROLE_HOLDERS)
-    @EnsureHasNoSecondaryUser
-    @EnsureHasNoWorkProfile
-    @RequireRunOnPrimaryUser
+    @RequireRunOnInitialUser
     @EnsureHasNoDpc
     @RequireMultiUserSupport
     public void shouldAllowBypassingDevicePolicyManagementRoleQualification_withUsers_returnsFalse()
@@ -340,9 +330,7 @@ public class DevicePolicyManagementRoleHolderTest {
     @RequireFeature(FEATURE_MANAGED_USERS)
     @EnsureHasPermission(MANAGE_PROFILE_AND_DEVICE_OWNERS)
     @EnsureHasPermission(MANAGE_ROLE_HOLDERS)
-    @EnsureHasNoSecondaryUser
-    @EnsureHasNoWorkProfile
-    @RequireRunOnPrimaryUser
+    @RequireRunOnInitialUser
     @EnsureHasNoDpc
     public void shouldAllowBypassingDevicePolicyManagementRoleQualification_withProfile_returnsFalse()
             throws Exception {
@@ -361,9 +349,7 @@ public class DevicePolicyManagementRoleHolderTest {
     @Postsubmit(reason = "New test")
     @Test
     @EnsureHasPermission(MANAGE_ROLE_HOLDERS)
-    @EnsureHasNoSecondaryUser
-    @EnsureHasNoWorkProfile
-    @RequireRunOnPrimaryUser
+    @RequireRunOnInitialUser
     @EnsureHasNoDpc
     public void shouldAllowBypassingDevicePolicyManagementRoleQualification_withAccounts_returnsFalse()
             throws Exception {

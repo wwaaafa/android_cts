@@ -34,6 +34,7 @@ import android.app.KeyguardManager;
 import android.app.admin.DevicePolicyManager;
 import android.content.Intent;
 import android.content.pm.UserInfo;
+import android.os.Build;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.util.Log;
@@ -56,10 +57,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * A representation of a User on device which may or may not exist.
- */
-public class UserReference implements AutoCloseable {
+/** A representation of a User on device which may or may not exist. */
+public final class UserReference implements AutoCloseable {
 
     private static final Set<AdbUser.UserState> RUNNING_STATES = new HashSet<>(
             Arrays.asList(AdbUser.UserState.RUNNING_LOCKED,
@@ -71,6 +70,10 @@ public class UserReference implements AutoCloseable {
 
     private static final String USER_SETUP_COMPLETE_KEY = "user_setup_complete";
 
+    private static final String TYPE_PASSWORD = "password";
+    private static final String TYPE_PIN = "pin";
+    private static final String TYPE_PATTERN = "pattern";
+
     private final int mId;
 
     private final UserManager mUserManager;
@@ -81,7 +84,9 @@ public class UserReference implements AutoCloseable {
     private Boolean mIsPrimary;
     private boolean mParentCached = false;
     private UserReference mParent;
-    private @Nullable String mPassword;
+    private @Nullable String mLockCredential;
+    private @Nullable String mLockType;
+
 
     /**
      * Returns a {@link UserReference} equivalent to the passed {@code userHandle}.
@@ -98,6 +103,10 @@ public class UserReference implements AutoCloseable {
 
     public final int id() {
         return mId;
+    }
+
+    public boolean isSystem() {
+        return id() == 0;
     }
 
     /**
@@ -424,75 +433,169 @@ public class UserReference implements AutoCloseable {
     }
 
     /**
-     * True if the user has a password.
+     * True if the user has a lock credential (password, pin or pattern set).
      */
-    public boolean hasPassword() {
+    public boolean hasLockCredential() {
         return TestApis.context().androidContextAsUser(this)
                 .getSystemService(KeyguardManager.class).isDeviceSecure();
+    }
+
+    /**
+     * Set a specific type of lock credential for the user.
+     */
+    private void setLockCredential(String lockType, String lockCredential) {
+        String lockTypeSentenceCase = Character.toUpperCase(lockType.charAt(0))
+                + lockType.substring(1);
+        try {
+            ShellCommand.builder("cmd lock_settings")
+                    .addOperand("set-" + lockType)
+                    .addOperand(lockCredential)
+                    .addOption("--user", mId)
+                    .validate(s -> s.startsWith(lockTypeSentenceCase + " set to"))
+                    .execute();
+        } catch (AdbException e) {
+            throw new NeneException("Error setting " + lockType, e);
+        }
+        mLockCredential = lockCredential;
+        mLockType = lockType;
     }
 
     /**
      * Set a password for the user.
      */
     public void setPassword(String password) {
-        try {
-            ShellCommand.builder("cmd lock_settings")
-                    .addOperand("set-password")
-                    .addOperand(password)
-                    .addOption("--user", mId)
-                    .validate(s -> s.startsWith("Password set to "))
-                    .execute();
-        } catch (AdbException e) {
-            throw new NeneException("Error setting password", e);
-        }
-        mPassword = password;
+        setLockCredential(TYPE_PASSWORD, password);
     }
 
     /**
-     * Clear the password for the user, using the password that was last set using Nene.
+     * Set a pin for the user.
+     */
+    public void setPin(String pin) {
+        setLockCredential(TYPE_PIN, pin);
+    }
+
+    /**
+     * Set a pattern for the user.
+     */
+    public void setPattern(String pattern) {
+        setLockCredential(TYPE_PATTERN, pattern);
+    }
+
+    /**
+     * Clear the password for the user, using the lock credential that was last set using
+     * Nene.
      */
     public void clearPassword() {
-        if (mPassword == null) {
-            throw new NeneException(
-                    "clearPassword() can only be called when setPassword was used to set the"
-                            + " password");
-        }
-        clearPassword(mPassword);
+        clearLockCredential(mLockCredential, TYPE_PASSWORD);
     }
 
     /**
-     * Clear the password for the user.
+     * Clear password for the user.
      */
     public void clearPassword(String password) {
+        clearLockCredential(password, TYPE_PASSWORD);
+    }
+
+    /**
+     * Clear the pin for the user, using the lock credential that was last set using
+     * Nene.
+     */
+    public void clearPin() {
+        clearLockCredential(mLockCredential, TYPE_PIN);
+    }
+
+    /**
+     * Clear pin for the user.
+     */
+    public void clearPin(String pin) {
+        clearLockCredential(pin, TYPE_PIN);
+    }
+
+    /**
+     * Clear the pattern for the user, using the lock credential that was last set using
+     * Nene.
+     */
+    public void clearPattern() {
+        clearLockCredential(mLockCredential, TYPE_PATTERN);
+    }
+
+    /**
+     * Clear pin for the user.
+     */
+    public void clearPattern(String pattern) {
+        clearLockCredential(pattern, TYPE_PATTERN);
+    }
+
+    /**
+     * Clear the lock credential for the user.
+     */
+    private void clearLockCredential(String lockCredential, String lockType) {
+        if (!lockType.equals(mLockType) && mLockType != null) {
+            String lockTypeSentenceCase = Character.toUpperCase(lockType.charAt(0))
+                    + lockType.substring(1);
+            throw new NeneException(
+                    "clear" + lockTypeSentenceCase + "() can only be called when set"
+                            + lockTypeSentenceCase + " was used to set the lock credential");
+        }
 
         try {
             ShellCommand.builder("cmd lock_settings")
                     .addOperand("clear")
-                    .addOption("--old", password)
+                    .addOption("--old", lockCredential)
                     .addOption("--user", mId)
                     .validate(s -> s.startsWith("Lock credential cleared"))
                     .execute();
         } catch (AdbException e) {
             if (e.output().contains("user has no password")) {
-                // No password anyway, fine
-                mPassword = null;
+                // No lock credential anyway, fine
+                mLockCredential = null;
+                mLockType = null;
                 return;
             }
-            throw new NeneException("Error clearing password", e);
+            throw new NeneException("Error clearing lock credential", e);
         }
 
-        mPassword = null;
+        mLockCredential = null;
+        mLockType = null;
     }
 
     /**
-     * Returns the password for this user if that password was set using Nene.
-     *
-     *
-     * <p>If there is no password, or the password was not set using Nene, then this will
-     * return {@code null}.
+     * returns password if password has been set using nene
      */
     public @Nullable String password() {
-        return mPassword;
+        return lockCredential(TYPE_PASSWORD);
+    }
+
+    /**
+     * returns pin if pin has been set using nene
+     */
+    public @Nullable String pin() {
+        return lockCredential(TYPE_PIN);
+    }
+
+    /**
+     * returns pattern if pattern has been set using nene
+     */
+    public @Nullable String pattern() {
+        return lockCredential(TYPE_PATTERN);
+    }
+
+    /**
+     * Returns the lock credential for this user if that lock credential was set using Nene.
+     * Where a lock credential can either be a password, pin or pattern.
+     *
+     * <p>If there is a lock credential but the lock credential was not set using the corresponding
+     * Nene method, this will throw an exception. If there is no lock credential set
+     * (regardless off the calling method) this will return {@code null}
+     */
+    private @Nullable String lockCredential(String lockType) {
+        if (mLockType != null && !lockType.equals(mLockType)) {
+            String lockTypeSentenceCase = Character.toUpperCase(lockType.charAt(0))
+                    + lockType.substring(1);
+            throw new NeneException(lockType + " not set, as set" + lockTypeSentenceCase + "() has "
+                    + "not been called");
+        }
+        return mLockCredential;
     }
 
     /**
@@ -508,6 +611,11 @@ public class UserReference implements AutoCloseable {
         if (!Versions.meetsMinimumSdkVersionRequirement(P)) {
             return false;
         }
+
+        if (isQuietModeEnabled() == enabled) {
+            return true;
+        }
+
         try (PermissionContext p = TestApis.permissions().withPermission(MODIFY_QUIET_MODE)) {
             BlockingBroadcastReceiver r = BlockingBroadcastReceiver.create(
                             TestApis.context().instrumentedContext(),
@@ -525,6 +633,18 @@ public class UserReference implements AutoCloseable {
                 r.unregisterQuietly();
             }
         }
+    }
+
+    /**
+     * Returns true if this user is a profile and quiet mode is enabled. Otherwise false.
+     */
+    @Experimental
+    public boolean isQuietModeEnabled() {
+        if (!Versions.meetsMinimumSdkVersionRequirement(Build.VERSION_CODES.N)) {
+            // Quiet mode not supported by < N
+            return false;
+        }
+        return mUserManager.isQuietModeEnabled(userHandle());
     }
 
     @Override

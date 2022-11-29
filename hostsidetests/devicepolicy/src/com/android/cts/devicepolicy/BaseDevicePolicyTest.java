@@ -26,11 +26,7 @@ import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
 import com.android.compatibility.common.tradefed.build.CompatibilityBuildHelper;
-import com.android.role.RoleProto;
-import com.android.role.RoleServiceDumpProto;
-import com.android.role.RoleUserStateProto;
 import com.android.tradefed.config.Option;
-import com.android.tradefed.device.CollectingByteOutputReceiver;
 import com.android.tradefed.device.CollectingOutputReceiver;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
@@ -57,7 +53,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -170,7 +165,6 @@ public abstract class BaseDevicePolicyTest extends BaseHostJUnit4Test {
 
     protected CompatibilityBuildHelper mBuildHelper;
     private String mPackageVerifier;
-    private HashSet<String> mAvailableFeatures;
 
     /** Packages installed as part of the tests */
     private Set<String> mFixedPackages;
@@ -746,6 +740,8 @@ public abstract class BaseDevicePolicyTest extends BaseHostJUnit4Test {
     }
 
     protected final void assumeSupportsMultiUser() throws DeviceNotAvailableException {
+        // setup isn't always called before this method
+        mSupportsMultiUser = getMaxNumberOfUsersSupported() > 1;
         assumeTrue("device doesn't support multiple users", mSupportsMultiUser);
     }
 
@@ -984,13 +980,19 @@ public abstract class BaseDevicePolicyTest extends BaseHostJUnit4Test {
                 String[] tokens = line.split("\\{|\\}");
                 String componentName = tokens[1];
                 // Skip to user id line.
-                i += 4;
-                line = lines[i].trim();
-                // Line is User ID: <N>
-                tokens = line.split(":");
-                int userId = Integer.parseInt(tokens[1].trim());
-                CLog.w("Cleaning up device owner " + userId + " " + componentName);
-                removeAdmin(componentName, userId);
+                for (int j = i + 1; j < lines.length; ++j) {
+                    line = lines[j].trim();
+                    // Line is User ID: <N>
+                    if (line.contains("User ID:")) {
+                        tokens = line.split(":");
+                        int userId = Integer.parseInt(tokens[1].trim());
+                        CLog.w("Cleaning up device owner " + userId + " " + componentName);
+                        removeAdmin(componentName, userId);
+                        return;
+                    }
+                }
+                throw new RuntimeException(
+                        "Error finding a user id for this device owner in dumpsys.");
             }
         }
     }
@@ -1203,31 +1205,8 @@ public abstract class BaseDevicePolicyTest extends BaseHostJUnit4Test {
     }
 
     protected String getDefaultLauncher() throws Exception {
-        final CollectingByteOutputReceiver receiver = new CollectingByteOutputReceiver();
-        getDevice().executeShellCommand("dumpsys role --proto", receiver);
-
-        RoleUserStateProto roleState = null;
-        final RoleServiceDumpProto dumpProto =
-                RoleServiceDumpProto.parser().parseFrom(receiver.getOutput());
-        for (RoleUserStateProto userState : dumpProto.getUserStatesList()) {
-            if (getDevice().getCurrentUser() == userState.getUserId()) {
-                roleState = userState;
-                break;
-            }
-        }
-
-        if (roleState != null) {
-            final List<RoleProto> roles = roleState.getRolesList();
-            // Iterate through the roles until we find the Home role
-            for (RoleProto roleProto : roles) {
-                if ("android.app.role.HOME".equals(roleProto.getName())) {
-                    assertEquals(1, roleProto.getHoldersList().size());
-                    return roleProto.getHoldersList().get(0);
-                }
-            }
-        }
-
-        throw new Exception("Default launcher not found");
+        return getDevice().executeShellCommand("cmd role get-role-holders --user "
+                + getDevice().getCurrentUser() + " android.app.role.HOME").trim();
     }
 
     void assumeIsDeviceAb() throws DeviceNotAvailableException {
@@ -1243,9 +1222,8 @@ public abstract class BaseDevicePolicyTest extends BaseHostJUnit4Test {
     // TODO (b/174775905) remove after exposing the check from ITestDevice.
     public static boolean isHeadlessSystemUserMode(ITestDevice device)
             throws DeviceNotAvailableException {
-        final String result = device
-                .executeShellCommand("getprop ro.fw.mu.headless_system_user").trim();
-        return "true".equalsIgnoreCase(result);
+        String result = device.executeShellCommand("dumpsys user");
+        return result.contains("headless-system mode: true");
     }
 
     protected void assumeHeadlessSystemUserMode(String reason)
