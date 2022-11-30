@@ -14,27 +14,10 @@
  * limitations under the License.
  */
 
-package com.android.interactive.steps;
+package com.android.interactive;
 
-import com.android.interactive.Nothing;
-import com.android.interactive.Step;
-
-/**
- * A {@link Step} where the user is asked to perform some action and confirm that it has been done.
- */
-public abstract class ActAndConfirmStep extends Step<Nothing> {
-
-    private final String mInstruction;
-
-    protected ActAndConfirmStep(String instruction) {
-        mInstruction = instruction;
-    }
-
-    @Override
-    public void interact() {
-        show(mInstruction);
-        addButton("Done", this::pass);
-
-        addFailButton();
+public final class StepTimeoutException extends RuntimeException {
+    public StepTimeoutException(Class<? extends Step> failedStep) {
+        super("Step " + failedStep.getCanonicalName() + " timed out waiting for tester input");
     }
 }

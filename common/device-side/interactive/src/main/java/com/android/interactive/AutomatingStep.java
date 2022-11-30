@@ -14,37 +14,33 @@
  * limitations under the License.
  */
 
-package com.android.interactive.steps;
+package com.android.interactive;
 
-import com.android.interactive.Step;
-
-import java.util.List;
+import java.util.Optional;
 
 /**
- * A {@link Step} where the user is asked to pick one from multiple options.
- *
- * <p>Each option is presented as a button
+ * A {@link Step} which is purely informational while some automation happens.
  */
-public abstract class MultipleChoiceStep extends Step<String> {
+final class AutomatingStep extends Step<Nothing> {
 
     private final String mInstruction;
-    private final List<String> mChoices;
 
-    protected MultipleChoiceStep(String instruction, List<String> choices) {
+    public AutomatingStep(String instruction) {
         mInstruction = instruction;
-        mChoices = choices;
+    }
+
+    @Override
+    public Optional<Nothing> getValue() {
+        return validate(Nothing.NOTHING);
     }
 
     @Override
     public void interact() {
         show(mInstruction);
+    }
 
-        for (String choice : mChoices) {
-            addButton(choice, () -> {
-                pass(choice);
-                close();
-            });
-        }
-        addFailButton();
+    @Override
+    public Optional<Nothing> validate(Nothing b) {
+        return Optional.empty();
     }
 }
