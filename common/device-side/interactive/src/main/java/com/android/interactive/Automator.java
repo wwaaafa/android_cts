@@ -143,7 +143,7 @@ public final class Automator {
      *
      * <p>{@link #canAutomate(Step)} should be returning true before calling this.
      */
-    public <E> E automate(Step<E> step) throws Throwable {
+    public <E> E automate(Step<E> step) throws Exception {
         // Unchecked cast is okay as we've verified the types when inserting into the map
         return ((Automation<E>)mAutomationClasses.get(step.getClass().getCanonicalName()))
                 .automate();
