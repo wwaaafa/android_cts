@@ -216,6 +216,11 @@ public final class ActivityManagerForegroundServiceTypeTest {
     }
 
     @Test
+    public void testForegroundServiceTypeFileManagementPermission() throws Exception {
+        testPermissionEnforcementCommon(ServiceInfo.FOREGROUND_SERVICE_TYPE_FILE_MANAGEMENT);
+    }
+
+    @Test
     public void testForegroundServiceTypeSpecialUsePermission() throws Exception {
         testPermissionEnforcementCommon(ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
     }
