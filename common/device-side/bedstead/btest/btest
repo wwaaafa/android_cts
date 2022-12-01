@@ -313,7 +313,9 @@ AVAILABLE_PARAMETER_COLOUR_CODES = [
     '\33[44m',
     '\33[45m',
     '\33[46m',
-    '\33[47m'
+    '\33[101m',
+    '\33[104m',
+    '\33[105m',
 ]
 
 def find_module_for_class_method(class_method):
