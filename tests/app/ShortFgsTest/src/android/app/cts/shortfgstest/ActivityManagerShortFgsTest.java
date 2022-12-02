@@ -26,6 +26,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
 import android.os.SystemClock;
+import android.platform.test.annotations.Presubmit;
 import android.provider.DeviceConfig;
 
 import com.android.compatibility.common.util.BroadcastMessenger.Receiver;
@@ -44,6 +45,7 @@ import org.junit.Test;
  *
  * TODO(short-service): Add more test cases, see b/260748204
  */
+@Presubmit
 public class ActivityManagerShortFgsTest {
     protected static final Context sContext = ShortFgsHelper.sContext;
 
