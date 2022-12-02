@@ -23,12 +23,9 @@ import static android.voiceinteraction.cts.testcore.VoiceInteractionDetectionHel
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeTrue;
 
-import android.app.Instrumentation;
 import android.app.compat.CompatChanges;
-import android.content.pm.PackageManager;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
@@ -36,13 +33,8 @@ import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.os.Parcelable;
-import android.os.Process;
 import android.platform.test.annotations.AppModeFull;
-import android.provider.DeviceConfig;
 import android.service.voice.HotwordDetectedResult;
-import android.support.test.uiautomator.By;
-import android.support.test.uiautomator.UiDevice;
-import android.support.test.uiautomator.Until;
 import android.util.Log;
 import android.voiceinteraction.common.Utils;
 import android.voiceinteraction.service.EventPayloadParcelable;
@@ -50,9 +42,7 @@ import android.voiceinteraction.service.MainHotwordDetectionService;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.RequiresDevice;
-import androidx.test.platform.app.InstrumentationRegistry;
 
-import com.android.compatibility.common.util.BlockingBroadcastReceiver;
 import com.android.compatibility.common.util.DisableAnimationRule;
 import com.android.compatibility.common.util.RequiredFeatureRule;
 import com.android.compatibility.common.util.SystemUtil;
@@ -75,28 +65,15 @@ public final class HotwordDetectionServiceBasicTest
     @Rule
     public RequiredFeatureRule REQUIRES_MIC_RULE = new RequiredFeatureRule(FEATURE_MICROPHONE);
 
+
     // TODO(b/230321933): Use active/noted RECORD_AUDIO app ops instead of checking the Mic icon.
     @Rule
     public DisableAnimationRule mDisableAnimationRule = new DisableAnimationRule();
 
-    private static final String INDICATORS_FLAG = "camera_mic_icons_enabled";
-    private static final String PRIVACY_CHIP_PKG = "com.android.systemui";
-    private static final String PRIVACY_CHIP_ID = "privacy_chip";
-    private static final Long PERMISSION_INDICATORS_NOT_PRESENT = 162547999L;
     private static final long MULTIPLE_ACTIVE_HOTWORD_DETECTORS = 193232191L;
     private static final Long CLEAR_CHIP_MS = 10000L;
 
-    private static Instrumentation sInstrumentation = InstrumentationRegistry.getInstrumentation();
-    private static UiDevice sUiDevice = UiDevice.getInstance(sInstrumentation);
-    private static PackageManager sPkgMgr = sInstrumentation.getContext().getPackageManager();
-    private static boolean wasIndicatorEnabled = false;
     private static String sDefaultScreenOffTimeoutValue;
-    private static boolean sIsAutomotive;
-
-    @BeforeClass
-    public static void enableIndicators() {
-        wasIndicatorEnabled = setIndicatorEnabledStateIfNeeded(true);
-    }
 
     @BeforeClass
     public static void extendScreenOffTimeout() throws Exception {
@@ -104,82 +81,12 @@ public final class HotwordDetectionServiceBasicTest
         sDefaultScreenOffTimeoutValue = SystemUtil.runShellCommand(
                 "settings get system screen_off_timeout");
         SystemUtil.runShellCommand("settings put system screen_off_timeout 600000");
-        sIsAutomotive = sPkgMgr.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE);
-    }
-
-    @AfterClass
-    public static void resetIndicators() {
-        if (!wasIndicatorEnabled) {
-            setIndicatorEnabledStateIfNeeded(false);
-        }
     }
 
     @AfterClass
     public static void restoreScreenOffTimeout() {
         SystemUtil.runShellCommand(
                 "settings put system screen_off_timeout " + sDefaultScreenOffTimeoutValue);
-    }
-
-    // Checks if the privacy indicators are enabled on this device. Sets the state to the parameter,
-    // And returns the original enable state (to allow this state to be reset after the test)
-    private static boolean setIndicatorEnabledStateIfNeeded(boolean shouldEnable) {
-        return SystemUtil.runWithShellPermissionIdentity(() -> {
-            boolean currentlyEnabled = DeviceConfig.getBoolean(DeviceConfig.NAMESPACE_PRIVACY,
-                    INDICATORS_FLAG, shouldEnable);
-            if (currentlyEnabled != shouldEnable) {
-                DeviceConfig.setProperty(DeviceConfig.NAMESPACE_PRIVACY, INDICATORS_FLAG,
-                        Boolean.toString(shouldEnable), false);
-            }
-            return currentlyEnabled;
-        });
-    }
-
-    @Test
-    @RequiresDevice
-    public void testHotwordDetectionService_createDetectorTwiceQuickly_triggerSuccess()
-            throws Throwable {
-        Thread.sleep(CLEAR_CHIP_MS);
-        final BlockingBroadcastReceiver softwareReceiver = new BlockingBroadcastReceiver(mContext,
-                Utils.HOTWORD_DETECTION_SERVICE_SOFTWARE_TRIGGER_RESULT_INTENT);
-        final BlockingBroadcastReceiver receiver = new BlockingBroadcastReceiver(mContext,
-                Utils.HOTWORD_DETECTION_SERVICE_TRIGGER_RESULT_INTENT);
-        softwareReceiver.register();
-        receiver.register();
-
-        // Create SoftwareHotwordDetector
-        testHotwordDetection(mActivityTestRule, mContext,
-                Utils.HOTWORD_DETECTION_SERVICE_FROM_SOFTWARE_TRIGGER_TEST,
-                Utils.HOTWORD_DETECTION_SERVICE_SOFTWARE_TRIGGER_RESULT_INTENT,
-                Utils.HOTWORD_DETECTION_SERVICE_TRIGGER_SUCCESS,
-                Utils.HOTWORD_DETECTION_SERVICE_BASIC);
-
-        // Destroy detector
-        testHotwordDetection(mActivityTestRule, mContext,
-                Utils.HOTWORD_DETECTION_SERVICE_SOFTWARE_DESTROY_DETECTOR,
-                Utils.HOTWORD_DETECTION_SERVICE_SOFTWARE_TRIGGER_RESULT_INTENT,
-                Utils.HOTWORD_DETECTION_SERVICE_TRIGGER_SUCCESS,
-                Utils.HOTWORD_DETECTION_SERVICE_BASIC);
-
-        // Create AlwaysOnHotwordDetector
-        testHotwordDetection(mActivityTestRule, mContext,
-                Utils.HOTWORD_DETECTION_SERVICE_TRIGGER_TEST,
-                Utils.HOTWORD_DETECTION_SERVICE_TRIGGER_RESULT_INTENT,
-                Utils.HOTWORD_DETECTION_SERVICE_TRIGGER_SUCCESS,
-                Utils.HOTWORD_DETECTION_SERVICE_BASIC);
-
-        verifyDetectedResult(
-                performAndGetDetectionResult(
-                        mActivityTestRule, mContext,
-                        Utils.HOTWORD_DETECTION_SERVICE_DSP_ONDETECT_TEST,
-                        Utils.HOTWORD_DETECTION_SERVICE_BASIC),
-                MainHotwordDetectionService.DETECTED_RESULT);
-        verifyMicrophoneChip(true);
-
-        testHotwordDetection(mActivityTestRule, mContext,
-                Utils.HOTWORD_DETECTION_SERVICE_DSP_DESTROY_DETECTOR,
-                Utils.HOTWORD_DETECTION_SERVICE_TRIGGER_RESULT_INTENT,
-                Utils.HOTWORD_DETECTION_SERVICE_TRIGGER_SUCCESS,
-                Utils.HOTWORD_DETECTION_SERVICE_BASIC);
     }
 
     @Test
@@ -327,29 +234,6 @@ public final class HotwordDetectionServiceBasicTest
     }
 
     @Test
-    public void testHotwordDetectionService_destroySoftwareDetector_activeDetectorRemoved() {
-        // Create SoftwareHotwordDetector
-        testHotwordDetection(mActivityTestRule, mContext,
-                Utils.HOTWORD_DETECTION_SERVICE_FROM_SOFTWARE_TRIGGER_TEST,
-                Utils.HOTWORD_DETECTION_SERVICE_SOFTWARE_TRIGGER_RESULT_INTENT,
-                Utils.HOTWORD_DETECTION_SERVICE_TRIGGER_SUCCESS,
-                Utils.HOTWORD_DETECTION_SERVICE_BASIC);
-
-        testHotwordDetection(mActivityTestRule, mContext,
-                Utils.HOTWORD_DETECTION_SERVICE_SOFTWARE_DESTROY_DETECTOR,
-                Utils.HOTWORD_DETECTION_SERVICE_SOFTWARE_TRIGGER_RESULT_INTENT,
-                Utils.HOTWORD_DETECTION_SERVICE_TRIGGER_SUCCESS,
-                Utils.HOTWORD_DETECTION_SERVICE_BASIC);
-
-        // Can no longer use the detector because it is in an invalid state
-        testHotwordDetection(mActivityTestRule, mContext,
-                Utils.HOTWORD_DETECTION_SERVICE_MIC_ONDETECT_TEST,
-                Utils.HOTWORD_DETECTION_SERVICE_TRIGGER_RESULT_INTENT,
-                Utils.HOTWORD_DETECTION_SERVICE_DETECTOR_ILLEGAL_STATE_EXCEPTION,
-                Utils.HOTWORD_DETECTION_SERVICE_BASIC);
-    }
-
-    @Test
     @RequiresDevice
     public void testMultipleDetectors_onDetectFromDspAndMic_success()
             throws Throwable {
@@ -425,29 +309,6 @@ public final class HotwordDetectionServiceBasicTest
                 expected.getPersonalizedScore());
         assertThat(hotwordDetectedResult.getScore()).isEqualTo(expected.getScore());
         assertThat(audioStream).isNull();
-    }
-
-    private void verifyMicrophoneChip(boolean shouldBePresent) throws Exception {
-        if (sPkgMgr.hasSystemFeature(PackageManager.FEATURE_LEANBACK)) {
-            // TODO ntmyren: test TV indicator
-        } else if (sPkgMgr.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)) {
-            // TODO ntmyren: test Auto indicator
-        } else {
-            verifyMicrophoneChipHandheld(shouldBePresent);
-        }
-    }
-
-    private void verifyMicrophoneChipHandheld(boolean shouldBePresent) throws Exception {
-        // If the change Id is not present, then isChangeEnabled will return true. To bypass this,
-        // the change is set to "false" if present.
-        if (SystemUtil.callWithShellPermissionIdentity(() -> CompatChanges.isChangeEnabled(
-                PERMISSION_INDICATORS_NOT_PRESENT, Process.SYSTEM_UID))) {
-            return;
-        }
-        // Ensure the privacy chip is present (or not)
-        final boolean chipFound = sUiDevice.wait(Until.hasObject(
-                By.res(PRIVACY_CHIP_PKG, PRIVACY_CHIP_ID)), CLEAR_CHIP_MS) == true;
-        assertEquals("chip display state", shouldBePresent, chipFound);
     }
 
     private boolean isEnableMultipleHotwordDetectors() {
