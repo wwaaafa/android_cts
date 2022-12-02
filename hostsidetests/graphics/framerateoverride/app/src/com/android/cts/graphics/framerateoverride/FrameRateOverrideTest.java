@@ -22,7 +22,6 @@ import android.hardware.display.DisplayManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.test.uiautomator.UiDevice;
-import android.sysprop.DisplayProperties;
 import android.sysprop.SurfaceFlingerProperties;
 import android.util.Log;
 import android.view.Display;
@@ -136,13 +135,6 @@ public final class FrameRateOverrideTest {
     private List<Display.Mode> getModesToTest() {
         List<Display.Mode> modesToTest = new ArrayList<>();
         if (!SurfaceFlingerProperties.enable_frame_rate_override().orElse(false)) {
-            return modesToTest;
-        }
-        // TODO(b/241447632): Remove the flag once SF changes are ready.
-        //  debug_render_frame_rate_is_physical_refresh_rate will prevent from SF choose a
-        //  frame rate which is different than the refresh rate, so the test can't run unless this
-        //  flag is turned off.
-        if (DisplayProperties.debug_render_frame_rate_is_physical_refresh_rate().orElse(true)) {
             return modesToTest;
         }
 
