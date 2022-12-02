@@ -1,4 +1,4 @@
-// Copyright (C) 2008 The Android Open Source Project
+// Copyright (C) 2022 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,50 +17,36 @@ package {
 }
 
 android_test {
-    name: "CtsOsTestCases",
-    defaults: ["cts_defaults"],
+    name: "CtsHibernationTestCases",
+    defaults: [
+        "cts_defaults",
+        "mts-target-sdk-version-current",
+    ],
     compile_multilib: "both",
     static_libs: [
-        "android.hidl.manager-V1.0-java",
         "androidx.test.core",
         "androidx.test.ext.junit",
         "androidx.test.rules",
-        "androidx.test.uiautomator",
+        "androidx.test.uiautomator_uiautomator",
         "compatibility-device-util-axt",
         "ctstestrunner-axt",
         "testng",
         "truth-prebuilt",
         "guava",
         "junit",
-        "Harrier",
-        "CtsMockInputMethodLib",
         "hamcrest-library",
         "modules-utils-build_system",
-        "platformprotosnano",
-    ],
-    jni_uses_platform_apis: true,
-    jni_libs: [
-        "libcts_jni",
-        "libctsos_jni",
-        "libnativehelper_compat_libc++",
+        "safety-center-internal-data",
     ],
     srcs: [
-        "src/**/*.java",
         "src/**/*.kt",
-        "src/android/os/cts/IParcelFileDescriptorPeer.aidl",
-        "src/android/os/cts/IEmptyService.aidl",
-        "src/android/os/cts/ISeccompIsolatedService.aidl",
-        "src/android/os/cts/ISecondary.aidl",
-        "src/android/os/cts/ISharedMemoryService.aidl",
-        "src/android/os/cts/IParcelExceptionService.aidl",
     ],
-    // Set its own test config to prevent sharing with cts-platform-version-check
-    test_config: "CtsOsTestCases.xml",
+    test_config: "AndroidTest.xml",
     // Tag this module as a cts test artifact
     test_suites: [
         "cts",
         "general-tests",
-        "sts",
+        "mts-permission",
     ],
     sdk_version: "test_current",
     libs: [
@@ -71,7 +57,9 @@ android_test {
     aaptflags: ["-0 .policy"],
     min_sdk_version: "29",
     data: [
-        ":CtsCompanionTestApp",
+        ":CtsAutoRevokeQApp",
+        ":CtsAutoRevokeSApp",
+        ":CtsAutoRevokeRApp",
     ],
     per_testcase_directory: true,
 }
