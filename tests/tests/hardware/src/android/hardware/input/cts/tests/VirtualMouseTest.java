@@ -106,9 +106,6 @@ public class VirtualMouseTest extends VirtualDeviceTestCase {
         verifyEvents(Arrays.asList(
                 createMotionEvent(MotionEvent.ACTION_HOVER_ENTER, firstStopPositionX,
                         firstStopPositionY, relativeChangeX, relativeChangeY, /* vScroll= */ 0f,
-                        /* hScroll= */ 0f, /* buttonState= */ 0, /* pressure= */ 0.0f),
-                createMotionEvent(MotionEvent.ACTION_HOVER_MOVE, firstStopPositionX,
-                        firstStopPositionY, relativeChangeX, relativeChangeY, /* vScroll= */ 0f,
                         /* hScroll= */ 0f, /* buttonState= */ 0, /* pressure= */ 0.0f)));
         final PointF cursorPosition1 = mVirtualMouse.getCursorPosition();
         assertEquals("getCursorPosition() should return the updated x position",
@@ -145,10 +142,6 @@ public class VirtualMouseTest extends VirtualDeviceTestCase {
                 .build());
         verifyEvents(Arrays.asList(
                 createMotionEvent(MotionEvent.ACTION_HOVER_ENTER, startPosition.x,
-                        startPosition.y, /* relativeX= */ 0f, /* relativeY= */ 0f,
-                        /* vScroll= */ 0f, /* hScroll= */ 0f, /* buttonState= */ 0,
-                        /* pressure= */ 0f),
-                createMotionEvent(MotionEvent.ACTION_HOVER_MOVE, startPosition.x,
                         startPosition.y, /* relativeX= */ 0f, /* relativeY= */ 0f,
                         /* vScroll= */ 0f, /* hScroll= */ 0f, /* buttonState= */ 0,
                         /* pressure= */ 0f),
