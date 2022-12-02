@@ -480,7 +480,7 @@ public class BluetoothHapClientTest {
     }
 
     @Test
-    public void testSupportSynchronizedPresets() {
+    public void testSupportsSynchronizedPresets() {
         if (shouldSkipTest()) {
             return;
         }
@@ -493,11 +493,11 @@ public class BluetoothHapClientTest {
         assertTrue(BTAdapterUtils.disableAdapter(mAdapter, mContext));
 
         // Verify returns false if bluetooth is not enabled
-        assertFalse(mBluetoothHapClient.supportSynchronizedPresets(testDevice));
+        assertFalse(mBluetoothHapClient.supportsSynchronizedPresets(testDevice));
     }
 
     @Test
-    public void testSupportIndependentPresets() {
+    public void testSupportsIndependentPresets() {
         if (shouldSkipTest()) {
             return;
         }
@@ -510,11 +510,11 @@ public class BluetoothHapClientTest {
         assertTrue(BTAdapterUtils.disableAdapter(mAdapter, mContext));
 
         // Verify returns false if bluetooth is not enabled
-        assertFalse(mBluetoothHapClient.supportIndependentPresets(testDevice));
+        assertFalse(mBluetoothHapClient.supportsIndependentPresets(testDevice));
     }
 
     @Test
-    public void testSupportDynamicPresets() {
+    public void testSupportsDynamicPresets() {
         if (shouldSkipTest()) {
             return;
         }
@@ -527,11 +527,11 @@ public class BluetoothHapClientTest {
         assertTrue(BTAdapterUtils.disableAdapter(mAdapter, mContext));
 
         // Verify returns false if bluetooth is not enabled
-        assertFalse(mBluetoothHapClient.supportDynamicPresets(testDevice));
+        assertFalse(mBluetoothHapClient.supportsDynamicPresets(testDevice));
     }
 
     @Test
-    public void testSupportWritablePresets() {
+    public void testSupportsWritablePresets() {
         if (shouldSkipTest()) {
             return;
         }
@@ -544,7 +544,7 @@ public class BluetoothHapClientTest {
         assertTrue(BTAdapterUtils.disableAdapter(mAdapter, mContext));
 
         // Verify returns false if bluetooth is not enabled
-        assertFalse(mBluetoothHapClient.supportWritablePresets(testDevice));
+        assertFalse(mBluetoothHapClient.supportsWritablePresets(testDevice));
     }
 
     private boolean shouldSkipTest() {
