@@ -17,6 +17,7 @@
 package android.mediav2.common.cts;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -297,15 +298,9 @@ public class CodecEncoderTestBase extends CodecTestBase {
                     fail("received partial frame to encode \n" + mTestConfig + mTestEnv);
                 } else {
                     Image img = mCodec.getInputImage(bufferIndex);
-                    if (img != null) {
-                        fillImage(img);
-                    } else {
-                        if (mWidth == mActiveRawRes.mWidth && mHeight == mActiveRawRes.mHeight) {
-                            inputBuffer.put(mInputData, mNumBytesSubmitted, size);
-                        } else {
-                            fillByteBuffer(inputBuffer);
-                        }
-                    }
+                    assertNotNull("getInputImage() expected to return non-null for video \n"
+                            + mTestConfig + mTestEnv, img);
+                    fillImage(img);
                 }
                 if (mSignalEOSWithLastFrame) {
                     if (mIsLoopBack ? (mInputCount + 1 >= mLoopBackFrameLimit) :
