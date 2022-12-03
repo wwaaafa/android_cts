@@ -23,6 +23,7 @@ import static android.media.MediaMuxer.OutputFormat.MUXER_OUTPUT_FIRST;
 import static android.media.MediaMuxer.OutputFormat.MUXER_OUTPUT_LAST;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -422,16 +423,9 @@ public class EncoderTestBase extends CodecTestBase {
                     fail("received partial frame to encode \n" + mTestConfig + mTestEnv);
                 } else {
                     Image img = mCodec.getInputImage(bufferIndex);
-                    if (img != null) {
-                        fillImage(img);
-                    } else {
-                        if (mActiveEncCfg.mWidth == mActiveRawRes.mWidth
-                                && mActiveEncCfg.mHeight == mActiveRawRes.mHeight) {
-                            inputBuffer.put(mInputData, mNumBytesSubmitted, size);
-                        } else {
-                            fillByteBuffer(inputBuffer);
-                        }
-                    }
+                    assertNotNull("getInputImage() expected to return non-null for video \n"
+                            + mTestConfig + mTestEnv, img);
+                    fillImage(img);
                 }
                 if (mSignalEOSWithLastFrame) {
                     if (mIsLoopBack ? (mInputCount + 1 >= mLoopBackFrameLimit) :
