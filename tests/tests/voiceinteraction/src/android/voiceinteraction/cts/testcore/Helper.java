@@ -60,6 +60,8 @@ public final class Helper {
 
     // The timeout to wait for async result
     public static final long WAIT_TIMEOUT_IN_MS = 10_000;
+
+    // The test package
     public static final String CTS_SERVICE_PACKAGE = "android.voiceinteraction.cts";
 
     // The id that is used to gate compat change
@@ -79,6 +81,11 @@ public final class Helper {
     public static byte[] FAKE_HOTWORD_AUDIO_DATA =
             new byte[]{'h', 'o', 't', 'w', 'o', 'r', 'd', '!'};
 
+    // The key or extra used for HotwordDetectionService
+    public static final String KEY_TEST_SCENARIO = "testScenario";
+    public static final int EXTRA_HOTWORD_DETECTION_SERVICE_ON_UPDATE_STATE_CRASH = 1;
+
+    // The expected HotwordDetectedResult for testing
     public static final HotwordDetectedResult DETECTED_RESULT =
             new HotwordDetectedResult.Builder()
                     .setAudioChannel(CHANNEL_IN_FRONT)
@@ -89,6 +96,11 @@ public final class Helper {
                     .setHotwordPhraseId(DEFAULT_PHRASE_ID)
                     .setPersonalizedScore(10)
                     .setScore(15)
+                    .build();
+    public static final HotwordDetectedResult DETECTED_RESULT_AFTER_STOP_DETECTION =
+            new HotwordDetectedResult.Builder()
+                    .setHotwordPhraseId(DEFAULT_PHRASE_ID)
+                    .setScore(57)
                     .build();
     public static final HotwordRejectedResult REJECTED_RESULT =
             new HotwordRejectedResult.Builder()
@@ -228,5 +240,16 @@ public final class Helper {
                 .isEqualTo(expectedDetectedResult.getPersonalizedScore());
         assertThat(hotwordDetectedResult.getScore()).isEqualTo(expectedDetectedResult.getScore());
         assertThat(audioStream).isNull();
+    }
+
+    /**
+     * Returns {@code true} if the device supports multiple detectors, otherwise
+     * returns {@code false}.
+     */
+    public static boolean isEnableMultipleDetectors() {
+        final boolean enableMultipleHotwordDetectors = CompatChanges.isChangeEnabled(
+                MULTIPLE_ACTIVE_HOTWORD_DETECTORS);
+        Log.d(TAG, "enableMultipleHotwordDetectors = " + enableMultipleHotwordDetectors);
+        return enableMultipleHotwordDetectors;
     }
 }
