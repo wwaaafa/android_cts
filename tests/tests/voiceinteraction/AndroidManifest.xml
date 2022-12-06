@@ -26,8 +26,8 @@
 
     <application>
       <uses-library android:name="android.test.runner"/>
-
-      <activity android:name="TestStartActivity"
+        <!-- Activities -->
+        <activity android:name="TestStartActivity"
            android:label="Voice Interaction Target"
            android:exported="true">
           <intent-filter>
@@ -35,7 +35,7 @@
               <category android:name="android.intent.category.LAUNCHER"/>
               <category android:name="android.intent.category.DEFAULT"/>
           </intent-filter>
-      </activity>
+        </activity>
         <activity android:name="TestVoiceInteractionServiceActivity"
             android:label="Voice Interaction Service Activity"
             android:exported="true">
@@ -48,6 +48,19 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- VoiceInteractionService -->
+        <service android:name=".services.CtsBasicVoiceInteractionService"
+                 android:label="CTS test Basic voice interaction service"
+                 android:permission="android.permission.BIND_VOICE_INTERACTION"
+                 android:exported="false"
+                 android:visibleToInstantApps="true">
+            <meta-data android:name="android.voice_interaction"
+                       android:resource="@xml/interaction_service_with_hotword" />
+            <intent-filter>
+                <action android:name="android.service.voice.VoiceInteractionService" />
+            </intent-filter>
+        </service>
+        <!-- TODO: move these VoiceInteractionService back to test folder -->
         <service android:name="android.voiceinteraction.service.BasicVoiceInteractionService"
                  android:label="CTS test Basic voice interaction service"
                  android:permission="android.permission.BIND_VOICE_INTERACTION"
