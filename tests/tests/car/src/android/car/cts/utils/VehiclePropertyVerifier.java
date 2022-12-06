@@ -22,6 +22,7 @@ import static com.google.common.truth.Truth.assertWithMessage;
 
 import static org.junit.Assume.assumeNotNull;
 
+import android.car.VehicleAreaDoor;
 import android.car.VehicleAreaMirror;
 import android.car.VehicleAreaSeat;
 import android.car.VehicleAreaType;
@@ -86,6 +87,13 @@ public class VehiclePropertyVerifier<T> {
             VehicleAreaSeat.SEAT_ROW_3_RIGHT);
     private static final ImmutableSet<Integer> ALL_POSSIBLE_SEAT_AREA_IDS =
             generateAllPossibleAreaIds(SEAT_AREAS);
+    private static final ImmutableSet<Integer> DOOR_AREAS = ImmutableSet.of(
+            VehicleAreaDoor.DOOR_ROW_1_LEFT, VehicleAreaDoor.DOOR_ROW_1_RIGHT,
+            VehicleAreaDoor.DOOR_ROW_2_LEFT, VehicleAreaDoor.DOOR_ROW_2_RIGHT,
+            VehicleAreaDoor.DOOR_ROW_3_LEFT, VehicleAreaDoor.DOOR_ROW_3_RIGHT,
+            VehicleAreaDoor.DOOR_HOOD, VehicleAreaDoor.DOOR_REAR);
+    private static final ImmutableSet<Integer> ALL_POSSIBLE_DOOR_AREA_IDS =
+            generateAllPossibleAreaIds(DOOR_AREAS);
 
 
     private final int mPropertyId;
@@ -459,6 +467,9 @@ public class VehiclePropertyVerifier<T> {
                 && mPropertyId != VehiclePropertyIds.INFO_DRIVER_SEAT) {
             verifyValidAreaIdsForAreaType(carPropertyConfig, ALL_POSSIBLE_SEAT_AREA_IDS);
             verifyNoAreaOverlapInAreaIds(carPropertyConfig, SEAT_AREAS);
+        } else if (mAreaType == VehicleAreaType.VEHICLE_AREA_TYPE_DOOR) {
+            verifyValidAreaIdsForAreaType(carPropertyConfig, ALL_POSSIBLE_DOOR_AREA_IDS);
+            verifyNoAreaOverlapInAreaIds(carPropertyConfig, DOOR_AREAS);
         }
         if (mAreaIdsVerifier.isPresent()) {
             mAreaIdsVerifier.get().verify(carPropertyConfig.getAreaIds());
