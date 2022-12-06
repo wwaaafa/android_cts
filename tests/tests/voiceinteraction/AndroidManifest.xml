@@ -59,6 +59,17 @@
                 <action android:name="android.service.voice.VoiceInteractionService" />
             </intent-filter>
         </service>
+        <service android:name=".services.CtsMainVoiceInteractionService"
+                 android:label="CTS test voice interaction service"
+                 android:permission="android.permission.BIND_VOICE_INTERACTION"
+                 android:exported="true"
+                 android:visibleToInstantApps="true">
+            <meta-data android:name="android.voice_interaction"
+                       android:resource="@xml/interaction_service" />
+            <intent-filter>
+                <action android:name="android.service.voice.VoiceInteractionService" />
+            </intent-filter>
+        </service>
         <!-- TODO: move these VoiceInteractionService back to test folder -->
         <service android:name="android.voiceinteraction.service.BasicVoiceInteractionService"
                  android:label="CTS test Basic voice interaction service"
