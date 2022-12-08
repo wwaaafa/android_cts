@@ -145,6 +145,26 @@ public class CtsCarModeInCallServiceControl extends Service {
         }
 
         @Override
+        public int getCallState() {
+            return CtsCarModeInCallService.getInstance().getLastCall().getState();
+        }
+
+        @Override
+        public void hold() {
+            CtsCarModeInCallService.getInstance().getLastCall().hold();
+        }
+
+        @Override
+        public void unhold() {
+            CtsCarModeInCallService.getInstance().getLastCall().unhold();
+        }
+
+        @Override
+        public void disconnect() {
+            CtsCarModeInCallService.getInstance().getLastCall().disconnect();
+        }
+
+        @Override
         public void answerCall(int videoState) {
             CtsCarModeInCallService.getInstance().getLastCall().answer(videoState);
         }

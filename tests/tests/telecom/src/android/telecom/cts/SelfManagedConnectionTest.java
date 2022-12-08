@@ -32,6 +32,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.IBinder;
 import android.os.UserHandle;
+import android.telecom.Call;
 import android.telecom.Connection;
 import android.telecom.PhoneAccount;
 import android.telecom.PhoneAccountHandle;
@@ -440,6 +441,95 @@ public class SelfManagedConnectionTest extends BaseTelecomTestWithMockServices {
 
         mContext.unbindService(inCallControl);
         mContext.unbindService(csControl);
+
+        assertIsInCall(false);
+        assertIsInManagedCall(false);
+    }
+
+    public void testSwapInCallServicesForSelfManagedCSCall() throws Exception {
+        if (!mShouldTestTelecom) {
+            return;
+        }
+
+        //Place self-managed CS second call
+        SelfManagedConnection connection = placeAndVerifySelfManagedCall();
+
+        // By default MockInCallService is binded
+        final MockInCallService inCallService = mInCallCallbacks.getService();
+        assertTrue(inCallService != null);
+
+        final Call call = inCallService.getLastCall();
+        assertTrue(call != null);
+
+        call.answer(VideoProfile.STATE_AUDIO_ONLY);
+
+        // Ensure AudioManager has correct voip mode.
+        AudioManager audioManager = mContext.getSystemService(AudioManager.class);
+        assertAudioMode(audioManager, MODE_IN_COMMUNICATION);
+        assertTrue(connection.getAudioModeIsVoip());
+
+        //hold the call
+        call.hold();
+
+        //connection should be on hold
+        assertTrue(connection.waitOnHold());
+        assertConnectionState(connection, Connection.STATE_HOLDING);
+        //call should be on hold
+        assertCallState(call, Call.STATE_HOLDING);
+
+        //should be still self-managed call
+        assertIsInCall(true);
+        assertIsInManagedCall(false);
+
+        // Start Car mode
+        TestServiceConnection inCallControl = setUpControl(CAR_MODE_CONTROL, CAR_DIALER_1);
+        mCarModeIncallServiceControlOne = ICtsCarModeInCallServiceControl.Stub
+                .asInterface(inCallControl.getService());
+        mCarModeIncallServiceControlOne.reset();
+
+        mUiAutomation.adoptShellPermissionIdentity(
+                "android.permission.ENTER_CAR_MODE_PRIORITIZED",
+                "android.permission.CONTROL_INCALL_EXPERIENCE");
+        mCarModeIncallServiceControlOne.enableCarMode(999);
+
+        // car mode inCallService should be binded
+        assertTrue(mCarModeIncallServiceControlOne.checkBindStatus(true /* bindStatus */));
+
+        // MockInCallService should be unbinded
+        assertMockInCallServiceUnbound();
+
+        // check call object received at car mode inCallService
+        assertTrue(mCarModeIncallServiceControlOne.checkCallAddedStatus());
+
+        // call state should be on hold
+        assertEquals(Call.STATE_HOLDING, mCarModeIncallServiceControlOne.getCallState());
+        //connection should be on hold
+        assertConnectionState(connection, Connection.STATE_HOLDING);
+
+        //should be still self-managed call
+        assertIsInCall(true);
+        assertIsInManagedCall(false);
+
+        //unhold the call
+        mCarModeIncallServiceControlOne.unhold();
+
+        // connection state should be ACTIVE
+        assertTrue(connection.waitOnUnHold());
+        assertConnectionState(connection, Connection.STATE_ACTIVE);
+
+        // Ensure AudioManager has correct voip mode.
+        assertAudioMode(audioManager, MODE_IN_COMMUNICATION);
+        assertTrue(connection.getAudioModeIsVoip());
+
+        // disconnect call
+        mCarModeIncallServiceControlOne.disconnect();
+
+        assertConnectionState(connection, Connection.STATE_DISCONNECTED);
+
+        mCarModeIncallServiceControlOne.disableCarMode();
+
+        mUiAutomation.dropShellPermissionIdentity();
+        mContext.unbindService(inCallControl);
 
         assertIsInCall(false);
         assertIsInManagedCall(false);
