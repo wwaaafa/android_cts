@@ -35,5 +35,9 @@ interface ICtsCarModeInCallServiceControl {
     void unregisterPhoneAccount(in PhoneAccountHandle phoneAccountHandle);
     boolean checkCallAddedStatus();
     int getCallVideoState();
+    int getCallState();
+    void hold();
+    void unhold();
+    void disconnect();
     void answerCall(int videoState);
 }
