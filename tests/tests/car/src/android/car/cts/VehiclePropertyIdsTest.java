@@ -116,6 +116,8 @@ public class VehiclePropertyIdsTest extends AbstractCarLessTestCase {
                 .isEqualTo("EV_BATTERY_INSTANTANEOUS_CHARGE_RATE");
         assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.EV_BATTERY_LEVEL))
                 .isEqualTo("EV_BATTERY_LEVEL");
+        assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.EV_CURRENT_BATTERY_CAPACITY))
+                .isEqualTo("EV_CURRENT_BATTERY_CAPACITY");
         assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.EV_CHARGE_PORT_CONNECTED))
                 .isEqualTo("EV_CHARGE_PORT_CONNECTED");
         assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.EV_CHARGE_PORT_OPEN))
