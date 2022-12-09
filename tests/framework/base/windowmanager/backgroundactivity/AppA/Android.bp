@@ -23,6 +23,9 @@ android_test_helper_app {
     static_libs: [
         "cts-wm-app-base",
         "cts-background-activity-common",
+        "cts_window-sidecar",
+        "cts_window-extensions",
+        "cts_window_jetpack_utils",
     ],
 
     srcs: ["src/**/*.java"],
@@ -42,6 +45,9 @@ android_test_helper_app {
     static_libs: [
         "cts-wm-app-base",
         "cts-background-activity-common",
+        "cts_window-sidecar",
+        "cts_window-extensions",
+        "cts_window_jetpack_utils",
     ],
 
     srcs: ["src/**/*.java"],

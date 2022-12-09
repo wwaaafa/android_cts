@@ -29,6 +29,7 @@
             android:exported="true"/>
         <activity
             android:name=".ForegroundActivity"
+            android:allowUntrustedActivityEmbedding="true"
             android:exported="true" />
     </application>
 </manifest>

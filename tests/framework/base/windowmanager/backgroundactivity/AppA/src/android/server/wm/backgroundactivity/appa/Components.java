@@ -47,6 +47,17 @@ public class Components extends ComponentsBase {
         }
     }
 
+    /** Action constants for {@link #FOREGROUND_EMBEDDING_ACTIVITY}. */
+    public static class ForegroundEmbeddedActivityAction {
+        public final String LAUNCH_EMBEDDED_ACTIVITY;
+        public final String FINISH_ACTIVITY;
+
+        public ForegroundEmbeddedActivityAction(String packageName) {
+            LAUNCH_EMBEDDED_ACTIVITY = packageName + ".ACTION_LAUNCH_EMBEDDED_ACTIVITY";
+            FINISH_ACTIVITY = packageName + ".ACTION_FINISH_ACTIVITY";
+        }
+    }
+
     /** Extra key constants for {@link #FOREGROUND_ACTIVITY}. */
     public static class ForegroundActivityExtra {
         public final String LAUNCH_BACKGROUND_ACTIVITY =
@@ -60,7 +71,11 @@ public class Components extends ComponentsBase {
         public final String START_ACTIVITY_FROM_FG_ACTIVITY_NEW_TASK =
                 "START_ACTIVITY_FROM_FG_ACTIVITY_NEW_TASK_EXTRA";
 
+        // Keep in sync with  android.server.wm.backgroundactivity.common.CommonComponents
+        // .CommonForegroundActivityExtras
+        public final String ACTIVITY_ID = "ACTIVITY_ID_EXTRA";
         public final String LAUNCH_INTENTS = "LAUNCH_INTENTS_EXTRA";
+        public final String FINISH_FIRST = "FINISH_FIRST_EXTRA";
     }
 
     /** Extra key constants for {@link #SEND_PENDING_INTENT_RECEIVER} */
@@ -89,6 +104,7 @@ public class Components extends ComponentsBase {
     public final ComponentName BACKGROUND_ACTIVITY;
     public final ComponentName SECOND_BACKGROUND_ACTIVITY;
     public final ComponentName FOREGROUND_ACTIVITY;
+    public final ComponentName FOREGROUND_EMBEDDING_ACTIVITY;
     public final ComponentName SEND_PENDING_INTENT_RECEIVER;
     public final ComponentName START_ACTIVITY_RECEIVER;
     public final ComponentName SIMPLE_ADMIN_RECEIVER;
@@ -102,6 +118,8 @@ public class Components extends ComponentsBase {
 
     public final ForegroundActivityAction FOREGROUND_ACTIVITY_ACTIONS;
     public final ForegroundActivityExtra FOREGROUND_ACTIVITY_EXTRA = new ForegroundActivityExtra();
+
+    public final ForegroundEmbeddedActivityAction FOREGROUND_EMBEDDING_ACTIVITY_ACTIONS;
 
     public final SendPendingIntentReceiverExtra SEND_PENDING_INTENT_RECEIVER_EXTRA =
             new SendPendingIntentReceiverExtra();
@@ -117,6 +135,8 @@ public class Components extends ComponentsBase {
                 component(APP_PACKAGE_NAME, "SecondBackgroundActivity");
         FOREGROUND_ACTIVITY =
                 component(APP_PACKAGE_NAME, "ForegroundActivity");
+        FOREGROUND_EMBEDDING_ACTIVITY =
+                component(APP_PACKAGE_NAME, "ForegroundEmbeddingActivity");
         SEND_PENDING_INTENT_RECEIVER =
                 component(APP_PACKAGE_NAME, "SendPendingIntentReceiver");
         START_ACTIVITY_RECEIVER =
@@ -139,6 +159,9 @@ public class Components extends ComponentsBase {
                 component(APP_PACKAGE_NAME, "ActivityStarterService");
 
         FOREGROUND_ACTIVITY_ACTIONS = new ForegroundActivityAction(APP_PACKAGE_NAME);
+        FOREGROUND_EMBEDDING_ACTIVITY_ACTIONS =
+                new ForegroundEmbeddedActivityAction(APP_PACKAGE_NAME);
+
     }
 
     private ComponentName component(String packageName, String className) {

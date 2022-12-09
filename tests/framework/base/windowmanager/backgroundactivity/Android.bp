@@ -35,6 +35,9 @@ android_test {
         "cts-wm-app-base",
         "cts-core-test-runner-axt",
         "cts-background-activity-common",
+        "cts_window-sidecar",
+        "cts_window-extensions",
+        "cts_window_jetpack_utils",
     ],
 
     test_suites: [
