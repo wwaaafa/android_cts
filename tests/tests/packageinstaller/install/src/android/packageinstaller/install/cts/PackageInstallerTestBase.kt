@@ -211,7 +211,7 @@ open class PackageInstallerTestBase {
         // Commit session
         val dialog = FutureResultActivity.doAndAwaitStart {
             val pendingIntent = PendingIntent.getBroadcast(
-                    context, 0, Intent(INSTALL_ACTION_CB),
+                    context, 0, Intent(INSTALL_ACTION_CB).setPackage(context.packageName),
                     FLAG_UPDATE_CURRENT or FLAG_MUTABLE)
             session.commit(pendingIntent.intentSender)
         }
@@ -245,7 +245,8 @@ open class PackageInstallerTestBase {
 
     private fun requestSession(session: Session, details: PreapprovalDetails) {
         val pendingIntent = PendingIntent.getBroadcast(context, 0 /* requestCode */,
-                Intent(INSTALL_ACTION_CB), FLAG_UPDATE_CURRENT or FLAG_MUTABLE)
+                Intent(INSTALL_ACTION_CB).setPackage(context.packageName),
+                FLAG_UPDATE_CURRENT or FLAG_MUTABLE)
         session.requestUserPreapproval(details, pendingIntent.intentSender)
     }
 
@@ -299,7 +300,8 @@ open class PackageInstallerTestBase {
 
     protected fun startInstallationViaPreapprovalSession(session: Session) {
         val pendingIntent = PendingIntent.getBroadcast(context, 0 /* requestCode */,
-                Intent(INSTALL_ACTION_CB), FLAG_UPDATE_CURRENT or FLAG_MUTABLE)
+                Intent(INSTALL_ACTION_CB).setPackage(context.packageName),
+                FLAG_UPDATE_CURRENT or FLAG_MUTABLE)
         session.commit(pendingIntent.intentSender)
     }
 
