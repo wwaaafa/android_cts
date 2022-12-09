@@ -35,6 +35,25 @@ public class Components extends ComponentsBase {
             return sPackageNameToComponents.computeIfAbsent(packageName, Components::new);
         }
     }
+    /** Action constants for {@link #FOREGROUND_ACTIVITY}. */
+    public static class ForegroundActivityAction {
+        public final String LAUNCH_BACKGROUND_ACTIVITIES;
+        public final String FINISH_ACTIVITY;
+
+        public ForegroundActivityAction(String packageName) {
+            LAUNCH_BACKGROUND_ACTIVITIES = packageName + ".ACTION_LAUNCH_BACKGROUND_ACTIVITIES";
+            FINISH_ACTIVITY = packageName + ".ACTION_FINISH_ACTIVITY";
+        }
+    }
+
+    /** Extra key constants for {@link #FOREGROUND_ACTIVITY}. */
+    public static class ForegroundActivityExtra {
+        // Keep in sync with  android.server.wm.backgroundactivity.common.CommonComponents
+        // .CommonForegroundActivityExtras
+        public final String ACTIVITY_ID = "ACTIVITY_ID_EXTRA";
+        public final String LAUNCH_INTENTS = "LAUNCH_INTENTS_EXTRA";
+        public final String FINISH_FIRST = "FINISH_FIRST_EXTRA";
+    }
 
     /** Extra key constants for {@link #START_PENDING_INTENT_ACTIVITY} */
     public static class StartPendingIntentActivityExtra {
@@ -58,6 +77,10 @@ public class Components extends ComponentsBase {
     public final ComponentName FOREGROUND_ACTIVITY;
     public final ComponentName START_PENDING_INTENT_ACTIVITY;
     public final ComponentName START_PENDING_INTENT_RECEIVER;
+
+    public final ForegroundActivityAction FOREGROUND_ACTIVITY_ACTIONS;
+    public final ForegroundActivityExtra FOREGROUND_ACTIVITY_EXTRA = new ForegroundActivityExtra();
+
     public final StartPendingIntentActivityExtra START_PENDING_INTENT_ACTIVITY_EXTRA =
             new StartPendingIntentActivityExtra();
     public final StartPendingIntentReceiverExtra START_PENDING_INTENT_RECEIVER_EXTRA =
@@ -72,6 +95,8 @@ public class Components extends ComponentsBase {
                 component(APP_PACKAGE_NAME, "StartPendingIntentActivity");
         START_PENDING_INTENT_RECEIVER =
                 component(APP_PACKAGE_NAME, "StartPendingIntentReceiver");
+
+        FOREGROUND_ACTIVITY_ACTIONS = new ForegroundActivityAction(APP_PACKAGE_NAME);
     }
 
     private ComponentName component(String packageName, String className) {

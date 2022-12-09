@@ -22,10 +22,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.os.SystemClock;
-
-import java.util.Arrays;
 
 /**
  * Foreground activity that makes AppA as foreground.
@@ -33,20 +30,30 @@ import java.util.Arrays;
 public class ForegroundActivity extends Activity {
     private Components mA;
 
+    private int mActivityId = -1;
     private boolean mRelaunch = false;
 
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
+            int activityId = intent.getIntExtra(mA.FOREGROUND_ACTIVITY_EXTRA.ACTIVITY_ID,
+                    mActivityId);
+            if (activityId != mActivityId) {
+                return;
+            }
+
+            if (mA.FOREGROUND_ACTIVITY_ACTIONS.FINISH_ACTIVITY.equals(action)
+                    || intent.getBooleanExtra(mA.FOREGROUND_ACTIVITY_EXTRA.FINISH_FIRST, false))  {
+                finish();
+            }
+
             if (mA.FOREGROUND_ACTIVITY_ACTIONS.LAUNCH_BACKGROUND_ACTIVITIES.equals(action)) {
                 // Need to copy as a new array instead of just casting to Intent[] since a new
                 // array of type Parcelable[] is created when deserializing.
-                Parcelable[] intents = intent.getParcelableArrayExtra(
-                        mA.FOREGROUND_ACTIVITY_EXTRA.LAUNCH_INTENTS);
-                startActivities(Arrays.copyOf(intents, intents.length, Intent[].class));
-            } else if (mA.FOREGROUND_ACTIVITY_ACTIONS.FINISH_ACTIVITY.equals(action)) {
-                finish();
+                Intent[] intents = intent.getParcelableArrayExtra(
+                        mA.FOREGROUND_ACTIVITY_EXTRA.LAUNCH_INTENTS, Intent.class);
+                startActivities(intents);
             }
         }
     };
@@ -59,6 +66,7 @@ public class ForegroundActivity extends Activity {
         Intent intent = getIntent();
         mRelaunch = intent.getBooleanExtra(
                 mA.FOREGROUND_ACTIVITY_EXTRA.RELAUNCH_FOREGROUND_ACTIVITY_EXTRA, false);
+        mActivityId = intent.getIntExtra(mA.FOREGROUND_ACTIVITY_EXTRA.ACTIVITY_ID, -1);
 
         boolean launchBackground = intent.getBooleanExtra(
                 mA.FOREGROUND_ACTIVITY_EXTRA.LAUNCH_BACKGROUND_ACTIVITY, false);

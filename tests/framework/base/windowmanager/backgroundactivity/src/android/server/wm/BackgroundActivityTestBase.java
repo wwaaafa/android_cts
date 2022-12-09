@@ -17,6 +17,7 @@
 package android.server.wm;
 
 import static android.app.AppOpsManager.MODE_ERRORED;
+import static android.server.wm.backgroundactivity.common.CommonComponents.COMMON_FOREGROUND_ACTIVITY_EXTRAS;
 
 import static com.android.compatibility.common.util.SystemUtil.runShellCommand;
 import static com.android.compatibility.common.util.SystemUtil.runWithShellPermissionIdentity;
@@ -73,7 +74,7 @@ public abstract class BackgroundActivityTestBase extends ActivityManagerTestBase
             initialAsmFlagVal = DeviceConfig.getProperty("window_manager",
                     "asm_restrictions_enabled");
             DeviceConfig.setProperty("window_manager",
-                    "asm_restrictions_enabled", "0", false);
+                    "asm_restrictions_enabled", "1", false);
 
             initialBalFlagVal = DeviceConfig.getProperty("window_manager",
                     "enable_default_rescind_bal_privileges_from_pending_intent_sender");
@@ -192,5 +193,142 @@ public abstract class BackgroundActivityTestBase extends ActivityManagerTestBase
                 .toArray(Intent[]::new);
         broadcastIntent.putExtra(appA.FOREGROUND_ACTIVITY_EXTRA.LAUNCH_INTENTS, intents);
         return broadcastIntent;
+    }
+
+    class ActivityStartVerifier {
+        private final Intent mBroadcastIntent = new Intent();
+        private final Intent mLaunchIntent = new Intent();
+
+        ActivityStartVerifier setupTaskWithForegroundActivity(
+                android.server.wm.backgroundactivity.appa.Components appA) {
+            setupTaskWithForegroundActivity(appA, -1);
+            return this;
+        }
+
+        ActivityStartVerifier setupTaskWithForegroundActivity(
+                android.server.wm.backgroundactivity.appa.Components appA, int id) {
+            Intent intent = new Intent();
+            intent.setComponent(appA.FOREGROUND_ACTIVITY);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.putExtra(COMMON_FOREGROUND_ACTIVITY_EXTRAS.ACTIVITY_ID, id);
+            mContext.startActivity(intent);
+            mWmState.waitForValidState(appA.FOREGROUND_ACTIVITY);
+            return this;
+        }
+
+        ActivityStartVerifier setupTaskWithEmbeddingActivity(
+                android.server.wm.backgroundactivity.appa.Components appA) {
+            Intent intent = new Intent();
+            intent.setComponent(appA.FOREGROUND_EMBEDDING_ACTIVITY);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            mContext.startActivity(intent);
+            mWmState.waitForValidState(appA.FOREGROUND_EMBEDDING_ACTIVITY);
+            return this;
+        }
+
+        ActivityStartVerifier startFromForegroundActivity(
+                android.server.wm.backgroundactivity.appa.Components appA) {
+            mBroadcastIntent.setAction(
+                    appA.FOREGROUND_ACTIVITY_ACTIONS.LAUNCH_BACKGROUND_ACTIVITIES);
+            return this;
+        }
+
+        ActivityStartVerifier startFromForegroundActivity(
+                android.server.wm.backgroundactivity.appb.Components appB) {
+            mBroadcastIntent.setAction(
+                    appB.FOREGROUND_ACTIVITY_ACTIONS.LAUNCH_BACKGROUND_ACTIVITIES);
+            return this;
+        }
+
+        ActivityStartVerifier startFromForegroundActivity(
+                android.server.wm.backgroundactivity.appa.Components appA, int id) {
+            startFromForegroundActivity(appA);
+            mBroadcastIntent.putExtra(COMMON_FOREGROUND_ACTIVITY_EXTRAS.ACTIVITY_ID, id);
+            return this;
+        }
+
+        ActivityStartVerifier startFromForegroundActivity(
+                android.server.wm.backgroundactivity.appb.Components appB, int id) {
+            startFromForegroundActivity(appB);
+            mBroadcastIntent.putExtra(COMMON_FOREGROUND_ACTIVITY_EXTRAS.ACTIVITY_ID, id);
+            return this;
+        }
+
+        ActivityStartVerifier startFromEmbeddingActivity(
+                android.server.wm.backgroundactivity.appa.Components appA) {
+            mBroadcastIntent.setAction(
+                    appA.FOREGROUND_EMBEDDING_ACTIVITY_ACTIONS.LAUNCH_EMBEDDED_ACTIVITY);
+            return this;
+        }
+
+        ActivityStartVerifier withBroadcastExtra(String key, boolean value) {
+            mBroadcastIntent.putExtra(key, value);
+            return this;
+        }
+
+        ActivityStartVerifier activity(ComponentName to) {
+            mLaunchIntent.setComponent(to);
+            mBroadcastIntent.putExtra(COMMON_FOREGROUND_ACTIVITY_EXTRAS.LAUNCH_INTENTS,
+                    new Intent[]{mLaunchIntent});
+            return this;
+        }
+
+        ActivityStartVerifier activity(ComponentName to, int id) {
+            activity(to);
+            mLaunchIntent.putExtra(COMMON_FOREGROUND_ACTIVITY_EXTRAS.ACTIVITY_ID, id);
+            return this;
+        }
+
+        ActivityStartVerifier execute() {
+            mContext.sendBroadcast(mBroadcastIntent);
+            mWmState.waitForValidState(mLaunchIntent.getComponent());
+            return this;
+        }
+
+        ActivityStartVerifier thenAssert(Runnable run) {
+            run.run();
+            return this;
+        }
+
+        ActivityStartVerifier thenAssertTaskStack(ComponentName... expectedComponents) {
+            BackgroundActivityTestBase.this.assertTaskStack(expectedComponents,
+                    expectedComponents[expectedComponents.length - 1]);
+            return this;
+        }
+
+        /**
+         * <pre>
+         * | expectedRootActivity | expectedEmbeddedActivities |
+         * |  fragment 1 - left   |     fragment 0 - right     |
+         * |----------------------|----------------------------|
+         * |                      |             A4             |  top
+         * |                      |             A3             |
+         * |          A1          |             A2             |  bottom
+         * </pre>
+         * @param expectedEmbeddedActivities The expected activities on the right side of the split
+         *                                   (fragment 0), top to bottom
+         * @param expectedRootActivity The expected activity on the left side of the split
+         *                             (fragment 1)
+         */
+        ActivityStartVerifier thenAssertEmbeddingTaskStack(
+                ComponentName[] expectedEmbeddedActivities, ComponentName expectedRootActivity) {
+            List<WindowManagerState.TaskFragment> fragments = mWmState.getTaskByActivity(
+                    expectedRootActivity).getTaskFragments();
+            assertEquals(2, fragments.size());
+
+            List<WindowManagerState.Activity> embeddedActivities = fragments.get(0).getActivities();
+            List<WindowManagerState.Activity> rootActivity = fragments.get(1).getActivities();
+
+            assertEquals(1, rootActivity.size());
+            assertEquals(expectedRootActivity.flattenToShortString(),
+                    rootActivity.get(0).getName());
+
+            assertEquals(expectedEmbeddedActivities.length, embeddedActivities.size());
+            for (int i = 0; i < expectedEmbeddedActivities.length; i++) {
+                assertEquals(expectedEmbeddedActivities[i].flattenToShortString(),
+                        embeddedActivities.get(i).getName());
+            }
+            return this;
+        }
     }
 }
