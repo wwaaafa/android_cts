@@ -137,7 +137,8 @@ public class ExtensionWindowLayoutComponentTest extends WindowManagerJetpackTest
     @ApiTest(apis = {
             "androidx.window.extensions.layout.WindowLayoutComponent#addWindowLayoutInfoListener"})
     public void testWindowLayoutComponent_onWindowLayoutChangeListener() throws Exception {
-        TestActivity activity = (TestActivity) startActivityNewTask(TestActivity.class);
+        TestActivity activity = (TestActivity) startFullScreenActivityNewTask(TestActivity.class,
+                null /* activityId */);
         // Set activity to portrait
         setActivityOrientationActivityDoesNotHandleOrientationChanges(activity,
                 ORIENTATION_PORTRAIT);
@@ -177,7 +178,8 @@ public class ExtensionWindowLayoutComponentTest extends WindowManagerJetpackTest
     @ApiTest(apis = {
             "androidx.window.extensions.layout.WindowLayoutComponent#addWindowLayoutInfoListener"})
     public void testWindowLayoutComponent_windowLayoutInfoListener() {
-        TestActivity activity = (TestActivity) startActivityNewTask(TestActivity.class);
+        TestActivity activity = (TestActivity) startFullScreenActivityNewTask(TestActivity.class,
+                null /* activityId */);
         TestValueCountConsumer<WindowLayoutInfo> windowLayoutInfoConsumer =
                 new TestValueCountConsumer<>();
         // Test that adding and removing callback succeeds
@@ -382,7 +384,8 @@ public class ExtensionWindowLayoutComponentTest extends WindowManagerJetpackTest
     public void testGetWindowLayoutInfo_windowRecreated_windowLayoutUpdates()
             throws ExecutionException, InterruptedException, TimeoutException {
         assumeSupportsRotation();
-        TestActivity activity = (TestActivity) startActivityNewTask(TestActivity.class);
+        TestActivity activity = (TestActivity) startFullScreenActivityNewTask(TestActivity.class,
+                null /* activityId */);
         mWindowLayoutInfo = getExtensionWindowLayoutInfo(activity);
         assumeHasDisplayFeatures(mWindowLayoutInfo);
 
@@ -411,7 +414,8 @@ public class ExtensionWindowLayoutComponentTest extends WindowManagerJetpackTest
     @Test
     public void testSidecarHasSameDisplayFeatures()
             throws ExecutionException, InterruptedException, TimeoutException {
-        TestActivity activity = (TestActivity) startActivityNewTask(TestActivity.class);
+        TestActivity activity = (TestActivity) startFullScreenActivityNewTask(TestActivity.class,
+                null /* activityId */);
         assumeSidecarSupportedDevice(activity);
         mWindowLayoutInfo = getExtensionWindowLayoutInfo(activity);
         assumeHasDisplayFeatures(mWindowLayoutInfo);
