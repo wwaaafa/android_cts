@@ -105,6 +105,7 @@ public class ValidateTestsAbi {
         BINARY_EXCEPTIONS.add("img2simg");
         BINARY_EXCEPTIONS.add("lpmake");
         BINARY_EXCEPTIONS.add("lpunpack");
+        BINARY_EXCEPTIONS.add("mk_payload");
         BINARY_EXCEPTIONS.add("sign_virt_apex");
         BINARY_EXCEPTIONS.add("simg2img");
     }
@@ -237,7 +238,11 @@ public class ValidateTestsAbi {
                 }
                 try {
                     // Ignore python binaries
-                    if (FileUtil.readStringFromFile(f).startsWith("#!/usr/bin/env python")) {
+                    String content = FileUtil.readStringFromFile(f);
+                    if (content.startsWith("#!/usr/bin/env python")) {
+                        return true;
+                    }
+                    if (content.contains("mobly/__init__.py")) {
                         return true;
                     }
                 } catch (IOException e) {
