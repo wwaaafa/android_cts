@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 The Android Open Source Project
+ * Copyright (C) 2022 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,29 @@
  * limitations under the License.
  */
 
-package android.telecom.cts.carmodetestapp;
+package android.telecom.cts.selfmanagedcstestapp;
+
 import android.telecom.PhoneAccountHandle;
 import android.telecom.PhoneAccount;
 
-interface ICtsCarModeInCallServiceControl {
-    boolean isBound();
-    boolean isUnbound();
-    void reset();
-    int getCallCount();
-    void enableCarMode(int priority);
-    void disableCarMode();
-    void disconnectCalls();
-    boolean requestAutomotiveProjection();
-    void releaseAutomotiveProjection();
-    boolean checkBindStatus(boolean bind);
-    List<PhoneAccountHandle> getSelfManagedPhoneAccounts();
-    List<PhoneAccountHandle> getOwnSelfManagedPhoneAccounts();
+interface ICtsSelfManagedConnectionServiceControl {
+    void init();
+    void deInit();
+    boolean waitForBinding();
+    boolean waitForUpdate(int lock);
     void registerPhoneAccount(in PhoneAccount phoneAccount);
     void unregisterPhoneAccount(in PhoneAccountHandle phoneAccountHandle);
-    boolean checkCallAddedStatus();
-    int getCallVideoState();
-    void answerCall(int videoState);
+    boolean isConnectionAvailable();
+    boolean waitOnHold();
+    boolean waitOnUnHold();
+    boolean placeOutgoingCall(in PhoneAccountHandle handle, in String uri);
+    boolean placeIncomingCall(in PhoneAccountHandle handle,
+            in String uri, in int videoState);
+    boolean isIncomingCall();
+    boolean waitOnAnswer();
+    boolean getAudioModeIsVoip();
+    int getConnectionState();
+    int getOnShowIncomingUiInvokeCounter();
+    void setConnectionActive();
+    void disconnectConnection();
 }
