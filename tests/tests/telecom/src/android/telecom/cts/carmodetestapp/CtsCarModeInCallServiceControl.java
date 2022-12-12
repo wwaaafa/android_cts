@@ -133,6 +133,21 @@ public class CtsCarModeInCallServiceControl extends Service {
                 telecomManager.unregisterPhoneAccount(phoneAccountHandle);
             }
         }
+
+        @Override
+        public boolean checkCallAddedStatus() {
+            return CtsCarModeInCallService.getInstance().checkCallAddedStatus();
+        }
+
+        @Override
+        public int getCallVideoState() {
+            return CtsCarModeInCallService.getInstance().getLastCall().getDetails().getVideoState();
+        }
+
+        @Override
+        public void answerCall(int videoState) {
+            CtsCarModeInCallService.getInstance().getLastCall().answer(videoState);
+        }
     };
 
     @Override
