@@ -19,6 +19,8 @@ package android.telephony.ims.cts;
 import static android.telephony.ims.RegistrationManager.SUGGESTED_ACTION_NONE;
 import static android.telephony.ims.RegistrationManager.SUGGESTED_ACTION_TRIGGER_PLMN_BLOCK;
 import static android.telephony.ims.RegistrationManager.SUGGESTED_ACTION_TRIGGER_PLMN_BLOCK_WITH_TIMEOUT;
+import static android.telephony.ims.stub.ImsRegistrationImplBase.REGISTRATION_TECH_LTE;
+import static android.telephony.ims.stub.ImsRegistrationImplBase.REGISTRATION_TECH_NONE;
 
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertNotNull;
@@ -4961,13 +4963,15 @@ public class ImsServiceTest {
         reasonInfo = new ImsReasonInfo(ImsReasonInfo.CODE_REGISTRATION_ERROR,
                 ImsReasonInfo.CODE_UNSPECIFIED, "");
         sServiceConnector.getCarrierService().getImsRegistration().onDeregistered(
-                reasonInfo, SUGGESTED_ACTION_TRIGGER_PLMN_BLOCK);
+                reasonInfo, SUGGESTED_ACTION_TRIGGER_PLMN_BLOCK, REGISTRATION_TECH_LTE);
 
         receivedInfo = waitForResult(mDeregQueue);
         assertNotNull(receivedInfo);
         assertEquals(reasonInfo, receivedInfo);
     }
 
+    @Ignore("RegistrationManager.RegistrationCallback#onUnregistered(ImsReasonInfo,int,int)"
+            + " is hidden. Internal use only.")
     @Test
     public void testMmTelManagerRegistrationBlock() throws Exception {
         if (!ImsUtils.shouldTestImsService()) {
@@ -4983,14 +4987,15 @@ public class ImsServiceTest {
 
         // Start de-registered
         sServiceConnector.getCarrierService().getImsRegistration().onDeregistered(
-                reasonInfo, SUGGESTED_ACTION_NONE);
+                reasonInfo, SUGGESTED_ACTION_NONE, REGISTRATION_TECH_NONE);
 
         LinkedBlockingQueue<Integer> mDeregQueue =
                 new LinkedBlockingQueue<>();
         RegistrationManager.RegistrationCallback callback =
                 new RegistrationManager.RegistrationCallback() {
             @Override
-            public void onUnregistered(ImsReasonInfo info, int suggestedAction) {
+            public void onUnregistered(ImsReasonInfo info, int suggestedAction,
+                    int imsRadioTech) {
                 mDeregQueue.offer(suggestedAction);
             }
         };
@@ -5011,14 +5016,16 @@ public class ImsServiceTest {
 
         // fatal error
         sServiceConnector.getCarrierService().getImsRegistration().onDeregistered(
-                reasonInfo, SUGGESTED_ACTION_TRIGGER_PLMN_BLOCK);
+                reasonInfo, SUGGESTED_ACTION_TRIGGER_PLMN_BLOCK,
+                REGISTRATION_TECH_LTE);
 
         suggestedAction = waitForResult(mDeregQueue);
         assertEquals(SUGGESTED_ACTION_TRIGGER_PLMN_BLOCK, suggestedAction);
 
         // repeated error
         sServiceConnector.getCarrierService().getImsRegistration().onDeregistered(
-                reasonInfo, SUGGESTED_ACTION_TRIGGER_PLMN_BLOCK_WITH_TIMEOUT);
+                reasonInfo, SUGGESTED_ACTION_TRIGGER_PLMN_BLOCK_WITH_TIMEOUT,
+                REGISTRATION_TECH_LTE);
 
         suggestedAction = waitForResult(mDeregQueue);
         assertEquals(SUGGESTED_ACTION_TRIGGER_PLMN_BLOCK_WITH_TIMEOUT, suggestedAction);
@@ -5028,6 +5035,56 @@ public class ImsServiceTest {
 
         suggestedAction = waitForResult(mDeregQueue);
         assertEquals(SUGGESTED_ACTION_NONE, suggestedAction);
+    }
+
+    @Ignore("RegistrationManager.RegistrationCallback#onUnregistered(ImsReasonInfo,int,int)"
+            + " is hidden. Internal use only.")
+    @Test
+    public void testMmTelManagerRegistrationDeregisteredRadioTech() throws Exception {
+        if (!ImsUtils.shouldTestImsService()) {
+            return;
+        }
+
+        assumeTrue(sSupportsImsHal);
+
+        triggerFrameworkConnectToCarrierImsService();
+
+        ImsReasonInfo reasonInfo = new ImsReasonInfo(ImsReasonInfo.CODE_REGISTRATION_ERROR,
+                ImsReasonInfo.CODE_UNSPECIFIED, "");
+
+        // Start de-registered
+        sServiceConnector.getCarrierService().getImsRegistration().onDeregistered(
+                reasonInfo, SUGGESTED_ACTION_NONE, REGISTRATION_TECH_LTE);
+
+        LinkedBlockingQueue<Integer> mDeregQueue =
+                new LinkedBlockingQueue<>();
+        RegistrationManager.RegistrationCallback callback =
+                new RegistrationManager.RegistrationCallback() {
+            @Override
+            public void onUnregistered(ImsReasonInfo info, int suggestedAction,
+                    int imsRadioTech) {
+                mDeregQueue.offer(imsRadioTech);
+            }
+        };
+
+        final UiAutomation automan = InstrumentationRegistry.getInstrumentation().getUiAutomation();
+        try {
+            automan.adoptShellPermissionIdentity();
+            ImsManager imsManager = getContext().getSystemService(ImsManager.class);
+            ImsMmTelManager mmTelManager = imsManager.getImsMmTelManager(sTestSub);
+            mmTelManager.registerImsRegistrationCallback(getContext().getMainExecutor(), callback);
+        } finally {
+            automan.dropShellPermissionIdentity();
+        }
+
+        int imsRadioTech = waitForResult(mDeregQueue);
+        assertEquals(REGISTRATION_TECH_LTE, imsRadioTech);
+
+        // without extra
+        sServiceConnector.getCarrierService().getImsRegistration().onDeregistered(reasonInfo);
+
+        imsRadioTech = waitForResult(mDeregQueue);
+        assertEquals(REGISTRATION_TECH_NONE, imsRadioTech);
     }
 
     private void verifyIntKey(ProvisioningManager pm,
