@@ -22,8 +22,14 @@ import static android.car.user.CarUserManager.USER_LIFECYCLE_EVENT_TYPE_REMOVED;
 import static android.car.user.CarUserManager.UserLifecycleEvent;
 import static android.car.user.CarUserManager.UserLifecycleListener;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
+import static org.junit.Assert.assertThrows;
+
+import static java.lang.Math.max;
+
+import android.app.ActivityManager;
 import android.car.test.ApiCheckerRule;
 import android.car.test.PermissionsCheckerRule.EnsureHasPermission;
 import android.car.test.util.AndroidHelper;
@@ -222,6 +228,22 @@ public final class CarUserManagerTest extends AbstractCarTestCase {
         }
     }
 
+
+    @Test
+    @ApiTest(apis = {"android.car.user.CarUserManager#isValidUser(UserHandle)"})
+    @EnsureHasPermission(CREATE_USERS)
+    public void testIsValidUserExists() {
+        assertThat(mCarUserManager.isValidUser(
+                UserHandle.of(ActivityManager.getCurrentUser()))).isTrue();
+    }
+
+    @Test
+    @ApiTest(apis = {"android.car.user.CarUserManager#isValidUser(UserHandle)"})
+    public void testIsValidUserDoesNotExist() {
+        assertThrows(SecurityException.class,
+                () -> mCarUserManager.isValidUser(getNonExistentUser()));
+    }
+
     @NonNull
     private UserHandle createUser(@Nullable String name, boolean isGuest) {
         name = getNewUserName(name);
@@ -280,6 +302,17 @@ public final class CarUserManagerTest extends AbstractCarTestCase {
         String message = String.format(format, args);
         Log.e(TAG, "test failed: " + message);
         org.junit.Assert.fail(message);
+    }
+
+    private UserHandle getNonExistentUser() {
+        List<UserHandle> existingUsers = mUserManager.getUserHandles(false);
+
+        int newUserId = UserHandle.USER_NULL;
+        for (UserHandle userHandle : existingUsers) {
+            newUserId = max(newUserId, userHandle.getIdentifier());
+        }
+
+        return UserHandle.of(++newUserId);
     }
 
     // TODO(b/244594590): Clean this listener up once BlockingUserLifecycleListener supports
