@@ -250,16 +250,16 @@ public class ResourcesProviderTest {
             throws PackageManager.NameNotFoundException, IOException {
         final String packageName = mContext.getPackageName();
         FabricatedOverlay fabricatedOverlayForColor =
-                new FabricatedOverlay.Builder("helloOverlayForColor", packageName)
-                        .setTargetOverlayable(OVERLAYABLE_NAME)
-                        .setResourceValue(
-                                TARGET_COLOR_RES, TypedValue.TYPE_INT_COLOR_ARGB8, Color.WHITE)
-                        .build();
+                new FabricatedOverlay("helloOverlayForColor", packageName);
+        fabricatedOverlayForColor.setTargetOverlayable(OVERLAYABLE_NAME);
+        fabricatedOverlayForColor.setResourceValue(
+                TARGET_COLOR_RES, TypedValue.TYPE_INT_COLOR_ARGB8, Color.WHITE,
+                null /* configuration */);
         FabricatedOverlay fabricatedOverlayForString =
-                new FabricatedOverlay.Builder("helloOverlayForString", packageName)
-                        .setTargetOverlayable(OVERLAYABLE_NAME)
-                        .setResourceValue(TARGET_STRING_RES, TypedValue.TYPE_STRING, "HELLO")
-                        .build();
+                new FabricatedOverlay("helloOverlayForString", packageName);
+        fabricatedOverlayForString.setTargetOverlayable(OVERLAYABLE_NAME);
+        fabricatedOverlayForString.setResourceValue(
+                TARGET_STRING_RES, TypedValue.TYPE_STRING, "HELLO", null /* configuration */);
         final OverlayManagerTransaction transaction = new OverlayManagerTransaction(
                 mOverlayManager);
         transaction.registerFabricatedOverlay(fabricatedOverlayForColor);
