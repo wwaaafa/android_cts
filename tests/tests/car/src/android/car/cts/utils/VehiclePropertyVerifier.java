@@ -20,6 +20,7 @@ import static android.car.cts.utils.ShellPermissionUtils.runWithShellPermissionI
 
 import static com.google.common.truth.Truth.assertWithMessage;
 
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeNotNull;
 
 import android.car.VehicleAreaDoor;
@@ -54,6 +55,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -215,6 +217,9 @@ public class VehiclePropertyVerifier<T> {
     }
 
     public void verify(CarPropertyManager carPropertyManager) {
+        // This allows updating this variable within a lambda.
+        AtomicReference<CarPropertyConfig<?>> savedCarPropertyConfig = new AtomicReference<>();
+
         runWithShellPermissionIdentity(
                 () -> {
                     CarPropertyConfig<?> carPropertyConfig =
@@ -228,6 +233,7 @@ public class VehiclePropertyVerifier<T> {
                     }
 
                     verifyCarPropertyConfig(carPropertyConfig);
+                    savedCarPropertyConfig.set(carPropertyConfig);
 
                     if (mPossiblyDependentOnHvacPowerOn) {
                         CarPropertyConfig<?> hvacPowerOnCarPropertyConfig =
@@ -250,6 +256,8 @@ public class VehiclePropertyVerifier<T> {
                         .addAll(mReadPermissions)
                         .addAll(mWritePermissions)
                         .build().toArray(new String[0]));
+
+        verifyPermissionNotGrantedException(savedCarPropertyConfig.get(), carPropertyManager);
     }
 
     private void turnOnHvacPower(CarPropertyManager carPropertyManager,
@@ -792,6 +800,66 @@ public class VehiclePropertyVerifier<T> {
                         + "the area type: " + areaTypeToString(mAreaType)).that(
                 Collections.frequency(areaIdOverlapCheckResults, 0)
                         == areaIdOverlapCheckResults.size()).isTrue();
+    }
+
+    private void verifyPermissionNotGrantedException(CarPropertyConfig<?> carPropertyConfig,
+            CarPropertyManager carPropertyManager) {
+        assertWithMessage(
+                    mPropertyName
+                            + " - property ID: "
+                            + mPropertyId
+                            + " CarPropertyConfig should not be accessible without permissions")
+                .that(carPropertyManager.getCarPropertyConfig(mPropertyId))
+                .isNull();
+
+        for (int areaId : carPropertyConfig.getAreaIds()) {
+            switch(carPropertyConfig.getAccess()) {
+                case CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE:
+                    assertThrows(
+                            mPropertyName
+                                    + " - property ID: "
+                                    + mPropertyId
+                                    + " - area ID: "
+                                    + areaId
+                                    + " should not be able to be read without permissions",
+                            SecurityException.class,
+                            () -> carPropertyManager.getProperty(mPropertyId, areaId));
+                    assertThrows(
+                            mPropertyName
+                                    + " - property ID: "
+                                    + mPropertyId
+                                    + " - area ID: "
+                                    + areaId
+                                    + " should not be able to be written to without permissions",
+                            SecurityException.class,
+                            () -> carPropertyManager.setProperty(
+                                        Object.class, mPropertyId, areaId, 0));
+                    break;
+                case CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ:
+                    assertThrows(
+                            mPropertyName
+                                    + " - property ID: "
+                                    + mPropertyId
+                                    + " - area ID: "
+                                    + areaId
+                                    + " should not be able to be read without permissions",
+                            SecurityException.class,
+                            () -> carPropertyManager.getProperty(mPropertyId, areaId));
+                    break;
+                case CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_WRITE:
+                    assertThrows(
+                            mPropertyName
+                                    + " - property ID: "
+                                    + mPropertyId
+                                    + " - area ID: "
+                                    + areaId
+                                    + " should not be able to be written to without permissions",
+                            SecurityException.class,
+                            () -> carPropertyManager.setProperty(
+                                        Object.class, mPropertyId, areaId, 0));
+                    break;
+            }
+        }
     }
 
     public interface ConfigArrayVerifier {
