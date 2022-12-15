@@ -255,12 +255,14 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
             ImmutableList.<Integer>builder()
                     .add(
                             VehiclePropertyIds.AUTOMATIC_EMERGENCY_BRAKING_ENABLED,
+                            VehiclePropertyIds.FORWARD_COLLISION_WARNING_ENABLED,
                             VehiclePropertyIds.LANE_CENTERING_ASSIST_ENABLED)
                     .build();
     private static final ImmutableList<Integer> PERMISSION_CONTROL_ADAS_SETTINGS_PROPERTIES =
             ImmutableList.<Integer>builder()
                     .add(
                             VehiclePropertyIds.AUTOMATIC_EMERGENCY_BRAKING_ENABLED,
+                            VehiclePropertyIds.FORWARD_COLLISION_WARNING_ENABLED,
                             VehiclePropertyIds.LANE_CENTERING_ASSIST_ENABLED)
                     .build();
     private static final ImmutableList<Integer> PERMISSION_READ_ADAS_STATES_PROPERTIES =
@@ -4186,6 +4188,20 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     public void testAutomaticEmergencyBrakingEnabledIfSupported() {
         VehiclePropertyVerifier.newBuilder(
                         VehiclePropertyIds.AUTOMATIC_EMERGENCY_BRAKING_ENABLED,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Boolean.class)
+                .addReadPermission(Car.PERMISSION_READ_ADAS_SETTINGS)
+                .addWritePermission(Car.PERMISSION_CONTROL_ADAS_SETTINGS)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
+    public void testForwardCollisionWarningEnabledIfSupported() {
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.FORWARD_COLLISION_WARNING_ENABLED,
                         CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE,
                         VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
                         CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
