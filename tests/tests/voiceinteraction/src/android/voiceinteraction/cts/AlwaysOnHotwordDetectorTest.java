@@ -96,7 +96,7 @@ public class AlwaysOnHotwordDetectorTest {
         mService.createAlwaysOnHotwordDetector();
 
         // verify callback result
-        mService.waitHotwordDetectionServiceInitializedResult();
+        mService.waitHotwordDetectionServiceInitializedCalledOrException();
         assertThat(mService.getHotwordDetectionServiceInitializedResult()).isEqualTo(
                 HotwordDetectionService.INITIALIZATION_STATUS_SUCCESS);
 
