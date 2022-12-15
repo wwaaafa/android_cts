@@ -131,6 +131,9 @@ public class AudioManagerTest extends InstrumentationTestCase {
                 AudioManager.DIRECT_PLAYBACK_OFFLOAD_SUPPORTED,
             AudioManager.PLAYBACK_OFFLOAD_GAPLESS_SUPPORTED,
                 AudioManager.DIRECT_PLAYBACK_OFFLOAD_GAPLESS_SUPPORTED);
+    private static final Set<Integer> ALL_MIXER_BEHAVIORS = Set.of(
+            AudioMixerAttributes.MIXER_BEHAVIOR_DEFAULT,
+            AudioMixerAttributes.MIXER_BEHAVIOR_BIT_PERFECT);
 
     private static final int INVALID_DIRECT_PLAYBACK_MODE = -1;
     private AudioManager mAudioManager;
@@ -2143,6 +2146,8 @@ public class AudioManagerTest extends InstrumentationTestCase {
                         attr, device, defaultMixerAttributes));
             } else {
                 for (AudioMixerAttributes mixerAttr : supportedMixerAttributes) {
+                    assertNotNull(mixerAttr.getFormat());
+                    assertTrue(ALL_MIXER_BEHAVIORS.contains(mixerAttr.getMixerBehavior()));
                     listener.reset();
                     assertTrue(mAudioManager.setPreferredMixerAttributes(attr, device, mixerAttr));
                     try {
