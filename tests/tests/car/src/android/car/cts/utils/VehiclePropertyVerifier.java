@@ -727,8 +727,10 @@ public class VehiclePropertyVerifier<T> {
         T areaIdMinValue = (T) carPropertyConfig.getMinValue(areaId);
         T areaIdMaxValue = (T) carPropertyConfig.getMaxValue(areaId);
         if (areaIdMinValue != null && areaIdMaxValue != null) {
-            assertWithMessage("carPropertyValue must be between the max and min values")
-                    .that(
+            assertWithMessage(
+                    "Property value: " + carPropertyValue.getValue() + " must be between the max: "
+                            + areaIdMaxValue + " and min: " + areaIdMinValue
+                            + " values for area ID: " + Integer.toHexString(areaId)).that(
                             verifyValueInRange(
                                     areaIdMinValue,
                                     areaIdMaxValue,
