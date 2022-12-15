@@ -17,13 +17,13 @@
 package android.media.tv.cts;
 
 import static androidx.test.ext.truth.view.MotionEventSubject.assertThat;
-
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.app.Instrumentation;
+import android.content.AttributionSource;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.media.PlaybackParams;
@@ -50,30 +50,25 @@ import android.view.Surface;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.LinearLayout;
-
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
-
 import com.android.compatibility.common.util.PollingCheck;
 import com.android.compatibility.common.util.RequiredFeatureRule;
-
 import com.google.common.truth.Truth;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * Test {@link android.media.tv.TvInputService}.
@@ -104,6 +99,7 @@ public class TvInputServiceTest {
 
     private TvRecordingClient mTvRecordingClient;
     private Instrumentation mInstrumentation;
+    private Context mContext;
     private TvInputManager mManager;
     private TvInputInfo mStubInfo;
     private TvInputInfo mFaultyStubInfo;
@@ -244,11 +240,10 @@ public class TvInputServiceTest {
     public void setUp() {
         mInstrumentation = InstrumentationRegistry
                 .getInstrumentation();
-        mTvRecordingClient = new TvRecordingClient(mInstrumentation.getTargetContext(),
-                "TvInputServiceTest",
-                mRecordingCallback, null);
-        mManager = (TvInputManager) mInstrumentation.getTargetContext().getSystemService(
-                Context.TV_INPUT_SERVICE);
+        mContext = mInstrumentation.getTargetContext();
+        mTvRecordingClient =
+                new TvRecordingClient(mContext, "TvInputServiceTest", mRecordingCallback, null);
+        mManager = (TvInputManager) mContext.getSystemService(Context.TV_INPUT_SERVICE);
         for (TvInputInfo info : mManager.getTvInputList()) {
             if (info.getServiceInfo().name.equals(CountingTvInputService.class.getName())) {
                 mStubInfo = info;
@@ -1037,6 +1032,7 @@ public class TvInputServiceTest {
     private CountingSession tune(Uri uri) {
         onTvView(tvView -> {
             tvView.setCallback(mCallback);
+            tvView.overrideTvAppAttributionSource(mContext.getAttributionSource());
             tvView.tune(mStubInfo.getId(), CHANNEL_0);
         });
         return waitForSessionCheck(session -> session.mTuneCount > 0);
@@ -1092,6 +1088,13 @@ public class TvInputServiceTest {
             sSession = new CountingSession(this, tvInputSessionId);
             sSession.setOverlayViewEnabled(true);
             return sSession;
+        }
+
+        @Override
+        public Session onCreateSession(
+                String inputId, String tvInputSessionId, AttributionSource tvAppAttributionSource) {
+            // todo: add AttributionSource equal check
+            return onCreateSession(inputId, tvInputSessionId);
         }
 
         @Override
@@ -1168,7 +1171,6 @@ public class TvInputServiceTest {
             public volatile Integer mOverlayViewSizeChangedWidth;
             public volatile Integer mOverlayViewSizeChangedHeight;
             public volatile Boolean mInteractiveAppNotificationEnabled;
-
 
             CountingSession(Context context, @Nullable String sessionId) {
 
