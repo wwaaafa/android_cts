@@ -2159,6 +2159,20 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     }
 
     @Test
+    public void testEngineIdleAutoStopEnabledIfSupported() {
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.ENGINE_IDLE_AUTO_STOP_ENABLED,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Boolean.class)
+                .addReadPermission(Car.PERMISSION_CAR_ENGINE_DETAILED)
+                .addWritePermission(Car.PERMISSION_CAR_ENGINE_DETAILED)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
     public void testPerfOdometerIfSupported() {
         VehiclePropertyVerifier.newBuilder(
                         VehiclePropertyIds.PERF_ODOMETER,
