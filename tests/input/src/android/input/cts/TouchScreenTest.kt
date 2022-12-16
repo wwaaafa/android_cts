@@ -69,7 +69,7 @@ class TouchScreenTest {
         if (!supportsMultiDisplay()) {
             return
         }
-        releaseDisplay()
+        releaseDisplayAndTouchScreen()
     }
 
     private fun supportsMultiDisplay(): Boolean {
@@ -101,7 +101,8 @@ class TouchScreenTest {
         assertNotNull(touchScreen)
     }
 
-    fun releaseDisplay() {
+    private fun releaseDisplayAndTouchScreen() {
+        touchScreen.close()
         virtualDisplay.release()
         reader.close()
     }
@@ -110,22 +111,20 @@ class TouchScreenTest {
     fun testSingleTouch() {
         val pointer = PointF(100f, 100f)
 
-        touchScreen.use {
-            // ACTION_DOWN
-            touchScreen.sendBtnTouch(true)
-            touchScreen.sendDown(0 /*id*/, pointer)
-            verifier.assertReceivedDown()
+        // ACTION_DOWN
+        touchScreen.sendBtnTouch(true)
+        touchScreen.sendDown(0 /*id*/, pointer)
+        verifier.assertReceivedDown()
 
-            // ACTION_MOVE
-            pointer.offset(1f, 1f)
-            touchScreen.sendMove(0 /*id*/, pointer)
-            verifier.assertReceivedMove()
+        // ACTION_MOVE
+        pointer.offset(1f, 1f)
+        touchScreen.sendMove(0 /*id*/, pointer)
+        verifier.assertReceivedMove()
 
-            // ACTION_UP
-            touchScreen.sendBtnTouch(false)
-            touchScreen.sendUp(0 /*id*/)
-            verifier.assertReceivedUp()
-        }
+        // ACTION_UP
+        touchScreen.sendBtnTouch(false)
+        touchScreen.sendUp(0 /*id*/)
+        verifier.assertReceivedUp()
     }
 
     @Test
@@ -133,56 +132,52 @@ class TouchScreenTest {
         val pointer1 = PointF(100f, 100f)
         val pointer2 = PointF(150f, 150f)
 
-        touchScreen.use {
-            // ACTION_DOWN
-            touchScreen.sendBtnTouch(true)
-            touchScreen.sendDown(0 /*id*/, pointer1)
-            verifier.assertReceivedDown()
+        // ACTION_DOWN
+        touchScreen.sendBtnTouch(true)
+        touchScreen.sendDown(0 /*id*/, pointer1)
+        verifier.assertReceivedDown()
 
-            // ACTION_POINTER_DOWN
-            touchScreen.sendDown(1 /*id*/, pointer2)
-            verifier.assertReceivedPointerDown(1)
+        // ACTION_POINTER_DOWN
+        touchScreen.sendDown(1 /*id*/, pointer2)
+        verifier.assertReceivedPointerDown(1)
 
-            // ACTION_MOVE
-            pointer2.offset(1f, 1f)
-            touchScreen.sendMove(1 /*id*/, pointer2)
-            verifier.assertReceivedMove()
+        // ACTION_MOVE
+        pointer2.offset(1f, 1f)
+        touchScreen.sendMove(1 /*id*/, pointer2)
+        verifier.assertReceivedMove()
 
-            // ACTION_POINTER_UP
-            touchScreen.sendUp(0 /*id*/)
-            verifier.assertReceivedPointerUp(0)
+        // ACTION_POINTER_UP
+        touchScreen.sendUp(0 /*id*/)
+        verifier.assertReceivedPointerUp(0)
 
-            // ACTION_UP
-            touchScreen.sendBtnTouch(false)
-            touchScreen.sendUp(1 /*id*/)
-            verifier.assertReceivedUp()
-        }
+        // ACTION_UP
+        touchScreen.sendBtnTouch(false)
+        touchScreen.sendUp(1 /*id*/)
+        verifier.assertReceivedUp()
     }
 
     @Test
     fun testDeviceCancel() {
         val pointer = PointF(100f, 100f)
 
-        touchScreen.use {
-            // ACTION_DOWN
-            touchScreen.sendBtnTouch(true)
-            touchScreen.sendDown(0 /*id*/, pointer)
-            verifier.assertReceivedDown()
+        // ACTION_DOWN
+        touchScreen.sendBtnTouch(true)
+        touchScreen.sendDown(0 /*id*/, pointer)
+        verifier.assertReceivedDown()
 
-            // ACTION_MOVE
-            pointer.offset(1f, 1f)
-            touchScreen.sendMove(0 /*id*/, pointer)
-            verifier.assertReceivedMove()
+        // ACTION_MOVE
+        pointer.offset(1f, 1f)
+        touchScreen.sendMove(0 /*id*/, pointer)
+        verifier.assertReceivedMove()
 
-            // ACTION_CANCEL
-            touchScreen.sendToolType(0 /*id*/, UinputTouchScreen.MT_TOOL_PALM)
-            verifier.assertReceivedCancel()
+        // ACTION_CANCEL
+        touchScreen.sendToolType(0 /*id*/, UinputTouchScreen.MT_TOOL_PALM)
+        verifier.assertReceivedCancel()
 
-            // No event
-            touchScreen.sendBtnTouch(false)
-            touchScreen.sendUp(0 /*id*/)
-            activity.assertNoEvents()
-        }
+        // No event
+        touchScreen.sendBtnTouch(false)
+        touchScreen.sendUp(0 /*id*/)
+        activity.assertNoEvents()
     }
 
     /**
@@ -193,39 +188,37 @@ class TouchScreenTest {
         val pointer1 = PointF(100f, 100f)
         val pointer2 = PointF(150f, 150f)
 
-        touchScreen.use {
-            // ACTION_DOWN
-            touchScreen.sendBtnTouch(true)
-            touchScreen.sendDown(0 /*id*/, pointer1)
-            verifier.assertReceivedDown()
+        // ACTION_DOWN
+        touchScreen.sendBtnTouch(true)
+        touchScreen.sendDown(0 /*id*/, pointer1)
+        verifier.assertReceivedDown()
 
-            // ACTION_MOVE
-            pointer1.offset(1f, 1f)
-            touchScreen.sendMove(0 /*id*/, pointer1)
-            verifier.assertReceivedMove()
+        // ACTION_MOVE
+        pointer1.offset(1f, 1f)
+        touchScreen.sendMove(0 /*id*/, pointer1)
+        verifier.assertReceivedMove()
 
-            // ACTION_POINTER_DOWN(1)
-            touchScreen.sendDown(1 /*id*/, pointer2)
-            verifier.assertReceivedPointerDown(1)
+        // ACTION_POINTER_DOWN(1)
+        touchScreen.sendDown(1 /*id*/, pointer2)
+        verifier.assertReceivedPointerDown(1)
 
-            // ACTION_POINTER_UP(1) with cancel flag
-            touchScreen.sendToolType(1 /*id*/, UinputTouchScreen.MT_TOOL_PALM)
-            verifier.assertReceivedPointerCancel(1)
+        // ACTION_POINTER_UP(1) with cancel flag
+        touchScreen.sendToolType(1 /*id*/, UinputTouchScreen.MT_TOOL_PALM)
+        verifier.assertReceivedPointerCancel(1)
 
-            // ACTION_UP
-            touchScreen.sendBtnTouch(false)
-            touchScreen.sendUp(0 /*id*/)
-            verifier.assertReceivedUp()
-        }
+        // ACTION_UP
+        touchScreen.sendBtnTouch(false)
+        touchScreen.sendUp(0 /*id*/)
+        verifier.assertReceivedUp()
     }
 
-companion object {
-    const val VIRTUAL_DISPLAY_NAME = "CtsVirtualDisplay"
-    const val WIDTH = 480
-    const val HEIGHT = 800
-    const val DENSITY = 160
+    companion object {
+        const val VIRTUAL_DISPLAY_NAME = "CtsVirtualDisplay"
+        const val WIDTH = 480
+        const val HEIGHT = 800
+        const val DENSITY = 160
 
-    /** See [DisplayManager.VIRTUAL_DISPLAY_FLAG_SUPPORTS_TOUCH].  */
-    const val VIRTUAL_DISPLAY_FLAG_SUPPORTS_TOUCH = 1 shl 6
-}
+        /** See [DisplayManager.VIRTUAL_DISPLAY_FLAG_SUPPORTS_TOUCH].  */
+        const val VIRTUAL_DISPLAY_FLAG_SUPPORTS_TOUCH = 1 shl 6
+    }
 }
