@@ -45,7 +45,7 @@ public class VirtualNavigationTouchpadTest extends VirtualDeviceTestCase {
     @Override
     void onSetUpVirtualInputDevice() {
         final VirtualNavigationTouchpadConfig navigationTouchpadConfig =
-                new VirtualNavigationTouchpadConfig.Builder(TOUCHPAD_HEIGHT, TOUCHPAD_WIDTH)
+                new VirtualNavigationTouchpadConfig.Builder(TOUCHPAD_WIDTH, TOUCHPAD_HEIGHT)
                         .setVendorId(VENDOR_ID)
                         .setProductId(PRODUCT_ID)
                         .setInputDeviceName(DEVICE_NAME)
