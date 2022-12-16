@@ -43,7 +43,7 @@ class InstallInfoTest : PackageInstallerTestBase() {
 
     @Test
     fun testInstallInfoOfMonolithicPackage() {
-        val apk = File("$TEST_APK_LOCATION/$TEST_APK_NAME")
+        val apk = File(context.filesDir.canonicalPath + "/$TEST_APK_NAME")
         val installInfo = pi.getInstallInfo(apk, 0)
 
         assertEquals(PackageInfo.INSTALL_LOCATION_PREFER_EXTERNAL, installInfo.installLocation)
@@ -53,7 +53,7 @@ class InstallInfoTest : PackageInstallerTestBase() {
 
     @Test
     fun testInstallInfoOfClusterPackage() {
-        val apk = File(TEST_APK_LOCATION)
+        val apk = File(context.filesDir.canonicalPath)
         val installInfo = pi.getInstallInfo(apk, 0)
 
         // The test APKs do not include native binaries or dex metadata. Thus, the total size of
