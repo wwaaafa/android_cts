@@ -38,6 +38,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Build;
 import android.os.PersistableBundle;
@@ -1004,6 +1005,13 @@ public class ImsServiceTest {
     @Test
     public void testMmTelReceiveSMPPClass2Sms() throws Exception {
         if (!ImsUtils.shouldRunSmsImsTests(sTestSub)) {
+            return;
+        }
+
+        Resources mResource = Resources.getSystem();
+        boolean isViaIms = mResource.getBoolean(
+                    com.android.internal.R.bool.config_smppsim_response_via_ims);
+        if (!isViaIms) {
             return;
         }
 
