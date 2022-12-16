@@ -23,7 +23,7 @@ import android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.pm.PackageManager
 import android.graphics.PixelFormat
-import android.graphics.PointF
+import android.graphics.Point
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
 import android.media.ImageReader
@@ -109,7 +109,7 @@ class TouchScreenTest {
 
     @Test
     fun testSingleTouch() {
-        val pointer = PointF(100f, 100f)
+        val pointer = Point(100, 100)
 
         // ACTION_DOWN
         touchScreen.sendBtnTouch(true)
@@ -117,7 +117,7 @@ class TouchScreenTest {
         verifier.assertReceivedDown()
 
         // ACTION_MOVE
-        pointer.offset(1f, 1f)
+        pointer.offset(1, 1)
         touchScreen.sendMove(0 /*id*/, pointer)
         verifier.assertReceivedMove()
 
@@ -129,8 +129,8 @@ class TouchScreenTest {
 
     @Test
     fun testMultiTouch() {
-        val pointer1 = PointF(100f, 100f)
-        val pointer2 = PointF(150f, 150f)
+        val pointer1 = Point(100, 100)
+        val pointer2 = Point(150, 150)
 
         // ACTION_DOWN
         touchScreen.sendBtnTouch(true)
@@ -142,7 +142,7 @@ class TouchScreenTest {
         verifier.assertReceivedPointerDown(1)
 
         // ACTION_MOVE
-        pointer2.offset(1f, 1f)
+        pointer2.offset(1, 1)
         touchScreen.sendMove(1 /*id*/, pointer2)
         verifier.assertReceivedMove()
 
@@ -158,7 +158,7 @@ class TouchScreenTest {
 
     @Test
     fun testDeviceCancel() {
-        val pointer = PointF(100f, 100f)
+        val pointer = Point(100, 100)
 
         // ACTION_DOWN
         touchScreen.sendBtnTouch(true)
@@ -166,7 +166,7 @@ class TouchScreenTest {
         verifier.assertReceivedDown()
 
         // ACTION_MOVE
-        pointer.offset(1f, 1f)
+        pointer.offset(1, 1)
         touchScreen.sendMove(0 /*id*/, pointer)
         verifier.assertReceivedMove()
 
@@ -185,8 +185,8 @@ class TouchScreenTest {
      */
     @Test
     fun testDevicePointerCancel() {
-        val pointer1 = PointF(100f, 100f)
-        val pointer2 = PointF(150f, 150f)
+        val pointer1 = Point(100, 100)
+        val pointer2 = Point(150, 150)
 
         // ACTION_DOWN
         touchScreen.sendBtnTouch(true)
@@ -194,7 +194,7 @@ class TouchScreenTest {
         verifier.assertReceivedDown()
 
         // ACTION_MOVE
-        pointer1.offset(1f, 1f)
+        pointer1.offset(1, 1)
         touchScreen.sendMove(0 /*id*/, pointer1)
         verifier.assertReceivedMove()
 
