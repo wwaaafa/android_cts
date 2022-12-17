@@ -91,7 +91,7 @@ class NoPermissionTests {
     @Before
     fun registerInstallResultReceiver() {
         context.registerReceiver(receiver, IntentFilter(ACTION),
-                Context.RECEIVER_EXPORTED_UNAUDITED)
+                Context.RECEIVER_EXPORTED)
     }
 
     @Before
