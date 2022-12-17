@@ -384,6 +384,8 @@ public class VehiclePropertyIdsTest extends AbstractCarLessTestCase {
         assertThat(
                 VehiclePropertyIds.toString(VehiclePropertyIds.FORWARD_COLLISION_WARNING_ENABLED))
                 .isEqualTo("FORWARD_COLLISION_WARNING_ENABLED");
+        assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.BLIND_SPOT_WARNING_ENABLED))
+                .isEqualTo("BLIND_SPOT_WARNING_ENABLED");
         assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.LANE_CENTERING_ASSIST_ENABLED))
                 .isEqualTo("LANE_CENTERING_ASSIST_ENABLED");
         assertThat(VehiclePropertyIds.toString(3)).isEqualTo("0x3");
