@@ -107,7 +107,7 @@ open class PackageSchemeTestBase {
     @Before
     fun setup() {
         receiver.clear()
-        mContext.registerReceiver(receiver, IntentFilter(RECEIVER_ACTION))
+        mContext.registerReceiver(receiver, IntentFilter(RECEIVER_ACTION), Context.RECEIVER_EXPORTED);
     }
 
     @Before
