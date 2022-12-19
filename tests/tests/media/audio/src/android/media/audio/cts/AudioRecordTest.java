@@ -593,6 +593,44 @@ public class AudioRecordTest {
                                     .setRequestHotwordLookbackStream(true)
                                     .build());
 
+        // Adopt permissions to access query APIs and test functionality
+        InstrumentationRegistry.getInstrumentation()
+                               .getUiAutomation()
+                               .adoptShellPermissionIdentity(
+                                Manifest.permission.CAPTURE_AUDIO_HOTWORD);
+
+
+        for (final boolean lookbackOn : new boolean[] { false, true} ) {
+            AudioRecord audioRecord = null;
+            if (!mAudioManager.isHotwordStreamSupported(lookbackOn)) {
+                // Hardware does not support capturing hotword content
+                continue;
+            }
+            try {
+                AudioRecord.Builder builder = new AudioRecord.Builder();
+                if (lookbackOn) {
+                    builder.setRequestHotwordLookbackStream(true);
+                } else {
+                    builder.setRequestHotwordStream(true);
+                }
+                audioRecord = builder.build();
+                if (lookbackOn) {
+                    assertTrue(audioRecord.isHotwordLookbackStream());
+                } else {
+                    assertTrue(audioRecord.isHotwordStream());
+                }
+                audioRecord.startRecording();
+                audioRecord.read(ByteBuffer.allocateDirect(4096), 4096);
+                audioRecord.stop();
+            } finally {
+                if (audioRecord != null) {
+                    audioRecord.release();
+                }
+            }
+        }
+        InstrumentationRegistry.getInstrumentation()
+                               .getUiAutomation()
+                               .dropShellPermissionIdentity();
     }
 
     // Test AudioRecord to ensure we can build after a failure.
