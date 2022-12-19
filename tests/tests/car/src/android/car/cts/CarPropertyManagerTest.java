@@ -580,6 +580,11 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
             ImmutableList.<Integer>builder()
                     .add()
                     .build();
+    private static final ImmutableList<Integer> PERMISSION_CONTROL_GLOVE_BOX_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.GLOVE_BOX_DOOR_POS)
+                  .build();
 
     private static final int VEHICLE_PROPERTY_GROUP_MASK = 0xf0000000;
     private static final int VEHICLE_PROPERTY_GROUP_VENDOR = 0x20000000;
@@ -1902,6 +1907,22 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                         Boolean.class)
                 .addReadPermission(Car.PERMISSION_CONTROL_STEERING_WHEEL)
                 .addWritePermission(Car.PERMISSION_CONTROL_STEERING_WHEEL)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
+    public void testGloveBoxDoorPosIfSupported() {
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.GLOVE_BOX_DOOR_POS,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_SEAT,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Integer.class)
+                .requireMinMaxValues()
+                .requireMinValuesToBeZero()
+                .addReadPermission(Car.PERMISSION_CONTROL_GLOVE_BOX)
+                .addWritePermission(Car.PERMISSION_CONTROL_GLOVE_BOX)
                 .build()
                 .verify(mCarPropertyManager);
     }
@@ -5535,6 +5556,23 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     }
                 },
                 Car.PERMISSION_CONTROL_STEERING_WHEEL);
+    }
+
+    @Test
+    public void testPermissionControlGloveBoxGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                "%s",
+                                VehiclePropertyIds.toString(
+                                        carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_CONTROL_GLOVE_BOX_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_CONTROL_GLOVE_BOX);
     }
 
     @Test
