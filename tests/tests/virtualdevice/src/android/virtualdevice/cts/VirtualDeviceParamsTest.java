@@ -18,6 +18,7 @@ package android.virtualdevice.cts;
 
 import static android.companion.virtual.VirtualDeviceParams.DEVICE_POLICY_CUSTOM;
 import static android.companion.virtual.VirtualDeviceParams.DEVICE_POLICY_DEFAULT;
+import static android.companion.virtual.VirtualDeviceParams.POLICY_TYPE_AUDIO;
 import static android.companion.virtual.VirtualDeviceParams.POLICY_TYPE_SENSORS;
 import static android.hardware.Sensor.TYPE_ACCELEROMETER;
 
@@ -188,16 +189,19 @@ public class VirtualDeviceParamsTest {
                 .build();
 
         assertThat(params.getDevicePolicy(POLICY_TYPE_SENSORS)).isEqualTo(DEVICE_POLICY_DEFAULT);
+        assertThat(params.getDevicePolicy(POLICY_TYPE_AUDIO)).isEqualTo(DEVICE_POLICY_DEFAULT);
     }
 
     @Test
-    public void getDevicePolicy_shouldReturnConfiguredValue() {
+    public void getDevicePolicy_shouldReturnConfiguredValueForSensors() {
         VirtualDeviceParams params = new VirtualDeviceParams.Builder()
                 .setName(VIRTUAL_DEVICE_NAME)
                 .setDevicePolicy(POLICY_TYPE_SENSORS, DEVICE_POLICY_CUSTOM)
+                .setDevicePolicy(POLICY_TYPE_AUDIO, DEVICE_POLICY_CUSTOM)
                 .build();
 
         assertThat(params.getDevicePolicy(POLICY_TYPE_SENSORS)).isEqualTo(DEVICE_POLICY_CUSTOM);
+        assertThat(params.getDevicePolicy(POLICY_TYPE_AUDIO)).isEqualTo(DEVICE_POLICY_CUSTOM);
     }
 
     @Test
