@@ -20,10 +20,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.testng.Assert.assertThrows;
 
+import android.Manifest;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -544,6 +545,54 @@ public class AudioRecordTest {
                 observedChannelCount);
         assertEquals(TEST_NAME + ": configured source", expectedSource, observedSource);
         assertEquals(TEST_NAME + ": state", expectedState, observedState);
+    }
+    // Test AudioRecord.Builder.setRequestHotwordStream, and hotword capture
+    @Test
+    public void testAudioRecordBuilderHotword() throws Exception {
+        // Verify typical behavior continues to work, and clearing works
+        AudioRecord regularRecord = new AudioRecord.Builder()
+                                    .setRequestHotwordStream(true)
+                                    .setRequestHotwordStream(false)
+                                    .build();
+
+        assertEquals(regularRecord.getState(), AudioRecord.STATE_INITIALIZED);
+        assertFalse(regularRecord.isHotwordStream());
+        assertFalse(regularRecord.isHotwordLookbackStream());
+        regularRecord.startRecording();
+        regularRecord.read(ByteBuffer.allocateDirect(4096), 4096);
+        regularRecord.stop();
+        regularRecord.release();
+
+        regularRecord = new AudioRecord.Builder()
+                                    .setRequestHotwordLookbackStream(true)
+                                    .setRequestHotwordLookbackStream(false)
+                                    .build();
+
+        assertEquals(regularRecord.getState(), AudioRecord.STATE_INITIALIZED);
+        assertFalse(regularRecord.isHotwordStream());
+        assertFalse(regularRecord.isHotwordLookbackStream());
+        regularRecord.startRecording();
+        regularRecord.read(ByteBuffer.allocateDirect(4096), 4096);
+        regularRecord.stop();
+        regularRecord.release();
+
+        // Should fail due to incompatible arguments
+        assertThrows(UnsupportedOperationException.class,
+               () ->  new AudioRecord.Builder()
+                                    .setRequestHotwordStream(true)
+                                    .setRequestHotwordLookbackStream(true)
+                                    .build());
+
+        // Should fail due to permission issues
+        assertThrows(UnsupportedOperationException.class,
+                   () -> new AudioRecord.Builder()
+                                    .setRequestHotwordStream(true)
+                                    .build());
+        assertThrows(UnsupportedOperationException.class,
+                   () -> new AudioRecord.Builder()
+                                    .setRequestHotwordLookbackStream(true)
+                                    .build());
+
     }
 
     // Test AudioRecord to ensure we can build after a failure.
