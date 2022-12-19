@@ -21,17 +21,24 @@ import android.telephony.CellIdentity;
 import android.telephony.CellIdentityLte;
 import android.telephony.NetworkRegistrationInfo;
 import android.telephony.TelephonyManager;
+import android.telephony.cts.util.TelephonyUtils;
+
+import androidx.test.InstrumentationRegistry;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
 
 public class NetworkRegistrationInfoTest {
+
+    private static final String RETURN_REGISTRATION_STATE_EMERGENCY_STRING =
+            "RETURN_REGISTRATION_STATE_EMERGENCY";
 
     @Test
     public void testDescribeContents() {
@@ -190,7 +197,8 @@ public class NetworkRegistrationInfoTest {
             NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_OR_SEARCHING,
                 NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_SEARCHING,
                 NetworkRegistrationInfo.REGISTRATION_STATE_DENIED,
-                NetworkRegistrationInfo.REGISTRATION_STATE_UNKNOWN};
+                NetworkRegistrationInfo.REGISTRATION_STATE_UNKNOWN,
+                NetworkRegistrationInfo.REGISTRATION_STATE_EMERGENCY};
         for (int state : unregisteredStates) {
             NetworkRegistrationInfo nri = new NetworkRegistrationInfo.Builder()
                     .setRegistrationState(state)
@@ -215,7 +223,8 @@ public class NetworkRegistrationInfoTest {
                 NetworkRegistrationInfo.REGISTRATION_STATE_ROAMING,
                 NetworkRegistrationInfo.REGISTRATION_STATE_HOME,
                 NetworkRegistrationInfo.REGISTRATION_STATE_DENIED,
-                NetworkRegistrationInfo.REGISTRATION_STATE_UNKNOWN};
+                NetworkRegistrationInfo.REGISTRATION_STATE_UNKNOWN,
+                NetworkRegistrationInfo.REGISTRATION_STATE_EMERGENCY};
         for (int state : isNotSearchingStates) {
             NetworkRegistrationInfo nri = new NetworkRegistrationInfo.Builder()
                     .setRegistrationState(state)
@@ -243,5 +252,56 @@ public class NetworkRegistrationInfoTest {
 
         NetworkRegistrationInfo newNrs = NetworkRegistrationInfo.CREATOR.createFromParcel(p);
         assertEquals(nri, newNrs);
+    }
+
+    @Ignore("the compatibility framework does not currently support changing compatibility flags"
+            + " on user builds for device side CTS tests. Ignore this test until support is added")
+    @Test
+    public void testReturnRegistrationStateEmergencyAndChangesCompatDisabled() throws Exception {
+        // disable compact change
+        TelephonyUtils.disableCompatCommand(InstrumentationRegistry.getInstrumentation(),
+                TelephonyUtils.CTS_APP_PACKAGE, RETURN_REGISTRATION_STATE_EMERGENCY_STRING);
+
+        // LTE
+        NetworkRegistrationInfo nri = new NetworkRegistrationInfo.Builder()
+                .setRegistrationState(NetworkRegistrationInfo.REGISTRATION_STATE_EMERGENCY)
+                .setAccessNetworkTechnology(TelephonyManager.NETWORK_TYPE_LTE)
+                .build();
+
+        assertEquals(NetworkRegistrationInfo.REGISTRATION_STATE_DENIED, nri.getRegistrationState());
+
+        // NR
+        nri = new NetworkRegistrationInfo.Builder()
+                .setRegistrationState(NetworkRegistrationInfo.REGISTRATION_STATE_EMERGENCY)
+                .setAccessNetworkTechnology(TelephonyManager.NETWORK_TYPE_NR)
+                .build();
+
+        assertEquals(NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_OR_SEARCHING,
+                nri.getRegistrationState());
+
+        // reset compat change
+        TelephonyUtils.resetCompatCommand(InstrumentationRegistry.getInstrumentation(),
+                TelephonyUtils.CTS_APP_PACKAGE, RETURN_REGISTRATION_STATE_EMERGENCY_STRING);
+    }
+
+    @Test
+    public void testReturnRegistrationStateEmergency() throws Exception {
+        // LTE
+        NetworkRegistrationInfo nri = new NetworkRegistrationInfo.Builder()
+                .setRegistrationState(NetworkRegistrationInfo.REGISTRATION_STATE_EMERGENCY)
+                .setAccessNetworkTechnology(TelephonyManager.NETWORK_TYPE_LTE)
+                .build();
+
+        assertEquals(NetworkRegistrationInfo.REGISTRATION_STATE_EMERGENCY,
+                nri.getRegistrationState());
+
+        // NR
+        nri = new NetworkRegistrationInfo.Builder()
+                .setRegistrationState(NetworkRegistrationInfo.REGISTRATION_STATE_EMERGENCY)
+                .setAccessNetworkTechnology(TelephonyManager.NETWORK_TYPE_NR)
+                .build();
+
+        assertEquals(NetworkRegistrationInfo.REGISTRATION_STATE_EMERGENCY,
+                nri.getRegistrationState());
     }
 }
