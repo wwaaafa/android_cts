@@ -278,6 +278,8 @@ public class VehiclePropertyIdsTest extends AbstractCarLessTestCase {
                 .isEqualTo("SEAT_HEADREST_HEIGHT_MOVE");
         assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.SEAT_HEADREST_HEIGHT_POS))
                 .isEqualTo("SEAT_HEADREST_HEIGHT_POS");
+        assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.SEAT_HEADREST_HEIGHT_POS_V2))
+                .isEqualTo("SEAT_HEADREST_HEIGHT_POS_V2");
         assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.SEAT_HEIGHT_MOVE))
                 .isEqualTo("SEAT_HEIGHT_MOVE");
         assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.SEAT_HEIGHT_POS))

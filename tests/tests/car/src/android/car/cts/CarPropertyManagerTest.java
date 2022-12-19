@@ -3134,6 +3134,36 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     }
 
     @Test
+    public void testSeatHeadrestHeightPosMustNotBeImplemented() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    assertWithMessage(
+                                "SEAT_HEADREST_HEIGHT_POS has been deprecated and should not be"
+                                + " implemented. Use SEAT_HEADREST_HEIGHT_POS_V2 instead.")
+                        .that(
+                                mCarPropertyManager.getCarPropertyConfig(
+                                        VehiclePropertyIds.SEAT_HEADREST_HEIGHT_POS))
+                        .isNull();
+                },
+                Car.PERMISSION_CONTROL_CAR_SEATS);
+    }
+
+    @Test
+    public void testSeatHeadrestHeightPosV2IfSupported() {
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.SEAT_HEADREST_HEIGHT_POS_V2,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_SEAT,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Integer.class)
+                .requireMinMaxValues()
+                .addReadPermission(Car.PERMISSION_CONTROL_CAR_SEATS)
+                .addWritePermission(Car.PERMISSION_CONTROL_CAR_SEATS)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
     @ApiTest(
             apis = {
                 "android.car.hardware.property.CarPropertyManager#getCarPropertyConfig",
