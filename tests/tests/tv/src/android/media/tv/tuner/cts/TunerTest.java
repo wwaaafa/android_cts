@@ -29,6 +29,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.media.AudioPresentation;
 import android.media.tv.tuner.DemuxCapabilities;
 import android.media.tv.tuner.Descrambler;
 import android.media.tv.tuner.Lnb;
@@ -2683,6 +2684,17 @@ public class TunerTest {
             ad.getAdGainCenter();
             ad.getAdGainFront();
             ad.getAdGainSurround();
+        }
+        List<AudioPresentation> aps = e.getAudioPresentations();
+        for (AudioPresentation ap : aps) {
+            ap.getPresentationId();
+            ap.getProgramId();
+            ap.getLabels();
+            ap.getLocale();
+            ap.getMasteringIndication();
+            ap.hasAudioDescription();
+            ap.hasDialogueEnhancement();
+            ap.hasSpokenSubtitles();
         }
         e.release();
     }
