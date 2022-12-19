@@ -193,7 +193,7 @@ public class VirtualDeviceParamsTest {
     }
 
     @Test
-    public void getDevicePolicy_shouldReturnConfiguredValueForSensors() {
+    public void getDevicePolicy_shouldReturnConfiguredValue() {
         VirtualDeviceParams params = new VirtualDeviceParams.Builder()
                 .setName(VIRTUAL_DEVICE_NAME)
                 .setDevicePolicy(POLICY_TYPE_SENSORS, DEVICE_POLICY_CUSTOM)
