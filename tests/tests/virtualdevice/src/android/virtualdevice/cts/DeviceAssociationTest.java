@@ -40,6 +40,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import android.annotation.Nullable;
 import android.app.Activity;
 import android.app.ActivityThread;
+import android.app.Service;
 import android.companion.virtual.VirtualDeviceManager;
 import android.companion.virtual.VirtualDeviceManager.VirtualDevice;
 import android.companion.virtual.VirtualDeviceParams;
@@ -50,13 +51,16 @@ import android.content.res.Configuration;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.platform.test.annotations.AppModeFull;
 import android.view.Display;
 import android.virtualdevice.cts.util.EmptyActivity;
 import android.virtualdevice.cts.util.FakeAssociationRule;
+import android.virtualdevice.cts.util.TestService;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.rule.ServiceTestRule;
 
 import com.android.compatibility.common.util.AdoptShellPermissionsRule;
 import com.android.compatibility.common.util.ApiTest;
@@ -70,6 +74,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeoutException;
 import java.util.function.IntConsumer;
 
 @RunWith(AndroidJUnit4.class)
@@ -85,11 +90,14 @@ public class DeviceAssociationTest {
             new VirtualDeviceParams.Builder().build();
 
     private Executor mTestExecutor;
-    @Mock private IntConsumer mDeviceChangeListener;
-    @Mock private IntConsumer mDeviceChangeListener2;
+    @Mock
+    private IntConsumer mDeviceChangeListener;
+    @Mock
+    private IntConsumer mDeviceChangeListener2;
     private Display mDefaultDisplay;
     private VirtualDisplay mVirtualDisplay;
-    @Mock private VirtualDisplay.Callback mVirtualDisplayCallback;
+    @Mock
+    private VirtualDisplay.Callback mVirtualDisplayCallback;
 
     @Rule
     public AdoptShellPermissionsRule mAdoptShellPermissionsRule = new AdoptShellPermissionsRule(
@@ -415,6 +423,44 @@ public class DeviceAssociationTest {
         assertThat(getApplicationContext().getDeviceId()).isEqualTo(DEVICE_ID_DEFAULT);
     }
 
+    @Test
+    public void serviceContext_lastActivityOnVirtualDevice_returnsVirtualDeviceId()
+            throws TimeoutException {
+        Service service = createTestService();
+        startActivity(DEFAULT_DISPLAY);
+        startActivity(mVirtualDisplay);
+
+        assertThat(service.getDeviceId()).isEqualTo(mVirtualDevice.getDeviceId());
+    }
+
+    @Test
+    public void serviceContext_lastActivityOnDefaultDevice_returnsDefault()
+            throws TimeoutException {
+        Service service = createTestService();
+        startActivity(mVirtualDisplay);
+        startActivity(DEFAULT_DISPLAY);
+
+        assertThat(service.getDeviceId()).isEqualTo(DEVICE_ID_DEFAULT);
+    }
+
+    @Test
+    public void serviceContext_startServiceAfterActivity_hasDeviceIdOfTopActivity()
+            throws TimeoutException {
+        startActivity(DEFAULT_DISPLAY);
+        startActivity(mVirtualDisplay);
+        Service service = createTestService();
+
+        assertThat(service.getDeviceId()).isEqualTo(mVirtualDevice.getDeviceId());
+    }
+
+    @Test
+    public void serviceContext_noActivities_hasDefaultId()
+            throws TimeoutException {
+        Service service = createTestService();
+
+        assertThat(service.getDeviceId()).isEqualTo(DEVICE_ID_DEFAULT);
+    }
+
     private VirtualDevice createVirtualDevice() {
         return mVirtualDeviceManager.createVirtualDevice(
                 mFakeAssociationRule.getAssociationInfo().getId(),
@@ -447,5 +493,12 @@ public class DeviceAssociationTest {
                                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                                         | Intent.FLAG_ACTIVITY_CLEAR_TASK),
                         activityOptions);
+    }
+
+    private Service createTestService() throws TimeoutException {
+        final Intent intent = new Intent(getApplicationContext(), TestService.class);
+        final ServiceTestRule serviceRule = new ServiceTestRule();
+        IBinder serviceToken = serviceRule.bindService(intent);
+        return ((TestService.TestBinder) serviceToken).getService();
     }
 }
