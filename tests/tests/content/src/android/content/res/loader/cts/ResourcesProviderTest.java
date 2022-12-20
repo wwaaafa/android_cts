@@ -29,6 +29,7 @@ import android.content.cts.R;
 import android.content.om.FabricatedOverlay;
 import android.content.om.OverlayInfo;
 import android.content.om.OverlayManager;
+import android.content.om.OverlayManagerTransaction;
 import android.content.om.cts.FabricatedOverlayFacilitator;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -75,11 +76,11 @@ public class ResourcesProviderTest {
     @Test
     public void loaderOverlay_withRegisteredOverlay_shouldSucceed()
             throws PackageManager.NameNotFoundException, IOException {
-        mOverlayManager
-                .beginTransaction()
-                .registerFabricatedOverlay(mFacilitator.prepare("hello_overlay1", OVERLAYABLE_NAME))
-                .build()
-                .commit();
+        final OverlayManagerTransaction transaction = new OverlayManagerTransaction(
+                mOverlayManager);
+        transaction.registerFabricatedOverlay(
+                mFacilitator.prepare("hello_overlay1", OVERLAYABLE_NAME));
+        transaction.commit();
         OverlayInfo overlayInfo =
                 mOverlayManager.getOverlayInfosForTarget(mContext.getPackageName()).get(0);
 
@@ -205,18 +206,17 @@ public class ResourcesProviderTest {
     @Test
     public void loaderOverlay_withNotExistedOverlay_shouldFail()
             throws PackageManager.NameNotFoundException, IOException {
-        mOverlayManager
-                .beginTransaction()
-                .registerFabricatedOverlay(mFacilitator.prepare("hello_overlay1", OVERLAYABLE_NAME))
-                .build()
-                .commit();
+        final OverlayManagerTransaction transaction = new OverlayManagerTransaction(
+                mOverlayManager);
+        transaction.registerFabricatedOverlay(
+                mFacilitator.prepare("hello_overlay1", OVERLAYABLE_NAME));
+        transaction.commit();
         OverlayInfo overlayInfo =
                 mOverlayManager.getOverlayInfosForTarget(mContext.getPackageName()).get(0);
-        mOverlayManager
-                .beginTransaction()
-                .unregisterFabricatedOverlay(overlayInfo.getOverlayIdentifier())
-                .build()
-                .commit();
+        final OverlayManagerTransaction unregisterTransaction = new OverlayManagerTransaction(
+                mOverlayManager);
+        unregisterTransaction.unregisterFabricatedOverlay(overlayInfo.getOverlayIdentifier());
+        unregisterTransaction.commit();
 
         assertThrows(IOException.class, () -> ResourcesProvider.loadOverlay(overlayInfo));
     }
@@ -229,11 +229,10 @@ public class ResourcesProviderTest {
     @Test
     public void loaderOverlay_applyOnResources_shouldSucceed()
             throws PackageManager.NameNotFoundException, IOException {
-        mOverlayManager
-                .beginTransaction()
-                .registerFabricatedOverlay(mFacilitator.prepare(mOverlayName, OVERLAYABLE_NAME))
-                .build()
-                .commit();
+        final OverlayManagerTransaction transaction = new OverlayManagerTransaction(
+                mOverlayManager);
+        transaction.registerFabricatedOverlay(mFacilitator.prepare(mOverlayName, OVERLAYABLE_NAME));
+        transaction.commit();
         OverlayInfo overlayInfo =
                 mOverlayManager.getOverlayInfosForTarget(mContext.getPackageName()).get(0);
         final ResourcesLoader loader = new ResourcesLoader();
@@ -261,12 +260,11 @@ public class ResourcesProviderTest {
                         .setTargetOverlayable(OVERLAYABLE_NAME)
                         .setResourceValue(TARGET_STRING_RES, TypedValue.TYPE_STRING, "HELLO")
                         .build();
-        mOverlayManager
-                .beginTransaction()
-                .registerFabricatedOverlay(fabricatedOverlayForColor)
-                .registerFabricatedOverlay(fabricatedOverlayForString)
-                .build()
-                .commit();
+        final OverlayManagerTransaction transaction = new OverlayManagerTransaction(
+                mOverlayManager);
+        transaction.registerFabricatedOverlay(fabricatedOverlayForColor);
+        transaction.registerFabricatedOverlay(fabricatedOverlayForString);
+        transaction.commit();
 
         final ResourcesLoader loader = new ResourcesLoader();
         for (OverlayInfo overlayInfo : mOverlayManager.getOverlayInfosForTarget(packageName)) {
