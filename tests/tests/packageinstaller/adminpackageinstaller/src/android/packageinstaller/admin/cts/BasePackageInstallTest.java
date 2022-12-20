@@ -189,7 +189,7 @@ public class BasePackageInstallTest extends InstrumentationTestCase {
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(action);
         mContext.registerReceiver(mBroadcastReceiver, intentFilter,
-                Context.RECEIVER_EXPORTED_UNAUDITED);
+                Context.RECEIVER_EXPORTED);
 
         // Create a PendingIntent and use it to generate the IntentSender
         Intent broadcastIntent = new Intent(action);
