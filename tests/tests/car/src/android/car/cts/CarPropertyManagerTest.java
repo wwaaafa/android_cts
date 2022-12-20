@@ -3882,18 +3882,26 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                                     }
                                 });
 
-        CarPropertyConfig<?> hvacTempSetConfig =
-                mCarPropertyManager.getCarPropertyConfig(VehiclePropertyIds.HVAC_TEMPERATURE_SET);
-        if (hvacTempSetConfig != null) {
-            ImmutableSet.Builder<Float> possibleHvacTempSetValuesBuilder = ImmutableSet.builder();
-            for (int possibleHvacTempSetValue = hvacTempSetConfig.getConfigArray().get(0);
-                    possibleHvacTempSetValue <= hvacTempSetConfig.getConfigArray().get(1);
-                    possibleHvacTempSetValue += hvacTempSetConfig.getConfigArray().get(2)) {
-                possibleHvacTempSetValuesBuilder.add((float) possibleHvacTempSetValue / 10.0f);
-            }
-            hvacTempSetVerifierBuilder.setPossibleCarPropertyValues(
-                    possibleHvacTempSetValuesBuilder.build());
-        }
+        runWithShellPermissionIdentity(
+                () -> {
+                    CarPropertyConfig<?> hvacTempSetConfig =
+                            mCarPropertyManager.getCarPropertyConfig(
+                                    VehiclePropertyIds.HVAC_TEMPERATURE_SET);
+                    if (hvacTempSetConfig != null) {
+                        List<Integer> hvacTempSetConfigArray = hvacTempSetConfig.getConfigArray();
+                        ImmutableSet.Builder<Float> possibleHvacTempSetValuesBuilder =
+                                ImmutableSet.builder();
+                        for (int possibleHvacTempSetValue = hvacTempSetConfigArray.get(0);
+                                possibleHvacTempSetValue <= hvacTempSetConfigArray.get(1);
+                                possibleHvacTempSetValue += hvacTempSetConfigArray.get(2)) {
+                            possibleHvacTempSetValuesBuilder.add(
+                                    (float) possibleHvacTempSetValue / 10.0f);
+                        }
+                        hvacTempSetVerifierBuilder.setPossibleCarPropertyValues(
+                                possibleHvacTempSetValuesBuilder.build());
+                    }
+                },
+                Car.PERMISSION_CONTROL_CAR_CLIMATE);
 
         hvacTempSetVerifierBuilder
                 .addReadPermission(Car.PERMISSION_CONTROL_CAR_CLIMATE)
