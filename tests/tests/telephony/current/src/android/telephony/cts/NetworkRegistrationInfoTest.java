@@ -108,10 +108,11 @@ public class NetworkRegistrationInfoTest {
                 NetworkRegistrationInfo.SERVICE_TYPE_VOICE), nri.getAvailableServices());
     }
 
-     /**
+    /**
      * Basic test to ensure {@link NetworkRegistrationInfo#isSearching()} does not throw any
      * exception.
      */
+    @SuppressWarnings("deprecation")
     @Test
     public void testNetworkRegistrationInfoIsSearching() {
         NetworkRegistrationInfo nri = new NetworkRegistrationInfo.Builder()
@@ -121,6 +122,18 @@ public class NetworkRegistrationInfoTest {
         assertTrue(nri.isSearching());
     }
 
+    /**
+     * Basic test to ensure {@link NetworkRegistrationInfo#isNetworkSearching()} does not throw any
+     * exception.
+     */
+    @Test
+    public void testNetworkRegistrationInfoIsNetworkSearching() {
+        NetworkRegistrationInfo nri = new NetworkRegistrationInfo.Builder()
+                .setRegistrationState(
+                        NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_SEARCHING)
+                .build();
+        assertTrue(nri.isNetworkSearching());
+    }
 
     @Test
     public void testGetDomain() {
@@ -130,12 +143,23 @@ public class NetworkRegistrationInfoTest {
         assertEquals(NetworkRegistrationInfo.DOMAIN_CS, nri.getDomain());
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testGetRegistrationState() {
         NetworkRegistrationInfo nri = new NetworkRegistrationInfo.Builder()
                 .setRegistrationState(NetworkRegistrationInfo.REGISTRATION_STATE_HOME)
                 .build();
         assertEquals(NetworkRegistrationInfo.REGISTRATION_STATE_HOME, nri.getRegistrationState());
+    }
+
+    @Test
+    public void testGetNetworkRegistrationState() {
+        NetworkRegistrationInfo nri = new NetworkRegistrationInfo.Builder()
+                .setRegistrationState(NetworkRegistrationInfo.REGISTRATION_STATE_ROAMING)
+                .build();
+        nri.setRoamingType(NetworkRegistrationInfo.REGISTRATION_STATE_HOME);
+        assertEquals(NetworkRegistrationInfo.REGISTRATION_STATE_ROAMING,
+                nri.getNetworkRegistrationState());
     }
 
     @Test
@@ -182,6 +206,10 @@ public class NetworkRegistrationInfoTest {
         assertEquals(ci, nri.getCellIdentity());
     }
 
+    /**
+     * Test {@link NetworkRegistrationInfo#isRegistered()} to support backward compatibility.
+     */
+    @SuppressWarnings("deprecation")
     @Test
     public void testIsRegistered() {
         final int[] registeredStates = new int[] {NetworkRegistrationInfo.REGISTRATION_STATE_HOME,
@@ -208,14 +236,67 @@ public class NetworkRegistrationInfoTest {
     }
 
     @Test
+    public void testIsNetworkRegistered() {
+        final int[] registeredStates = new int[] {NetworkRegistrationInfo.REGISTRATION_STATE_HOME,
+                NetworkRegistrationInfo.REGISTRATION_STATE_ROAMING};
+        for (int state : registeredStates) {
+            NetworkRegistrationInfo nri = new NetworkRegistrationInfo.Builder()
+                    .setRegistrationState(state)
+                    .build();
+            assertTrue(nri.isNetworkRegistered());
+        }
+
+        final int[] unregisteredStates = new int[] {
+                NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_OR_SEARCHING,
+                NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_SEARCHING,
+                NetworkRegistrationInfo.REGISTRATION_STATE_DENIED,
+                NetworkRegistrationInfo.REGISTRATION_STATE_UNKNOWN};
+        for (int state : unregisteredStates) {
+            NetworkRegistrationInfo nri = new NetworkRegistrationInfo.Builder()
+                    .setRegistrationState(state)
+                    .build();
+            assertFalse(nri.isNetworkRegistered());
+        }
+    }
+
+    /**
+     * Test {@link NetworkRegistrationInfo#isSearching()} to support backward compatibility.
+     */
+    @SuppressWarnings("deprecation")
+    @Test
     public void testIsSearching() {
+        final int[] isSearchingStates = new int[] {
+                NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_SEARCHING};
+        for (int state : isSearchingStates) {
+            NetworkRegistrationInfo nri = new NetworkRegistrationInfo.Builder()
+                    .setRegistrationState(state)
+                    .build();
+            assertTrue(nri.isSearching());
+        }
+
+        final int[] isNotSearchingStates = new int[] {
+                NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_OR_SEARCHING,
+                NetworkRegistrationInfo.REGISTRATION_STATE_ROAMING,
+                NetworkRegistrationInfo.REGISTRATION_STATE_HOME,
+                NetworkRegistrationInfo.REGISTRATION_STATE_DENIED,
+                NetworkRegistrationInfo.REGISTRATION_STATE_UNKNOWN};
+        for (int state : isNotSearchingStates) {
+            NetworkRegistrationInfo nri = new NetworkRegistrationInfo.Builder()
+                    .setRegistrationState(state)
+                    .build();
+            assertFalse(nri.isSearching());
+        }
+    }
+
+    @Test
+    public void testIsNetworkSearching() {
         final int[] isSearchingStates = new int[] {
             NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_SEARCHING};
         for (int state : isSearchingStates) {
             NetworkRegistrationInfo nri = new NetworkRegistrationInfo.Builder()
                     .setRegistrationState(state)
                     .build();
-            assertTrue(nri.isSearching());
+            assertTrue(nri.isNetworkSearching());
         }
 
         final int[] isNotSearchingStates = new int[] {
@@ -229,7 +310,7 @@ public class NetworkRegistrationInfoTest {
             NetworkRegistrationInfo nri = new NetworkRegistrationInfo.Builder()
                     .setRegistrationState(state)
                     .build();
-            assertFalse(nri.isSearching());
+            assertFalse(nri.isNetworkSearching());
         }
     }
 
