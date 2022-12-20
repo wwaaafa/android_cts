@@ -72,6 +72,7 @@ class AppDataSharingUpdatesTest : BasePermissionTest() {
         }
 
         waitFindObject(By.textContains("Data Sharing updates"))
+        pressBack()
     }
 
     @Test
