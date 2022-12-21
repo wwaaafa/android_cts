@@ -126,7 +126,9 @@ public class AudioManagerTest extends InstrumentationTestCase {
             AudioProfile.AUDIO_ENCAPSULATION_TYPE_PCM);
     private static final Set<Integer> ALL_AUDIO_STANDARDS = Set.of(
             AudioDescriptor.STANDARD_NONE,
-            AudioDescriptor.STANDARD_EDID);
+            AudioDescriptor.STANDARD_EDID,
+            AudioDescriptor.STANDARD_SADB,
+            AudioDescriptor.STANDARD_VSADB);
     private static final Map<Integer, Integer> DIRECT_OFFLOAD_MAP = Map.of(
             AudioManager.PLAYBACK_OFFLOAD_NOT_SUPPORTED,
                 AudioManager.DIRECT_PLAYBACK_NOT_SUPPORTED,
