@@ -43,6 +43,7 @@ import com.android.bedstead.nene.annotations.Experimental;
 import com.android.bedstead.nene.exceptions.AdbException;
 import com.android.bedstead.nene.exceptions.AdbParseException;
 import com.android.bedstead.nene.exceptions.NeneException;
+import com.android.bedstead.nene.packages.ComponentReference;
 import com.android.bedstead.nene.packages.Package;
 import com.android.bedstead.nene.permissions.CommonPermissions;
 import com.android.bedstead.nene.permissions.PermissionContext;
@@ -59,6 +60,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Test APIs related to device policy.
@@ -560,5 +562,24 @@ public final class DevicePolicy {
     public DevicePolicyResources resources() {
         Versions.requireMinimumVersion(TIRAMISU);
         return DevicePolicyResources.sInstance;
+    }
+
+    /**
+     * Get active admins on the instrumented user.
+     */
+    public Set<ComponentReference> getActiveAdmins() {
+        return getActiveAdmins(TestApis.users().instrumented());
+    }
+
+    /**
+     * Get active admins on the given user.
+     */
+    public Set<ComponentReference> getActiveAdmins(UserReference user) {
+        List<ComponentName> activeAdmins = devicePolicyManager(user).getActiveAdmins();
+        if (activeAdmins == null) {
+            return Set.of();
+        }
+        return activeAdmins.stream().map(ComponentReference::new).collect(
+                Collectors.toSet());
     }
 }

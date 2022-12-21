@@ -59,7 +59,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 @RunWith(BedsteadJUnit4.class)
-public class UsersTest {
+public final class UsersTest {
 
     private static final int MAX_SYSTEM_USERS = UserType.UNLIMITED;
     private static final int MAX_SYSTEM_USERS_PER_PARENT = UserType.UNLIMITED;

@@ -1023,7 +1023,9 @@ public final class DeviceState extends HarrierRule {
                 EnsureHasAccount ensureHasAccountAnnotation =
                         (EnsureHasAccount) annotation;
                 ensureHasAccount(
-                        ensureHasAccountAnnotation.onUser(), ensureHasAccountAnnotation.key());
+                        ensureHasAccountAnnotation.onUser(),
+                        ensureHasAccountAnnotation.key(),
+                        ensureHasAccountAnnotation.features());
                 continue;
             }
 
@@ -3288,23 +3290,28 @@ public final class DeviceState extends HarrierRule {
         mAccountAuthenticators.put(user, RemoteAccountAuthenticator.install(user));
     }
 
-    private void ensureHasAccount(UserType onUser, String key) {
-        ensureHasAccount(onUser, key, new HashSet<>());
+    private void ensureHasAccount(UserType onUser, String key, String[] features) {
+        ensureHasAccount(onUser, key, features, new HashSet<>());
     }
 
-    private AccountReference ensureHasAccount(
-            UserType onUser, String key, Set<AccountReference> ignoredAccounts) {
+
+    private AccountReference ensureHasAccount(UserType onUser, String key, String[] features,
+            Set<AccountReference> ignoredAccounts) {
         ensureHasAccountAuthenticator(onUser);
 
         Optional<AccountReference> account =
                 accounts(onUser).allAccounts().stream().filter(i -> !ignoredAccounts.contains(i))
                         .findFirst();
+
         if (account.isPresent()) {
+            accounts(onUser).setFeatures(account.get(), Set.of(features));
             mAccounts.put(key, account.get());
             return account.get();
         }
 
-        AccountReference createdAccount = accounts(onUser).addAccount().add();
+        AccountReference createdAccount = accounts(onUser).addAccount()
+                .features(Set.of(features))
+                .add();
         mCreatedAccounts.add(createdAccount);
         mAccounts.put(key, createdAccount);
         return createdAccount;
@@ -3314,7 +3321,8 @@ public final class DeviceState extends HarrierRule {
         Set<AccountReference> ignoredAccounts = new HashSet<>();
 
         for (EnsureHasAccount account : accounts) {
-            ignoredAccounts.add(ensureHasAccount(account.onUser(), account.key(), ignoredAccounts));
+            ignoredAccounts.add(ensureHasAccount(
+                    account.onUser(), account.key(), account.features(), ignoredAccounts));
         }
     }
 

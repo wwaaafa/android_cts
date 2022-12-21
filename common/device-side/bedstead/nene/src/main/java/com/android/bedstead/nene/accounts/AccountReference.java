@@ -19,13 +19,21 @@ package com.android.bedstead.nene.accounts;
 import static android.accounts.AccountManager.KEY_ACCOUNT_NAME;
 import static android.accounts.AccountManager.KEY_ACCOUNT_TYPE;
 
+import static com.android.bedstead.nene.permissions.CommonPermissions.INTERACT_ACROSS_USERS_FULL;
+
 import android.accounts.Account;
+import android.accounts.AccountManager;
+import android.accounts.AuthenticatorException;
+import android.accounts.OperationCanceledException;
 import android.os.Bundle;
 
+import com.android.bedstead.nene.TestApis;
 import com.android.bedstead.nene.annotations.Experimental;
 import com.android.bedstead.nene.exceptions.NeneException;
+import com.android.bedstead.nene.permissions.PermissionContext;
 import com.android.bedstead.nene.users.UserReference;
 
+import java.io.IOException;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -152,6 +160,19 @@ public final class AccountReference implements AutoCloseable {
     }
 
     /**
+     * True if this account has the given feature.
+     */
+    public boolean hasFeature(String feature) {
+        try (PermissionContext p =
+                     TestApis.permissions().withPermission(INTERACT_ACROSS_USERS_FULL)) {
+            return accountManager().hasFeatures(mAndroidAccount,
+                    new String[]{feature}, /* callback= */ null, /* handler= */ null).getResult();
+        } catch (OperationCanceledException | AuthenticatorException | IOException e) {
+            throw new NeneException("Error checking feature " + feature + " for user " + mUser, e);
+        }
+    }
+
+    /**
      * Remove the account.
      *
      * <p>If {@link #canRemove()} is false, this will throw an exception
@@ -180,5 +201,10 @@ public final class AccountReference implements AutoCloseable {
                 + "user=" + user()
                 + ",account=" + account()
                 + "}";
+    }
+
+    private android.accounts.AccountManager accountManager() {
+        return TestApis.context().androidContextAsUser(mUser)
+                .getSystemService(AccountManager.class);
     }
 }
