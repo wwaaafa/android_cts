@@ -16,10 +16,14 @@
 
 package com.android.bedstead.nene.accounts;
 
+import android.accounts.AuthenticatorException;
+import android.accounts.OperationCanceledException;
 import android.os.Bundle;
 
+import com.android.bedstead.nene.exceptions.NeneException;
 import com.android.bedstead.nene.utils.Poll;
 
+import java.io.IOException;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -35,6 +39,19 @@ public final class AccountBuilder {
 
     AccountBuilder(AccountManager<?> accountManager) {
         mAccountManager = accountManager;
+        // TODO: Remove the removeFunction and just always use the accountManager
+        mRemoveFunction = (account) -> {
+            try {
+                mAccountManager.accountManager().removeAccount(
+                        account.account(),
+                        /* activity= */ null,
+                        /* callback= */ null,
+                        /* handler= */ null
+                ).getResult();
+            } catch (AuthenticatorException | IOException | OperationCanceledException e) {
+                throw new NeneException("Error removing account " + account, e);
+            }
+        };
     }
 
     /**

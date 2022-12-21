@@ -802,10 +802,12 @@ def is_clone_user(user):
     return user["type"] == "profile.CLONE"
 
 def create_user(device_state, args):
-    commands = ["adb", "shell", "pm", "create-user", "user"]
+    commands = ["adb", "shell", "pm", "create-user"]
 
     if device_state["sdk_version"] >= 33:
         commands.append("--for-testing")
+
+    commands.append("user")
 
     output, err = execute_shell_command("Test", args, commands)
     id = int(output.rsplit(" ", 1)[1].strip())
@@ -813,10 +815,12 @@ def create_user(device_state, args):
     return id
 
 def create_work_profile(device_state, args, parent_id):
-    commands = ["adb", "shell", "pm", "create-user", "--managed", "--profileOf", str(parent_id), "user"]
+    commands = ["adb", "shell", "pm", "create-user", "--managed", "--profileOf", str(parent_id)]
 
     if device_state["sdk_version"] >= 33:
         commands.append("--for-testing")
+
+    commands.append("user")
 
     output, err = execute_shell_command("Test", args, commands)
     try:

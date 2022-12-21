@@ -47,7 +47,7 @@ public final class Accounts {
     /**
      * Wrap the given {@link RemoteAccountManager} subclass to use Nene APIs.
      */
-    public <E extends RemoteAccountManager> com.android.bedstead.nene.accounts.AccountManager<E> wrap(Class<E> clazz, UserReference user, E accountManager) {
+    public <E extends RemoteAccountManager> com.android.bedstead.nene.accounts.AccountManager<RemoteAccountManager> wrap(UserReference user, RemoteAccountManager accountManager) {
         return new com.android.bedstead.nene.accounts.AccountManager<>(
                 user, accountManager, accountManager);
     }
