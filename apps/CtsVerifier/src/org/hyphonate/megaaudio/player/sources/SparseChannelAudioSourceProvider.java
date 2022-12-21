@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Android Open Source Project
+ * Copyright 2022 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,22 +19,32 @@ import org.hyphonate.megaaudio.player.AudioSource;
 import org.hyphonate.megaaudio.player.AudioSourceProvider;
 import org.hyphonate.megaaudio.player.NativeAudioSource;
 
-public class SinAudioSourceProvider implements AudioSourceProvider {
-    // Cache sources
-    AudioSource mJavaSource;
-    NativeAudioSource mNativeSource;
+/**
+ * An AudioSourceProvider for SparseChannelAudioSources
+ */
+public class SparseChannelAudioSourceProvider implements AudioSourceProvider {
+    public static final int CHANNELMASK_LEFT = 0x01;
+    public static final int CHANNELMASK_RIGHT = 0x02;
+
+    int mChannelsMask;
+    public SparseChannelAudioSourceProvider(int mask) {
+        super();
+
+        mChannelsMask = mask;
+    }
 
     @Override
     public AudioSource getJavaSource() {
-        return mJavaSource != null ? mJavaSource : (mJavaSource = new SinAudioSource());
+        return new SparseChannelAudioSource(mChannelsMask);
     }
 
     @Override
     public NativeAudioSource getNativeSource() {
-        return mNativeSource != null
-                ? mNativeSource
-                : (mNativeSource = new NativeAudioSource(allocNativeSource()));
+        // NOTE: until a native version of the SparseChannelAudioSource is implemented, returning
+        // null from here will default back to the Java SparseChannelAudioSource.
+        // return new NativeAudioSource(allocNativeSource());
+        return null;
     }
 
-    private native long allocNativeSource();
+    // private native long allocNativeSource();
 }
