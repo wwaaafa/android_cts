@@ -40,7 +40,7 @@ import java.util.stream.Stream;
  */
 public final class RemoteAccountAuthenticator extends TestAppInstance {
 
-    // TODO: Query account types from xml
+    // TODO(263350665): Query account types from xml
     private static final Set<String> ACCOUNT_TYPES = Set.of(
             "com.android.bedstead.remoteaccountauthenticator.account"
     );
@@ -49,7 +49,7 @@ public final class RemoteAccountAuthenticator extends TestAppInstance {
             "com.android.RemoteAccountAuthenticator";
 
     private static final TestAppProvider sTestAppProvider = new TestAppProvider();
-    private static final TestApp REMOTE_ACCOUNT_AUTHENTICATOR_TEST_APP = sTestAppProvider.query()
+    public static final TestApp REMOTE_ACCOUNT_AUTHENTICATOR_TEST_APP = sTestAppProvider.query()
             .wherePackageName().isEqualTo(REMOTE_ACCOUNT_AUTHENTICATOR_PACKAGE_NAME)
             .get();
 
@@ -76,7 +76,7 @@ public final class RemoteAccountAuthenticator extends TestAppInstance {
     /**
      * Get all accounts owned by this RemoteAccountAuthenticator.
      */
-    public Set<AccountReference> accounts() {
+    public Set<AccountReference> allAccounts() {
         return ACCOUNT_TYPES.stream()
                 .flatMap(t -> Stream.of(accountManager().getAccountsByType(t)))
                 .map(a -> AccountReference.of(user(), a))
