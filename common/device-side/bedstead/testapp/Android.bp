@@ -110,6 +110,7 @@ java_genrule {
         ":RemoteDPCTestApp",
         ":SmsApp",
         ":AccountManagementApp",
+        ":RemoteAccountAuthenticatorApp",
         ":RoleHolderApp",
         ":MLCTestApp",
     ],
@@ -129,6 +130,7 @@ java_genrule {
         " && cp $(location :RemoteDPCTestApp) $(genDir)/res/raw" +
         " && cp $(location :SmsApp) $(genDir)/res/raw" +
         " && cp $(location :AccountManagementApp) $(genDir)/res/raw" +
+        " && cp $(location :RemoteAccountAuthenticatorApp) $(genDir)/res/raw" +
         " && cp $(location :RoleHolderApp) $(genDir)/res/raw" +
         " && $(location index_testapps) --directory $(genDir)/res/raw --aapt2 $(location aapt2)" +
         " && $(location soong_zip) -o $(out) -C $(genDir)/res -D $(genDir)/res/raw",
@@ -232,6 +234,17 @@ android_test_helper_app {
         "TestApp_TestApps",
     ],
     manifest: "manifests/MLCTestAppManifest.xml",
+    additional_manifests: ["CommonManifest.xml"],
+    min_sdk_version: "29",
+}
+
+android_test_helper_app {
+    name: "RemoteAccountAuthenticatorApp",
+    static_libs: [
+        "TestApp_TestApps",
+    ],
+    resource_dirs: ["src/testapps/main/res/accountmanagement"],
+    manifest: "manifests/RemoteAccountAuthenticatorManifest.xml",
     additional_manifests: ["CommonManifest.xml"],
     min_sdk_version: "29",
 }
