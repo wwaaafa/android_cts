@@ -33,10 +33,9 @@ public final class TestAppAccountAuthenticator extends AbstractAccountAuthentica
     private static TestAppAccountAuthenticator sMockAuthenticator = null;
     private static final String ACCOUNT_NAME
             = "com.android.bedstead.testapp.AccountManagementApp.account.name";
-    private static final String ACCOUNT_TYPE
-            = "com.android.bedstead.testapp.AccountManagementApp.account.type";
     private static final String AUTH_TOKEN = "mockAuthToken";
     private static final String AUTH_TOKEN_LABEL = "mockAuthTokenLabel";
+    private static final String ACCOUNT_PASSWORD = "password";
 
     public static synchronized TestAppAccountAuthenticator getAuthenticator(Context context) {
         if (null == sMockAuthenticator) {
@@ -45,14 +44,17 @@ public final class TestAppAccountAuthenticator extends AbstractAccountAuthentica
         return sMockAuthenticator;
     }
 
+    private final Context mContext;
+
     private TestAppAccountAuthenticator(Context context) {
         super(context);
+        mContext = context;
     }
 
-    private Bundle createResultBundle() {
+    private Bundle createResultBundle(String accountType) {
         Bundle result = new Bundle();
         result.putString(AccountManager.KEY_ACCOUNT_NAME, ACCOUNT_NAME);
-        result.putString(AccountManager.KEY_ACCOUNT_TYPE, ACCOUNT_TYPE);
+        result.putString(AccountManager.KEY_ACCOUNT_TYPE, accountType);
         result.putString(AccountManager.KEY_AUTHTOKEN, AUTH_TOKEN);
         return result;
     }
@@ -61,18 +63,23 @@ public final class TestAppAccountAuthenticator extends AbstractAccountAuthentica
     public Bundle addAccount(AccountAuthenticatorResponse response, String accountType,
             String authTokenType, String[] requiredFeatures, Bundle options)
             throws NetworkErrorException {
-        return createResultBundle();
+
+        mContext.getSystemService(AccountManager.class)
+                .addAccountExplicitly(
+                        new Account(ACCOUNT_NAME, accountType), ACCOUNT_PASSWORD, new Bundle());
+
+        return createResultBundle(accountType);
     }
 
     @Override
     public Bundle editProperties(AccountAuthenticatorResponse response, String accountType) {
-        return createResultBundle();
+        return createResultBundle(accountType);
     }
 
     @Override
     public Bundle updateCredentials(AccountAuthenticatorResponse response, Account account,
             String authTokenType, Bundle options) throws NetworkErrorException {
-        return createResultBundle();
+        return createResultBundle(/* accountType= */ null);
     }
 
     @Override
@@ -87,7 +94,7 @@ public final class TestAppAccountAuthenticator extends AbstractAccountAuthentica
     @Override
     public Bundle getAuthToken(AccountAuthenticatorResponse response, Account account,
             String authTokenType, Bundle options) throws NetworkErrorException {
-        return createResultBundle();
+        return createResultBundle(/* accountType= */ null);
     }
 
     @Override
