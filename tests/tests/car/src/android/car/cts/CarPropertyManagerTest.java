@@ -272,7 +272,8 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.BLIND_SPOT_WARNING_ENABLED,
                             VehiclePropertyIds.LANE_DEPARTURE_WARNING_ENABLED,
                             VehiclePropertyIds.LANE_CENTERING_ASSIST_ENABLED,
-                            VehiclePropertyIds.EMERGENCY_LANE_KEEP_ASSIST_ENABLED)
+                            VehiclePropertyIds.EMERGENCY_LANE_KEEP_ASSIST_ENABLED,
+                            VehiclePropertyIds.ADAPTIVE_CRUISE_CONTROL_ENABLED)
                     .build();
     private static final ImmutableList<Integer> PERMISSION_CONTROL_ADAS_SETTINGS_PROPERTIES =
             ImmutableList.<Integer>builder()
@@ -282,7 +283,8 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.BLIND_SPOT_WARNING_ENABLED,
                             VehiclePropertyIds.LANE_DEPARTURE_WARNING_ENABLED,
                             VehiclePropertyIds.LANE_CENTERING_ASSIST_ENABLED,
-                            VehiclePropertyIds.EMERGENCY_LANE_KEEP_ASSIST_ENABLED)
+                            VehiclePropertyIds.EMERGENCY_LANE_KEEP_ASSIST_ENABLED,
+                            VehiclePropertyIds.ADAPTIVE_CRUISE_CONTROL_ENABLED)
                     .build();
     private static final ImmutableList<Integer> PERMISSION_READ_ADAS_STATES_PROPERTIES =
             ImmutableList.<Integer>builder()
@@ -554,6 +556,20 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     public void testEmergencyLaneKeepAssistEnabledIfSupported() {
         VehiclePropertyVerifier.newBuilder(
                         VehiclePropertyIds.EMERGENCY_LANE_KEEP_ASSIST_ENABLED,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Boolean.class)
+                .addReadPermission(Car.PERMISSION_READ_ADAS_SETTINGS)
+                .addWritePermission(Car.PERMISSION_CONTROL_ADAS_SETTINGS)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
+    public void testAdaptiveCruiseControlEnabledIfSupported() {
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.ADAPTIVE_CRUISE_CONTROL_ENABLED,
                         CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE,
                         VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
                         CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
