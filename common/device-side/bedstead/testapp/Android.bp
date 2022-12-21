@@ -104,6 +104,7 @@ java_genrule {
         ":EmptyTestApp",
         ":NotEmptyTestApp",
         ":DeviceAdminTestApp",
+        ":TestOnlyDeviceAdminTestApp",
         ":LockTaskApp",
         ":DelegateTestApp",
         ":DevicePolicyManagementRoleHolderTestApp",
@@ -124,6 +125,7 @@ java_genrule {
         " && cp $(location :EmptyTestApp) $(genDir)/res/raw" +
         " && cp $(location :NotEmptyTestApp) $(genDir)/res/raw" +
         " && cp $(location :DeviceAdminTestApp) $(genDir)/res/raw" +
+        " && cp $(location :TestOnlyDeviceAdminTestApp) $(genDir)/res/raw" +
         " && cp $(location :LockTaskApp) $(genDir)/res/raw" +
         " && cp $(location :DelegateTestApp) $(genDir)/res/raw" +
         " && cp $(location :DevicePolicyManagementRoleHolderTestApp) $(genDir)/res/raw" +
@@ -162,6 +164,17 @@ android_test_helper_app {
     ],
     resource_dirs: ["src/testapps/main/res/device_admin"],
     manifest: "manifests/DeviceAdminManifest.xml",
+    additional_manifests: ["CommonManifest.xml"],
+    min_sdk_version: "29",
+}
+
+android_test_helper_app {
+    name: "TestOnlyDeviceAdminTestApp",
+    static_libs: [
+        "TestApp_TestApps",
+    ],
+    resource_dirs: ["src/testapps/main/res/device_admin"],
+    manifest: "manifests/TestOnlyDeviceAdminManifest.xml",
     additional_manifests: ["CommonManifest.xml"],
     min_sdk_version: "29",
 }

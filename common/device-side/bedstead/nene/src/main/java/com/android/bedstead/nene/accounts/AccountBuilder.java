@@ -24,6 +24,9 @@ import com.android.bedstead.nene.exceptions.NeneException;
 import com.android.bedstead.nene.utils.Poll;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -35,6 +38,7 @@ public final class AccountBuilder {
     private final AccountManager<?> mAccountManager;
     private String mType;
     private String mName = UUID.randomUUID().toString();
+    private Set<String> mFeatures = new HashSet<>();
     private Consumer<AccountReference> mRemoveFunction;
 
     AccountBuilder(AccountManager<?> accountManager) {
@@ -79,6 +83,30 @@ public final class AccountBuilder {
     }
 
     /**
+     * Set the features of the account. Defaults to none.
+     */
+    public AccountBuilder features(Set<String> features) {
+        mFeatures = new HashSet<>(features);
+        return this;
+    }
+
+    /**
+     * Add a feature to the account.
+     */
+    public AccountBuilder addFeature(String feature) {
+        mFeatures.add(feature);
+        return this;
+    }
+
+    /**
+     * Add features to the account.
+     */
+    public AccountBuilder addFeatures(String... feature) {
+        mFeatures.addAll(Set.of(feature));
+        return this;
+    }
+
+    /**
      * Add this account.
      */
     public AccountReference add() {
@@ -100,6 +128,7 @@ public final class AccountBuilder {
     private Bundle addAccountOnce() throws Exception {
         Bundle options = new Bundle();
         options.putString("name", mName);
+        options.putStringArrayList("features", new ArrayList<>(mFeatures));
         return mAccountManager.accountManager().addAccount(
                 mType,
                 /* authTokenType= */ null,

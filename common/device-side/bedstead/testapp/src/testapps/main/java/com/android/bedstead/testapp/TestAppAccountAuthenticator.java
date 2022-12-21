@@ -24,10 +24,12 @@ import android.accounts.NetworkErrorException;
 import android.content.Context;
 import android.os.Bundle;
 
-// TODO(b/199138647): Allow configuration of TestAppAccountAuthenticator
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Set;
+
 /**
- * An account authenticator which has every feature, has a single fixed account and accepts
- * every account being added/edited/removed.
+ * An account authenticator which can be configured by tests.
  */
 public final class TestAppAccountAuthenticator extends AbstractAccountAuthenticator {
     private static TestAppAccountAuthenticator sMockAuthenticator = null;
@@ -70,9 +72,16 @@ public final class TestAppAccountAuthenticator extends AbstractAccountAuthentica
 
         String name = options.getString("name", ACCOUNT_NAME);
         String password = options.getString("password", ACCOUNT_PASSWORD);
+        ArrayList<String> features = options.getStringArrayList("features");
+        if (features == null) {
+            features = new ArrayList<>();
+        }
 
-        mContext.getSystemService(AccountManager.class)
-                .addAccountExplicitly(new Account(name, accountType), password, new Bundle());
+        Account account = new Account(name, accountType);
+        AccountManager accountManager = mContext.getSystemService(AccountManager.class);
+        accountManager.addAccountExplicitly(account, password, new Bundle());
+
+        accountManager.setUserData(account, "features", String.join(",", features));
 
         return createResultBundle(accountType, name);
     }
@@ -85,6 +94,12 @@ public final class TestAppAccountAuthenticator extends AbstractAccountAuthentica
     @Override
     public Bundle updateCredentials(AccountAuthenticatorResponse response, Account account,
             String authTokenType, Bundle options) throws NetworkErrorException {
+        AccountManager accountManager = mContext.getSystemService(AccountManager.class);
+        if (options.containsKey("features")) {
+            accountManager.setUserData(account, "features",
+                    String.join(",", options.getStringArrayList("features")));
+        }
+
         return createResultBundle(/* accountType= */ null);
     }
 
@@ -111,8 +126,17 @@ public final class TestAppAccountAuthenticator extends AbstractAccountAuthentica
     @Override
     public Bundle hasFeatures(AccountAuthenticatorResponse response, Account account,
             String[] features) throws NetworkErrorException {
+        boolean hasFeatures;
+        AccountManager accountManager = mContext.getSystemService(AccountManager.class);
+        if (accountManager.getUserData(account, "features") == null) {
+            hasFeatures = false;
+        } else {
+            hasFeatures = Arrays.asList(accountManager.getUserData(account, "features")
+                    .split(",")).containsAll(Set.of(features));
+        }
+
         Bundle result = new Bundle();
-        result.putBoolean(AccountManager.KEY_BOOLEAN_RESULT, true);
+        result.putBoolean(AccountManager.KEY_BOOLEAN_RESULT, hasFeatures);
         return result;
     }
 }

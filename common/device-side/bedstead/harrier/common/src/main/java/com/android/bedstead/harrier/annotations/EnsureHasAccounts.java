@@ -32,6 +32,8 @@ public @interface EnsureHasAccounts {
 
     EnsureHasAccount[] value();
 
+    // TODO(263353413): Add an option to specify these should be the only accounts
+
     /**
      * Weight sets the order that annotations will be resolved.
      *

@@ -18,6 +18,7 @@ package com.android.bedstead.remoteaccountauthenticator;
 
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
+import android.os.Bundle;
 
 import com.android.bedstead.nene.TestApis;
 import com.android.bedstead.nene.accounts.AccountBuilder;
@@ -29,6 +30,7 @@ import com.android.bedstead.testapp.TestAppInstance;
 import com.android.bedstead.testapp.TestAppProvider;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -94,10 +96,30 @@ public final class RemoteAccountAuthenticator extends TestAppInstance {
     }
 
     /**
+     * Set the features for the given account.
+     */
+    public void setFeatures(AccountReference account, Set<String> features) {
+        Bundle options = new Bundle();
+        options.putStringArrayList("features", new ArrayList<>(features));
+
+        try {
+            accountManager().updateCredentials(
+                    account.account(),
+                    /* authTokenType= */ null,
+                    options,
+                    /* activity= */ null,
+                    /* callback= */ null,
+                    /* handler= */ null
+            ).getResult();
+        } catch (AuthenticatorException | IOException | OperationCanceledException e) {
+            throw new NeneException("Error updating account " + account, e);
+        }
+    }
+
+    /**
      * Remove this account.
      */
     public void remove(AccountReference account) {
-        // TODO: Check result
         try {
             accountManager().removeAccount(
                     account.account(),

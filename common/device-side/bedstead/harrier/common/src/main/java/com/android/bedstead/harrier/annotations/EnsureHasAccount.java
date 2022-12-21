@@ -31,7 +31,7 @@ import java.lang.annotation.Target;
  */
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-// TODO: Add options (features of the user, type of the user, etc.)
+// TODO(263353411): Make this take a query argument the same as remotedpc - instead of individual parameters
 public @interface EnsureHasAccount {
 
     String DEFAULT_ACCOUNT_KEY = "account";
@@ -41,6 +41,13 @@ public @interface EnsureHasAccount {
 
     /** Which user type the account must be added on. */
     UserType onUser() default INSTRUMENTED_USER;
+
+    /**
+     * Features which the account must have.
+     *
+     * <p>Lack of a feature here indicates the account should not have this feature
+     */
+    String[] features() default {};
 
     /**
      * Weight sets the order that annotations will be resolved.
