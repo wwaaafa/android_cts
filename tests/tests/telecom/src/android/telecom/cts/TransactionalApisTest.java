@@ -27,8 +27,8 @@ import android.os.Bundle;
 import android.os.OutcomeReceiver;
 import android.telecom.Call;
 import android.telecom.CallAttributes;
-import android.telecom.CallAudioState;
 import android.telecom.CallControl;
+import android.telecom.CallEndpoint;
 import android.telecom.CallEventCallback;
 import android.telecom.CallException;
 import android.telecom.Connection;
@@ -41,6 +41,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -73,6 +74,12 @@ public class TransactionalApisTest extends BaseTelecomTestWithMockServices {
             "failed to receive OutcomeReceiver#onResult";
     private static final String FAIL_MSG_DURING_CLEANUP =
             "exception thrown while cleaning up tests";
+    private static final String FAIL_MSG_ON_CALL_ENDPOINT_UPDATE =
+            "CallEndpoint was not updated at all or in time";
+    private static final String FAIL_MSG_ON_AVAILABLE_ENDPOINTS_UPDATE =
+            "onAvailable CallEndpoint was not updated at all or in time";
+    private static final String FAIL_MSG_ON_MUTE_STATE_CHANGED =
+            "Mute state was not updated at all or in time";
 
     // inner classes
     /**
@@ -83,6 +90,10 @@ public class TransactionalApisTest extends BaseTelecomTestWithMockServices {
         private final String mCallId;
         private String mTelecomCallId = "";
         CallControl mCallControl;
+        private CallEndpoint mCallEndpoint;
+        private List<CallEndpoint> mAvailableEndpoints;
+        private boolean mIsMuted = false;
+
 
         TestVoipCall(String id) {
             mCallId = id;
@@ -128,9 +139,36 @@ public class TransactionalApisTest extends BaseTelecomTestWithMockServices {
         }
 
         @Override
-        public void onCallAudioStateChanged(@NonNull CallAudioState callAudioState) {
-            Log.i(TAG, String.format("onCallAudioStateChanged: callId=[%s], state=[%s]",
-                    mCallId, callAudioState.toString()));
+        public void onCallEndpointChanged(@NonNull CallEndpoint newCallEndpoint) {
+            Log.i(TAG, String.format("onCallEndpointChanged: endpoint=[%s]", newCallEndpoint));
+            mCallEndpoint = newCallEndpoint;
+        }
+
+        @Override
+        public void onAvailableCallEndpointsChanged(
+                @NonNull List<CallEndpoint> availableEndpoints) {
+            Log.i(TAG, String.format("onAvailableCallEndpointsChanged: callId=[%s]", mCallId));
+            for (CallEndpoint endpoint : availableEndpoints) {
+                Log.i(TAG, String.format("endpoint=[%s]", endpoint));
+            }
+            mAvailableEndpoints = availableEndpoints;
+        }
+
+        @Override
+        public void onMuteStateChanged(boolean isMuted) {
+            mIsMuted = isMuted;
+        }
+
+        public final CallEndpoint getCurrentCallEndpoint() {
+            return mCallEndpoint;
+        }
+
+        public final List<CallEndpoint> getAvailableEndpoints() {
+            return mAvailableEndpoints;
+        }
+
+        public final boolean isMuted() {
+            return mIsMuted;
         }
 
         @Override
@@ -457,6 +495,184 @@ public class TransactionalApisTest extends BaseTelecomTestWithMockServices {
                 mTelecomManager.registerPhoneAccount(TestUtils.TEST_SIM_PHONE_ACCOUNT);
             });
         }
+    }
+
+    /**
+     * test {@link CallEventCallback#onCallEndpointChanged(CallEndpoint)} is called and provides a
+     * non-null {@link CallEndpoint}.
+     */
+    public void testOnChangedCallEndpoint() {
+        if (!mShouldTestTelecom) {
+            return;
+        }
+        try {
+            cleanup();
+            assertNull(mCall1.getCurrentCallEndpoint());
+            startCallWithAttributesAndVerify(mOutgoingCallAttributes, mCall1);
+            assertNumCalls(getInCallService(), 1);
+            verifyCallEndpointIsNotNull(mCall1);
+            callControlAction(DISCONNECT, mCall1);
+            assertNumCalls(getInCallService(), 0);
+        } finally {
+            cleanup();
+        }
+    }
+
+    /**
+     * test {@link CallEventCallback#onAvailableCallEndpointsChanged(List)} is called and provides a
+     * list of non-null {@link CallEndpoint}s.
+     */
+    public void testOnAvailableCallEndpointsChanged() {
+        if (!mShouldTestTelecom) {
+            return;
+        }
+        try {
+            cleanup();
+            assertNull(mCall1.getAvailableEndpoints());
+            startCallWithAttributesAndVerify(mOutgoingCallAttributes, mCall1);
+            assertNumCalls(getInCallService(), 1);
+            verifyOnAvailableEndpointsIsNotNull(mCall1);
+            callControlAction(DISCONNECT, mCall1);
+            assertNumCalls(getInCallService(), 0);
+        } finally {
+            cleanup();
+        }
+    }
+
+    /**
+     * test {@link CallEventCallback#onMuteStateChanged(boolean)} is called properly relays the
+     * changes to the audio mute state.
+     */
+    public void testMuteState() {
+        if (!mShouldTestTelecom) {
+            return;
+        }
+        try {
+            cleanup();
+            startCallWithAttributesAndVerify(mOutgoingCallAttributes, mCall1);
+            assertNumCalls(getInCallService(), 1);
+
+            // mute call and verify onMuteStateChanged was updated
+            getInCallService().setMuted(true);
+            verifyMuteState(true, mCall1);
+
+            // unmute call and verify onMuteStateChanged was updated
+            getInCallService().setMuted(false);
+            verifyMuteState(false, mCall1);
+
+            callControlAction(DISCONNECT, mCall1);
+            assertNumCalls(getInCallService(), 0);
+        } finally {
+            cleanup();
+        }
+    }
+
+    /**
+     * test {@link CallControl#requestCallEndpointChange(CallEndpoint, Executor, OutcomeReceiver)}
+     * can switch {@link CallEndpoint}s if there is another endpoint available.  This test will not
+     * request an endpoint change if the device only has a single endpoint.
+     */
+    public void testRequestCallEndpointChangeViaCallControl() {
+        if (!mShouldTestTelecom) {
+            return;
+        }
+
+        try {
+            cleanup();
+            startCallWithAttributesAndVerify(mIncomingCallAttributes, mCall1);
+            assertNumCalls(getInCallService(), 1);
+            // verify there is at least one endpoint that is non-null
+            verifyCallEndpointIsNotNull(mCall1);
+            int startingEndpointType = mCall1.getCurrentCallEndpoint().getEndpointType();
+
+            // query the current endpoints
+            List<CallEndpoint> endpoints = mCall1.getAvailableEndpoints();
+            // if another endpoint is available, request a switch
+            if (endpoints.size() > 1) {
+                // iterate the other endpoints until an endpoint other than the startingEndpointType
+                // is found
+                CallEndpoint anotherEndpoint = null;
+                for (CallEndpoint endpoint : endpoints) {
+                    if (endpoint != null
+                            && endpoint.getEndpointType() != startingEndpointType) {
+                        anotherEndpoint = endpoint;
+                        break;
+                    }
+                }
+                // CallControl#requestCallEndpointChange
+                requestAndAssertEndpointChange(mCall1, anotherEndpoint);
+                assertNotNull(anotherEndpoint);
+                assertEndpointType(getInCallService(), anotherEndpoint.getEndpointType());
+                // disconnect the call
+                callControlAction(DISCONNECT, mCall1);
+                assertNumCalls(getInCallService(), 0);
+            }
+        } finally {
+            cleanup();
+        }
+    }
+
+    public void verifyCallEndpointIsNotNull(TestVoipCall call) {
+        waitUntilConditionIsTrueOrTimeout(
+                new Condition() {
+                    @Override
+                    public Object expected() {
+                        return true;
+                    }
+
+                    @Override
+                    public Object actual() {
+                        return call.getCurrentCallEndpoint() != null;
+                    }
+                },
+                WAIT_FOR_STATE_CHANGE_TIMEOUT_MS, FAIL_MSG_ON_CALL_ENDPOINT_UPDATE);
+    }
+
+    public void verifyOnAvailableEndpointsIsNotNull(TestVoipCall call) {
+        waitUntilConditionIsTrueOrTimeout(
+                new Condition() {
+                    @Override
+                    public Object expected() {
+                        return true;
+                    }
+
+                    @Override
+                    public Object actual() {
+                        return call.getAvailableEndpoints() != null;
+                    }
+                },
+                WAIT_FOR_STATE_CHANGE_TIMEOUT_MS, FAIL_MSG_ON_AVAILABLE_ENDPOINTS_UPDATE);
+    }
+
+    public void verifyMuteState(boolean expected, TestVoipCall call) {
+        waitUntilConditionIsTrueOrTimeout(
+                new Condition() {
+                    @Override
+                    public Object expected() {
+                        return expected;
+                    }
+
+                    @Override
+                    public Object actual() {
+                        return call.isMuted();
+                    }
+                },
+                WAIT_FOR_STATE_CHANGE_TIMEOUT_MS, FAIL_MSG_ON_MUTE_STATE_CHANGED);
+    }
+
+    public void requestAndAssertEndpointChange(TestVoipCall call, CallEndpoint endpoint) {
+        final CountDownLatch latch = new CountDownLatch(1);
+        final LatchedOutcomeReceiver outcome = new LatchedOutcomeReceiver(latch);
+
+        CallControl callControl = call.mCallControl;
+        if (callControl == null) {
+            fail("callControl object is null");
+            return;
+        }
+
+        call.mCallControl.requestCallEndpointChange(endpoint, Runnable::run, outcome);
+
+        assertOnResultWasReceived(latch);
     }
 
     // waits for the latch to countdown or times out and fails
