@@ -20,6 +20,7 @@ import android.os.Bundle;
 
 import com.android.bedstead.nene.utils.Poll;
 
+import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
@@ -29,6 +30,7 @@ public final class AccountBuilder {
 
     private final AccountManager<?> mAccountManager;
     private String mType;
+    private String mName = UUID.randomUUID().toString();
     private Consumer<AccountReference> mRemoveFunction;
 
     AccountBuilder(AccountManager<?> accountManager) {
@@ -52,6 +54,14 @@ public final class AccountBuilder {
     }
 
     /**
+     * Set the name of the account. Defaults to a random name.
+     */
+    public AccountBuilder name(String name) {
+        mName = name;
+        return this;
+    }
+
+    /**
      * Add this account.
      */
     public AccountReference add() {
@@ -71,11 +81,13 @@ public final class AccountBuilder {
     }
 
     private Bundle addAccountOnce() throws Exception {
+        Bundle options = new Bundle();
+        options.putString("name", mName);
         return mAccountManager.accountManager().addAccount(
                 mType,
                 /* authTokenType= */ null,
                 /* requiredFeatures= */ null,
-                /* addAccountOptions= */ null,
+                /* addAccountOptions= */ options,
                 /* activity= */ null,
                 /* callback= */ null,
                 /* handler= */ null).getResult();

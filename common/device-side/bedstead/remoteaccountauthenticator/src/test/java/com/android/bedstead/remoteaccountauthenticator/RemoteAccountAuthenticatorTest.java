@@ -63,7 +63,7 @@ public final class RemoteAccountAuthenticatorTest {
                      RemoteAccountAuthenticator.install()) {
             AccountReference account = authenticator.addAccount().add();
 
-            assertThat(authenticator.accounts()).contains(account);
+            assertThat(authenticator.allAccounts()).contains(account);
         }
     }
 
@@ -74,7 +74,7 @@ public final class RemoteAccountAuthenticatorTest {
             AccountReference account = authenticator.addAccount().add();
             account.remove();
 
-            assertThat(authenticator.accounts()).doesNotContain(account);
+            assertThat(authenticator.allAccounts()).doesNotContain(account);
         }
     }
 
@@ -87,7 +87,7 @@ public final class RemoteAccountAuthenticatorTest {
                 // Just using autoclose
             }
 
-            assertThat(authenticator.accounts()).doesNotContain(account);
+            assertThat(authenticator.allAccounts()).doesNotContain(account);
         }
     }
 }

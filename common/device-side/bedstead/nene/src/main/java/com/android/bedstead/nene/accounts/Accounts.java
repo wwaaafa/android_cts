@@ -60,6 +60,43 @@ public final class Accounts {
     }
 
     /**
+     * Get all accounts across all users
+     *
+     * <p>These accounts are not removable.
+     */
+    // TODO(263351343): Map RemoteAccountAuthenticator accounts so they are removable
+    public Set<AccountReference> allOnDevice() {
+        return TestApis.users().all().stream().flatMap(u -> all(u).stream())
+                .collect(Collectors.toSet());
+    }
+
+
+    /**
+     * Get all accounts on the instrumented user.
+     *
+     * <p>These accounts are not removable.
+     */
+    // TODO(263351343): Map RemoteAccountAuthenticator accounts so they are removable
+    public Set<AccountReference> all() {
+        return all(TestApis.users().instrumented());
+    }
+
+    /**
+     * Get all accounts on the given user.
+     *
+     * <p>These accounts are not removable.
+     */
+    // TODO(263351343): Map RemoteAccountAuthenticator accounts so they are removable
+    public Set<AccountReference> all(UserReference user) {
+        // READ_CONTACTS allows access to accounts which manage contacts
+        try (PermissionContext p = TestApis.permissions().withPermission(
+                GET_ACCOUNTS, READ_CONTACTS, INTERACT_ACROSS_USERS_FULL)) {
+            return Arrays.stream(accountManager(user).getAccounts())
+                    .map((a) -> new AccountReference(user, a)).collect(Collectors.toSet());
+        }
+    }
+
+    /**
      * Get all accounts of the given type.
      */
     public Set<AccountReference> getByType(String type) {

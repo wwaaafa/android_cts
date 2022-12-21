@@ -173,4 +173,12 @@ public final class AccountReference implements AutoCloseable {
     public void close() {
         remove();
     }
+
+    @Override
+    public String toString() {
+        return "AccountReference{"
+                + "user=" + user()
+                + ",account=" + account()
+                + "}";
+    }
 }

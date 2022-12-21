@@ -52,8 +52,12 @@ public final class TestAppAccountAuthenticator extends AbstractAccountAuthentica
     }
 
     private Bundle createResultBundle(String accountType) {
+        return createResultBundle(accountType, ACCOUNT_NAME);
+    }
+
+    private Bundle createResultBundle(String accountType, String name) {
         Bundle result = new Bundle();
-        result.putString(AccountManager.KEY_ACCOUNT_NAME, ACCOUNT_NAME);
+        result.putString(AccountManager.KEY_ACCOUNT_NAME, name);
         result.putString(AccountManager.KEY_ACCOUNT_TYPE, accountType);
         result.putString(AccountManager.KEY_AUTHTOKEN, AUTH_TOKEN);
         return result;
@@ -64,11 +68,13 @@ public final class TestAppAccountAuthenticator extends AbstractAccountAuthentica
             String authTokenType, String[] requiredFeatures, Bundle options)
             throws NetworkErrorException {
 
-        mContext.getSystemService(AccountManager.class)
-                .addAccountExplicitly(
-                        new Account(ACCOUNT_NAME, accountType), ACCOUNT_PASSWORD, new Bundle());
+        String name = options.getString("name", ACCOUNT_NAME);
+        String password = options.getString("password", ACCOUNT_PASSWORD);
 
-        return createResultBundle(accountType);
+        mContext.getSystemService(AccountManager.class)
+                .addAccountExplicitly(new Account(name, accountType), password, new Bundle());
+
+        return createResultBundle(accountType, name);
     }
 
     @Override
