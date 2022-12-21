@@ -56,6 +56,13 @@ public class IWifiScannerImp extends IWifiScannerImpl.Stub {
     }
 
     @Override
+    public int scanRequest(SingleScanSettings scanSettings) {
+        Log.i(TAG, "scanRequest");
+        // TODO: Mock it when we have a use (test) case.
+        return 0;
+    }
+
+    @Override
     public void subscribeScanEvents(IScanEvent handler) {
         Log.i(TAG, "subscribeScanEvents");
         // TODO: Mock it when we have a use (test) case.
