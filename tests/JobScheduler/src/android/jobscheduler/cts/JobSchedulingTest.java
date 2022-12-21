@@ -51,6 +51,7 @@ public class JobSchedulingTest extends BaseJobSchedulerTest {
         mJobScheduler.cancel(JOB_ID);
         SystemUtil.runShellCommand(getInstrumentation(), "cmd jobscheduler reset-schedule-quota");
         BatteryUtils.runDumpsysBatteryReset();
+        AppOpsUtils.setOpMode(MY_PACKAGE, AppOpsManager.OPSTR_RUN_LONG_JOBS, MODE_DEFAULT);
 
         // The super method should be called at the end.
         super.tearDown();
@@ -342,5 +343,29 @@ public class JobSchedulingTest extends BaseJobSchedulerTest {
 
         assertEquals(JobScheduler.PENDING_JOB_REASON_CONSTRAINT_STORAGE_NOT_LOW,
                 mJobScheduler.getPendingJobReason(JOB_ID));
+    }
+
+    public void testRunLongJobPermissionRequirement() throws Exception {
+        JobInfo ji = new JobInfo.Builder(JOB_ID, kJobServiceComponent)
+                .setUserInitiated(true)
+                .build();
+        // Default is allowed.
+        AppOpsUtils.setOpMode(MY_PACKAGE, AppOpsManager.OPSTR_RUN_LONG_JOBS, MODE_DEFAULT);
+        assertEquals(JobScheduler.RESULT_SUCCESS, mJobScheduler.schedule(ji));
+
+        AppOpsUtils.setOpMode(MY_PACKAGE, AppOpsManager.OPSTR_RUN_LONG_JOBS, MODE_ERRORED);
+        try {
+            mJobScheduler.schedule(ji);
+            fail("Successfully scheduled user-initiated job without permission");
+        } catch (Exception expected) {
+            // Success
+        }
+
+        AppOpsUtils.setOpMode(MY_PACKAGE, AppOpsManager.OPSTR_RUN_LONG_JOBS, MODE_ALLOWED);
+        assertEquals(JobScheduler.RESULT_SUCCESS, mJobScheduler.schedule(ji));
+
+        AppOpsUtils.setOpMode(MY_PACKAGE, AppOpsManager.OPSTR_RUN_LONG_JOBS, MODE_IGNORED);
+        // TODO(263159631): uncomment to enable testing this scenario
+        // assertEquals(JobScheduler.RESULT_FAILURE, mJobScheduler.schedule(ji));
     }
 }
