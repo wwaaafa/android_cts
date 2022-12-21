@@ -18,7 +18,6 @@ package com.android.bedstead.remoteaccountauthenticator;
 
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
-import android.accounts.RemoteAccountManager;
 
 import com.android.bedstead.nene.TestApis;
 import com.android.bedstead.nene.accounts.AccountBuilder;
@@ -79,7 +78,7 @@ public final class RemoteAccountAuthenticator extends TestAppInstance {
     public Set<AccountReference> allAccounts() {
         return ACCOUNT_TYPES.stream()
                 .flatMap(t -> Stream.of(accountManager().getAccountsByType(t)))
-                .map(a -> AccountReference.of(user(), a))
+                .map(a -> AccountReference.of(user(), a, this::remove))
                 .collect(Collectors.toSet());
     }
 
@@ -89,8 +88,7 @@ public final class RemoteAccountAuthenticator extends TestAppInstance {
      * <p>By default, this will use any supported account type.
      */
     public AccountBuilder addAccount() {
-        return TestApis.accounts().wrap(RemoteAccountManager.class,
-                        user(), accountManager()).addAccount()
+        return TestApis.accounts().wrap(user(), accountManager()).addAccount()
                 .type(ACCOUNT_TYPES.stream().findFirst().get())
                 .removeFunction(this::remove);
     }
@@ -110,5 +108,19 @@ public final class RemoteAccountAuthenticator extends TestAppInstance {
         } catch (AuthenticatorException | IOException | OperationCanceledException e) {
             throw new NeneException("Error removing account " + account, e);
         }
+    }
+
+    /**
+     * Return the account types supported by this authenticator.
+     */
+    public Set<String> accountTypes() {
+        return ACCOUNT_TYPES;
+    }
+
+    /**
+     * Return any account type supported by this authenticator.
+     */
+    public String accountType() {
+        return ACCOUNT_TYPES.stream().findFirst().get();
     }
 }
