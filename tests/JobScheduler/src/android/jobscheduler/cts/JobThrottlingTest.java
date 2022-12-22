@@ -574,7 +574,7 @@ public class JobThrottlingTest {
         mDeviceConfigStateHelper.set("qc_timing_session_coalescing_duration_ms", "0");
         mDeviceConfigStateHelper.set("qc_max_session_count_restricted", "0");
 
-        mNetworkingHelper.setAirplaneMode(true);
+        mNetworkingHelper.setAllNetworksEnabled(false);
         setScreenState(true);
 
         setChargingState(false);
@@ -615,7 +615,7 @@ public class JobThrottlingTest {
         mDeviceConfigStateHelper.set("qc_timing_session_coalescing_duration_ms", "0");
         mDeviceConfigStateHelper.set("qc_max_session_count_restricted", "0");
 
-        mNetworkingHelper.setAirplaneMode(true);
+        mNetworkingHelper.setAllNetworksEnabled(false);
         setScreenState(true);
 
         setChargingState(false);
@@ -644,8 +644,7 @@ public class JobThrottlingTest {
         assertFalse("New job started in RESTRICTED bucket", mTestAppInterface.awaitJobStart(3_000));
 
         // Add network
-        mNetworkingHelper.setAirplaneMode(false);
-        mNetworkingHelper.setWifiState(true);
+        mNetworkingHelper.setAllNetworksEnabled(true);
         mNetworkingHelper.setWifiMeteredState(false);
         runJob();
         assertTrue("New job didn't start in RESTRICTED bucket",
@@ -961,8 +960,7 @@ public class JobThrottlingTest {
         mDeviceConfigStateHelper.set("qc_max_session_count_restricted", "0");
 
         // Satisfy all additional constraints.
-        mNetworkingHelper.setAirplaneMode(false);
-        mNetworkingHelper.setWifiState(true);
+        mNetworkingHelper.setAllNetworksEnabled(true);
         mNetworkingHelper.setWifiMeteredState(false);
         setChargingState(true);
         BatteryUtils.runDumpsysBatterySetLevel(100);
@@ -976,13 +974,12 @@ public class JobThrottlingTest {
         runJob();
         assertTrue("New job didn't start in RESTRICTED bucket",
                 mTestAppInterface.awaitJobStart(DEFAULT_WAIT_TIMEOUT));
-        mNetworkingHelper.setAirplaneMode(true);
+        mNetworkingHelper.setAllNetworksEnabled(false);
         assertTrue("New job didn't stop when connectivity dropped",
                 mTestAppInterface.awaitJobStop(DEFAULT_WAIT_TIMEOUT));
         assertEquals(JobParameters.STOP_REASON_CONSTRAINT_CONNECTIVITY,
                 mTestAppInterface.getLastParams().getStopReason());
-        mNetworkingHelper.setAirplaneMode(false);
-        mNetworkingHelper.setWifiState(true);
+        mNetworkingHelper.setAllNetworksEnabled(true);
 
         // Idle
         mTestAppInterface.scheduleJob(false, NETWORK_TYPE_ANY, false);
