@@ -156,6 +156,8 @@ public class VehiclePropertyIdsTest extends AbstractCarLessTestCase {
                 .isEqualTo("PARKING_BRAKE_AUTO_APPLY");
         assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.EV_BRAKE_REGENERATION_LEVEL))
                 .isEqualTo("EV_BRAKE_REGENERATION_LEVEL");
+        assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.EV_STOPPING_MODE))
+                .isEqualTo("EV_STOPPING_MODE");
         assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.NIGHT_MODE))
                 .isEqualTo("NIGHT_MODE");
         assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.TURN_SIGNAL_STATE))

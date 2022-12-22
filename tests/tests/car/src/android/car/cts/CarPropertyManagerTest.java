@@ -43,6 +43,7 @@ import android.car.hardware.property.CarPropertyManager;
 import android.car.hardware.property.CarPropertyManager.CarPropertyEventCallback;
 import android.car.hardware.property.EvChargeState;
 import android.car.hardware.property.EvRegenerativeBrakingState;
+import android.car.hardware.property.EvStoppingMode;
 import android.car.hardware.property.VehicleElectronicTollCollectionCardStatus;
 import android.car.hardware.property.VehicleElectronicTollCollectionCardType;
 import android.car.hardware.property.VehicleLightState;
@@ -151,6 +152,10 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
             ImmutableSet.<Integer>builder().add(VehicleLightSwitch.STATE_OFF,
                     VehicleLightSwitch.STATE_ON, VehicleLightSwitch.STATE_DAYTIME_RUNNING,
                     VehicleLightSwitch.STATE_AUTOMATIC).build();
+    private static final ImmutableSet<Integer> EV_STOPPING_MODES =
+            ImmutableSet.<Integer>builder().add(EvStoppingMode.STATE_OTHER,
+                    EvStoppingMode.STATE_CREEP, EvStoppingMode.STATE_ROLL,
+                    EvStoppingMode.STATE_HOLD).build();
     private static final ImmutableSet<Integer> HVAC_TEMPERATURE_DISPLAY_UNITS =
             ImmutableSet.<Integer>builder().add(VehicleUnit.CELSIUS,
                     VehicleUnit.FAHRENHEIT).build();
@@ -216,12 +221,14 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.PARKING_BRAKE_ON,
                             VehiclePropertyIds.PARKING_BRAKE_AUTO_APPLY,
                             VehiclePropertyIds.IGNITION_STATE,
-                            VehiclePropertyIds.EV_BRAKE_REGENERATION_LEVEL)
+                            VehiclePropertyIds.EV_BRAKE_REGENERATION_LEVEL,
+                            VehiclePropertyIds.EV_STOPPING_MODE)
                     .build();
     private static final ImmutableList<Integer> PERMISSION_CONTROL_CAR_POWERTRAIN_PROPERTIES =
             ImmutableList.<Integer>builder()
                     .add(
-                            VehiclePropertyIds.EV_BRAKE_REGENERATION_LEVEL)
+                            VehiclePropertyIds.EV_BRAKE_REGENERATION_LEVEL,
+                            VehiclePropertyIds.EV_STOPPING_MODE)
                     .build();
     private static final ImmutableList<Integer> PERMISSION_CAR_SPEED_PROPERTIES =
             ImmutableList.<Integer>builder()
@@ -1063,6 +1070,21 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                         Integer.class)
                 .requireMinMaxValues()
                 .requireMinValuesToBeZero()
+                .addReadPermission(Car.PERMISSION_POWERTRAIN)
+                .addWritePermission(Car.PERMISSION_CONTROL_POWERTRAIN)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
+    public void testEvStoppingModeIfSupported() {
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.EV_STOPPING_MODE,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Integer.class)
+                .setPossibleCarPropertyValues(EV_STOPPING_MODES)
                 .addReadPermission(Car.PERMISSION_POWERTRAIN)
                 .addWritePermission(Car.PERMISSION_CONTROL_POWERTRAIN)
                 .build()
