@@ -2129,13 +2129,13 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                         VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
                         CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
                         Integer.class)
-                .setCarPropertyValueVerifier(
-                        (carPropertyConfig, carPropertyValue) ->
-                                assertWithMessage(
-                                                "ENGINE_OIL_LEVEL Integer value must be greater"
-                                                    + " than or equal 0")
-                                        .that((Integer) carPropertyValue.getValue())
-                                        .isAtLeast(0))
+                .setPossibleCarPropertyValues(
+                        ImmutableSet.of(
+                                /*VehicleOilLevel.CRITICALLY_LOW=*/ 0,
+                                /*VehicleOilLevel.LOW=*/ 1,
+                                /*VehicleOilLevel.NORMAL=*/ 2,
+                                /*VehicleOilLevel.HIGH=*/ 3,
+                                /*VehicleOilLevel.ERROR=*/ 4))
                 .addReadPermission(Car.PERMISSION_CAR_ENGINE_DETAILED)
                 .build()
                 .verify(mCarPropertyManager);
