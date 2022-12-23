@@ -21,6 +21,7 @@ import static com.android.bedstead.nene.users.UserType.SECONDARY_USER_TYPE_NAME;
 import static com.android.bedstead.nene.users.Users.SYSTEM_USER_ID;
 
 import android.os.Build;
+import android.util.Log;
 
 import androidx.annotation.CheckResult;
 import androidx.annotation.Nullable;
@@ -37,11 +38,14 @@ import java.util.UUID;
 /**
  * Builder for creating a new Android User.
  */
-public class UserBuilder {
+public final class UserBuilder {
 
     private String mName;
     private @Nullable UserType mType;
     private @Nullable UserReference mParent;
+    private boolean mForTesting = true;
+
+    private static final String LOG_TAG = "UserBuilder";
 
     UserBuilder() {
     }
@@ -71,6 +75,29 @@ public class UserBuilder {
             throw new NullPointerException("Can not set type to null");
         }
         mType = type;
+        return this;
+    }
+
+    /**
+     * Set the {@link UserType}.
+     *
+     * <p>Defaults to android.os.usertype.full.SECONDARY
+     */
+    public UserBuilder type(String typeName) {
+        return type(TestApis.users().supportedType(typeName));
+    }
+
+    /**
+     * Set if this user should be marked as for-testing.
+     *
+     * <p>This means it should not contain human user data - and will ensure it does not block
+     * usage of some test functionality
+     *
+     * <p>This defaults to true
+     */
+    @CheckResult
+    public UserBuilder forTesting(boolean forTesting) {
+        mForTesting = forTesting;
         return this;
     }
 
@@ -130,18 +157,20 @@ public class UserBuilder {
             } else {
                 commandBuilder.addOption("--user-type", mType.name());
             }
+        }
 
-            if (Versions.meetsMinimumSdkVersionRequirement(Versions.U)) {
-                // Marking all created users as test users means we don't block changing device
-                // management states
-                commandBuilder.addOperand("--for-testing");
-            }
+        if (Versions.meetsMinimumSdkVersionRequirement(Versions.U) && mForTesting) {
+            // Marking all created users as test users means we don't block changing device
+            // management states
+            commandBuilder.addOperand("--for-testing");
         }
 
         commandBuilder.addOperand(mName);
 
         // Expected success string is e.g. "Success: created user id 14"
         try {
+
+            Log.d(LOG_TAG, "Creating user with command " + commandBuilder);
             int userId =
                     commandBuilder.validate(ShellCommandUtils::startsWithSuccess)
                             .executeAndParseOutput(
