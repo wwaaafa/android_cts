@@ -30,6 +30,7 @@ import com.android.bedstead.nene.exceptions.AdbException;
 import com.android.bedstead.nene.exceptions.NeneException;
 import com.android.bedstead.nene.utils.ShellCommand;
 import com.android.bedstead.nene.utils.ShellCommandUtils;
+import com.android.bedstead.nene.utils.Versions;
 
 import java.util.UUID;
 
@@ -128,6 +129,12 @@ public class UserBuilder {
                 }
             } else {
                 commandBuilder.addOption("--user-type", mType.name());
+            }
+
+            if (Versions.meetsMinimumSdkVersionRequirement(Versions.U)) {
+                // Marking all created users as test users means we don't block changing device
+                // management states
+                commandBuilder.addOperand("--for-testing");
             }
         }
 
