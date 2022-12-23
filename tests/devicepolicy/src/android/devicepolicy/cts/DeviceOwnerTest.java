@@ -16,6 +16,7 @@
 
 package android.devicepolicy.cts;
 
+import static com.android.bedstead.harrier.UserType.ADDITIONAL_USER;
 import static com.android.bedstead.nene.permissions.CommonPermissions.MANAGE_PROFILE_AND_DEVICE_OWNERS;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -29,6 +30,7 @@ import com.android.bedstead.harrier.BedsteadJUnit4;
 import com.android.bedstead.harrier.DeviceState;
 import com.android.bedstead.harrier.UserType;
 import com.android.bedstead.harrier.annotations.EnsureHasAccountAuthenticator;
+import com.android.bedstead.harrier.annotations.EnsureHasAdditionalUser;
 import com.android.bedstead.harrier.annotations.EnsureHasNoAccounts;
 import com.android.bedstead.harrier.annotations.EnsureHasPermission;
 import com.android.bedstead.harrier.annotations.Postsubmit;
@@ -43,6 +45,7 @@ import com.android.bedstead.nene.exceptions.AdbException;
 import com.android.bedstead.nene.packages.ComponentReference;
 import com.android.bedstead.nene.utils.Poll;
 import com.android.bedstead.nene.utils.ShellCommand;
+import com.android.bedstead.nene.utils.ShellCommandUtils;
 import com.android.bedstead.testapp.TestApp;
 import com.android.bedstead.testapp.TestAppInstance;
 
@@ -118,6 +121,13 @@ public final class DeviceOwnerTest {
                 .isEqualTo(sDeviceState.dpc().componentName());
     }
 
+    // All via adb methods use an additional user as we assume if it works cross user it'll work
+    // same user
+
+    // We use ensureHasNoAccounts and then create the account during the test because we want
+    // to ensure there is only one account (and bedstead currently doesn't support this)
+
+    @EnsureHasAdditionalUser
     @EnsureHasNoDpc
     @EnsureHasNoAccounts(onUser = UserType.ANY)
     @Test
@@ -127,6 +137,7 @@ public final class DeviceOwnerTest {
                 ShellCommand
                         .builder(SET_DEVICE_OWNER_COMMAND)
                         .addOperand(TEST_ONLY_DPC_COMPONENT.flattenToString())
+                        .validate(ShellCommandUtils::startsWithSuccess)
                         .execute();
 
                 assertThat(TestApis.devicePolicy().getDeviceOwner()).isNotNull();
@@ -139,6 +150,7 @@ public final class DeviceOwnerTest {
         }
     }
 
+    @EnsureHasAdditionalUser
     @EnsureHasNoDpc
     @EnsureHasNoAccounts(onUser = UserType.ANY)
     @Test
@@ -148,6 +160,7 @@ public final class DeviceOwnerTest {
                 ShellCommand
                         .builder(SET_DEVICE_OWNER_COMMAND)
                         .addOperand(NOT_TEST_ONLY_DPC_COMPONENT.flattenToString())
+                        .validate(ShellCommandUtils::startsWithSuccess)
                         .execute();
 
                 assertThat(TestApis.devicePolicy().getDeviceOwner()).isNotNull();
@@ -160,12 +173,13 @@ public final class DeviceOwnerTest {
         }
     }
 
+    @EnsureHasAdditionalUser
     @EnsureHasNoDpc
     @EnsureHasNoAccounts(onUser = UserType.ANY)
-    @EnsureHasAccountAuthenticator
+    @EnsureHasAccountAuthenticator(onUser = ADDITIONAL_USER)
     @Test
     public void setDeviceOwnerViaAdb_accountExistsWithNoFeatures_doesNotSet() {
-        try (AccountReference account = sDeviceState.accounts().addAccount().add();
+        try (AccountReference account = sDeviceState.accounts(ADDITIONAL_USER).addAccount().add();
              TestAppInstance dpcApp = TEST_ONLY_DPC.install(TestApis.users().system())) {
             try {
                 assertThrows(AdbException.class, () ->
@@ -192,12 +206,13 @@ public final class DeviceOwnerTest {
         }
     }
 
+    @EnsureHasAdditionalUser
     @EnsureHasNoDpc
     @EnsureHasNoAccounts(onUser = UserType.ANY)
-    @EnsureHasAccountAuthenticator
+    @EnsureHasAccountAuthenticator(onUser = ADDITIONAL_USER)
     @Test
     public void setDeviceOwnerViaAdb_accountExistsWithDisallowFeature_doesNotSet() {
-        try (AccountReference account = sDeviceState.accounts().addAccount()
+        try (AccountReference account = sDeviceState.accounts(ADDITIONAL_USER).addAccount()
                 .addFeature(FEATURE_DISALLOW)
                 .add();
              TestAppInstance dpcApp = TEST_ONLY_DPC.install(TestApis.users().system())) {
@@ -226,12 +241,13 @@ public final class DeviceOwnerTest {
         }
     }
 
+    @EnsureHasAdditionalUser
     @EnsureHasNoDpc
     @EnsureHasNoAccounts(onUser = UserType.ANY)
-    @EnsureHasAccountAuthenticator
+    @EnsureHasAccountAuthenticator(onUser = ADDITIONAL_USER)
     @Test
     public void setDeviceOwnerViaAdb_accountExistsWithDisallowAndAllowFeatures_doesNotSet() {
-        try (AccountReference account = sDeviceState.accounts().addAccount()
+        try (AccountReference account = sDeviceState.accounts(ADDITIONAL_USER).addAccount()
                 .addFeature(FEATURE_DISALLOW)
                 .addFeature(FEATURE_ALLOW)
                 .add();
@@ -261,13 +277,14 @@ public final class DeviceOwnerTest {
         }
     }
 
+    @EnsureHasAdditionalUser
     @EnsureHasNoDpc
     @EnsureHasNoAccounts(onUser = UserType.ANY)
-    @EnsureHasAccountAuthenticator
+    @EnsureHasAccountAuthenticator(onUser = ADDITIONAL_USER)
     @Test
     public void setDeviceOwnerViaAdb_accountExistsWithAllowFeature_testOnly_sets()
             throws Exception {
-        try (AccountReference account = sDeviceState.accounts().addAccount()
+        try (AccountReference account = sDeviceState.accounts(ADDITIONAL_USER).addAccount()
                 .addFeature(FEATURE_ALLOW)
                 .add();
              TestAppInstance dpcApp = TEST_ONLY_DPC.install(TestApis.users().system())) {
@@ -275,6 +292,7 @@ public final class DeviceOwnerTest {
                 ShellCommand
                         .builder(SET_DEVICE_OWNER_COMMAND)
                         .addOperand(TEST_ONLY_DPC_COMPONENT.flattenToString())
+                        .validate(ShellCommandUtils::startsWithSuccess)
                         .execute();
 
                 assertThat(TestApis.devicePolicy().getDeviceOwner()).isNotNull();
@@ -287,12 +305,13 @@ public final class DeviceOwnerTest {
         }
     }
 
+    @EnsureHasAdditionalUser
     @EnsureHasNoDpc
     @EnsureHasNoAccounts(onUser = UserType.ANY)
-    @EnsureHasAccountAuthenticator
+    @EnsureHasAccountAuthenticator(onUser = ADDITIONAL_USER)
     @Test
     public void setDeviceOwnerViaAdb_accountExistsWithAllowFeature_notTestOnly_doesNotSet() {
-        try (AccountReference account = sDeviceState.accounts().addAccount()
+        try (AccountReference account = sDeviceState.accounts(ADDITIONAL_USER).addAccount()
                 .addFeature(FEATURE_ALLOW)
                 .add();
              TestAppInstance dpcApp = NOT_TEST_ONLY_DPC.install(TestApis.users().system())) {
@@ -301,6 +320,7 @@ public final class DeviceOwnerTest {
                         ShellCommand
                                 .builder(SET_DEVICE_OWNER_COMMAND)
                                 .addOperand(NOT_TEST_ONLY_DPC_COMPONENT.flattenToString())
+                                .validate(ShellCommandUtils::startsWithSuccess)
                                 .execute());
                 assertThat(TestApis.devicePolicy().getDeviceOwner()).isNull();
             } finally {

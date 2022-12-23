@@ -16,7 +16,7 @@
 
 package com.android.bedstead.harrier.annotations;
 
-import static com.android.bedstead.harrier.UserType.INSTRUMENTED_USER;
+import static com.android.bedstead.harrier.UserType.ANY;
 import static com.android.bedstead.harrier.annotations.EnsureHasAccountAuthenticator.ENSURE_HAS_ACCOUNT_AUTHENTICATOR_WEIGHT;
 
 import com.android.bedstead.harrier.UserType;
@@ -34,8 +34,8 @@ import java.lang.annotation.Target;
 // TODO: Add options (features of the user, type of the user, etc.)
 public @interface EnsureHasNoAccounts {
 
-    /** Which user type the account must be added on. */
-    UserType onUser() default INSTRUMENTED_USER;
+    /** Which user type the account must not be present added on. */
+    UserType onUser() default ANY;
 
     /**
      * Weight sets the order that annotations will be resolved.

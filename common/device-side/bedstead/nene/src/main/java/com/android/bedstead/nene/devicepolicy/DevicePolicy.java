@@ -22,10 +22,12 @@ import static android.Manifest.permission.INTERACT_ACROSS_USERS_FULL;
 import static android.app.role.RoleManager.ROLE_DEVICE_POLICY_MANAGEMENT;
 import static android.os.Build.VERSION.SDK_INT;
 import static android.os.Build.VERSION_CODES.TIRAMISU;
+import static android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
 
 import static com.android.bedstead.nene.permissions.CommonPermissions.FORCE_DEVICE_POLICY_MANAGER_LOGS;
 import static com.android.bedstead.nene.permissions.CommonPermissions.MANAGE_DEVICE_ADMINS;
 import static com.android.bedstead.nene.permissions.CommonPermissions.MANAGE_PROFILE_AND_DEVICE_OWNERS;
+import static com.android.bedstead.nene.permissions.CommonPermissions.MANAGE_ROLE_HOLDERS;
 
 import android.annotation.TargetApi;
 import android.app.admin.DevicePolicyManager;
@@ -581,5 +583,18 @@ public final class DevicePolicy {
         }
         return activeAdmins.stream().map(ComponentReference::new).collect(
                 Collectors.toSet());
+    }
+
+    /**
+     * See {@link DevicePolicyManager#resetShouldAllowBypassingDevicePolicyManagementRoleQualificationState}.
+     */
+    @TargetApi(UPSIDE_DOWN_CAKE)
+    public void resetShouldAllowBypassingDevicePolicyManagementRoleQualificationState() {
+        Versions.requireMinimumVersion(UPSIDE_DOWN_CAKE);
+
+        try (PermissionContext p = TestApis.permissions().withPermission(MANAGE_ROLE_HOLDERS)) {
+            devicePolicyManager(TestApis.users().instrumented())
+                    .resetShouldAllowBypassingDevicePolicyManagementRoleQualificationState();
+        }
     }
 }
