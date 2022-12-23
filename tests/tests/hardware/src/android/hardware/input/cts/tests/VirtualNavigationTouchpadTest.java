@@ -16,6 +16,8 @@
 
 package android.hardware.input.cts.tests;
 
+import static org.junit.Assert.assertThrows;
+
 import android.hardware.input.VirtualNavigationTouchpad;
 import android.hardware.input.VirtualNavigationTouchpadConfig;
 import android.hardware.input.VirtualTouchEvent;
@@ -90,6 +92,28 @@ public class VirtualNavigationTouchpadTest extends VirtualDeviceTestCase {
                         /* pressure= */ 1f, /* size= */ computedSize, /* axisSize= */ inputSize),
                 createMotionEvent(MotionEvent.ACTION_UP, x, y,
                         /* pressure= */ 1f, /* size= */ computedSize, /* axisSize= */ inputSize)));
+    }
+
+    @Test
+    public void sendTouchEvent_withoutCreateVirtualDevicePermission_throwsException() {
+        final float inputSize = 1f;
+        final float x = 30f;
+        final float y = 30f;
+
+        try (DropShellPermissionsTemporarily drop = new DropShellPermissionsTemporarily()) {
+            assertThrows(SecurityException.class,
+                    () ->
+                            mVirtualNavigationTouchpad.sendTouchEvent(
+                                    new VirtualTouchEvent.Builder()
+                                            .setAction(VirtualTouchEvent.ACTION_DOWN)
+                                            .setPointerId(1)
+                                            .setX(x)
+                                            .setY(y)
+                                            .setPressure(255f)
+                                            .setMajorAxisSize(inputSize)
+                                            .setToolType(VirtualTouchEvent.TOOL_TYPE_FINGER)
+                                            .build()));
+        }
     }
 
     private MotionEvent createMotionEvent(int action, float x, float y, float pressure, float size,
