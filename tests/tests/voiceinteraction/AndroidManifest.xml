@@ -44,10 +44,6 @@
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity>
-        <activity android:name=".activities.TestVoiceInteractionServiceActivity"
-            android:label="Voice Interaction Service Activity"
-            android:exported="true">
-        </activity>
         <activity android:name=".activities.EmptyActivity"
                   android:label="Empty Activity"
                   android:exported="true">
@@ -121,19 +117,17 @@
             android:isolatedProcess="true"
             android:exported="true">
         </service>
-
-        <!-- TODO: move these VoiceInteractionService back to test folder -->
-        <service android:name="android.voiceinteraction.service.BasicVoiceInteractionService"
-                 android:label="CTS test Basic voice interaction service"
-                 android:permission="android.permission.BIND_VOICE_INTERACTION"
-                 android:exported="true"
-                 android:visibleToInstantApps="true">
-            <meta-data android:name="android.voice_interaction"
-                       android:resource="@xml/interaction_service_with_hotword" />
+        <!-- AttentionService, in CtsAttentionServiceDevice apk  -->
+        <service android:name="android.attentionservice.cts.CtsTestAttentionService"
+                 android:label="CtsTestAttentionService"
+                 android:permission="android.permission.BIND_ATTENTION_SERVICE"
+                 android:exported="true">
             <intent-filter>
-                <action android:name="android.service.voice.VoiceInteractionService" />
+                <action android:name="android.service.attention.AttentionService"/>
             </intent-filter>
         </service>
+
+        <!-- TODO: move these VoiceInteractionService back to test folder -->
         <service android:name="android.voiceinteraction.service.ProxyVoiceInteractionService"
                  android:label="CTS test proxy voice interaction service with binder interface"
                  android:permission="android.permission.BIND_VOICE_INTERACTION"
@@ -177,14 +171,6 @@
             </intent-filter>
             <meta-data android:name="android.speech"
                      android:resource="@xml/recognition_service" />
-        </service>
-        <service android:name="android.attentionservice.cts.CtsTestAttentionService"
-                 android:label="CtsTestAttentionService"
-                 android:permission="android.permission.BIND_ATTENTION_SERVICE"
-                 android:exported="true">
-            <intent-filter>
-                <action android:name="android.service.attention.AttentionService"/>
-            </intent-filter>
         </service>
       <receiver android:name="VoiceInteractionTestReceiver"
            android:exported="true"/>
