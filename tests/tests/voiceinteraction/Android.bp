@@ -34,7 +34,6 @@ android_test {
     },
     srcs: [
         "src/**/*.java",
-        "service/src/android/voiceinteraction/service/BasicVoiceInteractionService.java",
         "service/src/android/voiceinteraction/service/ProxyVoiceInteractionService.java",
         "service/src/android/voiceinteraction/service/MainHotwordDetectionService.java",
         "service/src/android/voiceinteraction/service/MainInteractionService.java",
