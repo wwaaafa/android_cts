@@ -808,20 +808,4 @@ abstract class BaseUsePermissionTest : BasePermissionTest() {
             }
         }
     }
-
-    protected fun findView(selector: BySelector, expected: Boolean) {
-        val timeoutMs = if (expected) {
-            10000L
-        } else {
-            1000L
-        }
-
-        val exception = try {
-            waitFindObject(selector, timeoutMs)
-            null
-        } catch (e: Exception) {
-            e
-        }
-        assertTrue("Expected to find view: $expected", (exception == null) == expected)
-    }
 }
