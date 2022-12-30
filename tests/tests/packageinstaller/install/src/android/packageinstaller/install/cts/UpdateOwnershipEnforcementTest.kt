@@ -25,6 +25,7 @@ import java.io.File
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -440,5 +441,39 @@ class UpdateOwnershipEnforcementTest : PackageInstallerTestBase() {
                 TEST_APK_LOCATION,
                 TEST_NOT_ALLOW_UPDATE_OWNERSHIP_APK_NAME
         ).copyTo(target = notAllowUpdateOwnershipApkFile, overwrite = true)
+    }
+
+    /**
+     * Checks that the update owner can relinquish the update ownership.
+     */
+    @Test
+    fun relinquishUpdateOwnership_fromUpdateOwner_shouldRemoveUpdateOwner() {
+        installTestPackage("--update-ownership -i " + context.opPackageName)
+        var sourceInfo = pm.getInstallSourceInfo(TEST_APK_PACKAGE_NAME)
+        assertEquals(context.opPackageName, sourceInfo.updateOwnerPackageName)
+
+        pm.relinquishUpdateOwnership(TEST_APK_PACKAGE_NAME)
+
+        sourceInfo = pm.getInstallSourceInfo(TEST_APK_PACKAGE_NAME)
+        assertEquals(null, sourceInfo.updateOwnerPackageName)
+    }
+
+    /**
+     * Checks that we cannot relinquish the update ownership from non-update owner.
+     */
+    @Test
+    fun relinquishUpdateOwnership_notFromUpdateOwner_throwSecurityException() {
+        installTestPackage("--update-ownership")
+        var sourceInfo = pm.getInstallSourceInfo(TEST_APK_PACKAGE_NAME)
+        assertEquals(SHELL_PACKAGE_NAME, sourceInfo.updateOwnerPackageName)
+
+        try {
+            pm.relinquishUpdateOwnership(TEST_APK_PACKAGE_NAME)
+            fail("relinquishUpdateOwnership from non-update owner should throw SecurityException.")
+        } catch (e: SecurityException) {
+            // Expected behavior
+            sourceInfo = pm.getInstallSourceInfo(TEST_APK_PACKAGE_NAME)
+            assertEquals(SHELL_PACKAGE_NAME, sourceInfo.updateOwnerPackageName)
+        }
     }
 }
