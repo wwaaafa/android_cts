@@ -537,6 +537,38 @@ public class MatrixTest {
             0.0f,     0.0f,    0.0f, 1.0f});
     }
 
+    @Test
+    public void testSetRotateEulerM2() {
+        float[] mat = new float[16];
+
+        // Rotate around X
+        Matrix.setIdentityM(mat, 0);
+        Matrix.setRotateEulerM2(mat, 0, 45.0f, 0.0f, 0.0f);
+        verifyMatrix(mat, new float[] {
+            1.0f, 0.0f,     0.0f,    0.0f,
+            0.0f, 0.7071f, -0.7071f, 0.0f,
+            0.0f, 0.7071f,  0.7071f, 0.0f,
+            0.0f, 0.0f,     0.0f,    1.0f});
+
+        // Rotate around y
+        Matrix.setIdentityM(mat, 0);
+        Matrix.setRotateEulerM2(mat, 0, 0.0f, 45.0f, 0.0f);
+        verifyMatrix(mat, new float[] {
+             0.7071f, 0.0f, 0.7071f, 0.0f,
+             0.0f,    1.0f, 0.0f,    0.0f,
+            -0.7071f, 0.0f, 0.7071f, 0.0f,
+             0.0f,    0.0f, 0.0f,    1.0f});
+
+        // Rotate around Z
+        Matrix.setIdentityM(mat, 0);
+        Matrix.setRotateEulerM2(mat, 0, 0.0f, 0.0f, 45.0f);
+        verifyMatrix(mat, new float[] {
+            0.7071f, -0.7071f, 0.0f, 0.0f,
+            0.7071f,  0.7071f, 0.0f, 0.0f,
+            0.0f,     0.0f,    1.0f, 0.0f,
+            0.0f,     0.0f,    0.0f, 1.0f});
+    }
+
     private void verifyMatrix(float[] actual, float[] expected) {
         if ((expected == null) || (expected.length != 16)) {
             fail("Expected does not have 16 elements");
