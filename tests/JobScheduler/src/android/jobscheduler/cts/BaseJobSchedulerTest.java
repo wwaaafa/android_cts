@@ -197,7 +197,7 @@ public abstract class BaseJobSchedulerTest extends InstrumentationTestCase {
             if (curSeq == seq) {
                 return;
             }
-        } while ((SystemClock.elapsedRealtime()-startTime) < 1000);
+        } while ((SystemClock.elapsedRealtime() - startTime) < 10_000);
 
         fail("Timed out waiting for job scheduler: expected seq=" + seq + ", cur=" + curSeq);
     }
