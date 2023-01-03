@@ -19,6 +19,7 @@ package android.server.wm.jetpack;
 import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.DEFAULT_SPLIT_RATIO;
 import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.UNEVEN_CONTAINERS_DEFAULT_SPLIT_RATIO;
 import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.assertValidSplit;
+import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.createSplitPairRuleBuilderWithJava8Predicate;
 import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.startActivityAndVerifySplit;
 import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.waitAndAssertNotVisible;
 import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.waitForFillsTask;
@@ -72,7 +73,7 @@ public class ActivityEmbeddingBoundsTests extends ActivityEmbeddingTestBase {
         // the parent cannot support a split.
         final int originalTaskWidth = getTaskWidth();
         final int originalTaskHeight = getTaskHeight();
-        final SplitPairRule splitPairRule = new SplitPairRule.Builder(
+        final SplitPairRule splitPairRule = createSplitPairRuleBuilderWithJava8Predicate(
                 activityActivityPair -> true /* activityPairPredicate */,
                 activityIntentPair -> true /* activityIntentPredicate */,
                 parentWindowMetrics -> parentWindowMetrics.getBounds().width() >= originalTaskWidth
@@ -175,7 +176,7 @@ public class ActivityEmbeddingBoundsTests extends ActivityEmbeddingTestBase {
         final float activityBCSplitRatio = 0.85f;
 
         // Create a split rule for activity A and activity B where the split ratio is 0.37.
-        final SplitPairRule splitPairRuleAB = new SplitPairRule.Builder(
+        final SplitPairRule splitPairRuleAB = createSplitPairRuleBuilderWithJava8Predicate(
                 activityActivityPair -> false /* activityPairPredicate */,
                 activityIntentPair -> matchesActivityIntentPair(activityIntentPair, activityAId,
                         activityBId) /* activityIntentPredicate */,
@@ -183,7 +184,7 @@ public class ActivityEmbeddingBoundsTests extends ActivityEmbeddingTestBase {
                 .setSplitRatio(activityABSplitRatio).build();
 
         // Create a split rule for activity B and activity C where the split ratio is 0.65.
-        final SplitPairRule splitPairRuleBC = new SplitPairRule.Builder(
+        final SplitPairRule splitPairRuleBC = createSplitPairRuleBuilderWithJava8Predicate(
                 activityActivityPair -> false /* activityPairPredicate */,
                 activityIntentPair -> matchesActivityIntentPair(activityIntentPair, activityBId,
                         activityCId) /* activityIntentPredicate */,
@@ -211,7 +212,8 @@ public class ActivityEmbeddingBoundsTests extends ActivityEmbeddingTestBase {
     }
 
     private SplitPairRule createUnevenWidthSplitPairRule(int layoutDir) {
-        return new SplitPairRule.Builder(activityActivityPair -> true /* activityPairPredicate */,
+        return createSplitPairRuleBuilderWithJava8Predicate(
+                activityActivityPair -> true /* activityPairPredicate */,
                 activityIntentPair -> true /* activityIntentPredicate */,
                 parentWindowMetrics -> true /* parentWindowMetricsPredicate */)
                 .setSplitRatio(UNEVEN_CONTAINERS_DEFAULT_SPLIT_RATIO)
