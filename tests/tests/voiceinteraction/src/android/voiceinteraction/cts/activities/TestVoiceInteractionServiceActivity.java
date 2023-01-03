@@ -38,9 +38,6 @@ public class TestVoiceInteractionServiceActivity extends Activity {
         } else if (serviceType == Utils.HOTWORD_DETECTION_SERVICE_BASIC) {
             serviceIntent.setComponent(new ComponentName(this,
                     "android.voiceinteraction.service.BasicVoiceInteractionService"));
-        } else if (serviceType == Utils.HOTWORD_DETECTION_SERVICE_PERMISSION) {
-            serviceIntent.setComponent(new ComponentName(this,
-                    "android.voiceinteraction.service.TestPermissionVoiceInteractionService"));
         } else {
             Log.w(TAG, "Never here");
             finish();
