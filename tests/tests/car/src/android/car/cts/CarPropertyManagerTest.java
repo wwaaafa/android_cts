@@ -3339,6 +3339,35 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     }
 
     @Test
+    public void testSeatFootwellLightsStateIfSupported() {
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.SEAT_FOOTWELL_LIGHTS_STATE,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_SEAT,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Integer.class)
+                .setPossibleCarPropertyValues(VEHICLE_LIGHT_STATES)
+                .addReadPermission(Car.PERMISSION_READ_INTERIOR_LIGHTS)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
+    public void testSeatFootwellLightsSwitchIfSupported() {
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.SEAT_FOOTWELL_LIGHTS_SWITCH,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_SEAT,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Integer.class)
+                .setPossibleCarPropertyValues(VEHICLE_LIGHT_SWITCHES)
+                .addReadPermission(Car.PERMISSION_CONTROL_INTERIOR_LIGHTS)
+                .addWritePermission(Car.PERMISSION_CONTROL_INTERIOR_LIGHTS)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
     public void testSeatEasyAccessEnabledIfSupported() {
         VehiclePropertyVerifier.newBuilder(
                         VehiclePropertyIds.SEAT_EASY_ACCESS_ENABLED,
