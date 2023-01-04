@@ -387,6 +387,8 @@ public class VehiclePropertyIdsTest extends AbstractCarLessTestCase {
         assertThat(
                 VehiclePropertyIds.toString(VehiclePropertyIds.AUTOMATIC_EMERGENCY_BRAKING_ENABLED))
                 .isEqualTo("AUTOMATIC_EMERGENCY_BRAKING_ENABLED");
+        assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.LANE_CENTERING_ASSIST_ENABLED))
+                .isEqualTo("LANE_CENTERING_ASSIST_ENABLED");
         assertThat(VehiclePropertyIds.toString(3)).isEqualTo("0x3");
         assertThat(VehiclePropertyIds.toString(12)).isEqualTo("0xc");
     }
