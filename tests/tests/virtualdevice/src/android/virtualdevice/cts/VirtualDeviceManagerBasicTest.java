@@ -46,7 +46,7 @@ import android.companion.virtual.sensor.VirtualSensorConfig;
 import android.content.Context;
 import android.hardware.Sensor;
 import android.platform.test.annotations.AppModeFull;
-import android.virtualdevice.cts.util.FakeAssociationRule;
+import android.virtualdevice.cts.common.FakeAssociationRule;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
