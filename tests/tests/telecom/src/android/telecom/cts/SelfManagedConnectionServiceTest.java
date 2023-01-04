@@ -1382,6 +1382,8 @@ public class SelfManagedConnectionServiceTest extends BaseTelecomTestWithMockSer
         call.answer(VideoProfile.STATE_AUDIO_ONLY);
 
         assertConnectionState(connection, Connection.STATE_ACTIVE);
+
+        assertTrue(appServiceController.waitOnDisconnect());
         assertEquals(Connection.STATE_DISCONNECTED, appServiceController.getConnectionState());
 
         // unregister a self-managed phone account
