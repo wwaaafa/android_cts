@@ -83,7 +83,13 @@ public final class UserBuilder {
      *
      * <p>Defaults to android.os.usertype.full.SECONDARY
      */
+    @CheckResult
     public UserBuilder type(String typeName) {
+        if (typeName == null) {
+            // We don't want to allow null to be passed in explicitly as that would cause subtle
+            // bugs when chaining with .supportedType() which can return null
+            throw new NullPointerException("Can not set type to null");
+        }
         return type(TestApis.users().supportedType(typeName));
     }
 
