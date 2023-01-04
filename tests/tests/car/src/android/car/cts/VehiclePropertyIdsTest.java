@@ -380,6 +380,10 @@ public class VehiclePropertyIdsTest extends AbstractCarLessTestCase {
                 .isEqualTo("READING_LIGHTS_STATE");
         assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.READING_LIGHTS_SWITCH))
                 .isEqualTo("READING_LIGHTS_SWITCH");
+        assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.STEERING_WHEEL_LIGHTS_STATE))
+                .isEqualTo("STEERING_WHEEL_LIGHTS_STATE");
+        assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.STEERING_WHEEL_LIGHTS_SWITCH))
+                .isEqualTo("STEERING_WHEEL_LIGHTS_SWITCH");
         assertThat(
                 VehiclePropertyIds.toString(VehiclePropertyIds.AUTOMATIC_EMERGENCY_BRAKING_ENABLED))
                 .isEqualTo("AUTOMATIC_EMERGENCY_BRAKING_ENABLED");
