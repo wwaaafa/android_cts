@@ -240,10 +240,18 @@ public final class UsersTest {
 
     @Test
     @EnsureCanAddUser
+    public void createUser_specifiesNullStringUserType_throwsException() {
+        UserBuilder userBuilder = TestApis.users().createUser();
+
+        assertThrows(NullPointerException.class, () -> userBuilder.type((String) null));
+    }
+
+    @Test
+    @EnsureCanAddUser
     public void createUser_specifiesNullUserType_throwsException() {
         UserBuilder userBuilder = TestApis.users().createUser();
 
-        assertThrows(NullPointerException.class, () -> userBuilder.type(null));
+        assertThrows(NullPointerException.class, () -> userBuilder.type((UserType) null));
     }
 
     @Test
