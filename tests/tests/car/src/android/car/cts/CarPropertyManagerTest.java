@@ -162,6 +162,19 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     private static final ImmutableSet<Integer> VEHICLE_SEAT_OCCUPANCY_STATES = ImmutableSet.of(
             /*VehicleSeatOccupancyState.UNKNOWN=*/0, /*VehicleSeatOccupancyState.VACANT=*/1,
             /*VehicleSeatOccupancyState.OCCUPIED=*/2);
+    private static final ImmutableList<Integer>
+            PERMISSION_READ_DRIVER_MONITORING_SETTINGS_PROPERTIES = ImmutableList.<Integer>builder()
+                    .add()
+                    .build();
+    private static final ImmutableList<Integer>
+            PERMISSION_CONTROL_DRIVER_MONITORING_SETTINGS_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add()
+                    .build();
+    private static final ImmutableList<Integer>
+            PERMISSION_READ_DRIVER_MONITORING_STATES_PROPERTIES = ImmutableList.<Integer>builder()
+                    .add()
+                    .build();
     private static final ImmutableList<Integer> PERMISSION_CAR_ENERGY_PROPERTIES =
             ImmutableList.<Integer>builder()
                     .add(
@@ -4664,6 +4677,57 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
         assertWithMessage("CarPropertyManager.getPropertyList()")
                 .that(mCarPropertyManager.getPropertyList())
                 .isEmpty();
+    }
+
+    @Test
+    public void testPermissionReadDriverMonitoringSettingsGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                "%s",
+                                VehiclePropertyIds.toString(
+                                        carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_READ_DRIVER_MONITORING_SETTINGS_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_READ_DRIVER_MONITORING_SETTINGS);
+    }
+
+    @Test
+    public void testPermissionControlDriverMonitoringSettingsGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                "%s",
+                                VehiclePropertyIds.toString(
+                                        carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_CONTROL_DRIVER_MONITORING_SETTINGS_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_CONTROL_DRIVER_MONITORING_SETTINGS);
+    }
+
+    @Test
+    public void testPermissionReadDriverMonitoringStatesGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                "%s",
+                                VehiclePropertyIds.toString(
+                                        carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_READ_DRIVER_MONITORING_STATES_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_READ_DRIVER_MONITORING_STATES);
     }
 
     @Test
