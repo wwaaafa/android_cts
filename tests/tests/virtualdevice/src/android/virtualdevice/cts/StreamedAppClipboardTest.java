@@ -84,7 +84,7 @@ import android.support.test.uiautomator.UiDevice;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.MotionEvent;
-import android.virtualdevice.cts.util.FakeAssociationRule;
+import android.virtualdevice.cts.common.FakeAssociationRule;
 import android.virtualdevice.cts.util.VirtualDeviceTestUtils;
 
 import androidx.annotation.NonNull;
