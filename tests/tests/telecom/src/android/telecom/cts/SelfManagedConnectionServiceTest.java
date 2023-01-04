@@ -1353,6 +1353,13 @@ public class SelfManagedConnectionServiceTest extends BaseTelecomTestWithMockSer
         appServiceController.initiateIncomingCall(
                 TestUtils.TEST_SELF_MANAGED_CS_1_HANDLE_3, TEST_ADDRESS_2.toString());
 
+        // Wait for Telecom to finish creating the new connection.
+        try {
+            TestUtils.waitOnAllHandlers(getInstrumentation());
+        } catch (Exception e) {
+            fail("Failed to wait on handlers");
+        }
+
         assertTrue(appServiceController.waitForBinding());
 
         appServiceController.setConnectionCapabilityNoHold();
