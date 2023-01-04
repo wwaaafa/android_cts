@@ -178,11 +178,12 @@ public class TaskFragmentOrganizerTest extends TaskFragmentOrganizerTestBase {
     }
 
     /**
-     * Verifies the behavior of
-     * {@link WindowContainerTransaction#deleteTaskFragment(WindowContainerToken)} to remove
-     * the organized TaskFragment.
+     * Verifies the behavior of {@link WindowContainerTransaction#deleteTaskFragment} to remove the
+     * organized TaskFragment.
      */
     @Test
+    @ApiTest(apis = {
+            "android.window.WindowContainerTransaction#deleteTaskFragment"})
     public void testDeleteTaskFragment() {
         final TaskFragmentInfo taskFragmentInfo = createTaskFragment(null);
         final IBinder taskFragToken = taskFragmentInfo.getFragmentToken();
@@ -193,7 +194,7 @@ public class TaskFragmentOrganizerTest extends TaskFragmentOrganizerTestBase {
                 .size();
 
         WindowContainerTransaction wct = new WindowContainerTransaction()
-                .deleteTaskFragment(taskFragmentInfo.getToken());
+                .deleteTaskFragment(taskFragToken);
         mTaskFragmentOrganizer.applyTransaction(wct, TASK_FRAGMENT_TRANSIT_CLOSE,
                 false /* shouldApplyIndependently */);
 
@@ -209,9 +210,8 @@ public class TaskFragmentOrganizerTest extends TaskFragmentOrganizerTestBase {
     }
 
     /**
-     * Verifies the behavior of
-     * {@link WindowContainerTransaction#deleteTaskFragment(WindowContainerToken)} to remove
-     * the organized TaskFragment with activity embedded.
+     * Verifies the behavior of {@link WindowContainerTransaction#deleteTaskFragment} to remove the
+     * organized TaskFragment with activity embedded.
      */
     @Test
     @ApiTest(apis = {
@@ -227,7 +227,7 @@ public class TaskFragmentOrganizerTest extends TaskFragmentOrganizerTestBase {
                 .size();
 
         WindowContainerTransaction wct = new WindowContainerTransaction()
-                .deleteTaskFragment(taskFragmentInfo.getToken());
+                .deleteTaskFragment(taskFragToken);
         mTaskFragmentOrganizer.applyTransaction(wct, TASK_FRAGMENT_TRANSIT_CLOSE,
                 false /* shouldApplyIndependently */);
 
