@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,12 @@ import android.accessibilityservice.cts.R;
 import android.os.Bundle;
 
 /**
- * Activity launched on a virtual display that is used by AccessibilityProxyTest.
+ * Activity launched on the default display that is used by AccessibilityProxyTest.
  */
-public class ProxyDisplayActivity extends AccessibilityTestActivity {
+public class ProxyConcurrentActivity extends AccessibilityTestActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.proxy_display_activity);
+        setContentView(R.layout.proxy_concurrent_activity);
     }
 }
