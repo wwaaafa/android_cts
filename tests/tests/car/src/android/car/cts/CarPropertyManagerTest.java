@@ -467,6 +467,12 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.EV_CHARGE_PERCENT_LIMIT,
                             VehiclePropertyIds.EV_CHARGE_SWITCH)
                     .build();
+    private static final ImmutableList<Integer> PERMISSION_PRIVILEGED_CAR_INFO_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.VEHICLE_CURB_WEIGHT,
+                            VehiclePropertyIds.TRAILER_PRESENT)
+                    .build();
     private static final ImmutableList<Integer> PERMISSION_READ_ADAS_SETTINGS_PROPERTIES =
             ImmutableList.<Integer>builder()
                     .add(
@@ -5614,6 +5620,23 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     }
                 },
                 Car.PERMISSION_CONTROL_CAR_ENERGY);
+    }
+
+    @Test
+    public void testPermissionPrivilegedCarInfoGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                "%s",
+                                VehiclePropertyIds.toString(
+                                        carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_PRIVILEGED_CAR_INFO_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_PRIVILEGED_CAR_INFO);
     }
 
     @Test
