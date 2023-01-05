@@ -359,6 +359,17 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.TIRE_PRESSURE,
                             VehiclePropertyIds.CRITICALLY_LOW_TIRE_PRESSURE)
                     .build();
+    private static final ImmutableList<Integer> PERMISSION_EXTERIOR_LIGHTS_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.TURN_SIGNAL_STATE,
+                            VehiclePropertyIds.HEADLIGHTS_STATE,
+                            VehiclePropertyIds.HIGH_BEAM_LIGHTS_STATE,
+                            VehiclePropertyIds.FOG_LIGHTS_STATE,
+                            VehiclePropertyIds.HAZARD_LIGHTS_STATE,
+                            VehiclePropertyIds.FRONT_FOG_LIGHTS_STATE,
+                            VehiclePropertyIds.REAR_FOG_LIGHTS_STATE)
+                    .build();
     private static final ImmutableList<Integer> PERMISSION_READ_ADAS_SETTINGS_PROPERTIES =
             ImmutableList.<Integer>builder()
                     .add(
@@ -5319,6 +5330,23 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     }
                 },
                 Car.PERMISSION_TIRES);
+    }
+
+    @Test
+    public void testPermissionExteriorLightsGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                "%s",
+                                VehiclePropertyIds.toString(
+                                        carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_EXTERIOR_LIGHTS_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_EXTERIOR_LIGHTS);
     }
 
     @Test
