@@ -348,6 +348,11 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.FUEL_DOOR_OPEN,
                             VehiclePropertyIds.EV_CHARGE_PORT_OPEN)
                     .build();
+    private static final ImmutableList<Integer> PERMISSION_ADJUST_RANGE_REMAINING_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.RANGE_REMAINING)
+                    .build();
     private static final ImmutableList<Integer> PERMISSION_READ_ADAS_SETTINGS_PROPERTIES =
             ImmutableList.<Integer>builder()
                     .add(
@@ -5274,6 +5279,23 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     }
                 },
                 Car.PERMISSION_CONTROL_ENERGY_PORTS);
+    }
+
+    @Test
+    public void testPermissionAdjustRangeRemainingGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                "%s",
+                                VehiclePropertyIds.toString(
+                                        carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_ADJUST_RANGE_REMAINING_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_ADJUST_RANGE_REMAINING);
     }
 
     @Test
