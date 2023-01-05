@@ -460,6 +460,13 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     .add(
                             VehiclePropertyIds.EPOCH_TIME)
                     .build();
+    private static final ImmutableList<Integer> PERMISSION_CONTROL_CAR_ENERGY_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.EV_CHARGE_CURRENT_DRAW_LIMIT,
+                            VehiclePropertyIds.EV_CHARGE_PERCENT_LIMIT,
+                            VehiclePropertyIds.EV_CHARGE_SWITCH)
+                    .build();
     private static final ImmutableList<Integer> PERMISSION_READ_ADAS_SETTINGS_PROPERTIES =
             ImmutableList.<Integer>builder()
                     .add(
@@ -5590,6 +5597,23 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     }
                 },
                 Car.PERMISSION_CAR_EPOCH_TIME);
+    }
+
+    @Test
+    public void testPermissionControlCarEnergyGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                "%s",
+                                VehiclePropertyIds.toString(
+                                        carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_CONTROL_CAR_ENERGY_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_CONTROL_CAR_ENERGY);
     }
 
     @Test
