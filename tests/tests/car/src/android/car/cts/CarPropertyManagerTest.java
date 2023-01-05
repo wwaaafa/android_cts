@@ -278,6 +278,45 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     .add(
                             VehiclePropertyIds.SEAT_AIRBAG_ENABLED)
                     .build();
+    private static final ImmutableList<Integer> PERMISSION_CONTROL_CAR_SEATS_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.SEAT_MEMORY_SELECT,
+                            VehiclePropertyIds.SEAT_MEMORY_SET,
+                            VehiclePropertyIds.SEAT_BELT_BUCKLED,
+                            VehiclePropertyIds.SEAT_BELT_HEIGHT_POS,
+                            VehiclePropertyIds.SEAT_BELT_HEIGHT_MOVE,
+                            VehiclePropertyIds.SEAT_FORE_AFT_POS,
+                            VehiclePropertyIds.SEAT_FORE_AFT_MOVE,
+                            VehiclePropertyIds.SEAT_BACKREST_ANGLE_1_POS,
+                            VehiclePropertyIds.SEAT_BACKREST_ANGLE_1_MOVE,
+                            VehiclePropertyIds.SEAT_BACKREST_ANGLE_2_POS,
+                            VehiclePropertyIds.SEAT_BACKREST_ANGLE_2_MOVE,
+                            VehiclePropertyIds.SEAT_HEIGHT_POS,
+                            VehiclePropertyIds.SEAT_HEIGHT_MOVE,
+                            VehiclePropertyIds.SEAT_DEPTH_POS,
+                            VehiclePropertyIds.SEAT_DEPTH_MOVE,
+                            VehiclePropertyIds.SEAT_TILT_POS,
+                            VehiclePropertyIds.SEAT_TILT_MOVE,
+                            VehiclePropertyIds.SEAT_LUMBAR_FORE_AFT_POS,
+                            VehiclePropertyIds.SEAT_LUMBAR_FORE_AFT_MOVE,
+                            VehiclePropertyIds.SEAT_LUMBAR_SIDE_SUPPORT_POS,
+                            VehiclePropertyIds.SEAT_LUMBAR_SIDE_SUPPORT_MOVE,
+                            VehiclePropertyIds.SEAT_HEADREST_HEIGHT_POS,
+                            VehiclePropertyIds.SEAT_HEADREST_HEIGHT_POS_V2,
+                            VehiclePropertyIds.SEAT_HEADREST_HEIGHT_MOVE,
+                            VehiclePropertyIds.SEAT_HEADREST_ANGLE_POS,
+                            VehiclePropertyIds.SEAT_HEADREST_ANGLE_MOVE,
+                            VehiclePropertyIds.SEAT_HEADREST_FORE_AFT_POS,
+                            VehiclePropertyIds.SEAT_HEADREST_FORE_AFT_MOVE,
+                            VehiclePropertyIds.SEAT_EASY_ACCESS_ENABLED,
+                            VehiclePropertyIds.SEAT_CUSHION_SIDE_SUPPORT_POS,
+                            VehiclePropertyIds.SEAT_CUSHION_SIDE_SUPPORT_MOVE,
+                            VehiclePropertyIds.SEAT_LUMBAR_VERTICAL_POS,
+                            VehiclePropertyIds.SEAT_LUMBAR_VERTICAL_MOVE,
+                            VehiclePropertyIds.SEAT_WALK_IN_POS,
+                            VehiclePropertyIds.SEAT_OCCUPANCY)
+                    .build();
     private static final ImmutableList<Integer> PERMISSION_READ_ADAS_SETTINGS_PROPERTIES =
             ImmutableList.<Integer>builder()
                     .add(
@@ -5102,6 +5141,23 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     }
                 },
                 Car.PERMISSION_CONTROL_CAR_AIRBAGS);
+    }
+
+    @Test
+    public void testPermissionControlCarSeatsGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                "%s",
+                                VehiclePropertyIds.toString(
+                                        carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_CONTROL_CAR_SEATS_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_CONTROL_CAR_SEATS);
     }
 
     @Test
