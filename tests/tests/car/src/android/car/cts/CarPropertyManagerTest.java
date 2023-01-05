@@ -4003,6 +4003,13 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                                                     (configArray.get(4) - configArray.get(3))
                                                             % configArray.get(5))
                                             .isEqualTo(0);
+                                    assertWithMessage(
+                                            "HVAC_TEMPERATURE_SET number of supported values for "
+                                                    + "Celsius and Fahrenheit must be equal.").that(
+                                            (configArray.get(1) - configArray.get(0))
+                                                    / configArray.get(2)).isEqualTo(
+                                            (configArray.get(4) - configArray.get(3))
+                                                    / configArray.get(5));
 
                                     int[] supportedAreaIds = carPropertyConfig.getAreaIds();
                                     int configMinValue = configArray.get(0);
