@@ -370,6 +370,12 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.FRONT_FOG_LIGHTS_STATE,
                             VehiclePropertyIds.REAR_FOG_LIGHTS_STATE)
                     .build();
+    private static final ImmutableList<Integer> PERMISSION_CAR_DYNAMICS_STATE_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.ABS_ACTIVE,
+                            VehiclePropertyIds.TRACTION_CONTROL_ACTIVE)
+                    .build();
     private static final ImmutableList<Integer> PERMISSION_READ_ADAS_SETTINGS_PROPERTIES =
             ImmutableList.<Integer>builder()
                     .add(
@@ -5347,6 +5353,23 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     }
                 },
                 Car.PERMISSION_EXTERIOR_LIGHTS);
+    }
+
+    @Test
+    public void testPermissionCarDynamicsStateGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                "%s",
+                                VehiclePropertyIds.toString(
+                                        carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_CAR_DYNAMICS_STATE_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_CAR_DYNAMICS_STATE);
     }
 
     @Test
