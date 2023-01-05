@@ -376,6 +376,32 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.ABS_ACTIVE,
                             VehiclePropertyIds.TRACTION_CONTROL_ACTIVE)
                     .build();
+    private static final ImmutableList<Integer> PERMISSION_CONTROL_CAR_CLIMATE_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.HVAC_FAN_SPEED,
+                            VehiclePropertyIds.HVAC_FAN_DIRECTION,
+                            VehiclePropertyIds.HVAC_TEMPERATURE_CURRENT,
+                            VehiclePropertyIds.HVAC_TEMPERATURE_SET,
+                            VehiclePropertyIds.HVAC_TEMPERATURE_VALUE_SUGGESTION,
+                            VehiclePropertyIds.HVAC_DEFROSTER,
+                            VehiclePropertyIds.HVAC_AC_ON,
+                            VehiclePropertyIds.HVAC_MAX_AC_ON,
+                            VehiclePropertyIds.HVAC_MAX_DEFROST_ON,
+                            VehiclePropertyIds.HVAC_RECIRC_ON,
+                            VehiclePropertyIds.HVAC_DUAL_ON,
+                            VehiclePropertyIds.HVAC_AUTO_ON,
+                            VehiclePropertyIds.HVAC_SEAT_TEMPERATURE,
+                            VehiclePropertyIds.HVAC_SIDE_MIRROR_HEAT,
+                            VehiclePropertyIds.HVAC_STEERING_WHEEL_HEAT,
+                            VehiclePropertyIds.HVAC_TEMPERATURE_DISPLAY_UNITS,
+                            VehiclePropertyIds.HVAC_ACTUAL_FAN_SPEED_RPM,
+                            VehiclePropertyIds.HVAC_POWER_ON,
+                            VehiclePropertyIds.HVAC_FAN_DIRECTION_AVAILABLE,
+                            VehiclePropertyIds.HVAC_AUTO_RECIRC_ON,
+                            VehiclePropertyIds.HVAC_SEAT_VENTILATION,
+                            VehiclePropertyIds.HVAC_ELECTRIC_DEFROSTER_ON)
+                    .build();
     private static final ImmutableList<Integer> PERMISSION_READ_ADAS_SETTINGS_PROPERTIES =
             ImmutableList.<Integer>builder()
                     .add(
@@ -5370,6 +5396,23 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     }
                 },
                 Car.PERMISSION_CAR_DYNAMICS_STATE);
+    }
+
+    @Test
+    public void testPermissionControlCarClimateGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                "%s",
+                                VehiclePropertyIds.toString(
+                                        carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_CONTROL_CAR_CLIMATE_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_CONTROL_CAR_CLIMATE);
     }
 
     @Test
