@@ -273,6 +273,11 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.STEERING_WHEEL_LOCKED,
                             VehiclePropertyIds.STEERING_WHEEL_EASY_ACCESS_ENABLED)
                     .build();
+    private static final ImmutableList<Integer> PERMISSION_CONTROL_CAR_AIRBAGS_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.SEAT_AIRBAG_ENABLED)
+                    .build();
     private static final ImmutableList<Integer> PERMISSION_READ_ADAS_SETTINGS_PROPERTIES =
             ImmutableList.<Integer>builder()
                     .add(
@@ -5080,6 +5085,23 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     }
                 },
                 Car.PERMISSION_CONTROL_STEERING_WHEEL);
+    }
+
+    @Test
+    public void testPermissionControlCarAirbagsGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                "%s",
+                                VehiclePropertyIds.toString(
+                                        carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_CONTROL_CAR_AIRBAGS_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_CONTROL_CAR_AIRBAGS);
     }
 
     @Test
