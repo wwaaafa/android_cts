@@ -402,6 +402,14 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.HVAC_SEAT_VENTILATION,
                             VehiclePropertyIds.HVAC_ELECTRIC_DEFROSTER_ON)
                     .build();
+    private static final ImmutableList<Integer> PERMISSION_CONTROL_CAR_DOORS_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.DOOR_POS,
+                            VehiclePropertyIds.DOOR_MOVE,
+                            VehiclePropertyIds.DOOR_LOCK,
+                            VehiclePropertyIds.DOOR_CHILD_LOCK_ENABLED)
+                    .build();
     private static final ImmutableList<Integer> PERMISSION_READ_ADAS_SETTINGS_PROPERTIES =
             ImmutableList.<Integer>builder()
                     .add(
@@ -5413,6 +5421,23 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     }
                 },
                 Car.PERMISSION_CONTROL_CAR_CLIMATE);
+    }
+
+    @Test
+    public void testPermissionControlCarDoorsGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                "%s",
+                                VehiclePropertyIds.toString(
+                                        carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_CONTROL_CAR_DOORS_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_CONTROL_CAR_DOORS);
     }
 
     @Test
