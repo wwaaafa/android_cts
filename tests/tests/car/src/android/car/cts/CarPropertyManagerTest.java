@@ -455,6 +455,11 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.READING_LIGHTS_SWITCH,
                             VehiclePropertyIds.STEERING_WHEEL_LIGHTS_SWITCH)
                     .build();
+    private static final ImmutableList<Integer> PERMISSION_CAR_EPOCH_TIME_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.EPOCH_TIME)
+                    .build();
     private static final ImmutableList<Integer> PERMISSION_READ_ADAS_SETTINGS_PROPERTIES =
             ImmutableList.<Integer>builder()
                     .add(
@@ -5568,6 +5573,23 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     }
                 },
                 Car.PERMISSION_CONTROL_INTERIOR_LIGHTS);
+    }
+
+    @Test
+    public void testPermissionCarEpochTimeGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                "%s",
+                                VehiclePropertyIds.toString(
+                                        carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_CAR_EPOCH_TIME_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_CAR_EPOCH_TIME);
     }
 
     @Test
