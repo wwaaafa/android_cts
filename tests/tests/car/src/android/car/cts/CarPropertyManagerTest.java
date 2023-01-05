@@ -333,6 +333,15 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.PERF_STEERING_ANGLE,
                             VehiclePropertyIds.PERF_REAR_STEERING_ANGLE)
                     .build();
+    private static final ImmutableList<Integer> PERMISSION_CAR_ENGINE_DETAILED_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.ENGINE_COOLANT_TEMP,
+                            VehiclePropertyIds.ENGINE_OIL_LEVEL,
+                            VehiclePropertyIds.ENGINE_OIL_TEMP,
+                            VehiclePropertyIds.ENGINE_RPM,
+                            VehiclePropertyIds.ENGINE_IDLE_AUTO_STOP_ENABLED)
+                    .build();
     private static final ImmutableList<Integer> PERMISSION_READ_ADAS_SETTINGS_PROPERTIES =
             ImmutableList.<Integer>builder()
                     .add(
@@ -5225,6 +5234,23 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     }
                 },
                 Car.PERMISSION_READ_STEERING_STATE);
+    }
+
+    @Test
+    public void testPermissionCarEngineDetailedGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                "%s",
+                                VehiclePropertyIds.toString(
+                                        carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_CAR_ENGINE_DETAILED_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_CAR_ENGINE_DETAILED);
     }
 
     @Test
