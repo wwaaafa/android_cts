@@ -439,6 +439,14 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.FRONT_FOG_LIGHTS_SWITCH,
                             VehiclePropertyIds.REAR_FOG_LIGHTS_SWITCH)
                     .build();
+    private static final ImmutableList<Integer> PERMISSION_READ_INTERIOR_LIGHTS_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.SEAT_FOOTWELL_LIGHTS_STATE,
+                            VehiclePropertyIds.CABIN_LIGHTS_STATE,
+                            VehiclePropertyIds.READING_LIGHTS_STATE,
+                            VehiclePropertyIds.STEERING_WHEEL_LIGHTS_STATE)
+                    .build();
     private static final ImmutableList<Integer> PERMISSION_READ_ADAS_SETTINGS_PROPERTIES =
             ImmutableList.<Integer>builder()
                     .add(
@@ -5518,6 +5526,23 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     }
                 },
                 Car.PERMISSION_CONTROL_EXTERIOR_LIGHTS);
+    }
+
+    @Test
+    public void testPermissionReadInteriorLightsGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                "%s",
+                                VehiclePropertyIds.toString(
+                                        carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_READ_INTERIOR_LIGHTS_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_READ_INTERIOR_LIGHTS);
     }
 
     @Test
