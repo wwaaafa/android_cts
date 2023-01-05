@@ -353,6 +353,12 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     .add(
                             VehiclePropertyIds.RANGE_REMAINING)
                     .build();
+    private static final ImmutableList<Integer> PERMISSION_TIRES_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.TIRE_PRESSURE,
+                            VehiclePropertyIds.CRITICALLY_LOW_TIRE_PRESSURE)
+                    .build();
     private static final ImmutableList<Integer> PERMISSION_READ_ADAS_SETTINGS_PROPERTIES =
             ImmutableList.<Integer>builder()
                     .add(
@@ -5296,6 +5302,23 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     }
                 },
                 Car.PERMISSION_ADJUST_RANGE_REMAINING);
+    }
+
+    @Test
+    public void testPermissionTiresGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                "%s",
+                                VehiclePropertyIds.toString(
+                                        carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_TIRES_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_TIRES);
     }
 
     @Test
