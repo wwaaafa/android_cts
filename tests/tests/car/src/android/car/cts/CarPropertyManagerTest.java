@@ -422,6 +422,13 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.MIRROR_AUTO_FOLD_ENABLED,
                             VehiclePropertyIds.MIRROR_AUTO_TILT_ENABLED)
                     .build();
+    private static final ImmutableList<Integer> PERMISSION_CONTROL_CAR_WINDOWS_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.WINDOW_POS,
+                            VehiclePropertyIds.WINDOW_MOVE,
+                            VehiclePropertyIds.WINDOW_LOCK)
+                    .build();
     private static final ImmutableList<Integer> PERMISSION_READ_ADAS_SETTINGS_PROPERTIES =
             ImmutableList.<Integer>builder()
                     .add(
@@ -5467,6 +5474,23 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     }
                 },
                 Car.PERMISSION_CONTROL_CAR_MIRRORS);
+    }
+
+    @Test
+    public void testPermissionControlCarWindowsGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                "%s",
+                                VehiclePropertyIds.toString(
+                                        carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_CONTROL_CAR_WINDOWS_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_CONTROL_CAR_WINDOWS);
     }
 
     @Test
