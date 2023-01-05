@@ -342,6 +342,12 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.ENGINE_RPM,
                             VehiclePropertyIds.ENGINE_IDLE_AUTO_STOP_ENABLED)
                     .build();
+    private static final ImmutableList<Integer> PERMISSION_CONTROL_ENERGY_PORTS_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.FUEL_DOOR_OPEN,
+                            VehiclePropertyIds.EV_CHARGE_PORT_OPEN)
+                    .build();
     private static final ImmutableList<Integer> PERMISSION_READ_ADAS_SETTINGS_PROPERTIES =
             ImmutableList.<Integer>builder()
                     .add(
@@ -5251,6 +5257,23 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     }
                 },
                 Car.PERMISSION_CAR_ENGINE_DETAILED);
+    }
+
+    @Test
+    public void testPermissionControlEnergyPortsGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                "%s",
+                                VehiclePropertyIds.toString(
+                                        carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_CONTROL_ENERGY_PORTS_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_CONTROL_ENERGY_PORTS);
     }
 
     @Test
