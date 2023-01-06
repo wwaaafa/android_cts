@@ -1245,7 +1245,7 @@ public class ScopedStorageDeviceTest extends ScopedStorageBaseDeviceTest {
             assertThat(fileInPodcastsDirLowerCase.createNewFile()).isTrue();
         } finally {
             fileInPodcastsDirLowerCase.delete();
-            deleteAsLegacyApp(podcastsDirLowerCase);
+            deleteRecursivelyAsLegacyApp(podcastsDirLowerCase);
             podcastsDir.mkdirs();
         }
     }
@@ -2660,8 +2660,8 @@ public class ScopedStorageDeviceTest extends ScopedStorageBaseDeviceTest {
             // We can't rename a non-top level directory to a top level directory.
             assertCantRenameDirectory(nonTopLevelDir, topLevelDir2, null);
         } finally {
-            deleteAsLegacyApp(topLevelDir1);
-            deleteAsLegacyApp(topLevelDir2);
+            deleteRecursivelyAsLegacyApp(topLevelDir1);
+            deleteRecursivelyAsLegacyApp(topLevelDir2);
             deleteRecursively(nonTopLevelDir);
         }
     }
@@ -2671,7 +2671,7 @@ public class ScopedStorageDeviceTest extends ScopedStorageBaseDeviceTest {
         final File podcastsDir = getPodcastsDir();
         try {
             if (podcastsDir.exists()) {
-                deleteAsLegacyApp(podcastsDir);
+                deleteRecursivelyAsLegacyApp(podcastsDir);
             }
             assertThat(podcastsDir.mkdir()).isTrue();
         } finally {
@@ -2693,7 +2693,7 @@ public class ScopedStorageDeviceTest extends ScopedStorageBaseDeviceTest {
             if (cameraDir.exists()) {
                 // This is a work around to address a known inode cache inconsistency issue
                 // that occurs when test runs for the second time.
-                deleteAsLegacyApp(cameraDir);
+                deleteRecursivelyAsLegacyApp(cameraDir);
             }
 
             createDirectoryAsLegacyApp(cameraDir);
@@ -2717,7 +2717,7 @@ public class ScopedStorageDeviceTest extends ScopedStorageBaseDeviceTest {
         } finally {
             deleteWithMediaProviderNoThrow(targetUri);
             deleteAsLegacyApp(nomediaFile);
-            deleteAsLegacyApp(cameraDir);
+            deleteRecursivelyAsLegacyApp(cameraDir);
         }
     }
 
@@ -2770,7 +2770,7 @@ public class ScopedStorageDeviceTest extends ScopedStorageBaseDeviceTest {
         } finally {
             deleteAsLegacyApp(videoFile);
             deleteAsLegacyApp(nomediaFile);
-            deleteAsLegacyApp(directory);
+            deleteRecursivelyAsLegacyApp(directory);
         }
     }
 
