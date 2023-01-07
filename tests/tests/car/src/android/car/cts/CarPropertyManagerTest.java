@@ -4709,22 +4709,36 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     }
 
     @Test
+    @ApiTest(
+            apis = {
+                "android.car.hardware.property.CarPropertyManager#registerCallback"
+            })
+    public void testRegisterCallbackWithInvalidProp() throws Exception {
+        runWithShellPermissionIdentity(() -> {
+            int invalidPropertyId = -1;
+
+            assertThat(mCarPropertyManager.registerCallback(
+                    new CarPropertyEventCounter(), invalidPropertyId, /* updateRateHz= */ 0))
+                    .isFalse();
+        });
+    }
+
+    @Test
+    @ApiTest(
+            apis = {
+                "android.car.hardware.property.CarPropertyManager#getCarPropertyConfig",
+                "android.car.hardware.property.CarPropertyManager#registerCallback",
+                "android.car.hardware.property.CarPropertyManager#"
+                        + "unregisterCallback(CarPropertyEventCallback)"
+            })
     public void testRegisterCallback() throws Exception {
         runWithShellPermissionIdentity(
                 () -> {
-                    // Test on registering a invalid property
-                    int invalidPropertyId = -1;
-                    boolean isRegistered =
-                            mCarPropertyManager.registerCallback(
-                                    new CarPropertyEventCounter(), invalidPropertyId, 0);
-                    assertThat(isRegistered).isFalse();
-
-                    // Test for continuous properties
                     int vehicleSpeed = VehiclePropertyIds.PERF_VEHICLE_SPEED;
                     CarPropertyConfig<?> carPropertyConfig =
                             mCarPropertyManager.getCarPropertyConfig(
                                     VehiclePropertyIds.PERF_VEHICLE_SPEED);
-                    float secondsToMillis = 1_000;
+                    float secondToMillis = 1_000;
                     long bufferMillis = 1_000; // 1 second
                     // timeoutMillis is set to the maximum expected time needed to receive the
                     // required
@@ -4734,7 +4748,7 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     long timeoutMillis =
                             ((long)
                                             ((1.0f / carPropertyConfig.getMinSampleRate())
-                                                    * secondsToMillis
+                                                    * secondToMillis
                                                     * UI_RATE_EVENT_COUNTER))
                                     + bufferMillis;
                     CarPropertyEventCounter speedListenerUI =
