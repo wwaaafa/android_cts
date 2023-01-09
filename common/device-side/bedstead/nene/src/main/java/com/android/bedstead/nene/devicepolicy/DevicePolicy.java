@@ -36,6 +36,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.Build;
+import android.os.UserHandle;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -140,6 +141,13 @@ public final class DevicePolicy {
      */
     public ProfileOwner getProfileOwner() {
         return getProfileOwner(TestApis.users().instrumented());
+    }
+
+    /**
+     * Get the profile owner for a given {@link UserHandle}.
+     */
+    public ProfileOwner getProfileOwner(UserHandle user) {
+        return getProfileOwner(UserReference.of(user));
     }
 
     /**
@@ -597,4 +605,27 @@ public final class DevicePolicy {
                     .resetShouldAllowBypassingDevicePolicyManagementRoleQualificationState();
         }
     }
+
+    /**
+     * Set or check user restrictions.
+     */
+    public UserRestrictions userRestrictions(UserHandle user) {
+        return userRestrictions(UserReference.of(user));
+    }
+
+    /**
+     * Set or check user restrictions on the instrumented user
+     */
+    public UserRestrictions userRestrictions() {
+        return new UserRestrictions(TestApis.users().instrumented());
+    }
+
+    /**
+     * Set or check user restrictions.
+     */
+    public UserRestrictions userRestrictions(UserReference user) {
+        return new UserRestrictions(user);
+    }
+
+
 }

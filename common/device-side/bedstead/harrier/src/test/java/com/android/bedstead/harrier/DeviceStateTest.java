@@ -59,6 +59,7 @@ import com.android.bedstead.harrier.annotations.EnsureCanAddUser;
 import com.android.bedstead.harrier.annotations.EnsureDemoMode;
 import com.android.bedstead.harrier.annotations.EnsureDoesNotHaveAppOp;
 import com.android.bedstead.harrier.annotations.EnsureDoesNotHavePermission;
+import com.android.bedstead.harrier.annotations.EnsureDoesNotHaveUserRestriction;
 import com.android.bedstead.harrier.annotations.EnsureFeatureFlagEnabled;
 import com.android.bedstead.harrier.annotations.EnsureFeatureFlagNotEnabled;
 import com.android.bedstead.harrier.annotations.EnsureFeatureFlagValue;
@@ -78,6 +79,7 @@ import com.android.bedstead.harrier.annotations.EnsureHasNoWorkProfile;
 import com.android.bedstead.harrier.annotations.EnsureHasPermission;
 import com.android.bedstead.harrier.annotations.EnsureHasSecondaryUser;
 import com.android.bedstead.harrier.annotations.EnsureHasTvProfile;
+import com.android.bedstead.harrier.annotations.EnsureHasUserRestriction;
 import com.android.bedstead.harrier.annotations.EnsureHasWorkProfile;
 import com.android.bedstead.harrier.annotations.EnsureNotDemoMode;
 import com.android.bedstead.harrier.annotations.EnsurePackageNotInstalled;
@@ -192,6 +194,9 @@ public class DeviceStateTest {
 
     private static final long TIMEOUT = 4000000;
     private static final String CLONE_PROFILE_TYPE_NAME = "android.os.usertype.profile.CLONE";
+
+    private static final String USER_RESTRICTION = UserManager.DISALLOW_AUTOFILL;
+    private static final String SECOND_USER_RESTRICTION = UserManager.DISALLOW_AIRPLANE_MODE;
 
     @Test
     @EnsureHasWorkProfile
@@ -1326,5 +1331,49 @@ public class DeviceStateTest {
     @Test
     public void ensureHasNoAccountsAnnotation_hasNoAccounts() {
         assertThat(TestApis.accounts().all()).isEmpty();
+    }
+
+    @EnsureHasUserRestriction(USER_RESTRICTION)
+    @Test
+    public void ensureHasUserRestrictionAnnotation_userRestrictionIsSet() {
+        assertThat(TestApis.devicePolicy().userRestrictions().isSet(USER_RESTRICTION)).isTrue();
+    }
+
+    @EnsureDoesNotHaveUserRestriction(USER_RESTRICTION)
+    @Test
+    public void ensureDoesNotHaveUserRestrictionAnnotation_userRestrictionIsNotSet() {
+        assertThat(TestApis.devicePolicy().userRestrictions().isSet(USER_RESTRICTION)).isFalse();
+    }
+
+    @EnsureHasUserRestriction(USER_RESTRICTION)
+    @EnsureHasUserRestriction(SECOND_USER_RESTRICTION)
+    @Test
+    public void ensureHasUserRestrictionAnnotation_multipleRestrictions_userRestrictionsAreSet() {
+        assertThat(TestApis.devicePolicy().userRestrictions().isSet(USER_RESTRICTION)).isTrue();
+        assertThat(TestApis.devicePolicy().userRestrictions()
+                .isSet(SECOND_USER_RESTRICTION)).isTrue();
+    }
+
+    @EnsureDoesNotHaveUserRestriction(USER_RESTRICTION)
+    @EnsureDoesNotHaveUserRestriction(SECOND_USER_RESTRICTION)
+    @Test
+    public void ensureDoesNotHaveUserRestrictionAnnotation_multipleRestrictions_userRestrictionsAreNotSet() {
+        assertThat(TestApis.devicePolicy().userRestrictions().isSet(USER_RESTRICTION)).isFalse();
+        assertThat(TestApis.devicePolicy().userRestrictions().isSet(SECOND_USER_RESTRICTION))
+                .isFalse();
+    }
+
+    @EnsureHasAdditionalUser
+    @EnsureHasUserRestriction(value = USER_RESTRICTION, onUser = ADDITIONAL_USER)
+    @Test
+    public void ensureHasUserRestrictionAnnotation_differentUser_userRestrictionIsSet() {
+        assertThat(TestApis.devicePolicy().userRestrictions().isSet(USER_RESTRICTION)).isTrue();
+    }
+
+    @EnsureHasAdditionalUser
+    @EnsureDoesNotHaveUserRestriction(value = USER_RESTRICTION, onUser = ADDITIONAL_USER)
+    @Test
+    public void ensureDoesNotHaveUserRestrictionAnnotation_differentUser_userRestrictionIsNotSet() {
+        assertThat(TestApis.devicePolicy().userRestrictions().isSet(USER_RESTRICTION)).isFalse();
     }
 }
