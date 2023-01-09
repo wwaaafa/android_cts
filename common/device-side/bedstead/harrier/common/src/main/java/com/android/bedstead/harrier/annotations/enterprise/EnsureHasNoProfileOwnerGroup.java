@@ -16,33 +16,20 @@
 
 package com.android.bedstead.harrier.annotations.enterprise;
 
-import static com.android.bedstead.harrier.UserType.INSTRUMENTED_USER;
 import static com.android.bedstead.harrier.annotations.enterprise.EnsureHasDeviceOwner.DO_PO_WEIGHT;
 
-import com.android.bedstead.harrier.UserType;
-import com.android.bedstead.harrier.annotations.AnnotationRunPrecedence;
-import com.android.bedstead.harrier.annotations.RequireNotInstantApp;
+import com.android.bedstead.harrier.annotations.meta.RepeatingAnnotation;
 
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * Mark that a test requires that there is no profile owner on the given user.
- *
- * <p>You can use {@code Devicestate} to ensure that the device enters the correct state for the
- * method.
- */
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-// TODO(b/206441366): Add instant app support
-@RequireNotInstantApp(reason = "Instant Apps cannot run Enterprise Tests")
-@Repeatable(EnsureHasNoProfileOwnerGroup.class)
-public @interface EnsureHasNoProfileOwner {
-    /** Which user type the profile owner should not be attached to. */
-    UserType onUser() default INSTRUMENTED_USER;
+@RepeatingAnnotation
+public @interface EnsureHasNoProfileOwnerGroup {
+    EnsureHasNoProfileOwner[] value();
 
     /**
      * Weight sets the order that annotations will be resolved.

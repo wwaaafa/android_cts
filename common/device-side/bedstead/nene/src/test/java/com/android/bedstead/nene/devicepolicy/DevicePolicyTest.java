@@ -229,7 +229,7 @@ public class DevicePolicyTest {
     @Test
     public void getProfileOwner_nullUser_throwsException() {
         assertThrows(NullPointerException.class,
-                () -> TestApis.devicePolicy().getProfileOwner(null));
+                () -> TestApis.devicePolicy().getProfileOwner((UserReference) null));
     }
 
     @Test
