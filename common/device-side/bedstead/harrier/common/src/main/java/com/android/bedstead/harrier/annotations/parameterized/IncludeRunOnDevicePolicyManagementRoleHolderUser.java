@@ -14,36 +14,31 @@
  * limitations under the License.
  */
 
-package com.android.bedstead.harrier.annotations.enterprise;
+package com.android.bedstead.harrier.annotations.parameterized;
 
-import static com.android.bedstead.harrier.UserType.INSTRUMENTED_USER;
-import static com.android.bedstead.harrier.annotations.enterprise.EnsureHasDeviceOwner.DO_PO_WEIGHT;
+import static com.android.bedstead.harrier.UserType.ANY;
+import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.EARLY;
 
-import com.android.bedstead.harrier.UserType;
 import com.android.bedstead.harrier.annotations.AnnotationRunPrecedence;
-import com.android.bedstead.harrier.annotations.RequireNotInstantApp;
+import com.android.bedstead.harrier.annotations.RequireRunOnSystemUser;
+import com.android.bedstead.harrier.annotations.enterprise.EnsureHasDevicePolicyManagerRoleHolder;
+import com.android.bedstead.harrier.annotations.enterprise.EnsureHasNoDpc;
+import com.android.bedstead.harrier.annotations.meta.ParameterizedAnnotation;
 
 import java.lang.annotation.ElementType;
-import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * Mark that a test requires that there is no profile owner on the given user.
- *
- * <p>You can use {@code Devicestate} to ensure that the device enters the correct state for the
- * method.
- */
-@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.TYPE})
+/** Parameterize a test so that it runs on the same user as the device policy management role
+ * holder and has no other dpcs. */
+@Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-// TODO(b/206441366): Add instant app support
-@RequireNotInstantApp(reason = "Instant Apps cannot run Enterprise Tests")
-@Repeatable(EnsureHasNoProfileOwnerGroup.class)
-public @interface EnsureHasNoProfileOwner {
-    /** Which user type the profile owner should not be attached to. */
-    UserType onUser() default INSTRUMENTED_USER;
-
+@ParameterizedAnnotation
+@RequireRunOnSystemUser
+@EnsureHasNoDpc(onUser = ANY)
+@EnsureHasDevicePolicyManagerRoleHolder(isPrimary = true)
+public @interface IncludeRunOnDevicePolicyManagementRoleHolderUser {
     /**
      * Weight sets the order that annotations will be resolved.
      *
@@ -54,5 +49,5 @@ public @interface EnsureHasNoProfileOwner {
      *
      * <p>Weight can be set to a {@link AnnotationRunPrecedence} constant, or to any {@link int}.
      */
-    int weight() default DO_PO_WEIGHT;
+    int weight() default EARLY;
 }
