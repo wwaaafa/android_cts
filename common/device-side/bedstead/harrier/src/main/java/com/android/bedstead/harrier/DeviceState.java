@@ -54,6 +54,7 @@ import com.android.bedstead.harrier.annotations.EnsureCanAddUser;
 import com.android.bedstead.harrier.annotations.EnsureCanGetPermission;
 import com.android.bedstead.harrier.annotations.EnsureDoesNotHaveAppOp;
 import com.android.bedstead.harrier.annotations.EnsureDoesNotHavePermission;
+import com.android.bedstead.harrier.annotations.EnsureDoesNotHaveUserRestriction;
 import com.android.bedstead.harrier.annotations.EnsureFeatureFlagEnabled;
 import com.android.bedstead.harrier.annotations.EnsureFeatureFlagNotEnabled;
 import com.android.bedstead.harrier.annotations.EnsureFeatureFlagValue;
@@ -66,6 +67,7 @@ import com.android.bedstead.harrier.annotations.EnsureHasAppOp;
 import com.android.bedstead.harrier.annotations.EnsureHasNoAccounts;
 import com.android.bedstead.harrier.annotations.EnsureHasNoAdditionalUser;
 import com.android.bedstead.harrier.annotations.EnsureHasPermission;
+import com.android.bedstead.harrier.annotations.EnsureHasUserRestriction;
 import com.android.bedstead.harrier.annotations.EnsurePackageNotInstalled;
 import com.android.bedstead.harrier.annotations.EnsurePasswordNotSet;
 import com.android.bedstead.harrier.annotations.EnsurePasswordSet;
@@ -1042,6 +1044,24 @@ public final class DeviceState extends HarrierRule {
                 ensureHasNoAccounts(ensureHasNoAccountsAnnotation.onUser());
                 continue;
             }
+
+            if (annotation instanceof EnsureHasUserRestriction) {
+                EnsureHasUserRestriction ensureHasUserRestrictionAnnotation =
+                        (EnsureHasUserRestriction) annotation;
+                ensureHasUserRestriction(
+                        ensureHasUserRestrictionAnnotation.value(),
+                        ensureHasUserRestrictionAnnotation.onUser());
+                continue;
+            }
+
+            if (annotation instanceof EnsureDoesNotHaveUserRestriction) {
+                EnsureDoesNotHaveUserRestriction ensureDoesNotHaveUserRestrictionAnnotation =
+                        (EnsureDoesNotHaveUserRestriction) annotation;
+                ensureDoesNotHaveUserRestriction(
+                        ensureDoesNotHaveUserRestrictionAnnotation.value(),
+                        ensureDoesNotHaveUserRestrictionAnnotation.onUser());
+                continue;
+            }
         }
 
         requireSdkVersion(/* min= */ mMinSdkVersionCurrentTest,
@@ -1415,6 +1435,8 @@ public final class DeviceState extends HarrierRule {
     private UserType mOtherUserType;
 
     private PermissionContextImpl mPermissionContext = null;
+    private Map<UserReference, Set<String>> mAddedUserRestrictions = new HashMap<>();
+    private Map<UserReference, Set<String>> mRemovedUserRestrictions = new HashMap<>();
     private final List<UserReference> mCreatedUsers = new ArrayList<>();
     private final List<RemovedUser> mRemovedUsers = new ArrayList<>();
     private final List<UserReference> mUsersSetPasswords = new ArrayList<>();
@@ -2196,6 +2218,23 @@ public final class DeviceState extends HarrierRule {
 
     private void teardownShareableState() {
         mCreatedAccounts.forEach(AccountReference::remove);
+
+        for (Map.Entry<UserReference, Set<String>> userRestrictions
+                : mAddedUserRestrictions.entrySet()) {
+            for (String restriction : userRestrictions.getValue()) {
+                ensureDoesNotHaveUserRestriction(restriction, userRestrictions.getKey());
+            }
+        }
+
+        for (Map.Entry<UserReference, Set<String>> userRestrictions
+                : mRemovedUserRestrictions.entrySet()) {
+            for (String restriction : userRestrictions.getValue()) {
+                ensureHasUserRestriction(restriction, userRestrictions.getKey());
+            }
+        }
+
+        mAddedUserRestrictions.clear();
+        mRemovedUserRestrictions.clear();
 
         if (mHasChangedDeviceOwner) {
             if (mOriginalDeviceOwner == null) {
@@ -3381,5 +3420,70 @@ public final class DeviceState extends HarrierRule {
             }
         }
         return mAnnotationExecutors.get(annotationExecutorClass);
+    }
+
+    private void ensureHasUserRestriction(String restriction, UserType onUser) {
+        ensureHasUserRestriction(restriction, resolveUserTypeToUser(onUser));
+    }
+
+    private void ensureHasUserRestriction(String restriction, UserReference onUser) {
+        if (TestApis.devicePolicy().userRestrictions(onUser).isSet(restriction)) {
+            return;
+        }
+
+        ensureHasProfileOwner(onUser,
+                /* isPrimary= */ false, /* isParentInstance= */ false,
+                /* affiliationIds= */ Set.of());
+
+        RemotePolicyManager dpc = profileOwner(onUser);
+        dpc.devicePolicyManager().addUserRestriction(dpc.componentName(), restriction);
+
+        if (mRemovedUserRestrictions.containsKey(onUser)
+                && mRemovedUserRestrictions.get(onUser).contains(restriction)) {
+            mRemovedUserRestrictions.get(onUser).remove(restriction);
+        } else {
+            if (!mAddedUserRestrictions.containsKey(onUser)) {
+                mAddedUserRestrictions.put(onUser, new HashSet<>());
+            }
+
+            mAddedUserRestrictions.get(onUser).add(restriction);
+        }
+
+        if (!TestApis.devicePolicy().userRestrictions(onUser).isSet(restriction)) {
+            throw new NeneException("Error setting user restriction " + restriction);
+        }
+    }
+
+    private void ensureDoesNotHaveUserRestriction(String restriction, UserType onUser) {
+        ensureDoesNotHaveUserRestriction(restriction, resolveUserTypeToUser(onUser));
+    }
+
+    private void ensureDoesNotHaveUserRestriction(String restriction, UserReference onUser) {
+        if (!TestApis.devicePolicy().userRestrictions(onUser).isSet(restriction)) {
+            return;
+        }
+
+        ensureHasProfileOwner(onUser,
+                /* isPrimary= */ false, /* isParentInstance= */ false,
+                /* affiliationIds= */ Set.of());
+
+        RemotePolicyManager dpc = profileOwner(onUser);
+        dpc.devicePolicyManager().clearUserRestriction(dpc.componentName(), restriction);
+
+        if (mAddedUserRestrictions.containsKey(onUser)
+                && mAddedUserRestrictions.get(onUser).contains(restriction)) {
+            mAddedUserRestrictions.get(onUser).remove(restriction);
+        } else {
+            if (!mRemovedUserRestrictions.containsKey(onUser)) {
+                mRemovedUserRestrictions.put(onUser, new HashSet<>());
+            }
+
+            mRemovedUserRestrictions.get(onUser).add(restriction);
+        }
+
+        if (TestApis.devicePolicy().userRestrictions(onUser).isSet(restriction)) {
+            throw new NeneException("Error removing user restriction " + restriction + ". "
+                    + "It's possible this is set by the system and cannot be removed");
+        }
     }
 }
