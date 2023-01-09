@@ -91,4 +91,14 @@ public class MediaRouter2HostSideTest extends BaseMediaHostSideTest {
                 DEVICE_SIDE_TEST_CLASS,
                 "getInstance_findsExternalPackage");
     }
+
+    @ApiTest(apis = {"android.media.RouteDiscoveryPreference, android.media.MediaRouter2"})
+    @AppModeFull
+    @RequiresDevice
+    public void testVisibilityAndAllowedPackages_propagateAcrossApps() throws Exception {
+        runDeviceTests(
+                MEDIA_ROUTER_TEST_PACKAGE,
+                DEVICE_SIDE_TEST_CLASS,
+                "visibilityAndAllowedPackages_propagateAcrossApps");
+    }
 }
