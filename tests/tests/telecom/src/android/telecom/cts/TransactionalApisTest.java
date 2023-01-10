@@ -16,6 +16,7 @@
 
 package android.telecom.cts;
 
+import static android.telecom.CallAttributes.AUDIO_CALL;
 import static android.telecom.CallAttributes.DIRECTION_INCOMING;
 import static android.telecom.CallAttributes.DIRECTION_OUTGOING;
 import static android.telecom.cts.TestUtils.WAIT_FOR_STATE_CHANGE_TIMEOUT_MS;
@@ -213,6 +214,29 @@ public class TransactionalApisTest extends BaseTelecomTestWithMockServices {
             return;
         }
         assertFalse(mOutgoingCallAttributes.equals(mIncomingCallAttributes));
+    }
+
+    public void testCallAttributesGetters() {
+        if (!mShouldTestTelecom) {
+            return;
+        }
+        // outgoing call
+        assertEquals(HANDLE, mOutgoingCallAttributes.getPhoneAccountHandle());
+        assertEquals(AUDIO_CALL, mOutgoingCallAttributes.getCallType());
+        assertEquals(CallAttributes.SUPPORTS_SET_INACTIVE,
+                mOutgoingCallAttributes.getCallCapabilities());
+        assertEquals(TEST_NAME_1, mOutgoingCallAttributes.getDisplayName());
+        assertEquals(DIRECTION_OUTGOING, mOutgoingCallAttributes.getDirection());
+        assertEquals(TEST_URI_1, mOutgoingCallAttributes.getAddress());
+
+        // incoming call
+        assertEquals(HANDLE, mIncomingCallAttributes.getPhoneAccountHandle());
+        assertEquals(AUDIO_CALL, mIncomingCallAttributes.getCallType());
+        assertEquals(CallAttributes.SUPPORTS_SET_INACTIVE,
+                mIncomingCallAttributes.getCallCapabilities());
+        assertEquals(TEST_NAME_2, mIncomingCallAttributes.getDisplayName());
+        assertEquals(DIRECTION_INCOMING, mIncomingCallAttributes.getDirection());
+        assertEquals(TEST_URI_2, mIncomingCallAttributes.getAddress());
     }
 
     /**
