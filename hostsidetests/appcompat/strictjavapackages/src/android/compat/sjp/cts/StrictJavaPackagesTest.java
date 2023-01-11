@@ -651,7 +651,8 @@ public class StrictJavaPackagesTest extends BaseHostJUnit4Test {
     private static final ImmutableSet<String> PERMISSION_CONTROLLER_APK_IN_APEX_BURNDOWN_LIST =
             ImmutableSet.of(
                 "Lcom/android/modules/utils/build/SdkLevel;",
-                "Lcom/android/settingslib/RestrictedLockUtils;"
+                "Lcom/android/settingslib/RestrictedLockUtils;",
+                "Lcom/android/safetycenter/resources/SafetyCenterResourcesContext;"
             );
     // TODO: b/223837599
     private static final ImmutableSet<String> TETHERING_APK_IN_APEX_BURNDOWN_LIST =
@@ -1073,7 +1074,8 @@ public class StrictJavaPackagesTest extends BaseHostJUnit4Test {
                 LegacyExemptAndroidxSharedLibsNamesToClasses =
                 new ImmutableMap.Builder<String, ImmutableSet<String>>()
                 .put("androidx.camera.extensions.impl",
-                    ImmutableSet.of("Landroidx/camera/extensions/impl/"))
+                    ImmutableSet.of("Landroidx/camera/extensions/impl/",
+                    "Landroidx/camera/extensions/impl/advanced/", "Landroidx/annotation"))
                 .put("androidx.window.extensions",
                     ImmutableSet.of("Landroidx/window/common/", "Landroidx/window/extensions/",
                         "Landroidx/window/util/"))

@@ -297,8 +297,8 @@ class CameraMicIndicatorsPermissionTest : StsExtraBusinessLogicTestCase {
         openApp(useMic, useCamera, useHotword, finishEarly)
         try {
             eventually {
-                val appView = uiDevice.findObject(UiSelector().textContains(APP_LABEL))
-                assertTrue("View with text $APP_LABEL not found", appView.exists())
+                val appView = uiDevice.findObject(By.textContains(APP_LABEL))
+                assertNotNull("View with text $APP_LABEL not found", appView)
             }
             if (chainUsage) {
                 chainAttribution = createChainAttribution()
