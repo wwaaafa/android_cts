@@ -19,6 +19,7 @@ package android.packageinstaller.install.cts
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageInstaller
+import android.platform.test.annotations.AppModeFull
 import androidx.test.InstrumentationRegistry
 import java.io.File
 import kotlin.random.Random
@@ -28,6 +29,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
+@AppModeFull(reason = "Instant apps cannot access device storage")
 class InstallInfoTest : PackageInstallerTestBase() {
     private val NOT_AN_APK = "NotAnApk.txt"
     // corruptedapk.apk in /install/assets dir was copied over from
