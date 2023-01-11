@@ -6839,7 +6839,19 @@
          @hide
     -->
     <permission android:name="android.permission.LIST_ENABLED_CREDENTIAL_PROVIDERS"
-        android:protectionLevel="signature|privileged"/>
+      android:protectionLevel="signature|privileged"/>
+
+    <!-- Allows a system application to be registered with credential manager without
+         having to be enabled by the user.
+         @hide -->
+    <permission android:name="android.permission.SYSTEM_CREDENTIAL_PROVIDER"
+                android:protectionLevel="signature|privileged" />
+
+    <!-- Allows an application to be able to store and retrieve credentials from a remote
+         device.
+         @hide -->
+    <permission android:name="android.permission.HYBRID_CREDENTIAL_PROVIDER"
+                android:protectionLevel="signature|privileged" />
 
     <!-- Allows an app access to the installer provided app metadata.
         @SystemApi
