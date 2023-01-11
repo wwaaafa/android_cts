@@ -42,6 +42,7 @@ android_test {
     ],
     data: [
         ":CtsEmptyTestApp",
+        ":CtsEmptyInstallerApp",
     ],
     per_testcase_directory: true,
 }
