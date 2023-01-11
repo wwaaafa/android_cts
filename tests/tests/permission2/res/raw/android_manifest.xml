@@ -4337,7 +4337,7 @@
     <!-- @SystemApi Allows an application to access ambient context service.
          @hide <p>Not for use by third-party applications.</p> -->
     <permission android:name="android.permission.ACCESS_AMBIENT_CONTEXT_EVENT"
-        android:protectionLevel="internal|role"/>
+        android:protectionLevel="signature|privileged|role"/>
 
     <!-- @SystemApi Required by a AmbientContextEventDetectionService
          to ensure that only the service with this permission can bind to it.
