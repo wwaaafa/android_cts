@@ -366,6 +366,11 @@ public class JobSchedulingTest extends BaseJobSchedulerTest {
     }
 
     public void testPendingJobReason_batteryNotLow() throws Exception {
+        if (!BatteryUtils.hasBattery()) {
+            // Can't test while the device doesn't have battery
+            return;
+        }
+
         setBatteryState(false, 5);
 
         JobInfo jobInfo = new JobInfo.Builder(JOB_ID, kJobServiceComponent)
@@ -379,6 +384,11 @@ public class JobSchedulingTest extends BaseJobSchedulerTest {
     }
 
     public void testPendingJobReason_charging() throws Exception {
+        if (!BatteryUtils.hasBattery()) {
+            // Can't test while the device doesn't have battery
+            return;
+        }
+
         setBatteryState(false, 100);
 
         JobInfo jobInfo = new JobInfo.Builder(JOB_ID, kJobServiceComponent)
