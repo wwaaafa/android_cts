@@ -37,5 +37,7 @@
     <option name="compatibility:exclude-filter" value="CtsSecurityTestCases android.security.cts.VerifiedBootTest#testVerifiedBootSupport" />
     <!-- CtsKeystoreTestCases: b/218751802 -->
     <option name="compatibility:exclude-filter" value="CtsKeystoreTestCases android.keystore.cts.KeyAttestationTest#testAttestationKmVersionMatchesFeatureVersionStrongBox" />
+    <!-- CtsCameraTestCases: b/259494877 -->
+    <option name="compatibility:exclude-filter" value="CtsCameraTestCases android.hardware.camera2.cts.ZoomCaptureTest#testRawZoomCapture" />
 
 </configuration>
