@@ -52,20 +52,17 @@ import android.accessibilityservice.AccessibilityServiceInfo;
 import android.accessibilityservice.cts.activities.AccessibilityWindowReportingActivity;
 import android.accessibilityservice.cts.activities.NonDefaultDisplayActivity;
 import android.accessibilityservice.cts.activities.NotTouchableWindowTestActivity;
+import android.accessibilityservice.cts.utils.DisplayUtils;
 import android.app.Activity;
 import android.app.Instrumentation;
 import android.app.UiAutomation;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Rect;
-import android.os.SystemClock;
 import android.platform.test.annotations.AppModeFull;
 import android.platform.test.annotations.Presubmit;
 import android.provider.Settings;
 import android.view.Gravity;
-import android.view.InputDevice;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -294,27 +291,7 @@ public class AccessibilityWindowReportingTest {
             // touch event on the activity window of the virtual display to pass this test case.
             sUiAutomation.executeAndWaitForEvent(
                     () -> {
-                        final Rect areaOfActivityWindowOnVirtualDisplay = new Rect();
-                        findWindowByTitleAndDisplay(sUiAutomation, activityTitle, virtualDisplayId)
-                                .getBoundsInScreen(areaOfActivityWindowOnVirtualDisplay);
-
-                        final int xOnScreen =
-                            areaOfActivityWindowOnVirtualDisplay.centerX();
-                        final int yOnScreen =
-                            areaOfActivityWindowOnVirtualDisplay.centerY();
-                        final long downEventTime = SystemClock.uptimeMillis();
-                        final MotionEvent downEvent = MotionEvent.obtain(downEventTime,
-                                downEventTime, MotionEvent.ACTION_DOWN, xOnScreen, yOnScreen, 0);
-                        downEvent.setSource(InputDevice.SOURCE_TOUCHSCREEN);
-                        downEvent.setDisplayId(virtualDisplayId);
-                        sUiAutomation.injectInputEvent(downEvent, true);
-
-                        final long upEventTime = downEventTime + 10;
-                        final MotionEvent upEvent = MotionEvent.obtain(downEventTime, upEventTime,
-                                MotionEvent.ACTION_UP, xOnScreen, yOnScreen, 0);
-                        upEvent.setSource(InputDevice.SOURCE_TOUCHSCREEN);
-                        upEvent.setDisplayId(virtualDisplayId);
-                        sUiAutomation.injectInputEvent(upEvent, true);
+                        DisplayUtils.touchDisplay(sUiAutomation, virtualDisplayId, activityTitle);
                     },
                     filterWindowsChangedWithChangeTypes(WINDOWS_CHANGE_FOCUSED |
                             WINDOWS_CHANGE_ACTIVE),
