@@ -79,6 +79,7 @@ open class PackageInstallerTestBase {
 
         const val PACKAGE_INSTALLER_PACKAGE_NAME = "com.android.packageinstaller"
         const val SYSTEM_PACKAGE_NAME = "android"
+        const val SHELL_PACKAGE_NAME = "com.android.shell"
         const val APP_OP_STR = "REQUEST_INSTALL_PACKAGES"
 
         const val PROPERTY_IS_PRE_APPROVAL_REQUEST_AVAILABLE = "is_preapproval_available"
