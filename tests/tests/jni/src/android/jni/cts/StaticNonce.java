@@ -39,11 +39,22 @@ public class StaticNonce {
 
     // See JniStaticTest for the expected behavior of these methods.
 
+    public static native void missing();
+    @FastNative
+    public static native void missingFast();
+    @CriticalNative
+    public static native void missingCritical();
+
     public static native void nop();
+    public static native void nopDlsym();
     @FastNative
     public static native void nopFast();
+    @FastNative
+    public static native void nopFastDlsym();
     @CriticalNative
     public static native void nopCritical();
+    @CriticalNative
+    public static native void nopCriticalDlsym();
 
     public static native boolean returnBoolean();
     @FastNative
@@ -192,13 +203,23 @@ public class StaticNonce {
     public static native boolean takeOneOfEach(boolean v0, byte v1, short v2,
             char v3, int v4, long v5, String v6, float v7, double v8,
             int[] v9);
+    public static native boolean takeOneOfEachDlsym(boolean v0, byte v1,
+            short v2, char v3, int v4, long v5, String v6, float v7, double v8,
+            int[] v9);
     @FastNative
     public static native boolean takeOneOfEachFast(boolean v0, byte v1,
+            short v2, char v3, int v4, long v5, String v6, float v7, double v8,
+            int[] v9);
+    @FastNative
+    public static native boolean takeOneOfEachFastDlsym(boolean v0, byte v1,
             short v2, char v3, int v4, long v5, String v6, float v7, double v8,
             int[] v9);
     @CriticalNative
     public static native boolean takeOneOfEachCritical(boolean v0, byte v1,
             short v2, char v3, int v4, long v5, float v6, double v7);
+    @CriticalNative
+    public static native boolean takeOneOfEachCriticalDlsym(boolean v0,
+            byte v1, short v2, char v3, int v4, long v5, float v6, double v7);
 
     public static native boolean takeCoolHandLuke(
             int v1, int v2, int v3, int v4,
