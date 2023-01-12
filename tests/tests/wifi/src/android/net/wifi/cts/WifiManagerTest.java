@@ -6039,8 +6039,9 @@ public class WifiManagerTest extends WifiJUnit3TestBase {
     }
 
     /**
-     * Tests that {@link WifiManager#addQosPolicy(QosPolicyParams)} and
-     * {@link WifiManager#removeQosPolicy(int)} do not crash.
+     * Tests that {@link WifiManager#addQosPolicy(QosPolicyParams)},
+     * {@link WifiManager#removeQosPolicy(int)}, and
+     * {@link WifiManager#removeAllQosPolicies()} do not crash.
      */
     public void testAddAndRemoveQosPolicy() throws Exception {
         if (!WifiFeature.isWifiSupported(getContext())) {
@@ -6062,5 +6063,12 @@ public class WifiManagerTest extends WifiJUnit3TestBase {
         }
         ShellIdentityUtils.invokeWithShellPermissions(
                 () -> mWifiManager.removeQosPolicy(policyId));
+
+        // sleep to wait for a response from supplicant
+        synchronized (mLock) {
+            mLock.wait(TEST_WAIT_DURATION_MS);
+        }
+        ShellIdentityUtils.invokeWithShellPermissions(
+                () -> mWifiManager.removeAllQosPolicies());
     }
 }
