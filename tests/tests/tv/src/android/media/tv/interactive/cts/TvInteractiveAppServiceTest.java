@@ -122,6 +122,7 @@ public class TvInteractiveAppServiceTest {
         private int mRequestStopRecordingCount = 0;
         private int mSetTvRecordingInfoCount = 0;
         private int mRequestTvRecordingInfoCount = 0;
+        private int mRequestTvRecordingInfoListCount = 0;
 
         private String mIAppServiceId = null;
         private Integer mState = null;
@@ -131,6 +132,7 @@ public class TvInteractiveAppServiceTest {
         private Uri mProgramUri = null;
         private String mRecordingId = null;
         private TvRecordingInfo mTvRecordingInfo = null;
+        private Integer mRecordingType = null;
 
         private void resetValues() {
             mRequestCurrentChannelUriCount = 0;
@@ -141,6 +143,7 @@ public class TvInteractiveAppServiceTest {
             mRequestSigningCount = 0;
             mSetTvRecordingInfoCount = 0;
             mRequestTvRecordingInfoCount = 0;
+            mRequestTvRecordingInfoListCount = 0;
 
             mIAppServiceId = null;
             mState = null;
@@ -150,6 +153,7 @@ public class TvInteractiveAppServiceTest {
             mProgramUri = null;
             mRecordingId = null;
             mTvRecordingInfo = null;
+            mRecordingType = null;
         }
 
         @Override
@@ -247,6 +251,13 @@ public class TvInteractiveAppServiceTest {
             super.onRequestTvRecordingInfo(id, recordingId);
             mRequestTvRecordingInfoCount++;
             mRecordingId = recordingId;
+        }
+
+        @Override
+        public void onRequestTvRecordingInfoList(String id, int type) {
+            super.onRequestTvRecordingInfoList(id, type);
+            mRequestTvRecordingInfoListCount++;
+            mRecordingType = type;
         }
     }
 
@@ -786,6 +797,16 @@ public class TvInteractiveAppServiceTest {
         PollingCheck.waitFor(TIME_OUT_MS, () -> mCallback.mRequestTvRecordingInfoCount > 0);
         assertThat(mCallback.mRequestTvRecordingInfoCount).isEqualTo(1);
         assertThat(mCallback.mRecordingId).isEqualTo(mockRecordingId);
+    }
+
+    @Test
+    public void testRequestTvRecordingInfoList() throws Throwable {
+        mSession.requestTvRecordingInfoList(TvRecordingInfo.RECORDING_SCHEDULED);
+        mCallback.resetValues();
+        mInstrumentation.waitForIdleSync();
+        PollingCheck.waitFor(TIME_OUT_MS, () -> mCallback.mRequestTvRecordingInfoListCount > 0);
+        assertThat(mCallback.mRequestTvRecordingInfoListCount).isEqualTo(1);
+        assertThat(mCallback.mRecordingType).isEqualTo(TvRecordingInfo.RECORDING_SCHEDULED);
     }
 
     @Test
