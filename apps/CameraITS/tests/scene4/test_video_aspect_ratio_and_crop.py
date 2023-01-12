@@ -224,7 +224,8 @@ class VideoAspectRatioAndCropTest(its_base_test.ItsBaseTest):
             logging.debug('numpy image shape: %s', np_image.shape)
 
             # Check fov
-            ref_img_name = f'{name_with_log_path}_{quality}_w{width}_h{height}_circle.png'
+            ref_img_name = (f'{name_with_log_path}_{quality}'
+                            f'_w{width}_h{height}_circle.png')
             circle = opencv_processing_utils.find_circle(
                 np_image, ref_img_name, image_fov_utils.CIRCLE_MIN_AREA,
                 image_fov_utils.CIRCLE_COLOR)

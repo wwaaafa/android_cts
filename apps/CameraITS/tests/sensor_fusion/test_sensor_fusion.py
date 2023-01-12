@@ -319,7 +319,8 @@ class SensorFusionTest(its_base_test.ItsBaseTest):
     gyro_smp_per_sec = len(gyro_times) / gyro_time_range
     logging.debug('Gyro samples per second: %f', gyro_smp_per_sec)
     if cam_frame_range > _CAM_FRAME_RANGE_MAX:
-      raise AssertionError(f'Camera frame range, {cam_frame_range}s, too high!')
+      raise AssertionError(
+          f'Camera frame range, {cam_frame_range}s, too high!')
     if gyro_smp_per_sec < _GYRO_SAMP_RATE_MIN:
       raise AssertionError(f'Gyro sample rate, {gyro_smp_per_sec}S/s, low!')
 
