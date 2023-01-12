@@ -1471,8 +1471,7 @@ public class SingleDeviceTest extends WifiJUnit3TestBase {
         assertTrue(config.isPairingVerificationEnabled());
         assertEquals(PAIRING_BOOTSTRAPPING_OPPORTUNISTIC, config.getBootstrappingMethods());
 
-        if (!ApiLevelUtil.isAtLeast(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-                && !ApiLevelUtil.codenameStartsWith("U")) {
+        if (!ApiLevelUtil.isAfter(Build.VERSION_CODES.TIRAMISU)) {
             return;
         }
 
