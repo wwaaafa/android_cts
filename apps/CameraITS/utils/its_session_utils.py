@@ -788,7 +788,8 @@ class ItsSession(object):
         requested_height = out_surface['height']
         if requested_width != width or requested_height != height:
           raise AssertionError(
-              f'Incorrect size. Requested: {requested_width}x{requested_height}, '
+              'Incorrect size. '
+              f'Requested: {requested_width}x{requested_height}, '
               f'Received: {width}x{height}')
       else:
         tag_string = unicodedata.normalize('NFKD', json_obj['tag']).encode(
@@ -1091,7 +1092,7 @@ class ItsSession(object):
           if 'width' in c and 'height' in c else yuv_maxsize_1d
           for c in yuv_surfaces
       ]
-      # Currently we don't pass enough metadta from ItsService to distinguish
+      # Currently we don't pass enough metadata from ItsService to distinguish
       # different yuv stream of same buffer size
       if len(yuv_sizes) != len(set(yuv_sizes)):
         raise error_util.CameraItsError(
