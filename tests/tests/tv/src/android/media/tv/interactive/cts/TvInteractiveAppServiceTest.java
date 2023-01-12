@@ -121,6 +121,7 @@ public class TvInteractiveAppServiceTest {
         private int mRequestStartRecordingCount = 0;
         private int mRequestStopRecordingCount = 0;
         private int mSetTvRecordingInfoCount = 0;
+        private int mRequestTvRecordingInfoCount = 0;
 
         private String mIAppServiceId = null;
         private Integer mState = null;
@@ -139,6 +140,7 @@ public class TvInteractiveAppServiceTest {
             mBiIAppCreatedCount = 0;
             mRequestSigningCount = 0;
             mSetTvRecordingInfoCount = 0;
+            mRequestTvRecordingInfoCount = 0;
 
             mIAppServiceId = null;
             mState = null;
@@ -237,6 +239,13 @@ public class TvInteractiveAppServiceTest {
             super.onSetTvRecordingInfo(id, recordingId, recordingInfo);
             mSetTvRecordingInfoCount++;
             mTvRecordingInfo = recordingInfo;
+            mRecordingId = recordingId;
+        }
+
+        @Override
+        public void onRequestTvRecordingInfo(String id, String recordingId) {
+            super.onRequestTvRecordingInfo(id, recordingId);
+            mRequestTvRecordingInfoCount++;
             mRecordingId = recordingId;
         }
     }
@@ -766,6 +775,17 @@ public class TvInteractiveAppServiceTest {
 
         assertThat(mCallback.mRequestStopRecordingCount).isEqualTo(1);
         assertThat(mCallback.mRecordingId).isEqualTo(testRecordingId);
+    }
+
+    @Test
+    public void testRequestTvRecordingInfo() throws Throwable {
+        String mockRecordingId = "testRecordingId";
+        mSession.requestTvRecordingInfo(mockRecordingId);
+        mCallback.resetValues();
+        mInstrumentation.waitForIdleSync();
+        PollingCheck.waitFor(TIME_OUT_MS, () -> mCallback.mRequestTvRecordingInfoCount > 0);
+        assertThat(mCallback.mRequestTvRecordingInfoCount).isEqualTo(1);
+        assertThat(mCallback.mRecordingId).isEqualTo(mockRecordingId);
     }
 
     @Test
