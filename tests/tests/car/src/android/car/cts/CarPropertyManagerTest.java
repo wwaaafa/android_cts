@@ -51,6 +51,7 @@ import android.car.hardware.property.EvChargeState;
 import android.car.hardware.property.EvRegenerativeBrakingState;
 import android.car.hardware.property.EvStoppingMode;
 import android.car.hardware.property.ForwardCollisionWarningState;
+import android.car.hardware.property.LaneCenteringAssistCommand;
 import android.car.hardware.property.LaneCenteringAssistState;
 import android.car.hardware.property.LaneKeepAssistState;
 import android.car.hardware.property.TrailerState;
@@ -238,6 +239,12 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             LaneCenteringAssistState.ACTIVATED,
                             LaneCenteringAssistState.USER_OVERRIDE,
                             LaneCenteringAssistState.FORCED_DEACTIVATION_WARNING)
+                    .build();
+    private static final ImmutableSet<Integer> LANE_CENTERING_ASSIST_COMMANDS =
+            ImmutableSet.<Integer>builder()
+                    .add(
+                            LaneCenteringAssistCommand.ACTIVATE,
+                            LaneCenteringAssistCommand.DEACTIVATE)
                     .build();
     private static final ImmutableSet<Integer> SINGLE_HVAC_FAN_DIRECTIONS = ImmutableSet.of(
             /*VehicleHvacFanDirection.FACE=*/0x1, /*VehicleHvacFanDirection.FLOOR=*/0x2,
@@ -602,7 +609,8 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     .build();
     private static final ImmutableList<Integer> PERMISSION_CONTROL_ADAS_STATES_PROPERTIES =
             ImmutableList.<Integer>builder()
-                    .add()
+                    .add(
+                            VehiclePropertyIds.LANE_CENTERING_ASSIST_COMMAND)
                     .build();
 
     private static final int VEHICLE_PROPERTY_GROUP_MASK = 0xf0000000;
@@ -4849,6 +4857,20 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                         Boolean.class)
                 .addReadPermission(Car.PERMISSION_READ_ADAS_SETTINGS)
                 .addWritePermission(Car.PERMISSION_CONTROL_ADAS_SETTINGS)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
+    public void testLaneCenteringAssistCommandIfSupported() {
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.LANE_CENTERING_ASSIST_COMMAND,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_WRITE,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Integer.class)
+                .setAllPossibleEnumValues(LANE_CENTERING_ASSIST_COMMANDS)
+                .addWritePermission(Car.PERMISSION_CONTROL_ADAS_STATES)
                 .build()
                 .verify(mCarPropertyManager);
     }
