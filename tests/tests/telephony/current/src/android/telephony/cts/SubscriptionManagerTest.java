@@ -100,6 +100,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -1357,6 +1358,76 @@ public class SubscriptionManagerTest {
             overrideCarrierConfig(null, mSubId);
         }
     }
+
+    private String getSubscriptionIso(int subId) {
+        SubscriptionInfo info = ShellIdentityUtils.invokeMethodWithShellPermissions(mSm,
+                (sm) -> sm.getActiveSubscriptionInfo(mSubId));
+        return info.getCountryIso();
+    }
+
+    /**
+     * Monitor the onSubscriptionsChangedListener until a condition is satisfied.
+     */
+    private void waitForSubscriptionCondition(
+            BooleanSupplier condition, long maxWaitMillis) throws Exception {
+        final Object lock = new Object();
+
+        TestThread t = new TestThread(new Runnable() {
+            @Override
+            public void run() {
+                Looper.prepare();
+
+                SubscriptionManager.OnSubscriptionsChangedListener listener =
+                        new SubscriptionManager.OnSubscriptionsChangedListener() {
+                            @Override
+                            public void onSubscriptionsChanged() {
+                                synchronized (lock) {
+                                    if (condition.getAsBoolean()) lock.notifyAll();
+                                }
+                            }
+                        };
+                mSm.addOnSubscriptionsChangedListener(listener);
+                try {
+                    synchronized (lock) {
+                        if (condition.getAsBoolean()) lock.notifyAll();
+                    }
+                    Looper.loop();
+                } finally {
+                    mSm.removeOnSubscriptionsChangedListener(listener);
+                }
+            }
+        });
+
+        t.start();
+
+        synchronized (lock) {
+            if (!condition.getAsBoolean()) lock.wait(maxWaitMillis);
+        }
+    }
+
+    @Test
+    public void testCountryIso() throws Exception {
+        final String liechtensteinIso = "li";
+        final String faroeIslandsIso = "fo";
+
+        final long maxWaitMillis = 5000;
+        final String isoUT = liechtensteinIso.equals(getSubscriptionIso(mSubId))
+                ? faroeIslandsIso : liechtensteinIso;
+
+        PersistableBundle bundle = new PersistableBundle();
+        bundle.putString(CarrierConfigManager.KEY_SIM_COUNTRY_ISO_OVERRIDE_STRING, isoUT);
+        overrideCarrierConfig(bundle, mSubId);
+        try {
+            waitForSubscriptionCondition(
+                    () -> isoUT.equals(getSubscriptionIso(mSubId)),
+                    maxWaitMillis);
+
+            assertEquals(isoUT, getSubscriptionIso(mSubId));
+        } finally {
+            overrideCarrierConfig(null, mSubId);
+        }
+    }
+
 
     @Test
     public void testSetAndGetSubscriptionUserHandle() throws Exception {
