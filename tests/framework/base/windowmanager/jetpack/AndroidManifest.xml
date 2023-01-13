@@ -19,6 +19,8 @@
           package="android.server.wm.jetpack"
           android:targetSandboxVersion="2">
 
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+
     <application android:label="CtsWindowManagerJetpackTestCases">
         <uses-library android:name="android.test.runner" />
         <uses-library android:name="androidx.window.extensions"
@@ -27,6 +29,7 @@
                       android:required="false" />
         <activity android:name="android.server.wm.jetpack.utils.TestActivity" />
         <activity android:name="android.server.wm.jetpack.utils.TestConfigChangeHandlingActivity"
+                  android:supportsPictureInPicture="true"
                   android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|colorMode|density|touchscreen"
         />
         <activity android:name="android.server.wm.jetpack.utils.TestGetWindowLayoutInfoActivity" />

@@ -488,6 +488,7 @@ public class BatteryStatsDumpsysTest extends BaseDumpsysTest {
         assertInteger(parts[8]); // attention
         assertInteger(parts[9]); // faceDown
         assertInteger(parts[10]); // deviceState
+
     }
 
     private void checkBattery(String[] parts) {

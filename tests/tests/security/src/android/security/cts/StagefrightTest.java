@@ -1377,8 +1377,10 @@ public class StagefrightTest extends StsExtraBusinessLogicTestCase {
         };
         server.start();
         String uri = "rtsp://127.0.0.1:8080/cve_2016_3880";
-        final MediaPlayerCrashListener mpcl = new MediaPlayerCrashListener(new CrashUtils.Config()
-                .setSignals(CrashUtils.SIGSEGV, CrashUtils.SIGBUS, CrashUtils.SIGABRT));
+        final MediaPlayerCrashListener mpcl = new MediaPlayerCrashListener(
+                new CrashUtils.Config()
+                        .setSignals(CrashUtils.SIGSEGV, CrashUtils.SIGBUS, CrashUtils.SIGABRT)
+                        .appendAbortMessageExcludes("CHECK\\(IsRTSPVersion"));
         LooperThread t = new LooperThread(new Runnable() {
             @Override
             public void run() {
@@ -1808,6 +1810,18 @@ public class StagefrightTest extends StsExtraBusinessLogicTestCase {
      to prevent merge conflicts, add Q tests below this comment,
      before any existing test methods
      ***********************************************************/
+    @Test
+    @AsbSecurityTest(cveBugId = 240971780)
+    public void testStagefright_cve_2022_33234() throws Exception {
+         doStagefrightTest(R.raw.cve_2022_33234);
+    }
+
+    @Test
+    @AsbSecurityTest(cveBugId = 235102508)
+    public void testStagefright_cve_2022_25669() throws Exception {
+         doStagefrightTest(R.raw.cve_2022_25669);
+    }
+
     @Test
     @AsbSecurityTest(cveBugId = 223209306)
     public void testStagefright_cve_2022_22085() throws Exception {
