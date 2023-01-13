@@ -32,13 +32,40 @@ public class JniInstanceTest extends JniTestCase {
     }
 
     /**
+     * Test native method call without implementation.
+     */
+    public void test_missing() {
+        try {
+            target.missing();
+            throw new Error("Unreachable");
+        } catch (UnsatisfiedLinkError expected) {
+        }
+    }
+    public void test_missingFast() {
+        try {
+            target.missingFast();
+            throw new Error("Unreachable");
+        } catch (UnsatisfiedLinkError expected) {
+        }
+    }
+
+    /**
      * Test a simple no-op and void-returning method call.
+     *
+     * The "Dlsym" versions use dynamic lookup instead of explicitly
+     * registering the native method implementation.
      */
     public void test_nop() {
         target.nop();
     }
+    public void test_nopDlsym() {
+        target.nopDlsym();
+    }
     public void test_nopFast() {
         target.nopFast();
+    }
+    public void test_nopFastDlsym() {
+        target.nopFastDlsym();
     }
 
     /**
@@ -335,14 +362,27 @@ public class JniInstanceTest extends JniTestCase {
     /**
      * Test a simple multiple value-taking method call, that returns whether it
      * got the expected values.
+     *
+     * The "Dlsym" versions use dynamic lookup instead of explicitly
+     * registering the native method implementation.
      */
     public void test_takeOneOfEach() {
         assertTrue(target.takeOneOfEach((boolean) false, (byte) 1,
                         (short) 2, (char) 3, (int) 4, 5L, "six", 7.0f, 8.0,
                         new int[] { 9, 10 }));
     }
+    public void test_takeOneOfEachDlsym() {
+        assertTrue(target.takeOneOfEachDlsym((boolean) false, (byte) 1,
+                        (short) 2, (char) 3, (int) 4, 5L, "six", 7.0f, 8.0,
+                        new int[] { 9, 10 }));
+    }
     public void test_takeOneOfEachFast() {
         assertTrue(target.takeOneOfEachFast((boolean) false, (byte) 1,
+                        (short) 2, (char) 3, (int) 4, 5L, "six", 7.0f, 8.0,
+                        new int[] { 9, 10 }));
+    }
+    public void test_takeOneOfEachFastDlsym() {
+        assertTrue(target.takeOneOfEachFastDlsym((boolean) false, (byte) 1,
                         (short) 2, (char) 3, (int) 4, 5L, "six", 7.0f, 8.0,
                         new int[] { 9, 10 }));
     }
