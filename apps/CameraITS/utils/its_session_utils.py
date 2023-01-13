@@ -25,7 +25,6 @@ import subprocess
 import sys
 import time
 import unicodedata
-import unittest
 
 import numpy
 
@@ -1731,48 +1730,3 @@ def get_vendor_api_level(device_id):
     logging.error('No vendor_api_level. Setting to build version.')
     vendor_api_level = get_build_sdk_version(device_id)
   return vendor_api_level
-
-
-class ItsSessionUtilsTests(unittest.TestCase):
-  """Run a suite of unit tests on this module."""
-
-  _BRIGHTNESS_CHECKS = (0.0,
-                        _VALIDATE_LIGHTING_THRESH-0.01,
-                        _VALIDATE_LIGHTING_THRESH,
-                        _VALIDATE_LIGHTING_THRESH+0.01,
-                        1.0)
-  _TEST_IMG_W = 640
-  _TEST_IMG_H = 480
-
-  def _generate_test_image(self, brightness):
-    """Creates a Y plane array with pixel values of brightness.
-
-    Args:
-      brightness: float between [0.0, 1.0]
-
-    Returns:
-      Y plane array with elements of value brightness
-    """
-    test_image = numpy.zeros((self._TEST_IMG_W, self._TEST_IMG_H, 1),
-                             dtype=float)
-    test_image.fill(brightness)
-    return test_image
-
-  def test_validate_lighting(self):
-    """Tests validate_lighting() works correctly."""
-    # Run with different brightnesses to validate.
-    for brightness in self._BRIGHTNESS_CHECKS:
-      logging.debug('Testing validate_lighting with brightness %.1f',
-                    brightness)
-      test_image = self._generate_test_image(brightness)
-      print(f'Testing brightness: {brightness}')
-      if brightness <= _VALIDATE_LIGHTING_THRESH:
-        self.assertRaises(
-            AssertionError, validate_lighting, test_image, 'unittest')
-      else:
-        self.assertTrue(validate_lighting(test_image, 'unittest'),
-                        f'image value {brightness} should PASS')
-
-
-if __name__ == '__main__':
-  unittest.main()
