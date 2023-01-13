@@ -802,7 +802,8 @@ public class MediaMetricsAtomTests extends DeviceTestCase implements IBuildRecei
             super.testEnded(test, endTime, testMetrics);
             LogUtil.CLog.i("testEnded  MetricMeasurement.Metric " + testMetrics);
             // TODO(b/265311058): use a common constant for metrics keys.
-            mLogSessionId = testMetrics.get("log_session_id").getMeasurements().getSingleString();
+            MetricMeasurement.Metric metric = testMetrics.get("log_session_id");
+            mLogSessionId = metric == null ? null : metric.getMeasurements().getSingleString();
         }
     }
 }
