@@ -25,6 +25,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeTrue;
 
+import android.content.Context;
 import android.credentials.ClearCredentialStateException;
 import android.credentials.ClearCredentialStateRequest;
 import android.credentials.CreateCredentialException;
@@ -69,6 +70,9 @@ public class CtsCredentialProviderServiceDeviceTest {
     private static final int USER_ID = UserHandle.myUserId();
     private static final int TEMPORARY_SERVICE_DURATION = 5000;
 
+    private CredentialManager mCredentialManager;
+    private Context mContext;
+
     @Rule
     public final DeviceConfigStateChangerRule mLookAllTheseRules =
             new DeviceConfigStateChangerRule(getInstrumentation().getTargetContext(),
@@ -81,6 +85,9 @@ public class CtsCredentialProviderServiceDeviceTest {
 
     @Before
     public void setUp() {
+        mContext = getInstrumentation().getContext();
+        mCredentialManager = (CredentialManager) mContext.getSystemService(
+                Context.CREDENTIAL_SERVICE);
         assumeTrue("VERSION.SDK_INT=" + VERSION.SDK_INT,
                 VERSION.SDK_INT >= VERSION_CODES.UPSIDE_DOWN_CAKE);
         clearTestableCredentialProviderService();
@@ -98,9 +105,8 @@ public class CtsCredentialProviderServiceDeviceTest {
                 ActivityScenario.launch(TestCredentialActivity.class);
 
         activityScenario.onActivity(activity -> {
-            CredentialManager credentialManager = activity.getCredentialManager();
 
-            assertThat(credentialManager).isNotNull();
+            assertThat(mCredentialManager).isNotNull();
         });
     }
 
@@ -129,8 +135,7 @@ public class CtsCredentialProviderServiceDeviceTest {
         ActivityScenario<TestCredentialActivity> activityScenario =
                 ActivityScenario.launch(TestCredentialActivity.class);
         activityScenario.onActivity(activity -> {
-            CredentialManager credentialManager = activity.getCredentialManager();
-            credentialManager.executeGetCredential(request, activity, null,
+            mCredentialManager.executeGetCredential(request, activity, null,
                     Executors.newSingleThreadExecutor(), callback);
 
             assertThat(loadedResult.get().getClass()).isEqualTo(
@@ -156,46 +161,12 @@ public class CtsCredentialProviderServiceDeviceTest {
         ActivityScenario<TestCredentialActivity> activityScenario =
                 ActivityScenario.launch(TestCredentialActivity.class);
         activityScenario.onActivity(activity -> {
-            CredentialManager credentialManager = activity.getCredentialManager();
 
             assertThrows("expect null request to throw NPE", NullPointerException.class,
-                    () -> credentialManager.executeGetCredential(null, activity, null,
+                    () -> mCredentialManager.executeGetCredential(null, activity, null,
                     Executors.newSingleThreadExecutor(), callback));
         });
     }
-
-    // TODO ensure these are mocked to force success
-    /*@Test
-    public void testGetCredentialRequest_validInput_givesExpectedResponse() {
-        AtomicReference<GetCredentialException> loadedResult = new AtomicReference<>();
-        Bundle empty = new Bundle();
-        GetCredentialRequest request = new GetCredentialRequest.Builder(empty)
-                .addGetCredentialOption(new GetCredentialOption(
-                        "type", empty, empty, false)).build();
-        OutcomeReceiver<GetCredentialResponse, GetCredentialException> callback =
-                new OutcomeReceiver<>() {
-                    @Override
-                    public void onResult(GetCredentialResponse response) {
-                        // Do nothing
-                    }
-
-                    @Override
-                    public void onError(GetCredentialException e) {
-                        loadedResult.set(e);
-                    }
-                };
-
-        ActivityScenario<TestCredentialActivity> activityScenario =
-                ActivityScenario.launch(TestCredentialActivity.class);
-        activityScenario.onActivity(activity -> {
-            CredentialManager credentialManager = activity.getCredentialManager();
-            credentialManager.executeGetCredential(request, activity, null,
-                    Executors.newSingleThreadExecutor(), callback);
-
-            assertThat(loadedResult.get().getClass()).isEqualTo(
-                    GetCredentialException.class);
-        });
-    }*/
 
     @Test
     public void testCreatePasswordCredentialRequest_serviceNotSetUp_onErrorInvoked() {
@@ -219,8 +190,7 @@ public class CtsCredentialProviderServiceDeviceTest {
         ActivityScenario<TestCredentialActivity> activityScenario =
                 ActivityScenario.launch(TestCredentialActivity.class);
         activityScenario.onActivity(activity -> {
-            CredentialManager credentialManager = activity.getCredentialManager();
-            credentialManager.executeCreateCredential(request, activity, null,
+            mCredentialManager.executeCreateCredential(request, activity, null,
                     Executors.newSingleThreadExecutor(), callback);
 
             assertThat(loadedResult.get().getClass()).isEqualTo(
@@ -229,7 +199,7 @@ public class CtsCredentialProviderServiceDeviceTest {
     }
 
     @Test
-    public void testCreatePasswordCredentialRequest_throwsNPE() {
+    public void testCreatePasswordCredentialRequest_nullRequest_throwsNPE() {
         OutcomeReceiver<CreateCredentialResponse, CreateCredentialException> callback =
                 new OutcomeReceiver<>() {
                     @Override
@@ -246,45 +216,12 @@ public class CtsCredentialProviderServiceDeviceTest {
         ActivityScenario<TestCredentialActivity> activityScenario =
                 ActivityScenario.launch(TestCredentialActivity.class);
         activityScenario.onActivity(activity -> {
-            CredentialManager credentialManager = activity.getCredentialManager();
 
             assertThrows("expect null request to throw NPE", NullPointerException.class,
-                    () -> credentialManager.executeCreateCredential(null, activity, null,
+                    () -> mCredentialManager.executeCreateCredential(null, activity, null,
                             Executors.newSingleThreadExecutor(), callback));
         });
     }
-
-    // TODO ensure these are mocked to force success
-    /*@Test
-    public void testCreatePasswordCredentialRequest_validInput_givesExpectedResponse() {
-        AtomicReference<CreateCredentialException> loadedResult = new AtomicReference<>();
-        Bundle empty = new Bundle();
-        CreateCredentialRequest request = new CreateCredentialRequest("PASSWORD", empty, empty,
-                false);
-        OutcomeReceiver<CreateCredentialResponse, CreateCredentialException> callback =
-                new OutcomeReceiver<>() {
-                    @Override
-                    public void onResult(CreateCredentialResponse response) {
-                        // Do nothing
-                    }
-
-                    @Override
-                    public void onError(CreateCredentialException e) {
-                        loadedResult.set(e);
-                    }
-                };
-
-        ActivityScenario<TestCredentialActivity> activityScenario =
-                ActivityScenario.launch(TestCredentialActivity.class);
-        activityScenario.onActivity(activity -> {
-            CredentialManager credentialManager = activity.getCredentialManager();
-            credentialManager.executeCreateCredential(request, activity, null,
-                    Executors.newSingleThreadExecutor(), callback);
-
-            assertThat(loadedResult.get().getClass()).isEqualTo(
-                    CreateCredentialException.class);
-        });
-    }*/
 
     @Test
     public void testClearCredentialRequest_serviceNotSetUp_onErrorInvoked() {
@@ -307,8 +244,7 @@ public class CtsCredentialProviderServiceDeviceTest {
         ActivityScenario<TestCredentialActivity> activityScenario =
                 ActivityScenario.launch(TestCredentialActivity.class);
         activityScenario.onActivity(activity -> {
-            CredentialManager credentialManager = activity.getCredentialManager();
-            credentialManager.clearCredentialState(request, null,
+            mCredentialManager.clearCredentialState(request, null,
                     Executors.newSingleThreadExecutor(), callback);
 
             assertThat(loadedResult.get().getClass()).isEqualTo(
@@ -321,42 +257,12 @@ public class CtsCredentialProviderServiceDeviceTest {
         ActivityScenario<TestCredentialActivity> activityScenario =
                 ActivityScenario.launch(TestCredentialActivity.class);
         activityScenario.onActivity(activity -> {
-            CredentialManager credentialManager = activity.getCredentialManager();
 
             assertThrows("expect null request to throw NPE", NullPointerException.class,
-                    () -> credentialManager.clearCredentialState(null, null,
-                    Executors.newSingleThreadExecutor(), null));
+                    () -> mCredentialManager.clearCredentialState(null, null,
+                            Executors.newSingleThreadExecutor(), null));
         });
     }
-
-    // TODO ensure these are mocked to force success
-    /*@Test
-    public void testClearCredentialRequest_validInput_voidOutput() {
-        AtomicReference<ClearCredentialStateException> loadedResult = new AtomicReference<>();
-        OutcomeReceiver<Void, ClearCredentialStateException> callback =
-                new OutcomeReceiver<>() {
-                    @Override
-                    public void onResult(Void response) {
-                        // Do nothing
-                    }
-
-                    @Override
-                    public void onError(ClearCredentialStateException e) {
-                        loadedResult.set(e);
-                    }
-                };
-
-        ActivityScenario<TestCredentialActivity> activityScenario =
-                ActivityScenario.launch(TestCredentialActivity.class);
-        activityScenario.onActivity(activity -> {
-            CredentialManager credentialManager = activity.getCredentialManager();
-            credentialManager.clearCredentialState(null, null,
-                    Executors.newSingleThreadExecutor(), callback);
-
-            assertThat(loadedResult.get().getClass()).isEqualTo(
-                    ClearCredentialStateException.class);
-        });
-    }*/
 
     private void bindToTestService() {
         // On Manager, bind to test service
