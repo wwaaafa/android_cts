@@ -31,15 +31,34 @@ static void StaticNonce_nop(JNIEnv *env, jclass clazz) {
     // This space intentionally left blank.
 }
 
+// public static native void nopDlsym();
+JNIEXPORT void Java_android_jni_cts_StaticNonce_nopDlsym(JNIEnv *env,
+        jclass clazz) {
+    // This space intentionally left blank.
+}
+
 // @FastNative
 // public static native void nopFast();
 static void StaticNonce_nopFast(JNIEnv *env, jclass clazz) {
     // This space intentionally left blank.
 }
 
+// @FastNative
+// public static native void nopFastDlsym();
+JNIEXPORT void Java_android_jni_cts_StaticNonce_nopFastDlsym(JNIEnv *env,
+        jclass clazz) {
+    // This space intentionally left blank.
+}
+
 // @CriticalNative
 // public static native void nopCritical();
 static void StaticNonce_nopCritical() {
+    // This space intentionally left blank.
+}
+
+// @CriticalNative
+// public static native void nopCriticalDlsym();
+JNIEXPORT void Java_android_jni_cts_StaticNonce_nopCriticalDlsym() {
     // This space intentionally left blank.
 }
 
@@ -573,6 +592,16 @@ static jboolean StaticNonce_takeOneOfEach(JNIEnv *env, jclass clazz,
     return result;
 }
 
+// public static native boolean takeOneOfEachDlsym(boolean v0, byte v1,
+//         short v2, char v3, int v4, long v5, String v6, float v7, double v8,
+//         int[] v9);
+JNIEXPORT jboolean Java_android_jni_cts_StaticNonce_takeOneOfEachDlsym(
+        JNIEnv *env, jclass clazz, jboolean v0, jbyte v1, jshort v2, jchar v3,
+        jint v4, jlong v5, jstring v6, jfloat v7, jdouble v8, jintArray v9) {
+    return StaticNonce_takeOneOfEach(
+            env, clazz, v0, v1, v2, v3, v4, v5, v6, v7, v8, v9);
+}
+
 // @FastNative
 // public static native boolean takeOneOfEachFast(boolean v0, byte v1,
 //         short v2, char v3, int v4, long v5, String v6, float v7, double v8,
@@ -580,6 +609,17 @@ static jboolean StaticNonce_takeOneOfEach(JNIEnv *env, jclass clazz,
 static jboolean StaticNonce_takeOneOfEachFast(JNIEnv *env, jclass clazz,
         jboolean v0, jbyte v1, jshort v2, jchar v3, jint v4, jlong v5,
         jstring v6, jfloat v7, jdouble v8, jintArray v9) {
+    return StaticNonce_takeOneOfEach(
+            env, clazz, v0, v1, v2, v3, v4, v5, v6, v7, v8, v9);
+}
+
+// @FastNative
+// public static native boolean takeOneOfEachFastDlsym(boolean v0, byte v1,
+//         short v2, char v3, int v4, long v5, String v6, float v7, double v8,
+//         int[] v9);
+JNIEXPORT jboolean Java_android_jni_cts_StaticNonce_takeOneOfEachFastDlsym(
+        JNIEnv *env, jclass clazz, jboolean v0, jbyte v1, jshort v2, jchar v3,
+        jint v4, jlong v5, jstring v6, jfloat v7, jdouble v8, jintArray v9) {
     return StaticNonce_takeOneOfEach(
             env, clazz, v0, v1, v2, v3, v4, v5, v6, v7, v8, v9);
 }
@@ -592,6 +632,15 @@ static jboolean StaticNonce_takeOneOfEachCritical(
         jfloat v6, jdouble v7) {
     return (v0 == false) && (v1 == 1) && (v2 == 2) && (v3 == 3) &&
             (v4 == 4) && (v5 == 5) && (v6 == 6.0f) && (v7 == 7.0);
+}
+
+// @CriticalNative
+// public static native boolean takeOneOfEachCriticalDlsym(boolean v0, byte v1,
+//         short v2, char v3, int v4, long v5, float v6, double v7);
+JNIEXPORT jboolean Java_android_jni_cts_StaticNonce_takeOneOfEachCriticalDlsym(
+        jboolean v0, jbyte v1, jshort v2, jchar v3, jint v4, jlong v5,
+        jfloat v6, jdouble v7) {
+    return StaticNonce_takeOneOfEachCritical(v0, v1, v2, v3, v4, v5, v6, v7);
 }
 
 // public static native boolean takeCoolHandLuke(
