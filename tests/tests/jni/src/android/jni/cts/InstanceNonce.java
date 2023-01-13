@@ -38,6 +38,14 @@ public class InstanceNonce {
 
     // See JniInstanceTest for the expected behavior of these methods.
 
+    public static native void missing();
+    @FastNative
+    public static native void missingFast();
+
+    public static native void nopDlsym();
+    @FastNative
+    public static native void nopFastDlsym();
+
     public native void nop();
     @FastNative
     public native void nopFast();
@@ -149,8 +157,15 @@ public class InstanceNonce {
     public native boolean takeOneOfEach(boolean v0, byte v1, short v2,
             char v3, int v4, long v5, String v6, float v7, double v8,
             int[] v9);
+    public native boolean takeOneOfEachDlsym(boolean v0, byte v1, short v2,
+            char v3, int v4, long v5, String v6, float v7, double v8,
+            int[] v9);
     @FastNative
     public native boolean takeOneOfEachFast(boolean v0, byte v1, short v2,
+            char v3, int v4, long v5, String v6, float v7, double v8,
+            int[] v9);
+    @FastNative
+    public native boolean takeOneOfEachFastDlsym(boolean v0, byte v1, short v2,
             char v3, int v4, long v5, String v6, float v7, double v8,
             int[] v9);
 
