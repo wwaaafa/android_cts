@@ -88,6 +88,8 @@ _CV2_LK_PARAMS = dict(winSize=(15, 15),
                                 10, 0.03))  # cv2.calcOpticalFlowPyrLK params.
 _ROTATION_PER_FRAME_MIN = 0.001  # rads/s
 _GYRO_ROTATION_PER_SEC_MAX = 2.0  # rads/s
+_R_SQUARED_TOLERANCE = 0.01  # tolerance for polynomial fitting r^2
+_SHIFT_DOMAIN_RADIUS = 5  # limited domain centered around best shift
 
 # unittest constants
 _COARSE_FIT_RANGE = 20  # Range area around coarse fit to do optimization.
@@ -101,6 +103,43 @@ _SEC_TO_NSEC = int(1/_NSEC_TO_SEC)
 _RADS_TO_DEGS = 180/math.pi
 
 _NUM_GYRO_PTS_TO_AVG = 20
+
+
+def polynomial_from_coefficients(coefficients):
+  """Return a polynomial function from a coefficient list, highest power first.
+
+  Args:
+    coefficients: list of coefficients (float)
+  Returns:
+    Function in the form of a*x^n + b*x^(n - 1) + ... + constant
+  """
+  def polynomial(x):
+    n = len(coefficients)
+    return sum(coefficients[i] * x ** (n - i - 1) for i in range(n))
+  return polynomial
+
+
+def smallest_absolute_minimum_of_polynomial(coefficients):
+  """Return the smallest minimum by absolute value from a coefficient list.
+
+  Args:
+    coefficients: list of coefficients (float)
+  Returns:
+    Smallest local minimum (by absolute value) on the function (float)
+  """
+  first_derivative = np.polyder(coefficients, m=1)
+  second_derivative = np.polyder(coefficients, m=2)
+  extrema = np.roots(first_derivative)
+  smallest_absolute_minimum = None
+  for extremum in extrema:
+    if np.polyval(second_derivative, extremum) > 0:
+      if smallest_absolute_minimum is None or abs(extremum) < abs(
+          smallest_absolute_minimum):
+        smallest_absolute_minimum = extremum
+  if smallest_absolute_minimum is None:
+    raise AssertionError(
+        f'No minima were found on function described by {coefficients}.')
+  return smallest_absolute_minimum
 
 
 def serial_port_def(name):
@@ -530,7 +569,7 @@ def get_cam_rotations(frames, facing, h, file_name_stem,
   return rotations
 
 
-def get_best_alignment_offset(cam_times, cam_rots, gyro_events):
+def get_best_alignment_offset(cam_times, cam_rots, gyro_events, degree=2):
   """Find the best offset to align the camera and gyro motion traces.
 
   This function integrates the shifted gyro data between camera samples
@@ -551,6 +590,7 @@ def get_best_alignment_offset(cam_times, cam_rots, gyro_events):
     cam_times: Array of N camera times, one for each frame.
     cam_rots: Array of N-1 camera rotation displacements (rad).
     gyro_events: List of gyro event objects.
+    degree: Degree of polynomial
 
   Returns:
     Best alignment offset(ms), fit coefficients, candidates, and distances.
@@ -572,21 +612,68 @@ def get_best_alignment_offset(cam_times, cam_rots, gyro_events):
   coarse_best_shift = shift_candidates[spatial_distances.index(best_corr_dist)]
   logging.debug('Best shift without fitting is %.4f ms', coarse_best_shift)
 
-  # Fit a 2nd order polynomial around coarse_best_shift to extract best fit
+  # Fit a polynomial around coarse_best_shift to extract best fit
   i = spatial_distances.index(best_corr_dist)
   i_poly_fit_min = i - _COARSE_FIT_RANGE
   i_poly_fit_max = i + _COARSE_FIT_RANGE + 1
   shift_candidates = shift_candidates[i_poly_fit_min:i_poly_fit_max]
   spatial_distances = spatial_distances[i_poly_fit_min:i_poly_fit_max]
-  fit_coeffs = np.polyfit(shift_candidates, spatial_distances, 2)  # ax^2+bx+c
-  exact_best_shift = -fit_coeffs[1]/(2*fit_coeffs[0])
+  logging.debug('Polynomial degree: %d', degree)
+  fit_coeffs, residuals, _, _, _ = np.polyfit(
+      shift_candidates, spatial_distances, degree, full=True
+  )
+  logging.debug('Fit coefficients: %s', fit_coeffs)
+  logging.debug('Residuals: %s', residuals)
+  total_sum_of_squares = np.sum(
+      (spatial_distances - np.mean(spatial_distances)) ** 2
+  )
+  # Calculate r-squared on the entire domain for debugging
+  r_squared = 1 - residuals[0] / total_sum_of_squares
+  logging.debug('r^2 on the entire domain: %f', r_squared)
+
+  # Calculate r-squared near the best shift
+  domain_around_best_shift = [coarse_best_shift - _SHIFT_DOMAIN_RADIUS,
+                              coarse_best_shift + _SHIFT_DOMAIN_RADIUS]
+  logging.debug('Calculating r^2 on the limited domain of [%f, %f]',
+                domain_around_best_shift[0], domain_around_best_shift[1])
+  small_shifts_and_distances = [
+      (x, y)
+      for x, y in zip(shift_candidates, spatial_distances)
+      if domain_around_best_shift[0] <= x <= domain_around_best_shift[1]
+  ]
+  small_shift_candidates, small_spatial_distances = zip(
+      *small_shifts_and_distances
+  )
+  logging.debug('Shift candidates on limited domain: %s',
+                small_shift_candidates)
+  logging.debug('Spatial distances on limited domain: %s',
+                small_spatial_distances)
+  limited_residuals = np.sum(
+      (np.polyval(fit_coeffs, small_shift_candidates) - small_spatial_distances)
+      ** 2
+  )
+  logging.debug('Residuals on limited domain: %s', limited_residuals)
+  limited_total_sum_of_squares = np.sum(
+      (small_spatial_distances - np.mean(small_spatial_distances)) ** 2
+  )
+  limited_r_squared = 1 - limited_residuals / limited_total_sum_of_squares
+  logging.debug('r^2 on limited domain: %f', limited_r_squared)
+
+  # Calculate exact_best_shift (x where y is minimum of parabola)
+  exact_best_shift = smallest_absolute_minimum_of_polynomial(fit_coeffs)
+
   if abs(coarse_best_shift - exact_best_shift) > 2.0:
     raise AssertionError(
         f'Test failed. Bad fit to time-shift curve. Coarse best shift: '
         f'{coarse_best_shift}, Exact best shift: {exact_best_shift}.')
-  if fit_coeffs[0] <= 0 or fit_coeffs[2] <= 0:
-    raise AssertionError(
-        f'Coefficients are < 0: a: {fit_coeffs[0]}, c: {fit_coeffs[2]}.')
+
+  # Check fit of polynomial near the best shift
+  if not math.isclose(limited_r_squared, 1, abs_tol=_R_SQUARED_TOLERANCE):
+    logging.debug('r-squared on domain [%f, %f] was %f, expected 1.0, '
+                  'ATOL: %f',
+                  domain_around_best_shift[0], domain_around_best_shift[1],
+                  limited_r_squared, _R_SQUARED_TOLERANCE)
+    return None
 
   return exact_best_shift, fit_coeffs, shift_candidates, spatial_distances
 
