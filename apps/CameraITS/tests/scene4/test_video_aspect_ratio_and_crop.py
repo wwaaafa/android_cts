@@ -207,13 +207,17 @@ class VideoAspectRatioAndCropTest(its_base_test.ItsBaseTest):
             logging.debug('video_file_name: %s', video_file_name)
 
             key_frame_files = []
-            key_frame_files = video_processing_utils.extract_key_frames_from_video(
-                self.log_path, video_file_name)
+            key_frame_files = (
+                video_processing_utils.extract_key_frames_from_video(
+                    self.log_path, video_file_name)
+            )
             logging.debug('key_frame_files:%s', key_frame_files)
 
             # Get the key frame file to process.
-            last_key_frame_file = video_processing_utils.get_key_frame_to_process(
-                key_frame_files)
+            last_key_frame_file = (
+                video_processing_utils.get_key_frame_to_process(
+                    key_frame_files)
+            )
             logging.debug('last_key_frame: %s', last_key_frame_file)
             last_key_frame_path = os.path.join(
                 self.log_path, last_key_frame_file)
