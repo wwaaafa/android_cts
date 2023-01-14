@@ -236,7 +236,7 @@ public class MockImeSession implements AutoCloseable {
     }
 
     @Nullable
-    public InputMethodInfo getInputMethodInfo() {
+    private InputMethodInfo getInputMethodInfo() {
         for (InputMethodInfo imi :
                 mContext.getSystemService(InputMethodManager.class).getInputMethodList()) {
             if (TextUtils.equals(getImeId(), imi.getId())) {

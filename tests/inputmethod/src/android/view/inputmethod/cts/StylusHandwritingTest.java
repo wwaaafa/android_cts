@@ -53,7 +53,6 @@ import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
-import android.view.inputmethod.InputMethodInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.cts.util.EndToEndImeTestBase;
 import android.view.inputmethod.cts.util.NoOpInputConnection;
@@ -135,28 +134,6 @@ public class StylusHandwritingTest extends EndToEndImeTestBase {
                 Settings.Global.putInt(mContext.getContentResolver(),
                         STYLUS_HANDWRITING_ENABLED, mHwInitialState);
             }, Manifest.permission.WRITE_SECURE_SETTINGS);
-        }
-    }
-
-    /**
-     * Verify current IME has {@link InputMethodInfo} for stylus handwriting, settings.
-     */
-    @Test
-    @ApiTest(apis = {"android.view.inputmethod.InputMethodInfo#supportsStylusHandwriting",
-            "android.view.inputmethod.InputMethodInfo#createStylusHandwritingSettingsActivityIntent"
-    })
-    public void testHandwritingInfo() throws Exception {
-        try (MockImeSession imeSession = MockImeSession.create(
-                InstrumentationRegistry.getInstrumentation().getContext(),
-                InstrumentationRegistry.getInstrumentation().getUiAutomation(),
-                new ImeSettings.Builder())) {
-            InputMethodInfo info = imeSession.getInputMethodInfo();
-            assertTrue(info.supportsStylusHandwriting());
-            // TODO(b/217957587): migrate CtsMockInputMethodLib to android_library and use
-            //  string resource.
-            assertEquals("handwriting_settings",
-                    info.createStylusHandwritingSettingsActivityIntent().getComponent()
-                            .getClassName());
         }
     }
 

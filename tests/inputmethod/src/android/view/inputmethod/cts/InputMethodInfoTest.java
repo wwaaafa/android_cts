@@ -81,8 +81,6 @@ public class InputMethodInfoTest {
     private boolean mSubtypeIsAuxiliary;
     private boolean mSubtypeOverridesImplicitlyEnabledSubtype;
     private int mSubtypeId;
-    private boolean mSupportsStylusHandwriting;
-    private String mSettingsActivityActionForStylusHandwriting;
     private InputMethodSubtype mInputMethodSubtype;
 
     @Before
@@ -93,10 +91,7 @@ public class InputMethodInfoTest {
         mClassName = InputMethodSettingsActivityStub.class.getName();
         mLabel = "test";
         mSettingsActivity = "android.view.inputmethod.cts.InputMethodSettingsActivityStub";
-        mSupportsStylusHandwriting = true;
-        mSettingsActivityActionForStylusHandwriting = mSettingsActivity;
-        mInputMethodInfo = new InputMethodInfo(mPackageName, mClassName, mLabel, mSettingsActivity,
-                mSupportsStylusHandwriting, mSettingsActivityActionForStylusHandwriting);
+        mInputMethodInfo = new InputMethodInfo(mPackageName, mClassName, mLabel, mSettingsActivity);
 
         mSubtypeNameResId = 0;
         mSubtypeIconResId = 0;
@@ -108,7 +103,6 @@ public class InputMethodInfoTest {
         mSubtypeIsAuxiliary = false;
         mSubtypeOverridesImplicitlyEnabledSubtype = false;
         mSubtypeId = 99;
-
         mInputMethodSubtype = new InputMethodSubtype(mSubtypeNameResId, mSubtypeIconResId,
                 mSubtypeLocale, mSubtypeMode, mSubtypeExtraValue, mSubtypeIsAuxiliary,
                 mSubtypeOverridesImplicitlyEnabledSubtype, mSubtypeId);
@@ -167,9 +161,6 @@ public class InputMethodInfoTest {
         String expectedId = component.flattenToShortString();
         assertEquals(expectedId, info.getId());
         assertEquals(mClassName, info.getServiceName());
-        assertEquals(mSupportsStylusHandwriting, info.supportsStylusHandwriting());
-        assertEquals(mSettingsActivityActionForStylusHandwriting,
-                info.createStylusHandwritingSettingsActivityIntent().getComponent().getClassName());
     }
 
     @Test
@@ -213,10 +204,6 @@ public class InputMethodInfoTest {
         assertEquals(mInputMethodInfo.getSettingsActivity(), imi.getSettingsActivity());
         assertEquals(mInputMethodInfo.getId(), imi.getId());
         assertEquals(mInputMethodInfo.getIsDefaultResourceId(), imi.getIsDefaultResourceId());
-        assertEquals(mInputMethodInfo.supportsStylusHandwriting(), imi.supportsStylusHandwriting());
-        assertEquals(mInputMethodInfo.createStylusHandwritingSettingsActivityIntent().getComponent()
-                        .getClassName(),
-                imi.createStylusHandwritingSettingsActivityIntent().getComponent().getClassName());
         assertService(mInputMethodInfo.getServiceInfo(), imi.getServiceInfo());
     }
 
