@@ -463,7 +463,6 @@ public class VehiclePropertyVerifier<T> {
                 CAR_PROPERTY_VALUE_SOURCE_CALLBACK);
     }
 
-
     private void verifySetNotAvailable(CarPropertyConfig<T> carPropertyConfig,
             CarPropertyManager carPropertyManager) {
         if (carPropertyConfig.getAccess() != CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE) {
@@ -475,6 +474,9 @@ public class VehiclePropertyVerifier<T> {
                 // getProperty may/may not throw exception when the property is not available.
                 currentValue = carPropertyManager.getProperty(mPropertyId, areaId);
                 T valueToSet = getDefaultValue(mPropertyType);
+                if (valueToSet == null) {
+                    assertWithMessage("Testing mixed type property is not supported").fail();
+                }
                 verifySetProperty(carPropertyConfig, carPropertyManager, areaId, valueToSet);
             } catch (Exception e) {
                 // In normal cases, this should throw PropertyNotAvailableException.
