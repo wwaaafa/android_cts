@@ -124,6 +124,19 @@ public class VisualQueryDetectionServiceBasicTest {
     }
 
     @Test
+    public void testVoiceInteractionService_withoutManageHotwordDetectionPermission_triggerFailure()
+            throws Throwable {
+        // Create VisualQueryDetector and wait result
+        mService.createVisualQueryDetectorWithoutManageHotwordDetectionPermission();
+
+        // Wait the result and verify expected result
+        mService.waitSandboxedDetectionServiceInitializedCalledOrException();
+
+        // Verify IllegalStateException throws
+        assertThat(mService.isCreateDetectorSecurityExceptionThrow()).isTrue();
+    }
+
+    @Test
     public void testVoiceInteractionService_holdBindHotwordDetectionPermission_triggerFailure()
             throws Throwable {
         // Create VisualQueryDetector and wait result
@@ -159,10 +172,10 @@ public class VisualQueryDetectionServiceBasicTest {
     @Test
     public void testVisualQueryDetectionService_destroyVisualQueryDetector_activeDetectorRemoved()
             throws Throwable {
-        // Create SoftwareHotwordDetector
+        // Create VisualQueryDetector
         VisualQueryDetector visualQueryDetector = createVisualQueryDetector();
 
-        // Destroy SoftwareHotwordDetector
+        // Destroy VisualQueryDetector
         visualQueryDetector.destroy();
 
         try {
@@ -423,7 +436,7 @@ public class VisualQueryDetectionServiceBasicTest {
         assertThat(mService.getSandboxedDetectionServiceInitializedResult()).isEqualTo(
                 INITIALIZATION_STATUS_SUCCESS);
 
-        // The AlwaysOnHotwordDetector should be created correctly
+        // The VisualQueryDetector should be created correctly
         VisualQueryDetector visualQueryDetector = mService.getVisualQueryDetector();
         Objects.requireNonNull(visualQueryDetector);
 
