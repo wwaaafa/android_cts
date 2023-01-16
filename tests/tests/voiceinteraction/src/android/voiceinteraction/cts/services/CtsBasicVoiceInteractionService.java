@@ -17,6 +17,7 @@
 package android.voiceinteraction.cts.services;
 
 import static android.Manifest.permission.BIND_HOTWORD_DETECTION_SERVICE;
+import static android.Manifest.permission.BIND_VISUAL_QUERY_DETECTION_SERVICE;
 import static android.Manifest.permission.MANAGE_HOTWORD_DETECTION;
 import static android.voiceinteraction.cts.testcore.Helper.WAIT_TIMEOUT_IN_MS;
 
@@ -219,6 +220,17 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
         }, MANAGE_HOTWORD_DETECTION));
     }
 
+    /**
+     * Create a VisualQueryDetector but doesn't hold MANAGE_HOTWORD_DETECTION but hold
+     * BIND_VISUAL_QUERY_DETECTION_SERVICE.
+     */
+    public void createVisualQueryDetectorHoldBindVisualQueryDetectionPermission() {
+        mServiceTriggerLatch = new CountDownLatch(1);
+        mHandler.post(() -> runWithShellPermissionIdentity(
+                () -> callCreateVisualQueryDetector(mNoOpVisualQueryDetectorCallback),
+                BIND_VISUAL_QUERY_DETECTION_SERVICE));
+    }
+
     public void createVisualQueryDetector() {
         mServiceTriggerLatch = new CountDownLatch(1);
         mHandler.post(() -> runWithShellPermissionIdentity(() -> {
@@ -275,7 +287,7 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
                 }
             };
             mVisualQueryDetector = callCreateVisualQueryDetector(callback);
-        }));
+        }, MANAGE_HOTWORD_DETECTION)); //Permission placeholder - Don't really need any
     }
 
     /**
