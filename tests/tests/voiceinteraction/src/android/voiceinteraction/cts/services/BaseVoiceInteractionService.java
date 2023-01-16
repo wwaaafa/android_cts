@@ -181,8 +181,8 @@ public abstract class BaseVoiceInteractionService extends VoiceInteractionServic
     }
 
     @Override
-    public void onShowSessionFailed() {
-        Log.d(mTag, "onShowSessionFailed");
+    public void onShowSessionFailed(Bundle args) {
+        Log.d(mTag, "onShowSessionFailed args = " + args);
     }
 
     /**
