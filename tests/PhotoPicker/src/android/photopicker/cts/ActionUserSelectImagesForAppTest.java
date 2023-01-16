@@ -44,6 +44,7 @@ import android.photopicker.cts.util.UiAssertionUtils;
 import android.provider.MediaStore;
 import android.util.Pair;
 
+import androidx.test.filters.SdkSuppress;
 import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.After;
@@ -55,6 +56,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** PhotoPicker tests for {@link MediaStore#ACTION_USER_SELECT_IMAGES_FOR_APP} intent. */
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, codeName = "UpsideDownCake")
 @RunWith(AndroidJUnit4.class)
 public class ActionUserSelectImagesForAppTest extends PhotoPickerBaseTest {
 
