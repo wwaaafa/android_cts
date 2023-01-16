@@ -124,6 +124,19 @@ public class VisualQueryDetectionServiceBasicTest {
     }
 
     @Test
+    public void testVoiceInteractionService_holdBindHotwordDetectionPermission_triggerFailure()
+            throws Throwable {
+        // Create VisualQueryDetector and wait result
+        mService.createVisualQueryDetectorHoldBindVisualQueryDetectionPermission();
+
+        // Wait the result and verify expected result
+        mService.waitSandboxedDetectionServiceInitializedCalledOrException();
+
+        // Verify SecurityException throws
+        assertThat(mService.isCreateDetectorSecurityExceptionThrow()).isTrue();
+    }
+
+    @Test
     public void testVoiceInteractionService_disallowCreateVisualQueryDetectorTwice()
             throws Throwable {
         final boolean enableMultipleDetectors = Helper.isEnableMultipleDetectors();
