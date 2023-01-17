@@ -55,6 +55,7 @@ import android.car.hardware.property.EvChargeState;
 import android.car.hardware.property.EvRegenerativeBrakingState;
 import android.car.hardware.property.EvStoppingMode;
 import android.car.hardware.property.ForwardCollisionWarningState;
+import android.car.hardware.property.HandsOnDetectionDriverState;
 import android.car.hardware.property.LaneCenteringAssistCommand;
 import android.car.hardware.property.LaneCenteringAssistState;
 import android.car.hardware.property.LaneDepartureWarningState;
@@ -242,6 +243,13 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             CruiseControlCommand.INCREASE_TARGET_TIME_GAP,
                             CruiseControlCommand.DECREASE_TARGET_TIME_GAP)
                     .build();
+    private static final ImmutableSet<Integer> HANDS_ON_DETECTION_DRIVER_STATES =
+            ImmutableSet.<Integer>builder()
+                    .add(
+                            HandsOnDetectionDriverState.OTHER,
+                            HandsOnDetectionDriverState.HANDS_ON,
+                            HandsOnDetectionDriverState.HANDS_OFF)
+                    .build();
     private static final ImmutableSet<Integer> ERROR_STATES =
             ImmutableSet.<Integer>builder()
                     .add(
@@ -330,7 +338,8 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     .build();
     private static final ImmutableList<Integer>
             PERMISSION_READ_DRIVER_MONITORING_STATES_PROPERTIES = ImmutableList.<Integer>builder()
-                    .add()
+                    .add(
+                            VehiclePropertyIds.HANDS_ON_DETECTION_DRIVER_STATE)
                     .build();
     private static final ImmutableList<Integer> PERMISSION_CAR_ENERGY_PROPERTIES =
             ImmutableList.<Integer>builder()
@@ -1098,6 +1107,30 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                 .addWritePermission(Car.PERMISSION_CONTROL_DRIVER_MONITORING_SETTINGS)
                 .build()
                 .verify(mCarPropertyManager);
+    }
+
+    @Test
+    public void testHandsOnDetectionDriverStateIfSupported() {
+        ImmutableSet<Integer> possibleEnumValues = ImmutableSet.<Integer>builder()
+                .addAll(HANDS_ON_DETECTION_DRIVER_STATES)
+                .addAll(ERROR_STATES)
+                .build();
+
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.HANDS_ON_DETECTION_DRIVER_STATE,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Integer.class)
+                .setAllPossibleEnumValues(possibleEnumValues)
+                .addReadPermission(Car.PERMISSION_READ_DRIVER_MONITORING_STATES)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
+    public void testHandsOnDetectionDriverStateAndErrorStateDontIntersect() {
+        verifyEnumValuesAreDistinct(HANDS_ON_DETECTION_DRIVER_STATES, ERROR_STATES);
     }
 
     @Test
