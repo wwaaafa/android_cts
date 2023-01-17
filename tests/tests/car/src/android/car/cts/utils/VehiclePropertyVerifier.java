@@ -358,7 +358,16 @@ public class VehiclePropertyVerifier<T> {
 
     private void verifyIntegerPropertySetter(CarPropertyConfig<T> carPropertyConfig,
             CarPropertyManager carPropertyManager) {
-        if (mVerifySetterWithConfigArrayValues) {
+        if (mPropertyId == VehiclePropertyIds.HVAC_FAN_DIRECTION) {
+            for (int areaId : carPropertyConfig.getAreaIds()) {
+                int[] availableHvacFanDirections = carPropertyManager.getIntArrayProperty(
+                        VehiclePropertyIds.HVAC_FAN_DIRECTION_AVAILABLE, areaId);
+                for (int availableHvacFanDirection : availableHvacFanDirections) {
+                    verifySetProperty(carPropertyConfig, carPropertyManager, areaId,
+                            (T) Integer.valueOf(availableHvacFanDirection));
+                }
+            }
+        } else if (mVerifySetterWithConfigArrayValues) {
             verifySetterWithValues((CarPropertyConfig<T>) carPropertyConfig, carPropertyManager,
                     (Collection<T>) carPropertyConfig.getConfigArray());
         } else if (!mPossibleCarPropertyValues.isEmpty()) {
