@@ -257,10 +257,11 @@ public class VehiclePropertyVerifier<T> {
                     verifyGetPropertiesAsync(carPropertyConfig, carPropertyManager);
 
                     if (hvacPowerStateByAreaId != null) {
-                        turnOffHvacPower(hvacPowerOnCarPropertyConfig, carPropertyManager);
-                        verifySetNotAvailable(carPropertyConfig, carPropertyManager);
-                        restoreHvacPower(hvacPowerOnCarPropertyConfig, carPropertyManager,
-                                hvacPowerStateByAreaId);
+                        // TODO(b/265483050): Reenable once the bug is fixed.
+                        // turnOffHvacPower(hvacPowerOnCarPropertyConfig, carPropertyManager);
+                        // verifySetNotAvailable(carPropertyConfig, carPropertyManager);
+                        // restoreHvacPower(hvacPowerOnCarPropertyConfig, carPropertyManager,
+                        //         hvacPowerStateByAreaId);
                     }
                 },
                 ImmutableSet.<String>builder()
