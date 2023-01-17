@@ -68,6 +68,8 @@ public class VehiclePropertyIdsTest extends AbstractCarLessTestCase {
                 .isEqualTo("HANDS_ON_DETECTION_ENABLED");
         assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.HANDS_ON_DETECTION_DRIVER_STATE))
                 .isEqualTo("HANDS_ON_DETECTION_DRIVER_STATE");
+        assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.HANDS_ON_DETECTION_WARNING))
+                .isEqualTo("HANDS_ON_DETECTION_WARNING");
         assertThat(
                 VehiclePropertyIds.toString(VehiclePropertyIds.DRIVER_ATTENTION_MONITORING_ENABLED))
                 .isEqualTo("DRIVER_ATTENTION_MONITORING_ENABLED");
