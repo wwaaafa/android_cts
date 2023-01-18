@@ -166,7 +166,7 @@ class MeshTest : ActivityTestBase() {
         vertexBuffer.put(50f)
         vertexBuffer.rewind()
         assertThrows(IllegalArgumentException::class.java) {
-            Mesh.make(meshSpec, 6, vertexBuffer, 3, Rect(0, 0, 0, 0))
+            Mesh(meshSpec, 6, vertexBuffer, 3, Rect(0, 0, 0, 0))
         }
     }
 
@@ -185,7 +185,7 @@ class MeshTest : ActivityTestBase() {
         vertexBuffer.put(50f)
         vertexBuffer.rewind()
         assertThrows(IllegalArgumentException::class.java) {
-            Mesh.make(meshSpec, Mesh.TRIANGLES, vertexBuffer, 1, Rect(0, 0, 0, 0))
+            Mesh(meshSpec, Mesh.TRIANGLES, vertexBuffer, 1, Rect(0, 0, 0, 0))
         }
     }
 
@@ -204,7 +204,7 @@ class MeshTest : ActivityTestBase() {
         vertexBuffer.put(50f)
         vertexBuffer.rewind()
         assertThrows(IllegalArgumentException::class.java) {
-            Mesh.make(meshSpec, Mesh.TRIANGLES, vertexBuffer, 100, Rect(0, 0, 0, 0))
+            Mesh(meshSpec, Mesh.TRIANGLES, vertexBuffer, 100, Rect(0, 0, 0, 0))
         }
     }
 
@@ -222,7 +222,7 @@ class MeshTest : ActivityTestBase() {
         vertexBuffer.put(0f)
         vertexBuffer.put(50f)
         assertThrows(IllegalArgumentException::class.java) {
-            Mesh.make(meshSpec, Mesh.TRIANGLES, vertexBuffer, 3, Rect(0, 0, 0, 0))
+            Mesh(meshSpec, Mesh.TRIANGLES, vertexBuffer, 3, Rect(0, 0, 0, 0))
         }
     }
 
@@ -240,7 +240,7 @@ class MeshTest : ActivityTestBase() {
         vertexBuffer.put(0f)
         vertexBuffer.put(50f)
         vertexBuffer.rewind()
-        val mesh = Mesh.make(meshSpec, Mesh.TRIANGLES, vertexBuffer, 3, Rect(0, 0, 0, 0))
+        val mesh = Mesh(meshSpec, Mesh.TRIANGLES, vertexBuffer, 3, Rect(0, 0, 0, 0))
 
         assertThrows(IllegalArgumentException::class.java) {
             mesh.setFloatUniform("test", 1f)
@@ -261,7 +261,7 @@ class MeshTest : ActivityTestBase() {
         vertexBuffer.put(0f)
         vertexBuffer.put(50f)
         vertexBuffer.rewind()
-        Mesh.make(meshSpec, Mesh.TRIANGLES, vertexBuffer, 3, Rect(0, 0, 0, 0))
+        Mesh(meshSpec, Mesh.TRIANGLES, vertexBuffer, 3, Rect(0, 0, 0, 0))
     }
 
     @Test
@@ -283,7 +283,7 @@ class MeshTest : ActivityTestBase() {
         indexBuffer.put(1, 1)
         indexBuffer.put(2, 2)
         indexBuffer.rewind()
-        Mesh.makeIndexed(
+        Mesh(
                 meshSpec, Mesh.TRIANGLES, vertexBuffer, 3, indexBuffer,
                 Rect(0, 0, 100, 100)
         )
@@ -314,7 +314,7 @@ class MeshTest : ActivityTestBase() {
         val rect = Rect(20, 20, 80, 80)
         val paint = Paint()
         paint.color = Color.BLUE
-        val mesh = Mesh.make(
+        val mesh = Mesh(
                 meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
                 Rect(20, 20, 80, 80)
         )
@@ -369,7 +369,7 @@ class MeshTest : ActivityTestBase() {
 
         val paint = Paint()
         paint.color = Color.BLUE
-        val mesh = Mesh.makeIndexed(
+        val mesh = Mesh(
                 meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
                 indexBuffer, Rect(20, 20, 90, 90)
         )
@@ -417,7 +417,7 @@ class MeshTest : ActivityTestBase() {
         val rect = Rect(20, 20, 80, 80)
         val paint = Paint()
         paint.color = Color.BLUE
-        val mesh = Mesh.make(
+        val mesh = Mesh(
                 meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
                 Rect(20, 20, 80, 80)
         )
@@ -457,9 +457,9 @@ class MeshTest : ActivityTestBase() {
         val rect = Rect(20, 20, 80, 80)
         val paint = Paint()
         paint.color = Color.BLUE
-        val mesh = Mesh.make(
-            meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
-            Rect(20, 20, 80, 80)
+        val mesh = Mesh(
+                meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
+                Rect(20, 20, 80, 80)
         )
 
         mesh.setColorUniform("color", Color())
@@ -497,9 +497,9 @@ class MeshTest : ActivityTestBase() {
         val rect = Rect(20, 20, 80, 80)
         val paint = Paint()
         paint.color = Color.BLUE
-        val mesh = Mesh.make(
-            meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
-            Rect(20, 20, 80, 80)
+        val mesh = Mesh(
+                meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
+                Rect(20, 20, 80, 80)
         )
 
         mesh.setColorUniform("color", 0L)
@@ -537,9 +537,9 @@ class MeshTest : ActivityTestBase() {
         val rect = Rect(20, 20, 80, 80)
         val paint = Paint()
         paint.color = Color.BLUE
-        val mesh = Mesh.make(
-            meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
-            Rect(20, 20, 80, 80)
+        val mesh = Mesh(
+                meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
+                Rect(20, 20, 80, 80)
         )
 
         mesh.setIntUniform("test", 2)
@@ -577,9 +577,9 @@ class MeshTest : ActivityTestBase() {
         val rect = Rect(20, 20, 80, 80)
         val paint = Paint()
         paint.color = Color.BLUE
-        val mesh = Mesh.make(
-            meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
-            Rect(20, 20, 80, 80)
+        val mesh = Mesh(
+                meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
+                Rect(20, 20, 80, 80)
         )
 
         mesh.setIntUniform("test", 1, 2)
@@ -617,9 +617,9 @@ class MeshTest : ActivityTestBase() {
         val rect = Rect(20, 20, 80, 80)
         val paint = Paint()
         paint.color = Color.BLUE
-        val mesh = Mesh.make(
-            meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
-            Rect(20, 20, 80, 80)
+        val mesh = Mesh(
+                meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
+                Rect(20, 20, 80, 80)
         )
 
         mesh.setIntUniform("test", 1, 2, 3)
@@ -657,9 +657,9 @@ class MeshTest : ActivityTestBase() {
         val rect = Rect(20, 20, 80, 80)
         val paint = Paint()
         paint.color = Color.BLUE
-        val mesh = Mesh.make(
-            meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
-            Rect(20, 20, 80, 80)
+        val mesh = Mesh(
+                meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
+                Rect(20, 20, 80, 80)
         )
 
         mesh.setIntUniform("test", 1, 2, 3, 4)
@@ -697,9 +697,9 @@ class MeshTest : ActivityTestBase() {
         val rect = Rect(20, 20, 80, 80)
         val paint = Paint()
         paint.color = Color.BLUE
-        val mesh = Mesh.make(
-            meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
-            Rect(20, 20, 80, 80)
+        val mesh = Mesh(
+                meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
+                Rect(20, 20, 80, 80)
         )
 
         mesh.setIntUniform("test", intArrayOf(1, 2, 3, 4))
@@ -737,9 +737,9 @@ class MeshTest : ActivityTestBase() {
         val rect = Rect(20, 20, 80, 80)
         val paint = Paint()
         paint.color = Color.BLUE
-        val mesh = Mesh.make(
-            meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
-            Rect(20, 20, 80, 80)
+        val mesh = Mesh(
+                meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
+                Rect(20, 20, 80, 80)
         )
 
         mesh.setFloatUniform("test", 1f)
@@ -777,9 +777,9 @@ class MeshTest : ActivityTestBase() {
         val rect = Rect(20, 20, 80, 80)
         val paint = Paint()
         paint.color = Color.BLUE
-        val mesh = Mesh.make(
-            meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
-            Rect(20, 20, 80, 80)
+        val mesh = Mesh(
+                meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
+                Rect(20, 20, 80, 80)
         )
 
         mesh.setFloatUniform("test", 1f, 2f)
@@ -817,9 +817,9 @@ class MeshTest : ActivityTestBase() {
         val rect = Rect(20, 20, 80, 80)
         val paint = Paint()
         paint.color = Color.BLUE
-        val mesh = Mesh.make(
-            meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
-            Rect(20, 20, 80, 80)
+        val mesh = Mesh(
+                meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
+                Rect(20, 20, 80, 80)
         )
 
         mesh.setFloatUniform("test", 1f, 2f, 3f)
@@ -857,9 +857,9 @@ class MeshTest : ActivityTestBase() {
         val rect = Rect(20, 20, 80, 80)
         val paint = Paint()
         paint.color = Color.BLUE
-        val mesh = Mesh.make(
-            meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
-            Rect(20, 20, 80, 80)
+        val mesh = Mesh(
+                meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
+                Rect(20, 20, 80, 80)
         )
 
         mesh.setFloatUniform("test", 1f, 2f, 3f, 4f)
@@ -897,9 +897,9 @@ class MeshTest : ActivityTestBase() {
         val rect = Rect(20, 20, 80, 80)
         val paint = Paint()
         paint.color = Color.BLUE
-        val mesh = Mesh.make(
-            meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
-            Rect(20, 20, 80, 80)
+        val mesh = Mesh(
+                meshSpec, Mesh.TRIANGLES, vertexBuffer, 6,
+                Rect(20, 20, 80, 80)
         )
 
         mesh.setFloatUniform("test", floatArrayOf(1f, 2f))
@@ -950,7 +950,7 @@ class MeshTest : ActivityTestBase() {
         val rect = Rect(20, 20, 80, 80)
         val paint = Paint()
         paint.color = Color.BLUE
-        val mesh = Mesh.makeIndexed(
+        val mesh = Mesh(
                 meshSpec, Mesh.TRIANGLES, vertexBuffer, 4,
                 indexBuffer, Rect(20, 20, 80, 80)
         )
