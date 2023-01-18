@@ -192,6 +192,8 @@ public class BackgroundActivityLaunchTest extends ActivityManagerTestBase {
                 + APP_A_FOREGROUND_ACTIVITY.getPackageName());
         runShellCommand("cmd deviceidle tempwhitelist -d 100000 "
                 + APP_B_FOREGROUND_ACTIVITY.getPackageName());
+
+        enableDefaultRescindBalPrivilegesFromPendingIntentSender(true);
     }
 
     @After
@@ -559,14 +561,7 @@ public class BackgroundActivityLaunchTest extends ActivityManagerTestBase {
 
     @Test
     public void testPendingIntentBroadcastActivity_appBIsForegroundAndFeatureOff_isNotBlocked() {
-        runWithShellPermissionIdentity(
-                () -> {
-                    DeviceConfig.setProperty(
-                            NAMESPACE_WINDOW_MANAGER,
-                            ENABLE_DEFAULT_RESCIND_BAL_PRIVILEGES_FROM_PENDING_INTENT_SENDER,
-                            Boolean.FALSE.toString(),
-                            false);
-                });
+        enableDefaultRescindBalPrivilegesFromPendingIntentSender(false);
         // Start AppB foreground activity
         Intent intent = new Intent();
         intent.setComponent(APP_B_FOREGROUND_ACTIVITY);
@@ -583,6 +578,17 @@ public class BackgroundActivityLaunchTest extends ActivityManagerTestBase {
         assertTrue("Not able to launch background activity", result);
         assertTaskStack(new ComponentName[] {APP_A_BACKGROUND_ACTIVITY}, APP_A_BACKGROUND_ACTIVITY);
         assertTaskStack(new ComponentName[] {APP_B_FOREGROUND_ACTIVITY}, APP_B_FOREGROUND_ACTIVITY);
+    }
+
+    private void enableDefaultRescindBalPrivilegesFromPendingIntentSender(boolean enable) {
+        runWithShellPermissionIdentity(
+                () -> {
+                    DeviceConfig.setProperty(
+                            NAMESPACE_WINDOW_MANAGER,
+                            ENABLE_DEFAULT_RESCIND_BAL_PRIVILEGES_FROM_PENDING_INTENT_SENDER,
+                            String.valueOf(enable),
+                            false);
+                });
     }
 
     @Test
