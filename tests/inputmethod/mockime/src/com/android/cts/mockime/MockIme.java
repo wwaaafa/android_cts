@@ -459,7 +459,7 @@ public final class MockIme extends InputMethodService {
                                 getTracer().onPerformHandwritingGestureResult(
                                         value, command.getId(), () -> {});
                         getMemorizedOrCurrentInputConnection()
-                                .performHandwritingGesture(gesture, Runnable::run, consumer);
+                                .performHandwritingGesture(gesture, mMainHandler::post, consumer);
                         return ImeEvent.RETURN_VALUE_UNAVAILABLE;
                     }
                     case "requestCursorUpdates": {
