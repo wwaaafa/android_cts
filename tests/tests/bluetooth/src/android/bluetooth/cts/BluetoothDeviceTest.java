@@ -145,8 +145,24 @@ public class BluetoothDeviceTest extends AndroidTestCase {
         }
 
         // This should throw a SecurityException because no BLUETOOTH_PRIVILEGED permission
-        assertThrows("No BLUETOOTH_PRIVILEGED permission",
-                SecurityException.class, () -> mFakeDevice.getIdentityAddress());
+        assertThrows("No BLUETOOTH_PRIVILEGED permission", SecurityException.class,
+                () -> mFakeDevice.getIdentityAddress());
+    }
+
+    public void test_getConnectionHandle() {
+        if (!mHasBluetooth || !mHasCompanionDevice) {
+            // Skip the test if bluetooth or companion device are not present.
+            return;
+        }
+
+        // This should throw a SecurityException because no BLUETOOTH_PRIVILEGED permission
+        assertThrows("No BLUETOOTH_PRIVILEGED permission", SecurityException.class,
+                () -> mFakeDevice.getConnectionHandle(TRANSPORT_LE));
+
+        // but it should work after we get the permission
+        mUiAutomation.adoptShellPermissionIdentity(BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED);
+        var handle = mFakeDevice.getConnectionHandle(TRANSPORT_LE);
+        assertEquals(handle, BluetoothDevice.ERROR);
     }
 
     public void test_getAnonymizedAddress() {
