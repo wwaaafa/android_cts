@@ -244,7 +244,7 @@ public class ChecksumsTest {
         pm.requestChecksums(V2V3_PACKAGE_NAME, true, 0, TRUST_NONE, receiver);
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
-        assertEquals(checksums.length, 1);
+        assertEquals(checksums.length, 1, Arrays.toString(checksums));
         assertEquals(checksums[0].getType(), TYPE_PARTIAL_MERKLE_ROOT_1M_SHA256);
     }
 
@@ -259,7 +259,7 @@ public class ChecksumsTest {
         pm.requestChecksums(V4_PACKAGE_NAME, true, 0, TRUST_NONE, receiver);
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
-        assertEquals(checksums.length, 6);
+        assertEquals(checksums.length, 6, Arrays.toString(checksums));
         // v2/v3 signature use 1M merkle tree.
         assertEquals(checksums[0].getSplitName(), null);
         assertEquals(checksums[0].getType(), TYPE_PARTIAL_MERKLE_ROOT_1M_SHA256);
@@ -285,7 +285,7 @@ public class ChecksumsTest {
         pm.requestChecksums(FIXED_PACKAGE_NAME, true, 0, TRUST_NONE, receiver);
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
-        assertEquals(checksums.length, 1);
+        assertEquals(checksums.length, 1, Arrays.toString(checksums));
         // v2/v3 signature use 1M merkle tree.
         assertEquals(checksums[0].getType(), TYPE_PARTIAL_MERKLE_ROOT_1M_SHA256);
         assertEquals(bytesToHexString(checksums[0].getValue()), TEST_FIXED_APK_V2_SHA256);
@@ -302,7 +302,7 @@ public class ChecksumsTest {
         pm.requestChecksums(FIXED_PACKAGE_NAME, true, 0, TRUST_NONE, receiver);
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
-        assertEquals(checksums.length, 0);
+        assertEquals(checksums.length, 0, Arrays.toString(checksums));
     }
 
     @Test
@@ -315,7 +315,7 @@ public class ChecksumsTest {
         pm.requestChecksums(FIXED_PACKAGE_NAME, true, 0, TRUST_NONE, receiver);
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
-        assertEquals(checksums.length, 1);
+        assertEquals(checksums.length, 1, Arrays.toString(checksums));
         // v2/v3 signature use 1M merkle tree.
         assertEquals(checksums[0].getType(), TYPE_PARTIAL_MERKLE_ROOT_1M_SHA512);
         assertEquals(bytesToHexString(checksums[0].getValue()),
@@ -336,7 +336,7 @@ public class ChecksumsTest {
         pm.requestChecksums(FIXED_FSVERITY_PACKAGE_NAME, true, 0, TRUST_NONE, receiver);
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
-        assertEquals(checksums.length, 2);
+        assertEquals(checksums.length, 2, Arrays.toString(checksums));
         assertEquals(checksums[0].getType(), TYPE_WHOLE_MERKLE_ROOT_4K_SHA256);
         if ("x86_64".equals(PRIMARY_ABI) || "x86".equals(PRIMARY_ABI)) {
             assertEquals(bytesToHexString(checksums[0].getValue()),
@@ -371,7 +371,7 @@ public class ChecksumsTest {
         pm.requestChecksums(FIXED_FSVERITY_PACKAGE_NAME, true, 0, TRUST_NONE, receiver);
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
-        assertEquals(checksums.length, 1);
+        assertEquals(checksums.length, 1, Arrays.toString(checksums));
         assertEquals(checksums[0].getType(), TYPE_WHOLE_MERKLE_ROOT_4K_SHA256);
         if ("x86_64".equals(PRIMARY_ABI) || "x86".equals(PRIMARY_ABI)) {
             assertEquals(bytesToHexString(checksums[0].getValue()),
@@ -396,7 +396,7 @@ public class ChecksumsTest {
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
         // No usable hashes as verity-in-v2-signature does not cover the whole file.
-        assertEquals(checksums.length, 0);
+        assertEquals(checksums.length, 0, Arrays.toString(checksums));
     }
 
     @LargeTest
@@ -411,7 +411,7 @@ public class ChecksumsTest {
                 receiver);
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
-        assertEquals(checksums.length, 7);
+        assertEquals(checksums.length, 7, Arrays.toString(checksums));
         assertEquals(checksums[0].getType(), TYPE_WHOLE_MERKLE_ROOT_4K_SHA256);
         assertEquals(bytesToHexString(checksums[0].getValue()),
                 "759626c33083fbf43215cb5b17156977d963d4c6850c0cb4e73162a665db560b");
@@ -446,7 +446,7 @@ public class ChecksumsTest {
                 receiver);
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
-        assertEquals(checksums.length, 5);
+        assertEquals(checksums.length, 5, Arrays.toString(checksums));
         assertEquals(checksums[0].getType(), TYPE_WHOLE_MERKLE_ROOT_4K_SHA256);
         assertEquals(bytesToHexString(checksums[0].getValue()),
                 "0b9bd6ef683e0c4e8940aba6460382b33e607c0fcf487f3dc6a44b715615d166");
@@ -477,7 +477,7 @@ public class ChecksumsTest {
         pm.requestChecksums(V4_PACKAGE_NAME, true, 0, TRUST_NONE, receiver);
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
-        assertEquals(checksums.length, 1);
+        assertEquals(checksums.length, 1, Arrays.toString(checksums));
         assertEquals(checksums[0].getType(), TYPE_WHOLE_MERKLE_ROOT_4K_SHA256);
     }
 
@@ -494,7 +494,7 @@ public class ChecksumsTest {
         pm.requestChecksums(FIXED_PACKAGE_NAME, true, 0, TRUST_NONE, receiver);
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
-        assertEquals(checksums.length, 1);
+        assertEquals(checksums.length, 1, Arrays.toString(checksums));
         assertEquals(checksums[0].getType(), TYPE_WHOLE_MERKLE_ROOT_4K_SHA256);
         assertEquals(bytesToHexString(checksums[0].getValue()),
                 "759626c33083fbf43215cb5b17156977d963d4c6850c0cb4e73162a665db560b");
@@ -515,7 +515,7 @@ public class ChecksumsTest {
                 receiver);
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
-        assertEquals(checksums.length, 7);
+        assertEquals(checksums.length, 7, Arrays.toString(checksums));
         assertEquals(checksums[0].getType(), TYPE_WHOLE_MERKLE_ROOT_4K_SHA256);
         assertEquals(bytesToHexString(checksums[0].getValue()),
                 "759626c33083fbf43215cb5b17156977d963d4c6850c0cb4e73162a665db560b");
@@ -548,7 +548,7 @@ public class ChecksumsTest {
         pm.requestChecksums(FIXED_PACKAGE_NAME, true, 0, TRUST_NONE, receiver);
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
-        assertEquals(checksums.length, 1);
+        assertEquals(checksums.length, 1, Arrays.toString(checksums));
         assertEquals(checksums[0].getType(), TYPE_PARTIAL_MERKLE_ROOT_1M_SHA256);
         assertEquals(bytesToHexString(checksums[0].getValue()), TEST_FIXED_APK_V2_SHA256);
         assertNull(checksums[0].getInstallerPackageName());
@@ -564,7 +564,7 @@ public class ChecksumsTest {
         pm.requestChecksums(FIXED_PACKAGE_NAME, true, 0, TRUST_ALL, receiver);
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
-        assertEquals(checksums.length, 1);
+        assertEquals(checksums.length, 1, Arrays.toString(checksums));
         assertEquals(checksums[0].getType(), TYPE_PARTIAL_MERKLE_ROOT_1M_SHA256);
         assertEquals(bytesToHexString(checksums[0].getValue()), TEST_FIXED_APK_V2_SHA256);
         assertNull(checksums[0].getInstallerPackageName());
@@ -607,7 +607,7 @@ public class ChecksumsTest {
         pm.requestChecksums(FIXED_PACKAGE_NAME, true, 0, TRUST_NONE, receiver);
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
-        assertEquals(checksums.length, 1);
+        assertEquals(checksums.length, 1, Arrays.toString(checksums));
         assertEquals(checksums[0].getType(), TYPE_PARTIAL_MERKLE_ROOT_1M_SHA256);
         assertEquals(bytesToHexString(checksums[0].getValue()), TEST_FIXED_APK_V2_SHA256);
         assertNull(checksums[0].getInstallerPackageName());
@@ -629,7 +629,7 @@ public class ChecksumsTest {
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
         // v2/v3+installer provided.
-        assertEquals(checksums.length, 3);
+        assertEquals(checksums.length, 3, Arrays.toString(checksums));
 
         assertEquals(checksums[0].getType(), TYPE_WHOLE_MD5);
         assertEquals(bytesToHexString(checksums[0].getValue()), TEST_FIXED_APK_MD5);
@@ -660,7 +660,7 @@ public class ChecksumsTest {
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
         // v2/v3+installer provided.
-        assertEquals(checksums.length, 3);
+        assertEquals(checksums.length, 3, Arrays.toString(checksums));
 
         assertEquals(checksums[0].getType(), TYPE_WHOLE_MD5);
         assertEquals(bytesToHexString(checksums[0].getValue()), TEST_FIXED_APK_MD5);
@@ -694,7 +694,7 @@ public class ChecksumsTest {
         pm.requestChecksums(FIXED_PACKAGE_NAME, true, 0, signatures, receiver);
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
-        assertEquals(checksums.length, 3);
+        assertEquals(checksums.length, 3, Arrays.toString(checksums));
         assertEquals(checksums[0].getType(), TYPE_WHOLE_MD5);
         assertEquals(bytesToHexString(checksums[0].getValue()), TEST_FIXED_APK_MD5);
         assertEquals(checksums[0].getSplitName(), null);
@@ -754,7 +754,7 @@ public class ChecksumsTest {
                         receiver);
                 ApkChecksum[] checksums = receiver.getResult();
                 assertNotNull(checksums);
-                assertEquals(checksums.length, 3);
+                assertEquals(checksums.length, 3, Arrays.toString(checksums));
                 // base
                 assertEquals(checksums[0].getType(), TYPE_WHOLE_MD5);
                 assertEquals(checksums[0].getSplitName(), null);
@@ -780,7 +780,7 @@ public class ChecksumsTest {
                         getContext().getMainExecutor(), receiver);
                 ApkChecksum[] checksums = receiver.getResult();
                 assertNotNull(checksums);
-                assertEquals(checksums.length, 3);
+                assertEquals(checksums.length, 3, Arrays.toString(checksums));
                 // split0
                 assertEquals(checksums[0].getType(), TYPE_WHOLE_MD5);
                 assertEquals(checksums[0].getSplitName(), null);
@@ -820,7 +820,7 @@ public class ChecksumsTest {
         pm.requestChecksums(FIXED_PACKAGE_NAME, true, 0, signatures, receiver);
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
-        assertEquals(checksums.length, 1);
+        assertEquals(checksums.length, 1, Arrays.toString(checksums));
         assertEquals(checksums[0].getType(), TYPE_PARTIAL_MERKLE_ROOT_1M_SHA256);
         assertEquals(bytesToHexString(checksums[0].getValue()), TEST_FIXED_APK_V2_SHA256);
         assertNull(checksums[0].getInstallerPackageName());
@@ -879,7 +879,7 @@ public class ChecksumsTest {
             pm.requestChecksums(V4_PACKAGE_NAME, true, 0, TRUST_ALL, receiver);
             ApkChecksum[] checksums = receiver.getResult();
             assertNotNull(checksums);
-            assertEquals(checksums.length, 6);
+            assertEquals(checksums.length, 6, Arrays.toString(checksums));
             // base
             assertEquals(checksums[0].getType(), TYPE_WHOLE_MD5);
             assertEquals(checksums[0].getSplitName(), null);
@@ -944,7 +944,7 @@ public class ChecksumsTest {
             pm.requestChecksums(V4_PACKAGE_NAME, true, 0, TRUST_ALL, receiver);
             ApkChecksum[] checksums = receiver.getResult();
             assertNotNull(checksums);
-            assertEquals(checksums.length, 10);
+            assertEquals(checksums.length, 10, Arrays.toString(checksums));
             // base
             assertEquals(checksums[0].getType(), TYPE_WHOLE_MD5);
             assertEquals(checksums[0].getSplitName(), null);
@@ -1061,7 +1061,7 @@ public class ChecksumsTest {
             pm.requestChecksums(V4_PACKAGE_NAME, true, 0, TRUST_ALL, receiver);
             ApkChecksum[] checksums = receiver.getResult();
             assertNotNull(checksums);
-            assertEquals(checksums.length, 6);
+            assertEquals(checksums.length, 6, Arrays.toString(checksums));
             // base
             assertEquals(checksums[0].getType(), TYPE_WHOLE_MD5);
             assertEquals(checksums[0].getSplitName(), null);
@@ -1126,7 +1126,7 @@ public class ChecksumsTest {
             pm.requestChecksums(V4_PACKAGE_NAME, true, 0, TRUST_ALL, receiver);
             ApkChecksum[] checksums = receiver.getResult();
             assertNotNull(checksums);
-            assertEquals(checksums.length, 10);
+            assertEquals(checksums.length, 10, Arrays.toString(checksums));
             // base
             assertEquals(checksums[0].getType(), TYPE_WHOLE_MD5);
             assertEquals(checksums[0].getSplitName(), null);
@@ -1209,7 +1209,7 @@ public class ChecksumsTest {
                 receiver);
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
-        assertEquals(checksums.length, 3);
+        assertEquals(checksums.length, 3, Arrays.toString(checksums));
         assertEquals(checksums[0].getType(), TYPE_WHOLE_MD5);
         assertEquals(bytesToHexString(checksums[0].getValue()), TEST_FIXED_APK_MD5);
         assertEquals(checksums[0].getInstallerPackageName(), CTS_PACKAGE_NAME);
@@ -1249,7 +1249,7 @@ public class ChecksumsTest {
                 receiver);
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
-        assertEquals(checksums.length, 3);
+        assertEquals(checksums.length, 3, Arrays.toString(checksums));
         assertEquals(checksums[0].getType(), TYPE_WHOLE_MD5);
         assertEquals(bytesToHexString(checksums[0].getValue()), TEST_FIXED_APK_MD5);
         assertEquals(checksums[0].getInstallerPackageName(), CTS_PACKAGE_NAME);
@@ -1285,7 +1285,7 @@ public class ChecksumsTest {
                 receiver);
         ApkChecksum[] checksums = receiver.getResult();
         assertNotNull(checksums);
-        assertEquals(checksums.length, 1);
+        assertEquals(checksums.length, 1, Arrays.toString(checksums));
         assertEquals(checksums[0].getType(), TYPE_PARTIAL_MERKLE_ROOT_1M_SHA256);
         assertEquals(bytesToHexString(checksums[0].getValue()), TEST_FIXED_APK_V2_SHA256);
         assertNull(checksums[0].getInstallerPackageName());
