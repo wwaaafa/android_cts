@@ -23,20 +23,18 @@ java_test_host {
     defaults: ["cts_defaults"],
     srcs: [
         "src/**/*.java",
-        ":CtsMediaSessionTestCommon",
     ],
     // tag this module as a cts test artifact
     test_suites: [
         "cts",
         "general-tests",
     ],
-
     libs: [
         "cts-tradefed",
         "tradefed",
         "compatibility-host-util",
+        "CtsMediaHostTestCommon",
     ],
-
     static_libs: [
         "cts-host-utils",
         "cts-statsd-atom-host-test-utils",
@@ -46,9 +44,4 @@ java_test_host {
         ":CtsMediaSessionHostTestApp",
         ":CtsMediaSessionTestHelper",
     ],
-}
-
-filegroup {
-    name: "CtsMediaSessionTestCommon",
-    srcs: ["common/**/*.java"],
 }
