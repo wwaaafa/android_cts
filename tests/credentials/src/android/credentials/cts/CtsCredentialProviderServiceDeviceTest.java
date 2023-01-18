@@ -37,10 +37,10 @@ import android.credentials.GetCredentialException;
 import android.credentials.GetCredentialOption;
 import android.credentials.GetCredentialRequest;
 import android.credentials.GetCredentialResponse;
+import android.credentials.cts.testcore.DeviceConfigStateRequiredRule;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
-import android.os.Looper;
 import android.os.OutcomeReceiver;
 import android.os.UserHandle;
 import android.platform.test.annotations.AppModeFull;
@@ -63,7 +63,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 @AppModeFull
@@ -82,23 +84,27 @@ public class CtsCredentialProviderServiceDeviceTest {
             "enable_credential_manager";
 
     private CredentialManager mCredentialManager;
-    private Context mContext;
+    private final Context mContext = getInstrumentation().getContext();
 
     @Rule
     public ActivityScenarioRule mActivityScenarioRule =
             new ActivityScenarioRule(TestCredentialActivity.class);
 
-    // Sets up the feature flag rule.
+    // Sets up the feature flag rule and the device flag rule
     @Rule
-    public final RequiredFeatureRule sRequiredFeatureRule =
+    public final RequiredFeatureRule mRequiredFeatureRule =
             new RequiredFeatureRule(PackageManager.FEATURE_CREDENTIALS);
+
+    @Rule
+    public final DeviceConfigStateRequiredRule mDeviceConfigStateRequiredRule =
+            new DeviceConfigStateRequiredRule(DEVICE_CONFIG_ENABLE_CREDENTIAL_MANAGER,
+                    DeviceConfig.NAMESPACE_CREDENTIAL, mContext, "true");
 
     @Before
     public void setUp() {
 
         Log.i(TAG, "Enabling service from scratch for " + CTS_SERVICE_NAME);
         Log.i(TAG, "Enabling CredentialManager flags as well...");
-        mContext = getInstrumentation().getContext();
         enableCredentialManagerDeviceFeature(mContext);
         mCredentialManager = (CredentialManager) mContext.getSystemService(
                 Context.CREDENTIAL_SERVICE);
@@ -111,7 +117,7 @@ public class CtsCredentialProviderServiceDeviceTest {
     @After
     public void tearDown() {
         Log.i(TAG, "Disabling credman services and device feature flag");
-        disableCredentialManagerDeviceFeature(mContext);
+        //disableCredentialManagerDeviceFeature(mContext);
         clearTestableCredentialProviderService();
     }
 
@@ -129,11 +135,10 @@ public class CtsCredentialProviderServiceDeviceTest {
     // TODO for all 'valid success' cases, mock credential manager the current success case
     // TODO (rightly) flips an error bit since we have test inputs
     @Test
-    public void testGetCredentialRequest_serviceNotSetUp_onErrorInvoked() {
-        if (Looper.myLooper() == null) {
-            Looper.prepare();
-        }
+    public void testGetCredentialRequest_serviceNotSetUp_onErrorInvoked()
+            throws InterruptedException {
         AtomicReference<GetCredentialException> loadedResult = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
         Bundle empty = new Bundle();
         GetCredentialRequest request = new GetCredentialRequest.Builder(empty)
                 .addGetCredentialOption(new GetCredentialOption(
@@ -148,6 +153,7 @@ public class CtsCredentialProviderServiceDeviceTest {
                     @Override
                     public void onError(@NonNull GetCredentialException e) {
                         loadedResult.set(e);
+                        latch.countDown();
                     }
                 };
 
@@ -158,8 +164,10 @@ public class CtsCredentialProviderServiceDeviceTest {
                     Executors.newSingleThreadExecutor(), callback);
         });
 
+        latch.await(100L, TimeUnit.MILLISECONDS);
         assertThat(loadedResult.get().getClass()).isEqualTo(
                 GetCredentialException.class);
+        // TODO add a null check for the case when the feature exists but remains false
     }
 
     @Test
@@ -188,11 +196,10 @@ public class CtsCredentialProviderServiceDeviceTest {
     }
 
     @Test
-    public void testCreatePasswordCredentialRequest_serviceNotSetUp_onErrorInvoked() {
-        if (Looper.myLooper() == null) {
-            Looper.prepare();
-        }
+    public void testCreatePasswordCredentialRequest_serviceNotSetUp_onErrorInvoked()
+            throws InterruptedException {
         AtomicReference<CreateCredentialException> loadedResult = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
         Bundle empty = new Bundle();
         CreateCredentialRequest request = new CreateCredentialRequest("PASSWORD", empty, empty,
                 false);
@@ -206,6 +213,7 @@ public class CtsCredentialProviderServiceDeviceTest {
                     @Override
                     public void onError(@NonNull CreateCredentialException e) {
                         loadedResult.set(e);
+                        latch.countDown();
                     }
                 };
 
@@ -216,6 +224,7 @@ public class CtsCredentialProviderServiceDeviceTest {
                     Executors.newSingleThreadExecutor(), callback);
         });
 
+        latch.await(100L, TimeUnit.MILLISECONDS);
         assertThat(loadedResult.get().getClass()).isEqualTo(
                 CreateCredentialException.class);
     }
@@ -246,11 +255,10 @@ public class CtsCredentialProviderServiceDeviceTest {
     }
 
     @Test
-    public void testClearCredentialRequest_serviceNotSetUp_onErrorInvoked() {
-        if (Looper.myLooper() == null) {
-            Looper.prepare();
-        }
+    public void testClearCredentialRequest_serviceNotSetUp_onErrorInvoked()
+            throws InterruptedException {
         AtomicReference<ClearCredentialStateException> loadedResult = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
         Bundle empty = new Bundle();
         ClearCredentialStateRequest request = new ClearCredentialStateRequest(empty);
         OutcomeReceiver<Void, ClearCredentialStateException> callback =
@@ -263,6 +271,7 @@ public class CtsCredentialProviderServiceDeviceTest {
                     @Override
                     public void onError(@NonNull ClearCredentialStateException e) {
                         loadedResult.set(e);
+                        latch.countDown();
                     }
                 };
 
@@ -273,6 +282,7 @@ public class CtsCredentialProviderServiceDeviceTest {
                     Executors.newSingleThreadExecutor(), callback);
         });
 
+        latch.await(100L, TimeUnit.MILLISECONDS);
         assertThat(loadedResult.get().getClass()).isEqualTo(
                 ClearCredentialStateException.class);
     }
