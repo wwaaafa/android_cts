@@ -732,6 +732,23 @@ public class BluetoothAdapterTest extends AndroidTestCase {
                 mAdapter.unregisterPreferredAudiProfilesChangedCallback(callback));
     }
 
+    public void test_notifyPreferredAudioProfileChangeApplied() {
+        if (!mHasBluetooth) {
+            // Skip the test if bluetooth or companion device are not present.
+            return;
+        }
+        assertTrue(BTAdapterUtils.enableAdapter(mAdapter, mContext));
+        String deviceAddress = "00:11:22:AA:BB:CC";
+        BluetoothDevice device = mAdapter.getRemoteDevice(deviceAddress);
+
+        assertThrows(NullPointerException.class, () ->
+                mAdapter.notifyPreferredAudioProfileChangeApplied(null));
+
+
+        assertEquals(BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED,
+                mAdapter.notifyPreferredAudioProfileChangeApplied(device));
+    }
+
     private static void sleep(long t) {
         try {
             Thread.sleep(t);
