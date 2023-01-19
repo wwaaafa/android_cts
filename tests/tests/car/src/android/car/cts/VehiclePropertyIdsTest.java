@@ -73,6 +73,9 @@ public class VehiclePropertyIdsTest extends AbstractCarLessTestCase {
         assertThat(
                 VehiclePropertyIds.toString(VehiclePropertyIds.DRIVER_ATTENTION_MONITORING_ENABLED))
                 .isEqualTo("DRIVER_ATTENTION_MONITORING_ENABLED");
+        assertThat(
+                VehiclePropertyIds.toString(VehiclePropertyIds.DRIVER_ATTENTION_MONITORING_WARNING))
+                .isEqualTo("DRIVER_ATTENTION_MONITORING_WARNING");
         assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.IGNITION_STATE))
                 .isEqualTo("IGNITION_STATE");
         assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.INFO_DRIVER_SEAT))

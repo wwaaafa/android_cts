@@ -49,6 +49,7 @@ import android.car.hardware.property.CarPropertyManager.CarPropertyEventCallback
 import android.car.hardware.property.CruiseControlCommand;
 import android.car.hardware.property.CruiseControlState;
 import android.car.hardware.property.CruiseControlType;
+import android.car.hardware.property.DriverAttentionMonitoringWarning;
 import android.car.hardware.property.EmergencyLaneKeepAssistState;
 import android.car.hardware.property.ErrorState;
 import android.car.hardware.property.EvChargeState;
@@ -258,6 +259,13 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             HandsOnDetectionWarning.NO_WARNING,
                             HandsOnDetectionWarning.WARNING)
                     .build();
+    private static final ImmutableSet<Integer> DRIVER_ATTENTION_MONITORING_WARNINGS =
+            ImmutableSet.<Integer>builder()
+                    .add(
+                            DriverAttentionMonitoringWarning.OTHER,
+                            DriverAttentionMonitoringWarning.NO_WARNING,
+                            DriverAttentionMonitoringWarning.WARNING)
+                    .build();
     private static final ImmutableSet<Integer> ERROR_STATES =
             ImmutableSet.<Integer>builder()
                     .add(
@@ -348,7 +356,8 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
             PERMISSION_READ_DRIVER_MONITORING_STATES_PROPERTIES = ImmutableList.<Integer>builder()
                     .add(
                             VehiclePropertyIds.HANDS_ON_DETECTION_DRIVER_STATE,
-                            VehiclePropertyIds.HANDS_ON_DETECTION_WARNING)
+                            VehiclePropertyIds.HANDS_ON_DETECTION_WARNING,
+                            VehiclePropertyIds.DRIVER_ATTENTION_MONITORING_WARNING)
                     .build();
     private static final ImmutableList<Integer> PERMISSION_CAR_ENERGY_PROPERTIES =
             ImmutableList.<Integer>builder()
@@ -1178,6 +1187,30 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                 .addWritePermission(Car.PERMISSION_CONTROL_DRIVER_MONITORING_SETTINGS)
                 .build()
                 .verify(mCarPropertyManager);
+    }
+
+    @Test
+    public void testDriverAttentionMonitoringWarningIfSupported() {
+        ImmutableSet<Integer> possibleEnumValues = ImmutableSet.<Integer>builder()
+                .addAll(DRIVER_ATTENTION_MONITORING_WARNINGS)
+                .addAll(ERROR_STATES)
+                .build();
+
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.DRIVER_ATTENTION_MONITORING_WARNING,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Integer.class)
+                .setAllPossibleEnumValues(possibleEnumValues)
+                .addReadPermission(Car.PERMISSION_READ_DRIVER_MONITORING_STATES)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
+    public void testDriverAttentionMonitoringWarningAndErrorStateDontIntersect() {
+        verifyEnumValuesAreDistinct(DRIVER_ATTENTION_MONITORING_WARNINGS, ERROR_STATES);
     }
 
     @Test
