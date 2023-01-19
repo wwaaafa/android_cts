@@ -17,10 +17,10 @@
 package android.telephony.mockmodem;
 
 import static android.telephony.mockmodem.MockSimService.MOCK_SIM_PROFILE_ID_DEFAULT;
-
 import static com.android.internal.telephony.RILConstants.RIL_REQUEST_RADIO_POWER;
 
 import android.content.Context;
+import android.hardware.radio.sim.Carrier;
 import android.hardware.radio.voice.CdmaSignalInfoRecord;
 import android.hardware.radio.voice.UusInfo;
 import android.telephony.Annotation;
@@ -1128,5 +1128,15 @@ public class MockModemManager {
             sb.append(intArr[intArr.length - 1]);
         }
         return sb.toString();
+    }
+
+    /**
+     * Sets the new carrierId and CarrierRestriction status values in IRadioSimImpl.java
+     * @param carrierList
+     * @param carrierRestrictionStatus
+     */
+    public void updateCarrierRestrictionInfo(Carrier[] carrierList, int carrierRestrictionStatus) {
+        mMockModemService.getIRadioSim().updateCarrierRestrictionStatusInfo(carrierList,
+                carrierRestrictionStatus);
     }
 }
