@@ -52,6 +52,7 @@ import com.android.compatibility.common.util.SystemUtil.eventually
 import com.android.compatibility.common.util.SystemUtil.getEventually
 import com.android.compatibility.common.util.SystemUtil.runShellCommandOrThrow
 import com.android.compatibility.common.util.SystemUtil.runWithShellPermissionIdentity
+import com.android.compatibility.common.util.ThrowingSupplier
 import com.android.compatibility.common.util.UI_ROOT
 import com.android.compatibility.common.util.click
 import com.android.compatibility.common.util.depthFirstSearch
@@ -128,11 +129,10 @@ class AutoRevokeTest {
     @Before
     fun setup() {
         // Collapse notifications
-        if (!hasFeatureWatch()) {
-            assertThat(
-                    runShellCommandOrThrow("cmd statusbar collapse"),
-                    equalTo(""))
-        }
+        assertThat(
+                runShellCommandOrThrow("cmd statusbar collapse"),
+                equalTo(""))
+
         // Wake up the device
         runShellCommandOrThrow("input keyevent KEYCODE_WAKEUP")
         if ("false".equals(runShellCommandOrThrow("cmd lock_settings get-disabled"))) {
@@ -330,6 +330,7 @@ class AutoRevokeTest {
     @AppModeFull(reason = "Uses separate apps for testing")
     @Test
     fun testPreMinAutoRevokeVersionUnusedApp_doesntGetPermissionRevoked() {
+        assumeFalse(isHibernationEnabledForPreSApps())
         withUnusedThresholdMs(3L) {
             withDummyApp(preMinVersionApkPath, preMinVersionAppPackageName) {
                 withDummyApp {
@@ -356,6 +357,18 @@ class AutoRevokeTest {
                 }
             }
         }
+    }
+
+    private fun isHibernationEnabledForPreSApps(): Boolean {
+        return runWithShellPermissionIdentity(
+            ThrowingSupplier {
+                DeviceConfig.getBoolean(
+                    DeviceConfig.NAMESPACE_APP_HIBERNATION,
+                    "app_hibernation_targets_pre_s_apps",
+                    false
+                )
+            }
+        )
     }
 
     @AppModeFull(reason = "Uses separate apps for testing")
@@ -669,9 +682,16 @@ class AutoRevokeTest {
 
     private fun getAllowlistToggle(): UiObject2 {
         waitForIdle()
+        // Wear: per b/253990371, unused_apps_summary string is not available,
+        // so look for unused_apps_label_v2 string instead.
+        val autoRevokeText = if (hasFeatureWatch()) {
+            "Pause app"
+        } else {
+            "Remove permissions"
+        }
         val parent = waitFindObject(
             By.clickable(true)
-                .hasDescendant(By.textStartsWith("Remove permissions"))
+                .hasDescendant(By.textStartsWith(autoRevokeText))
                 .hasDescendant(By.checkable(true))
         )
         return parent.findObject(By.checkable(true))
