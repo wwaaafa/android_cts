@@ -36,6 +36,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.RectF;
 import android.inputmethodservice.InputMethodService;
 import android.os.Build;
 import android.os.Bundle;
@@ -86,6 +87,7 @@ import android.view.inputmethod.RemoveSpaceGesture;
 import android.view.inputmethod.SelectGesture;
 import android.view.inputmethod.SelectRangeGesture;
 import android.view.inputmethod.TextAttribute;
+import android.view.inputmethod.TextBoundsInfoResult;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
@@ -460,6 +462,15 @@ public final class MockIme extends InputMethodService {
                                         value, command.getId(), () -> {});
                         getMemorizedOrCurrentInputConnection()
                                 .performHandwritingGesture(gesture, Runnable::run, consumer);
+                        return ImeEvent.RETURN_VALUE_UNAVAILABLE;
+                    }
+                    case "requestTextBoundsInfo": {
+                        var rectF = command.getExtras().getParcelable("rectF", RectF.class);
+                        Consumer<TextBoundsInfoResult> consumer = value ->
+                                getTracer().onRequestTextBoundsInfoResult(
+                                        value, command.getId());
+                        getMemorizedOrCurrentInputConnection().requestTextBoundsInfo(
+                                rectF, mMainHandler::post, consumer);
                         return ImeEvent.RETURN_VALUE_UNAVAILABLE;
                     }
                     case "requestCursorUpdates": {
@@ -1713,6 +1724,14 @@ public final class MockIme extends InputMethodService {
             arguments.putInt("result", result);
             arguments.putLong("requestId", requestId);
             recordEventInternal("onPerformHandwritingGestureResult", runnable, arguments);
+        }
+
+        public void onRequestTextBoundsInfoResult(TextBoundsInfoResult result, long requestId) {
+            final Bundle arguments = new Bundle();
+            arguments.putInt("resultCode", result.getResultCode());
+            arguments.putParcelable("boundsInfo", result.getTextBoundsInfo());
+            arguments.putLong("requestId", requestId);
+            recordEventInternal("onRequestTextBoundsInfoResult", () -> {}, arguments);
         }
 
         void getWindowLayoutInfo(@NonNull WindowLayoutInfo windowLayoutInfo,
