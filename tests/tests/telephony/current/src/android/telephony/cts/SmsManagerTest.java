@@ -165,8 +165,8 @@ public class SmsManagerTest {
         mDeliveryReportSupported = !(CarrierCapability.NO_DELIVERY_REPORTS.contains(mccmnc));
 
         // register receivers
-        mSendIntent = new Intent(SMS_SEND_ACTION);
-        mDeliveryIntent = new Intent(SMS_DELIVERY_ACTION);
+        mSendIntent = new Intent(SMS_SEND_ACTION).setPackage(mContext.getPackageName());
+        mDeliveryIntent = new Intent(SMS_DELIVERY_ACTION).setPackage(mContext.getPackageName());
 
         IntentFilter sendIntentFilter = new IntentFilter(SMS_SEND_ACTION);
         IntentFilter deliveryIntentFilter = new IntentFilter(SMS_DELIVERY_ACTION);
