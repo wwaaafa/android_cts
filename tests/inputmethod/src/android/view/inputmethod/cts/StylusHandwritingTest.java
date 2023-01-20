@@ -641,6 +641,7 @@ public class StylusHandwritingTest extends EndToEndImeTestBase {
                     stream,
                     editorMatcher("onStartStylusHandwriting", marker),
                     TIMEOUT);
+            TestUtils.injectStylusUpEvent(editText, endX, endY);
             // Inject stylus swipe up on navbar.
             TestUtils.injectNavBarToHomeGestureEvents(
                     ((Activity) editText.getContext()), MotionEvent.TOOL_TYPE_STYLUS);
@@ -697,6 +698,7 @@ public class StylusHandwritingTest extends EndToEndImeTestBase {
                     stream,
                     editorMatcher("onStartStylusHandwriting", marker),
                     TIMEOUT);
+            TestUtils.injectStylusUpEvent(editText, endX, endY);
             // Inject finger swipe up on navbar.
             TestUtils.injectNavBarToHomeGestureEvents(
                     ((Activity) editText.getContext()), MotionEvent.TOOL_TYPE_FINGER);
