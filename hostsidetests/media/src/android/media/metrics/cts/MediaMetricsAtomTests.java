@@ -29,6 +29,7 @@ import com.android.os.AtomsProto;
 import com.android.os.StatsLog;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.invoker.TestInformation;
 import com.android.tradefed.log.LogUtil;
 import com.android.tradefed.metrics.proto.MetricMeasurement;
 import com.android.tradefed.result.CollectingTestListener;
@@ -36,7 +37,9 @@ import com.android.tradefed.result.TestDescription;
 import com.android.tradefed.result.TestResult;
 import com.android.tradefed.result.TestRunResult;
 import com.android.tradefed.testtype.DeviceJUnit4ClassRunner;
+import com.android.tradefed.testtype.junit4.AfterClassWithInfo;
 import com.android.tradefed.testtype.junit4.BaseHostJUnit4Test;
+import com.android.tradefed.testtype.junit4.BeforeClassWithInfo;
 
 import com.google.common.truth.Correspondence;
 
@@ -45,6 +48,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -68,10 +72,17 @@ public class MediaMetricsAtomTests extends BaseHostJUnit4Test {
     private static final String FEATURE_MICROPHONE = "android.hardware.microphone";
     private static final int MAX_BUFFER_CAPACITY = 30 * 1024 * 1024; // 30M
 
+
+    @BeforeClassWithInfo
+    public static void installApp(TestInformation testInfo)
+            throws DeviceNotAvailableException, FileNotFoundException {
+        assertThat(testInfo.getBuildInfo()).isNotNull();
+        DeviceUtils.installTestApp(testInfo.getDevice(), TEST_APK, TEST_PKG,
+                testInfo.getBuildInfo());
+    }
+
     @Before
     public void setUp() throws Exception {
-        assertThat(getBuild()).isNotNull();
-        DeviceUtils.installTestApp(getDevice(), TEST_APK, TEST_PKG, getBuild());
         ConfigUtils.removeConfig(getDevice());
         ReportUtils.clearReports(getDevice());
         Thread.sleep(AtomTestUtils.WAIT_TIME_LONG);
@@ -81,7 +92,11 @@ public class MediaMetricsAtomTests extends BaseHostJUnit4Test {
     public void tearDown() throws Exception {
         ConfigUtils.removeConfig(getDevice());
         ReportUtils.clearReports(getDevice());
-        DeviceUtils.uninstallTestApp(getDevice(), TEST_PKG);
+    }
+
+    @AfterClassWithInfo
+    public static void uninstallApp(TestInformation testInfo) throws Exception {
+        DeviceUtils.uninstallTestApp(testInfo.getDevice(), TEST_PKG);
     }
 
 
