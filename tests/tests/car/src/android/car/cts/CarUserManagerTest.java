@@ -55,8 +55,6 @@ import androidx.annotation.Nullable;
 
 import com.android.compatibility.common.util.ApiTest;
 
-import com.google.common.truth.StringSubject;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -396,10 +394,5 @@ public final class CarUserManagerTest extends AbstractCarTestCase {
             }
             return false;
         }
-    }
-
-    // TODO(b/266146969): Remove when AbstractExpectableTestCase is updated with expectThat(String)
-    StringSubject expectThat(String actual) {
-        return mExpect.that(actual);
     }
 }
