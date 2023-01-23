@@ -18,7 +18,15 @@ package android.car.cts;
 
 import static android.Manifest.permission.CREATE_USERS;
 import static android.car.user.CarUserManager.USER_LIFECYCLE_EVENT_TYPE_CREATED;
+import static android.car.user.CarUserManager.USER_LIFECYCLE_EVENT_TYPE_INVISIBLE;
 import static android.car.user.CarUserManager.USER_LIFECYCLE_EVENT_TYPE_REMOVED;
+import static android.car.user.CarUserManager.USER_LIFECYCLE_EVENT_TYPE_STARTING;
+import static android.car.user.CarUserManager.USER_LIFECYCLE_EVENT_TYPE_STOPPED;
+import static android.car.user.CarUserManager.USER_LIFECYCLE_EVENT_TYPE_STOPPING;
+import static android.car.user.CarUserManager.USER_LIFECYCLE_EVENT_TYPE_SWITCHING;
+import static android.car.user.CarUserManager.USER_LIFECYCLE_EVENT_TYPE_UNLOCKED;
+import static android.car.user.CarUserManager.USER_LIFECYCLE_EVENT_TYPE_UNLOCKING;
+import static android.car.user.CarUserManager.USER_LIFECYCLE_EVENT_TYPE_VISIBLE;
 import static android.car.user.CarUserManager.UserLifecycleEvent;
 import static android.car.user.CarUserManager.UserLifecycleListener;
 
@@ -46,6 +54,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.android.compatibility.common.util.ApiTest;
+
+import com.google.common.truth.StringSubject;
 
 import org.junit.After;
 import org.junit.Before;
@@ -244,6 +254,32 @@ public final class CarUserManagerTest extends AbstractCarTestCase {
                 () -> mCarUserManager.isValidUser(getNonExistentUser()));
     }
 
+    @Test
+    @ApiTest(apis = {"android.car.user.CarUserManager#lifecycleEventTypeToString"})
+    public void testLifecycleEventTypeToString() {
+        expectThat(mCarUserManager.lifecycleEventTypeToString(
+                USER_LIFECYCLE_EVENT_TYPE_STARTING)).isEqualTo("STARTING");
+        expectThat(mCarUserManager.lifecycleEventTypeToString(
+                USER_LIFECYCLE_EVENT_TYPE_SWITCHING)).isEqualTo("SWITCHING");
+        expectThat(mCarUserManager.lifecycleEventTypeToString(
+                USER_LIFECYCLE_EVENT_TYPE_UNLOCKING)).isEqualTo("UNLOCKING");
+        expectThat(mCarUserManager.lifecycleEventTypeToString(
+                USER_LIFECYCLE_EVENT_TYPE_UNLOCKED)).isEqualTo("UNLOCKED");
+        expectThat(mCarUserManager.lifecycleEventTypeToString(
+                USER_LIFECYCLE_EVENT_TYPE_STOPPING)).isEqualTo("STOPPING");
+        expectThat(mCarUserManager.lifecycleEventTypeToString(
+                USER_LIFECYCLE_EVENT_TYPE_STOPPED)).isEqualTo("STOPPED");
+        expectThat(mCarUserManager.lifecycleEventTypeToString(
+                USER_LIFECYCLE_EVENT_TYPE_CREATED)).isEqualTo("CREATED");
+        expectThat(mCarUserManager.lifecycleEventTypeToString(
+                USER_LIFECYCLE_EVENT_TYPE_REMOVED)).isEqualTo("REMOVED");
+        expectThat(mCarUserManager.lifecycleEventTypeToString(
+                USER_LIFECYCLE_EVENT_TYPE_VISIBLE)).isEqualTo("VISIBLE");
+        expectThat(mCarUserManager.lifecycleEventTypeToString(
+                USER_LIFECYCLE_EVENT_TYPE_INVISIBLE)).isEqualTo("INVISIBLE");
+        expectThat(mCarUserManager.lifecycleEventTypeToString(0)).isEqualTo("UNKNOWN-0");
+    }
+
     @NonNull
     private UserHandle createUser(@Nullable String name, boolean isGuest) {
         name = getNewUserName(name);
@@ -360,5 +396,10 @@ public final class CarUserManagerTest extends AbstractCarTestCase {
             }
             return false;
         }
+    }
+
+    // TODO(b/266146969): Remove when AbstractExpectableTestCase is updated with expectThat(String)
+    StringSubject expectThat(String actual) {
+        return mExpect.that(actual);
     }
 }
