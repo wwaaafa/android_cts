@@ -16,18 +16,21 @@
 
 package android.webkit.cts;
 
-import android.app.ActivityManager;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import android.graphics.Bitmap;
-import android.os.Build;
 import android.os.Message;
 import android.platform.test.annotations.AppModeFull;
-import android.test.ActivityInstrumentationTestCase2;
+import android.util.Pair;
 import android.view.KeyEvent;
 import android.view.ViewGroup;
 import android.webkit.HttpAuthHandler;
 import android.webkit.RenderProcessGoneDetail;
 import android.webkit.SafeBrowsingResponse;
-import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
@@ -36,25 +39,44 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.cts.WebViewSyncLoader.WaitForLoadedClient;
-import android.util.Pair;
+
+import androidx.test.ext.junit.rules.ActivityScenarioRule;
+import androidx.test.filters.MediumTest;
+import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.runner.AndroidJUnit4;
 
 import com.android.compatibility.common.util.NullWebViewUtils;
 import com.android.compatibility.common.util.PollingCheck;
+
 import com.google.common.util.concurrent.SettableFuture;
+
+import org.junit.After;
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @AppModeFull
-public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewCtsActivity> {
+@MediumTest
+@RunWith(AndroidJUnit4.class)
+public class WebViewClientTest {
     private static final String TEST_URL = "http://www.example.com/";
+
+    @Rule
+    public ActivityScenarioRule mActivityScenarioRule =
+            new ActivityScenarioRule(WebViewCtsActivity.class);
 
     private WebViewOnUiThread mOnUiThread;
     private CtsTestServer mWebServer;
+    private WebViewCtsActivity mActivity;
 
     private static final String TEST_SAFE_BROWSING_URL_PREFIX =
             "chrome://safe-browsing/match?type=";
@@ -67,36 +89,32 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
     private static final String TEST_SAFE_BROWSING_BILLING_URL =
             TEST_SAFE_BROWSING_URL_PREFIX + "billing";
 
-    public WebViewClientTest() {
-        super("android.webkit.cts", WebViewCtsActivity.class);
+    @Before
+    public void setUp() throws Exception {
+        Assume.assumeTrue("WebView is not available", NullWebViewUtils.isWebViewAvailable());
+        mActivityScenarioRule.getScenario().onActivity(activity -> {
+            mActivity = (WebViewCtsActivity) activity;
+            WebView webview = mActivity.getWebView();
+            if (webview != null) {
+                new PollingCheck(WebkitUtils.TEST_TIMEOUT_MS) {
+                    @Override
+                        protected boolean check() {
+                        return activity.hasWindowFocus();
+                    }
+                }.run();
+                mOnUiThread = new WebViewOnUiThread(webview);
+            }
+        });
     }
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        final WebViewCtsActivity activity = getActivity();
-        WebView webview = activity.getWebView();
-        if (webview != null) {
-            new PollingCheck(WebkitUtils.TEST_TIMEOUT_MS) {
-                @Override
-                    protected boolean check() {
-                    return activity.hasWindowFocus();
-                }
-            }.run();
-
-            mOnUiThread = new WebViewOnUiThread(webview);
-        }
-    }
-
-    @Override
-    protected void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         if (mOnUiThread != null) {
             mOnUiThread.cleanUp();
         }
         if (mWebServer != null) {
             mWebServer.shutdown();
         }
-        super.tearDown();
     }
 
     /**
@@ -106,10 +124,8 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
      * http://go/modifying-webview-cts.
      */
     // Verify that the shouldoverrideurlloading is false by default
+    @Test
     public void testShouldOverrideUrlLoadingDefault() {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
         final WebViewClient webViewClient = new WebViewClient();
         assertFalse(webViewClient.shouldOverrideUrlLoading(mOnUiThread.getWebView(), new String()));
     }
@@ -120,10 +136,8 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
      * test should be reflected in that test as necessary. See http://go/modifying-webview-cts.
      */
     // Verify shouldoverrideurlloading called on top level navigation
+    @Test
     public void testShouldOverrideUrlLoading() {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
         final MockWebViewClient webViewClient = new MockWebViewClient();
         mOnUiThread.setWebViewClient(webViewClient);
         mOnUiThread.getSettings().setJavaScriptEnabled(true);
@@ -141,11 +155,9 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
 
     // Verify shouldoverrideurlloading called on webview called via onCreateWindow
     // TODO(sgurun) upstream this test to Aw.
+    @Test
     public void testShouldOverrideUrlLoadingOnCreateWindow() throws Exception {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
-        mWebServer = new CtsTestServer(getActivity());
+        mWebServer = new CtsTestServer(mActivity);
         // WebViewClient for main window
         final MockWebViewClient mainWebViewClient = new MockWebViewClient();
         // WebViewClient for child window
@@ -166,7 +178,7 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
                 childWebView.setWebViewClient(childWebViewClient);
                 childWebView.getSettings().setJavaScriptEnabled(true);
                 transport.setWebView(childWebView);
-                getActivity().addContentView(childWebView, new ViewGroup.LayoutParams(
+                mActivity.addContentView(childWebView, new ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.FILL_PARENT,
                             ViewGroup.LayoutParams.WRAP_CONTENT));
                 resultMsg.sendToTarget();
@@ -215,13 +227,11 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
                         "console.log('element with id [" + linkId + "] clicked');"));
     }
 
+    @Test
     public void testLoadPage() throws Exception {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
         final MockWebViewClient webViewClient = new MockWebViewClient();
         mOnUiThread.setWebViewClient(webViewClient);
-        mWebServer = new CtsTestServer(getActivity());
+        mWebServer = new CtsTestServer(mActivity);
         String url = mWebServer.getAssetUrl(TestHtmlConstants.HELLO_WORLD_URL);
 
         assertFalse(webViewClient.hasOnPageStartedCalled());
@@ -251,10 +261,8 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
         }.run();
     }
 
+    @Test
     public void testOnReceivedLoginRequest() throws Exception {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
         final MockWebViewClient webViewClient = new MockWebViewClient();
         mOnUiThread.setWebViewClient(webViewClient);
         TestWebServer testServer = null;
@@ -290,10 +298,8 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
      * androidx.webkit.WebViewClientCompatTest#testOnReceivedError. Modifications to this test
      * should be reflected in that test as necessary. See http://go/modifying-webview-cts.
      */
+    @Test
     public void testOnReceivedError() throws Exception {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
         final MockWebViewClient webViewClient = new MockWebViewClient();
         mOnUiThread.setWebViewClient(webViewClient);
 
@@ -309,13 +315,11 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
      * androidx.webkit.WebViewClientCompatTest#testOnReceivedErrorForSubresource. Modifications to
      * this test should be reflected in that test as necessary. See http://go/modifying-webview-cts.
      */
+    @Test
     public void testOnReceivedErrorForSubresource() throws Exception {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
         final MockWebViewClient webViewClient = new MockWebViewClient();
         mOnUiThread.setWebViewClient(webViewClient);
-        mWebServer = new CtsTestServer(getActivity());
+        mWebServer = new CtsTestServer(mActivity);
 
         assertNull(webViewClient.hasOnReceivedResourceError());
         String url = mWebServer.getAssetUrl(TestHtmlConstants.BAD_IMAGE_PAGE_URL);
@@ -325,13 +329,11 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
                 webViewClient.hasOnReceivedResourceError().getErrorCode());
     }
 
+    @Test
     public void testOnReceivedHttpError() throws Exception {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
         final MockWebViewClient webViewClient = new MockWebViewClient();
         mOnUiThread.setWebViewClient(webViewClient);
-        mWebServer = new CtsTestServer(getActivity());
+        mWebServer = new CtsTestServer(mActivity);
 
         assertNull(webViewClient.hasOnReceivedHttpError());
         String url = mWebServer.getAssetUrl(TestHtmlConstants.NON_EXISTENT_PAGE_URL);
@@ -340,15 +342,13 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
         assertEquals(404, webViewClient.hasOnReceivedHttpError().getStatusCode());
     }
 
+    @Test
     public void testOnFormResubmission() throws Exception {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
         final MockWebViewClient webViewClient = new MockWebViewClient();
         mOnUiThread.setWebViewClient(webViewClient);
         final WebSettings settings = mOnUiThread.getSettings();
         settings.setJavaScriptEnabled(true);
-        mWebServer = new CtsTestServer(getActivity());
+        mWebServer = new CtsTestServer(mActivity);
 
         assertFalse(webViewClient.hasOnFormResubmissionCalled());
         String url = mWebServer.getAssetUrl(TestHtmlConstants.JS_FORM_URL);
@@ -368,13 +368,11 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
         }.run();
     }
 
+    @Test
     public void testDoUpdateVisitedHistory() throws Exception {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
         final MockWebViewClient webViewClient = new MockWebViewClient();
         mOnUiThread.setWebViewClient(webViewClient);
-        mWebServer = new CtsTestServer(getActivity());
+        mWebServer = new CtsTestServer(mActivity);
 
         assertFalse(webViewClient.hasDoUpdateVisitedHistoryCalled());
         String url1 = mWebServer.getAssetUrl(TestHtmlConstants.HELLO_WORLD_URL);
@@ -389,13 +387,11 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
         }.run();
     }
 
+    @Test
     public void testOnReceivedHttpAuthRequest() throws Exception {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
         final MockWebViewClient webViewClient = new MockWebViewClient();
         mOnUiThread.setWebViewClient(webViewClient);
-        mWebServer = new CtsTestServer(getActivity());
+        mWebServer = new CtsTestServer(mActivity);
 
         assertFalse(webViewClient.hasOnReceivedHttpAuthRequestCalled());
         String url = mWebServer.getAuthAssetUrl(TestHtmlConstants.EMBEDDED_IMG_URL);
@@ -403,29 +399,25 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
         assertTrue(webViewClient.hasOnReceivedHttpAuthRequestCalled());
     }
 
+    @Test
     public void testShouldOverrideKeyEvent() {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
         final MockWebViewClient webViewClient = new MockWebViewClient();
         mOnUiThread.setWebViewClient(webViewClient);
 
         assertFalse(webViewClient.shouldOverrideKeyEvent(mOnUiThread.getWebView(), null));
     }
 
+    @Test
     public void testOnUnhandledKeyEvent() throws Throwable {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
         requireLoadedPage();
         final MockWebViewClient webViewClient = new MockWebViewClient();
         mOnUiThread.setWebViewClient(webViewClient);
 
         mOnUiThread.requestFocus();
-        getInstrumentation().waitForIdleSync();
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
 
         assertFalse(webViewClient.hasOnUnhandledKeyEventCalled());
-        sendKeys(KeyEvent.KEYCODE_1);
+        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_1);
 
         new PollingCheck(WebkitUtils.TEST_TIMEOUT_MS) {
             @Override
@@ -435,13 +427,11 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
         }.run();
     }
 
+    @Test
     public void testOnScaleChanged() throws Throwable {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
         final MockWebViewClient webViewClient = new MockWebViewClient();
         mOnUiThread.setWebViewClient(webViewClient);
-        mWebServer = new CtsTestServer(getActivity());
+        mWebServer = new CtsTestServer(mActivity);
 
         assertFalse(webViewClient.hasOnScaleChangedCalled());
         String url1 = mWebServer.getAssetUrl(TestHtmlConstants.HELLO_WORLD_URL);
@@ -464,11 +454,8 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
     }
 
     // Test that shouldInterceptRequest is called with the correct parameters
+    @Test
     public void testShouldInterceptRequestParams() throws Throwable {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
-
         final String mainPath = "/main";
         final String mainPage = "<head></head><body>test page</body>";
         final String headerName = "x-test-header-name";
@@ -530,11 +517,8 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
     }
 
     // Test that the WebResourceResponse returned by shouldInterceptRequest is handled correctly
+    @Test
     public void testShouldInterceptRequestResponse() throws Throwable {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
-
         final String mainPath = "/main";
         final String mainPage = "<head></head><body>test page</body>";
         final String interceptPath = "/intercept_me";
@@ -602,18 +586,14 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
     }
 
     // Verify that OnRenderProcessGone returns false by default
+    @Test
     public void testOnRenderProcessGoneDefault() throws Throwable {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
         final WebViewClient webViewClient = new WebViewClient();
         assertFalse(webViewClient.onRenderProcessGone(mOnUiThread.getWebView(), null));
     }
 
+    @Test
     public void testOnRenderProcessGone() throws Throwable {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
         final MockWebViewClient webViewClient = new MockWebViewClient();
         mOnUiThread.setWebViewClient(webViewClient);
         mOnUiThread.loadUrl("chrome://kill");
@@ -632,11 +612,9 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
      * Modifications to this test should be reflected in that test as necessary. See
      * http://go/modifying-webview-cts.
      */
+    @Test
     public void testOnSafeBrowsingHitBackToSafety() throws Throwable {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
-        mWebServer = new CtsTestServer(getActivity());
+        mWebServer = new CtsTestServer(mActivity);
         String url = mWebServer.getAssetUrl(TestHtmlConstants.HELLO_WORLD_URL);
         mOnUiThread.loadUrlAndWaitForCompletion(url);
         final String ORIGINAL_URL = mOnUiThread.getUrl();
@@ -669,11 +647,9 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
      * Modifications to this test should be reflected in that test as necessary. See
      * http://go/modifying-webview-cts.
      */
+    @Test
     public void testOnSafeBrowsingHitProceed() throws Throwable {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
-        mWebServer = new CtsTestServer(getActivity());
+        mWebServer = new CtsTestServer(mActivity);
         String url = mWebServer.getAssetUrl(TestHtmlConstants.HELLO_WORLD_URL);
         mOnUiThread.loadUrlAndWaitForCompletion(url);
         final String ORIGINAL_URL = mOnUiThread.getUrl();
@@ -697,10 +673,7 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
 
     private void testOnSafeBrowsingCode(String expectedUrl, int expectedThreatType)
             throws Throwable {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
-        mWebServer = new CtsTestServer(getActivity());
+        mWebServer = new CtsTestServer(mActivity);
         String url = mWebServer.getAssetUrl(TestHtmlConstants.HELLO_WORLD_URL);
         mOnUiThread.loadUrlAndWaitForCompletion(url);
         final String ORIGINAL_URL = mOnUiThread.getUrl();
@@ -728,6 +701,7 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
      * Modifications to this test should be reflected in that test as necessary. See
      * http://go/modifying-webview-cts.
      */
+    @Test
     public void testOnSafeBrowsingMalwareCode() throws Throwable {
         testOnSafeBrowsingCode(TEST_SAFE_BROWSING_MALWARE_URL,
                 WebViewClient.SAFE_BROWSING_THREAT_MALWARE);
@@ -739,6 +713,7 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
      * Modifications to this test should be reflected in that test as necessary. See
      * http://go/modifying-webview-cts.
      */
+    @Test
     public void testOnSafeBrowsingPhishingCode() throws Throwable {
         testOnSafeBrowsingCode(TEST_SAFE_BROWSING_PHISHING_URL,
                 WebViewClient.SAFE_BROWSING_THREAT_PHISHING);
@@ -750,6 +725,7 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
      * Modifications to this test should be reflected in that test as necessary. See
      * http://go/modifying-webview-cts.
      */
+    @Test
     public void testOnSafeBrowsingUnwantedSoftwareCode() throws Throwable {
         testOnSafeBrowsingCode(TEST_SAFE_BROWSING_UNWANTED_SOFTWARE_URL,
                 WebViewClient.SAFE_BROWSING_THREAT_UNWANTED_SOFTWARE);
@@ -761,15 +737,13 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
      * Modifications to this test should be reflected in that test as necessary. See
      * http://go/modifying-webview-cts.
      */
+    @Test
     public void testOnSafeBrowsingBillingCode() throws Throwable {
         testOnSafeBrowsingCode(TEST_SAFE_BROWSING_BILLING_URL,
                 WebViewClient.SAFE_BROWSING_THREAT_BILLING);
     }
 
     private void requireLoadedPage() throws Throwable {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
         mOnUiThread.loadUrlAndWaitForCompletion("about:blank");
     }
 
@@ -779,13 +753,10 @@ public class WebViewClientTest extends ActivityInstrumentationTestCase2<WebViewC
      * Modifications to this test should be reflected in that test as necessary. See
      * http://go/modifying-webview-cts.
      */
+    @Test
     public void testOnPageCommitVisibleCalled() throws Exception {
         // Check that the onPageCommitVisible callback is called
         // correctly.
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
-
         final SettableFuture<String> pageCommitVisibleFuture = SettableFuture.create();
         mOnUiThread.setWebViewClient(new WebViewClient() {
             public void onPageCommitVisible(WebView view, String url) {
