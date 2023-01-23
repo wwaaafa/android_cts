@@ -197,6 +197,8 @@ class CameraMicIndicatorsPermissionTest : StsExtraBusinessLogicTestCase {
 
     @Test
     fun testCameraIndicator() {
+        // If camera is not available skip the test
+        assumeTrue(packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA))
         val manager = context.getSystemService(CameraManager::class.java)!!
         assumeTrue(manager.cameraIdList.isNotEmpty())
         changeSafetyCenterFlag(false.toString())
@@ -229,6 +231,8 @@ class CameraMicIndicatorsPermissionTest : StsExtraBusinessLogicTestCase {
         // Car has separate panels for mic and camera for now.
         // TODO(b/218788634): enable this test for car once the new camera indicator is implemented.
         assumeFalse(isCar)
+        // If camera is not available skip the test
+        assumeTrue(packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA))
         changeSafetyCenterFlag(false.toString())
         testCameraAndMicIndicator(useMic = false, useCamera = true, chainUsage = true)
     }
@@ -293,6 +297,8 @@ class CameraMicIndicatorsPermissionTest : StsExtraBusinessLogicTestCase {
         safetyCenterEnabled: Boolean = false,
         finishEarly: Boolean = false
     ) {
+        // If camera is not available skip the test
+        assumeTrue(packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA))
         var chainAttribution: AttributionSource? = null
         openApp(useMic, useCamera, useHotword, finishEarly)
         try {
