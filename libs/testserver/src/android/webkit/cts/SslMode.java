@@ -13,27 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package android.webkit.cts;
 
-import android.webkit.cts.HttpRequest;
+import androidx.annotation.IntDef;
 
-interface IWebServer {
-    void start(int sslMode);
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
-    void shutdown();
-
-    void resetRequestState();
-
-    String getDelayedAssetUrl(String path);
-
-    String getRedirectingAssetUrl(String path);
-
-    String getAssetUrl(String path);
-
-    String getBinaryUrl(String mimeType, int contentLength);
-
-    boolean wasResourceRequested(String url);
-
-    HttpRequest getLastRequest(String url);
+@Retention(RetentionPolicy.SOURCE)
+@IntDef({
+    SslMode.INSECURE,
+    SslMode.NO_CLIENT_AUTH,
+    SslMode.WANTS_CLIENT_AUTH,
+    SslMode.NEEDS_CLIENT_AUTH,
+    SslMode.TRUST_ANY_CLIENT
+})
+public @interface SslMode {
+    int INSECURE = 0;
+    int NO_CLIENT_AUTH = 1;
+    int WANTS_CLIENT_AUTH = 2;
+    int NEEDS_CLIENT_AUTH = 3;
+    int TRUST_ANY_CLIENT = 4;
 }
