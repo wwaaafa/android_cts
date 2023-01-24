@@ -16,31 +16,22 @@ package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
-android_test {
-    name: "CtsSdkSandboxWebkitTestCases",
-    defaults: ["cts_defaults"],
-    libs: [
-        "android.test.runner",
-        "android.test.base",
-    ],
-    static_libs: [
-        "compatibility-device-util-axt",
-        "ctstestrunner-axt",
-        "CtsSdkSandboxTestScenario",
-        "ctswebkitsharedenv",
-    ],
-    data: [
-        ":EmptySdkProviderApp",
-        ":WebViewSandboxTestSdk",
-        ":WebViewSandboxZoomTestSdk",
-    ],
+android_test_helper_app {
+    name: "WebViewSandboxZoomTestSdk",
+    manifest: "AndroidManifest.xml",
+    certificate: ":sdksandbox-test",
     srcs: [
         "src/**/*.java",
-        "src/**/*.aidl",
     ],
-    test_suites: [
-        "cts",
-        "general-tests",
+    static_libs: [
+        "androidx.test.ext.junit",
+        "CtsSdkSandboxTestRunner",
+        "compatibility-device-util-axt",
+        "ctsdeviceutillegacy-axt",
+        "ctswebkitsharedenv",
+        "CtsWebkitTestCasesSharedWithSdk",
     ],
-    sdk_version: "current",
+    libs: [
+        "android.test.base",
+    ],
 }

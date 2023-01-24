@@ -194,10 +194,10 @@ public final class SharedWebViewTestEnvironment {
                 return new IWebServer.Stub() {
                     private CtsTestServer mWebServer;
 
-                    public void start(boolean secure) {
+                    public void start(@SslMode int sslMode) {
                         assertNull(mWebServer);
                         try {
-                            mWebServer = new CtsTestServer(applicationContext, secure);
+                            mWebServer = new CtsTestServer(applicationContext, sslMode);
                         } catch (Exception e) {
                             fail("Failed to launch CtsTestServer");
                         }
