@@ -227,7 +227,7 @@ public class WebViewTest extends SharedWebViewTest {
     private void startWebServer(boolean secure) throws Exception {
         assertNull(mWebServer);
         mWebServer = getTestEnvironment().getWebServer();
-        mWebServer.start(secure);
+        mWebServer.start(secure ? SslMode.NO_CLIENT_AUTH : SslMode.INSECURE);
     }
 
     @Test
