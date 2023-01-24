@@ -15,13 +15,8 @@
  */
 package android.sdksandbox.webkit.cts;
 
-import static android.app.sdksandbox.testutils.testscenario.SdkSandboxScenarioRule.ENABLE_LIFE_CYCLE_ANNOTATIONS;
-
 import android.app.sdksandbox.testutils.testscenario.KeepSdkSandboxAliveRule;
-import android.app.sdksandbox.testutils.testscenario.SdkSandboxScenarioRule;
-import android.webkit.cts.SharedWebViewTestEnvironment;
 
-import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.junit.ClassRule;
@@ -31,17 +26,14 @@ import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class WebViewSandboxZoomTest {
+
     @ClassRule
     public static final KeepSdkSandboxAliveRule sSdkTestSuiteSetup =
             new KeepSdkSandboxAliveRule("com.android.emptysdkprovider");
 
     @Rule
-    public final SdkSandboxScenarioRule sdkTester =
-            new SdkSandboxScenarioRule(
-                    "com.android.cts.sdksidetests.webviewsandboxzoomtest",
-                    SharedWebViewTestEnvironment.createHostAppInvoker(
-                            ApplicationProvider.getApplicationContext()),
-                    ENABLE_LIFE_CYCLE_ANNOTATIONS);
+    public final WebViewSandboxTestRule sdkTester =
+            new WebViewSandboxTestRule("android.webkit.cts.WebViewZoomTest");
 
     @Test
     public void testZoomIn() throws Exception {
