@@ -28,7 +28,6 @@ import static android.car.user.CarUserManager.USER_LIFECYCLE_EVENT_TYPE_UNLOCKED
 import static android.car.user.CarUserManager.USER_LIFECYCLE_EVENT_TYPE_UNLOCKING;
 import static android.car.user.CarUserManager.USER_LIFECYCLE_EVENT_TYPE_VISIBLE;
 import static android.car.user.CarUserManager.UserLifecycleEvent;
-import static android.car.user.CarUserManager.UserLifecycleListener;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
@@ -59,15 +58,16 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 public final class CarUserManagerTest extends AbstractCarTestCase {
     private static final String TAG = AbstractCarTestCase.class.getSimpleName();
     private static final String NEW_USER_NAME_PREFIX = "CarCTSTest.";
     private static final int START_TIMEOUT_MS = 20_000;
+
+    private static final int NO_EVENTS_TIMEOUT_MS = 5_000;
 
     private final List<UserHandle> mUsersToRemove = new ArrayList<>();
     private CarUserManager mCarUserManager;
@@ -146,18 +146,29 @@ public final class CarUserManagerTest extends AbstractCarTestCase {
     @EnsureHasPermission(CREATE_USERS)
     public void testLifecycleUserCreatedListener_unsupportedVersion() throws Exception {
 
-        LifecycleListener listener = new LifecycleListener();
+        BlockingUserLifecycleListener listener = BlockingUserLifecycleListener
+                .forNoExpectedEvent()
+                .setTimeout(NO_EVENTS_TIMEOUT_MS)
+                .addExpectedEvent(USER_LIFECYCLE_EVENT_TYPE_CREATED)
+                .build();
 
         UserHandle newUser = null;
         try {
+            Log.d(TAG, "registering listener: " + listener);
             mCarUserManager.addListener(Runnable::run, listener);
             Log.v(TAG, "ok");
 
             newUser = createUser("TestUserToCreate", false);
 
             Log.d(TAG, "Waiting for events");
-            listener.assertEventNotReceived(
-                    newUser.getIdentifier(), CarUserManager.USER_LIFECYCLE_EVENT_TYPE_CREATED);
+            List<UserLifecycleEvent> events = listener.waitForEvents();
+            Log.d(TAG, "events: " + events);
+
+            for (UserLifecycleEvent event : events) {
+                assertWithMessage("user id on %s", event).that(
+                        event.getUserHandle().getIdentifier()).isNotEqualTo(
+                        newUser.getIdentifier());
+            }
         } finally {
             Log.d(TAG, "unregistering listener: " + listener);
             mCarUserManager.removeListener(listener);
@@ -217,7 +228,12 @@ public final class CarUserManagerTest extends AbstractCarTestCase {
     public void testLifecycleUserRemovedListener_unsupportedVersion() throws Exception {
         UserHandle newUser = createUser("TestUserToRemove", false);
 
-        LifecycleListener listener = new LifecycleListener();
+        BlockingUserLifecycleListener listener = BlockingUserLifecycleListener
+                .forNoExpectedEvent()
+                .forUser(newUser.getIdentifier())
+                .setTimeout(NO_EVENTS_TIMEOUT_MS)
+                .addExpectedEvent(USER_LIFECYCLE_EVENT_TYPE_REMOVED)
+                .build();
 
         try {
             Log.d(TAG, "registering listener: " + listener);
@@ -227,8 +243,14 @@ public final class CarUserManagerTest extends AbstractCarTestCase {
             removeUser(newUser);
 
             Log.d(TAG, "Waiting for events");
-            listener.assertEventNotReceived(
-                    newUser.getIdentifier(), CarUserManager.USER_LIFECYCLE_EVENT_TYPE_CREATED);
+            List<UserLifecycleEvent> events = listener.waitForEvents();
+            Log.d(TAG, "events: " + events);
+
+            for (UserLifecycleEvent event : events) {
+                assertWithMessage("user id on %s", event).that(
+                        event.getUserHandle().getIdentifier()).isNotEqualTo(
+                        newUser.getIdentifier());
+            }
         } finally {
             Log.d(TAG, "unregistering listener: " + listener);
             mCarUserManager.removeListener(listener);
@@ -300,14 +322,12 @@ public final class CarUserManagerTest extends AbstractCarTestCase {
         return user;
     }
 
-    protected void removeUser(UserHandle userHandle) {
+    protected void removeUser(UserHandle userHandle) throws IOException {
         Log.d(TAG, "Removing user " + userHandle.getIdentifier());
 
-        // TODO(b/235994008): Update this to use CarUserManager.createUser when it is unhidden.
-        boolean result = mUserManager.removeUser(userHandle);
-
-        assertWithMessage("User %s removed. Result: %s", userHandle.getIdentifier(), result)
-                .that(result).isTrue();
+        assertWithMessage("User removed").that(
+                executeShellCommand("pm remove-user --wait %d",
+                        userHandle.getIdentifier())).contains("Success: removed user");
 
         mUsersToRemove.remove(userHandle);
     }
@@ -347,52 +367,5 @@ public final class CarUserManagerTest extends AbstractCarTestCase {
         }
 
         return UserHandle.of(++newUserId);
-    }
-
-    // TODO(b/244594590): Clean this listener up once BlockingUserLifecycleListener supports
-    // no events received.
-    private static final class LifecycleListener implements UserLifecycleListener {
-        private static final int TIMEOUT_MS = 60_000;
-
-        private final List<UserLifecycleEvent> mEvents = new ArrayList<>();
-
-        private final Object mLock = new Object();
-
-        private final CountDownLatch mLatch = new CountDownLatch(1);
-
-        @Override
-        public void onEvent(UserLifecycleEvent event) {
-            Log.d(TAG, "Event received: " + event);
-            synchronized (mLock) {
-                mEvents.add(event);
-            }
-        }
-
-        public void assertEventNotReceived(int userId, int eventType)
-                throws InterruptedException {
-            if (!mLatch.await(TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
-                String errorMessage = "Interrupted while While waiting for " + eventType;
-                Log.e(TAG, errorMessage);
-                throw new IllegalStateException(errorMessage);
-            }
-
-            boolean result = checkEvent(userId, eventType);
-            if (result) {
-                fail("Event" + eventType
-                        + " was not expected but was received within timeoutMs: " + TIMEOUT_MS);
-            }
-        }
-
-        private boolean checkEvent(int userId, int eventType) {
-            synchronized (mLock) {
-                for (UserLifecycleEvent event : mEvents) {
-                    if (event.getUserHandle().getIdentifier() == userId
-                            && event.getEventType() == eventType) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
     }
 }
