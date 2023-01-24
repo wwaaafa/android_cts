@@ -32,9 +32,11 @@ import android.support.test.uiautomator.UiSelector
 import android.text.Spanned
 import android.text.style.ClickableSpan
 import android.view.View
+import com.android.compatibility.common.util.SystemUtil.callWithShellPermissionIdentity
 import com.android.compatibility.common.util.SystemUtil.eventually
 import com.android.modules.utils.build.SdkLevel
 import org.junit.After
+import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -112,6 +114,9 @@ abstract class BaseUsePermissionTest : BasePermissionTest() {
         const val ALERT_DIALOG_OK_BUTTON = "android:id/button1"
 
         const val REQUEST_LOCATION_MESSAGE = "permgrouprequest_location"
+
+        // The highest SDK for which the system will show a "low SDK" warning when launching the app
+        const val MAX_SDK_FOR_SDK_WARNING = 27
 
         val STORAGE_AND_MEDIA_PERMISSIONS = setOf(
             android.Manifest.permission.READ_EXTERNAL_STORAGE,
@@ -209,8 +214,10 @@ abstract class BaseUsePermissionTest : BasePermissionTest() {
         uninstallPackage(APP_PACKAGE_NAME, requireSuccess = false)
     }
 
-    protected fun clearTargetSdkWarning() =
-        click(By.res("android:id/button1"))
+    protected fun clearTargetSdkWarning(timeoutMillis: Long = TIMEOUT_MILLIS) =
+        waitFindObjectOrNull(By.res("android:id/button1"), timeoutMillis)?.click()?.also {
+            waitForIdle()
+        }
 
     protected fun clickPermissionReviewContinue() {
         if (isAutomotive || isWatch) {
@@ -231,6 +238,8 @@ abstract class BaseUsePermissionTest : BasePermissionTest() {
     protected fun approvePermissionReview() {
         startAppActivityAndAssertResultCode(Activity.RESULT_OK) {
             clickPermissionReviewContinue()
+            waitForIdle()
+            clearTargetSdkWarning()
         }
     }
 
@@ -294,6 +303,13 @@ abstract class BaseUsePermissionTest : BasePermissionTest() {
             }
         )
         waitForIdle()
+
+        // Clear the low target SDK warning message if it's expected
+        if (getTargetSdk() <= MAX_SDK_FOR_SDK_WARNING) {
+            clearTargetSdkWarning(timeoutMillis = QUICK_CHECK_TIMEOUT_MILLIS)
+            waitForIdle()
+        }
+
         // Notification permission prompt is shown first, so get it out of the way
         clickNotificationPermissionRequestAllowButtonIfAvailable()
         // Perform the post-request action
@@ -462,26 +478,39 @@ abstract class BaseUsePermissionTest : BasePermissionTest() {
         }
     }
 
-    protected fun grantAppPermissions(vararg permissions: String, targetSdk: Int = 30) {
-        setAppPermissionState(*permissions, state = PermissionState.ALLOWED, isLegacyApp = false,
-                targetSdk = targetSdk)
+    protected fun grantAppPermissions(vararg permissions: String) {
+        setAppPermissionState(*permissions, state = PermissionState.ALLOWED, isLegacyApp = false)
     }
 
     protected fun revokeAppPermissions(
         vararg permissions: String,
-        isLegacyApp: Boolean = false,
-        targetSdk: Int = 30
+        isLegacyApp: Boolean = false
     ) {
         setAppPermissionState(*permissions, state = PermissionState.DENIED,
-                isLegacyApp = isLegacyApp, targetSdk = targetSdk)
+                isLegacyApp = isLegacyApp)
+    }
+
+    protected fun getTargetSdk(packageName: String = APP_PACKAGE_NAME): Int {
+        return callWithShellPermissionIdentity {
+            try {
+                context.packageManager.getApplicationInfo(packageName, 0).targetSdkVersion
+            } catch (e: PackageManager.NameNotFoundException) {
+                Assert.fail("Package $packageName not found")
+                -1
+            }
+        }
     }
 
     private fun setAppPermissionState(
         vararg permissions: String,
         state: PermissionState,
-        isLegacyApp: Boolean,
-        targetSdk: Int
+        isLegacyApp: Boolean
     ) {
+        val targetSdk = getTargetSdk()
+        if (targetSdk <= MAX_SDK_FOR_SDK_WARNING) {
+            clearTargetSdkWarning(QUICK_CHECK_TIMEOUT_MILLIS)
+        }
+
         if (isTv) {
             // Dismiss DeprecatedTargetSdkVersionDialog, if present
             if (waitFindObjectOrNull(By.text(APP_PACKAGE_NAME), 1000L) != null) {
@@ -564,7 +593,9 @@ abstract class BaseUsePermissionTest : BasePermissionTest() {
                                 By.text(getPermissionControllerString(
                                         ALLOW_FOREGROUND_PREFERENCE_TEXT))
                             } else {
-                                byAnyText(getPermissionControllerResString(ALLOW_BUTTON_TEXT),getPermissionControllerResString(ALLOW_ALL_FILES_BUTTON_TEXT))
+                                byAnyText(getPermissionControllerResString(ALLOW_BUTTON_TEXT),
+                                        getPermissionControllerResString(
+                                                ALLOW_ALL_FILES_BUTTON_TEXT))
                             }
                         PermissionState.DENIED ->
                             if (!isLegacyApp && hasAskButton(permission)) {
