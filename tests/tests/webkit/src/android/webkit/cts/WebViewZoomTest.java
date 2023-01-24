@@ -70,7 +70,7 @@ public class WebViewZoomTest extends SharedWebViewTest{
     @Before
     public void setUp() throws Exception {
         mWebView = getTestEnvironment().getWebView();
-        mOnUiThread = getTestEnvironment().getWebViewOnUiThread();
+        mOnUiThread = new WebViewOnUiThread(mWebView);
         mWebViewClient = new ScaleChangedWebViewClient();
         mOnUiThread.setWebViewClient(mWebViewClient);
         // Pinch zoom is not supported in wrap_content layouts.
@@ -107,11 +107,6 @@ public class WebViewZoomTest extends SharedWebViewTest{
                                                     mActivity))
                                     .setContext(mActivity)
                                     .setWebView(webView);
-
-                            if (webView != null) {
-                                WebViewOnUiThread onUi = new WebViewOnUiThread(webView);
-                                builder.setWebViewOnUiThread(onUi);
-                            }
                         });
 
         SharedWebViewTestEnvironment environment = builder.build();
