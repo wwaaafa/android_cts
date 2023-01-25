@@ -52,6 +52,7 @@ import android.car.hardware.property.VehicleElectronicTollCollectionCardStatus;
 import android.car.hardware.property.VehicleElectronicTollCollectionCardType;
 import android.car.hardware.property.VehicleLightState;
 import android.car.hardware.property.VehicleLightSwitch;
+import android.car.hardware.property.VehicleOilLevel;
 import android.car.hardware.property.VehicleTurnSignal;
 import android.car.test.ApiCheckerRule.Builder;
 import android.os.SystemClock;
@@ -157,6 +158,15 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
             ImmutableSet.<Integer>builder().add(VehicleLightSwitch.STATE_OFF,
                     VehicleLightSwitch.STATE_ON, VehicleLightSwitch.STATE_DAYTIME_RUNNING,
                     VehicleLightSwitch.STATE_AUTOMATIC).build();
+    private static final ImmutableSet<Integer> VEHICLE_OIL_LEVELS =
+            ImmutableSet.<Integer>builder()
+                    .add(
+                            VehicleOilLevel.LEVEL_CRITICALLY_LOW,
+                            VehicleOilLevel.LEVEL_LOW,
+                            VehicleOilLevel.LEVEL_NORMAL,
+                            VehicleOilLevel.LEVEL_HIGH,
+                            VehicleOilLevel.LEVEL_ERROR)
+                    .build();
     private static final ImmutableSet<Integer> EV_STOPPING_MODES =
             ImmutableSet.<Integer>builder().add(EvStoppingMode.STATE_OTHER,
                     EvStoppingMode.STATE_CREEP, EvStoppingMode.STATE_ROLL,
@@ -2480,13 +2490,7 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                         VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
                         CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
                         Integer.class)
-                .setPossibleCarPropertyValues(
-                        ImmutableSet.of(
-                                /*VehicleOilLevel.CRITICALLY_LOW=*/ 0,
-                                /*VehicleOilLevel.LOW=*/ 1,
-                                /*VehicleOilLevel.NORMAL=*/ 2,
-                                /*VehicleOilLevel.HIGH=*/ 3,
-                                /*VehicleOilLevel.ERROR=*/ 4))
+                .setPossibleCarPropertyValues(VEHICLE_OIL_LEVELS)
                 .addReadPermission(Car.PERMISSION_CAR_ENGINE_DETAILED)
                 .build()
                 .verify(mCarPropertyManager);
