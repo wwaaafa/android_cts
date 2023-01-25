@@ -194,7 +194,6 @@ class AutoRevokeTest {
 
     @AppModeFull(reason = "Uses separate apps for testing")
     @Test
-    @Ignore("b/201545116")
     fun testUnusedApp_uninstallApp() {
         assumeFalse(
             "Unused apps screen may be unavailable on TV",
