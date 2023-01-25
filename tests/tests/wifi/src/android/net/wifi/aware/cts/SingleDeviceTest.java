@@ -374,7 +374,7 @@ public class SingleDeviceTest extends WifiJUnit3TestBase {
         }
 
         @Override
-        public void onSessionSuspendSuccess() {
+        public void onSessionSuspendSucceeded() {
             processCallback(ON_SESSION_SUSPEND_SUCCEEDED);
         }
 
@@ -384,7 +384,7 @@ public class SingleDeviceTest extends WifiJUnit3TestBase {
         }
 
         @Override
-        public void onSessionResumeSuccess() {
+        public void onSessionResumeSucceeded() {
             processCallback(ON_SESSION_RESUME_SUCCEEDED);
         }
 
