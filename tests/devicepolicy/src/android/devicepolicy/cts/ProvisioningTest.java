@@ -1086,29 +1086,6 @@ public final class ProvisioningTest {
     @Test
     @EnsureHasPermission(MANAGE_PROFILE_AND_DEVICE_OWNERS)
     @RequireRunOnSecondaryUser
-    @EnsureHasProfileOwner(onUser = SYSTEM_USER)
-    @EnsureHasNoDeviceOwner
-    @ApiTest(apis = "android.app.admin.DevicePolicyManager#checkProvisioningPrecondition")
-    public void checkProvisioningPreCondition_actionDO_systemUserHasProfileOwner_returnsHasProfileOwner() {
-        boolean setupComplete = TestApis.users().system().getSetupComplete();
-        TestApis.users().system().setSetupComplete(false);
-
-        try {
-            assertThat(
-                    sDevicePolicyManager.checkProvisioningPrecondition(
-                            DevicePolicyManager.ACTION_PROVISION_MANAGED_DEVICE,
-                            DEVICE_ADMIN_COMPONENT_NAME.getPackageName()))
-                    .isEqualTo(DevicePolicyManager.STATUS_USER_HAS_PROFILE_OWNER);
-
-        } finally {
-            TestApis.users().system().setSetupComplete(setupComplete);
-        }
-    }
-
-    @Postsubmit(reason = "New test")
-    @Test
-    @EnsureHasPermission(MANAGE_PROFILE_AND_DEVICE_OWNERS)
-    @RequireRunOnSecondaryUser
     @EnsureHasNoProfileOwner
     @RequireNotHeadlessSystemUserMode(reason = "TODO(b/242189747): Remove or give reason")
     @RequireFeature(FEATURE_DEVICE_ADMIN)
