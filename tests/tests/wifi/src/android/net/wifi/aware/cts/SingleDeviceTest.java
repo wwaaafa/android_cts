@@ -77,6 +77,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -1679,12 +1681,13 @@ public class SingleDeviceTest extends WifiJUnit3TestBase {
                     == PERMISSION_GRANTED;
             // Attach offload session
             final AttachCallbackTest attachCb = new AttachCallbackTest();
+            ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
             if (!hasPermission) {
                 assertThrows(SecurityException.class, () ->
-                        mWifiAwareManager.attachOffload(mHandler, attachCb));
+                        mWifiAwareManager.attachOffload(executor, attachCb));
                 return;
             }
-            mWifiAwareManager.attachOffload(mHandler, attachCb);
+            mWifiAwareManager.attachOffload(executor, attachCb);
             int cbCalled = attachCb.waitForAnyCallback();
             assertEquals("Wi-Fi Aware attach", AttachCallbackTest.ATTACHED, cbCalled);
             // Attach a normal session offload session should be terminated
@@ -1695,7 +1698,7 @@ public class SingleDeviceTest extends WifiJUnit3TestBase {
             // Attach offload again, should fail.
             final AttachCallbackTest attachCb1 = new AttachCallbackTest();
 
-            mWifiAwareManager.attachOffload(mHandler, attachCb1);
+            mWifiAwareManager.attachOffload(executor, attachCb1);
             cbCalled = attachCb1.waitForAnyCallback();
             assertEquals("Wi-Fi Aware attach", AttachCallbackTest.ATTACH_FAILED, cbCalled);
         } finally {
