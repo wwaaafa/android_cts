@@ -115,6 +115,8 @@ public class TestUtils {
     public static final String QUERY_URI = "android.scopedstorage.cts.query_uri";
     public static final String QUERY_MAX_ROW_ID = "android.scopedstorage.cts.query_max_row_id";
     public static final String QUERY_MIN_ROW_ID = "android.scopedstorage.cts.query_min_row_id";
+    public static final String QUERY_OWNER_PACKAGE_NAMES =
+            "android.scopedstorage.cts.query_owner_package_names";
     public static final String OPEN_FILE_FOR_READ_QUERY =
             "android.scopedstorage.cts.openfile_read";
     public static final String OPEN_FILE_FOR_WRITE_QUERY =
@@ -288,7 +290,33 @@ public class TestUtils {
      * by an {@code '/'}.
      */
     public static boolean createImageEntryAs(TestApp testApp, String path) throws Exception {
-        return getResultFromTestApp(testApp, path, CREATE_IMAGE_ENTRY_QUERY);
+        return createImageEntryForUriAs(testApp, path) != null;
+    }
+
+    /**
+     * Makes the given {@code testApp} create a mediastore DB entry under
+     * {@code MediaStore.Media.Images}.
+     *
+     * The {@code path} argument is treated as a relative path and a name separated
+     * by an {@code '/'}.
+     *
+     * Returns URI of the created image.
+     */
+    public static Uri createImageEntryForUriAs(TestApp testApp, String path) throws Exception {
+        final String actionName = CREATE_IMAGE_ENTRY_QUERY;
+        final String uriString = getFromTestApp(testApp, path, actionName)
+                .getString(actionName, null);
+        return Uri.parse(uriString);
+    }
+
+    /**
+     * Makes the given {@code testApp} query on {@code uri} to get all the ownerPackageName values.
+     *
+     * <p>This method drops shell permission identity.
+     */
+    public static String[] queryForOwnerPackageNamesAs(TestApp testApp, Uri uri) throws Exception {
+        final String actionName = QUERY_OWNER_PACKAGE_NAMES;
+        return getFromTestApp(testApp, uri, actionName).getStringArray(actionName);
     }
 
     /**
