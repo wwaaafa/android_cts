@@ -82,7 +82,7 @@ class AppDataSharingUpdatesTest : BaseUsePermissionTest() {
             findView(By.textContains(UPDATES_IN_LAST_30_DAYS), true)
             findView(By.textContains(APP_PACKAGE_NAME_SUBSTRING), true)
             findView(By.textContains(DATA_SHARING_UPDATES_FOOTER_MESSAGE), true)
-            findView(By.textContains(LEARN_MORE_ABOUT_DATA_SHARING), true)
+            findView(By.textContains(LEARN_ABOUT_DATA_SHARING), true)
         } finally {
             pressBack()
         }
@@ -99,7 +99,7 @@ class AppDataSharingUpdatesTest : BaseUsePermissionTest() {
             findView(By.textContains(DATA_SHARING_UPDATES_SUBTITLE), true)
             findView(By.textContains(UPDATES_IN_LAST_30_DAYS), true)
             findView(By.textContains(DATA_SHARING_UPDATES_FOOTER_MESSAGE), true)
-            findView(By.textContains(LEARN_MORE_ABOUT_DATA_SHARING), true)
+            findView(By.textContains(LEARN_ABOUT_DATA_SHARING), true)
         } finally {
             pressBack()
         }
@@ -114,11 +114,11 @@ class AppDataSharingUpdatesTest : BaseUsePermissionTest() {
 
         try {
             findView(By.descContains(DATA_SHARING_UPDATES), true)
-            findView(By.textContains(LEARN_MORE_ABOUT_DATA_SHARING), true)
+            findView(By.textContains(LEARN_ABOUT_DATA_SHARING), true)
             findView(By.textContains(APP_PACKAGE_NAME_SUBSTRING), true)
             waitForIdle()
 
-            click(By.textContains(LEARN_MORE_ABOUT_DATA_SHARING))
+            click(By.textContains(LEARN_ABOUT_DATA_SHARING))
 
             findView(By.descContains(PERMISSION_MANAGER), true)
         } finally {
@@ -156,12 +156,12 @@ class AppDataSharingUpdatesTest : BaseUsePermissionTest() {
 
         try {
             findView(By.descContains(DATA_SHARING_UPDATES), true)
-            findView(By.textContains(DATA_SHARING_NO_UPDATES_SUBTITLE), true)
-            findView(By.textContains(DATA_SHARING_UPDATES_SUBTITLE), false)
+            findView(By.textContains(DATA_SHARING_UPDATES_SUBTITLE), true)
+            findView(By.textContains(DATA_SHARING_NO_UPDATES_MESSAGE), true)
             findView(By.textContains(APP_PACKAGE_NAME_SUBSTRING), false)
             findView(By.textContains(UPDATES_IN_LAST_30_DAYS), false)
-            findView(By.textContains(DATA_SHARING_UPDATES_FOOTER_MESSAGE), false)
-            findView(By.textContains(LEARN_MORE_ABOUT_DATA_SHARING), false)
+            findView(By.textContains(DATA_SHARING_UPDATES_FOOTER_MESSAGE), true)
+            findView(By.textContains(LEARN_ABOUT_DATA_SHARING), true)
         } finally {
             pressBack()
         }
@@ -214,15 +214,15 @@ class AppDataSharingUpdatesTest : BaseUsePermissionTest() {
     companion object {
         private const val DATA_SHARING_UPDATES = "Data sharing updates"
         private const val DATA_SHARING_UPDATES_SUBTITLE =
-            "These apps have provided updates on data sharing practices. Review these updates and" +
-                " modify app permissions if necessary."
-        private const val DATA_SHARING_NO_UPDATES_SUBTITLE = "No apps have provided recent updates."
-        private const val UPDATES_IN_LAST_30_DAYS = "Updated in the last 30 days"
+            "These apps have changed the way they share location data. They may not have shared" +
+                    " it before, or may now share it for advertising or marketing purposes."
+        private const val DATA_SHARING_NO_UPDATES_MESSAGE = "No updates at this time"
+        private const val UPDATES_IN_LAST_30_DAYS = "Updated within 30 days"
         private const val DATA_SHARING_UPDATES_FOOTER_MESSAGE =
-            "The developers of the apps listed here provided this information about their sharing" +
-                " practices and may update it over time.\nData privacy and security practices" +
-                " may vary based on your use, region, and age."
-        private const val LEARN_MORE_ABOUT_DATA_SHARING = "Learn more about data sharing"
+            "The developers of these apps provided info about their data sharing practices and" +
+                    " may update it over time.\n\nData sharing practices may vary based on your" +
+                    " app version, use, region, and age."
+        private const val LEARN_ABOUT_DATA_SHARING = "Learn about data sharing"
         private const val APP_PERMISSIONS = "App permissions"
         private const val PERMISSION_MANAGER = "Permission manager"
         private const val APP_PACKAGE_NAME_SUBSTRING = "android.permission3"
