@@ -20,6 +20,8 @@ import android.content.Intent
 import android.content.Intent.ACTION_REVIEW_APP_DATA_SHARING_UPDATES
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.os.Build
+import android.permission3.cts.AppMetadata.createAppMetadataWithLocationSharingNoAds
+import android.permission3.cts.AppMetadata.createAppMetadataWithNoSharing
 import android.provider.DeviceConfig
 import android.safetylabel.SafetyLabelConstants.PERMISSION_RATIONALE_ENABLED
 import android.safetylabel.SafetyLabelConstants.SAFETY_LABEL_CHANGE_NOTIFICATIONS_ENABLED
@@ -27,6 +29,7 @@ import android.support.test.uiautomator.By
 import androidx.test.filters.SdkSuppress
 import com.android.compatibility.common.util.DeviceConfigStateChangerRule
 import com.android.compatibility.common.util.SystemUtil.runWithShellPermissionIdentity
+import com.android.compatibility.common.util.SystemUtil.waitForBroadcasts
 import com.android.modules.utils.build.SdkLevel
 import org.junit.Assume
 import org.junit.Before
@@ -37,7 +40,6 @@ import org.junit.Test
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, codeName = "UpsideDownCake")
 class AppDataSharingUpdatesTest : BaseUsePermissionTest() {
     // TODO(b/263838456): Add tests for personal and work profile.
-    // TODO(b/261660881): Add tests involving installing an app with test app metadata.
 
     @get:Rule
     val deviceConfigSafetyLabelChangeNotificationsEnabled =
@@ -60,6 +62,26 @@ class AppDataSharingUpdatesTest : BaseUsePermissionTest() {
         DeviceConfigStateChangerRule(
             context, DeviceConfig.NAMESPACE_PRIVACY, PERMISSION_RATIONALE_ENABLED, true.toString())
 
+    @get:Rule
+    val deviceConfigDataSharingUpdatesPeriod =
+        DeviceConfigStateChangerRule(
+            context,
+            DeviceConfig.NAMESPACE_PRIVACY,
+            PROPERTY_DATA_SHARING_UPDATE_PERIOD_MILLIS,
+            "600000")
+
+    /**
+     * This rule serves to limit the max number of safety labels that can be persisted, so that
+     * repeated tests don't overwhelm the disk storage on the device.
+     */
+    @get:Rule
+    val deviceConfigMaxSafetyLabelsPersistedPerApp =
+        DeviceConfigStateChangerRule(
+            context,
+            DeviceConfig.NAMESPACE_PRIVACY,
+            PROPERTY_MAX_SAFETY_LABELS_PERSISTED_PER_APP,
+            "2")
+
     @Before
     fun setup() {
         Assume.assumeTrue(
@@ -67,11 +89,15 @@ class AppDataSharingUpdatesTest : BaseUsePermissionTest() {
         Assume.assumeFalse(isAutomotive)
         Assume.assumeFalse(isTv)
         Assume.assumeFalse(isWatch)
+
+        installPackageViaSession(APP_APK_NAME_31, createAppMetadataWithNoSharing())
+        waitForBroadcasts()
+        installPackageViaSession(APP_APK_NAME_31, createAppMetadataWithLocationSharingNoAds())
+        waitForBroadcasts()
     }
 
     @Test
     fun startActivityWithIntent_featuresEnabled_whenAppHasLocationGranted_showUpdates() {
-        installPackage(APP_APK_PATH_31, installSource = TEST_INSTALLER_PACKAGE_NAME)
         grantLocationPermission(APP_PACKAGE_NAME)
 
         startAppDataSharingUpdatesActivity()
@@ -108,7 +134,6 @@ class AppDataSharingUpdatesTest : BaseUsePermissionTest() {
     // TODO(b/263838996): Check that Safety Label Help Center is opened.
     @Test
     fun clickLearnMore_opensPermissionManager() {
-        installPackage(APP_APK_PATH_31, installSource = TEST_INSTALLER_PACKAGE_NAME)
         grantLocationPermission(APP_PACKAGE_NAME)
         startAppDataSharingUpdatesActivity()
 
@@ -129,7 +154,6 @@ class AppDataSharingUpdatesTest : BaseUsePermissionTest() {
 
     @Test
     fun clickSettingsGearInUpdate_opensAppPermissionsPage() {
-        installPackage(APP_APK_PATH_31, installSource = TEST_INSTALLER_PACKAGE_NAME)
         grantLocationPermission(APP_PACKAGE_NAME)
         startAppDataSharingUpdatesActivity()
 
@@ -151,7 +175,6 @@ class AppDataSharingUpdatesTest : BaseUsePermissionTest() {
 
     @Test
     fun startActivityWithIntent_featuresEnabled_whenAppDoesntHaveLocationGranted_showsNoUpdates() {
-        installPackage(APP_APK_PATH_31, installSource = TEST_INSTALLER_PACKAGE_NAME)
         startAppDataSharingUpdatesActivity()
 
         try {
@@ -230,5 +253,9 @@ class AppDataSharingUpdatesTest : BaseUsePermissionTest() {
             "com.android.permissioncontroller:id/settings_button"
         private const val PLACEHOLDER_SAFETY_LABEL_UPDATES_FLAG =
             "placeholder_safety_label_updates_flag"
+        private const val PROPERTY_DATA_SHARING_UPDATE_PERIOD_MILLIS =
+            "data_sharing_update_period_millis"
+        private const val PROPERTY_MAX_SAFETY_LABELS_PERSISTED_PER_APP =
+            "max_safety_labels_persisted_per_app"
     }
 }
