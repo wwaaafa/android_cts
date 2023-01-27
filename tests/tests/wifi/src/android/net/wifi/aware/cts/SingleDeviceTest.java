@@ -1677,7 +1677,7 @@ public class SingleDeviceTest extends WifiJUnit3TestBase {
         UiAutomation uiAutomation = InstrumentationRegistry.getInstrumentation().getUiAutomation();
         try {
             uiAutomation.adoptShellPermissionIdentity();
-            boolean hasPermission = mContext.checkCallingPermission(OVERRIDE_WIFI_CONFIG)
+            boolean hasPermission = mContext.checkCallingOrSelfPermission(OVERRIDE_WIFI_CONFIG)
                     == PERMISSION_GRANTED;
             // Attach offload session
             final AttachCallbackTest attachCb = new AttachCallbackTest();
