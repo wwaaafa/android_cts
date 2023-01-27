@@ -285,11 +285,6 @@ public class EncoderColorAspectsTest extends CodecEncoderTestBase {
     public void testColorAspects() throws IOException, InterruptedException {
         Assume.assumeTrue("Test introduced with Android 11", sIsAtLeastR);
 
-        if (mCodecName.equals("OMX.google.h264.encoder")) {  // TODO(b/189883530)
-            Log.d(LOG_TAG, "test skipped due to b/189883530");
-            return;
-        }
-
         mActiveEncCfg = mEncCfgParams[0];
         if (mActiveEncCfg.mInputBitDepth > 8) {
             // Check if encoder is capable of supporting HDR profiles.
