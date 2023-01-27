@@ -17,17 +17,24 @@
 package android.devicepolicy.cts;
 
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
+import static android.location.LocationManager.FUSED_PROVIDER;
 
+import static com.android.bedstead.nene.permissions.CommonPermissions.ACCESS_BACKGROUND_LOCATION;
+import static com.android.bedstead.nene.permissions.CommonPermissions.ACCESS_COARSE_LOCATION;
+import static com.android.bedstead.nene.permissions.CommonPermissions.ACCESS_FINE_LOCATION;
 import static com.android.bedstead.nene.permissions.CommonPermissions.INTERACT_ACROSS_USERS_FULL;
 import static com.android.queryable.queries.ActivityQuery.activity;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
 import android.content.Context;
 import android.content.Intent;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
 
 import androidx.test.uiautomator.UiSelector;
@@ -37,7 +44,9 @@ import com.android.bedstead.harrier.DeviceState;
 import com.android.bedstead.harrier.annotations.EnsureHasPermission;
 import com.android.bedstead.harrier.annotations.EnsureHasWorkProfile;
 import com.android.bedstead.harrier.annotations.Postsubmit;
+import com.android.bedstead.harrier.annotations.RequireRunOnWorkProfile;
 import com.android.bedstead.nene.TestApis;
+import com.android.bedstead.nene.location.LocationProvider;
 import com.android.bedstead.nene.users.UserReference;
 import com.android.bedstead.nene.utils.Poll;
 import com.android.bedstead.nene.utils.ShellCommand;
@@ -55,6 +64,10 @@ import org.junit.runner.RunWith;
  */
 @RunWith(BedsteadJUnit4.class)
 public class QuietModeTest {
+    private static final double TEST_LATITUDE = 51.5;
+    private static final double TEST_LONGITUDE = -0.1;
+    private static final float TEST_ACCURACY = 14.0f;
+
     @ClassRule
     @Rule
     public static final DeviceState sDeviceState = new DeviceState();
@@ -138,6 +151,35 @@ public class QuietModeTest {
 
             // The DPC shouldn't be suspended.
             assertThat(sDeviceState.dpc().testApp().pkg().isSuspended(workProfile)).isFalse();
+        } finally {
+            workProfile.setQuietMode(false);
+        }
+    }
+
+    @Postsubmit(reason = "new test")
+    @RequireRunOnWorkProfile
+    @EnsureHasPermission({ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, ACCESS_BACKGROUND_LOCATION})
+    @Test
+    public void quietMode_noLocationAccess() throws Exception {
+        assumeTrue("Keep profiles available feature not enabled", keepProfilesRunningEnabled());
+        UserReference workProfile = sDeviceState.workProfile();
+
+        try (LocationProvider provider = TestApis.location().addLocationProvider(FUSED_PROVIDER)) {
+            provider.setLocation(TEST_LATITUDE, TEST_LONGITUDE, TEST_ACCURACY);
+            LocationManager lm = sContext.getSystemService(LocationManager.class);
+
+            // Location should be accessible pre quiet mode.
+            Location loc = lm.getLastKnownLocation(FUSED_PROVIDER);
+            assertWithMessage("Location not available").that(loc).isNotNull();
+            assertWithMessage("Unexpected latitude")
+                    .that(loc.getLatitude()).isEqualTo(TEST_LATITUDE);
+            assertWithMessage("Unexpected longitude")
+                    .that(loc.getLongitude()).isEqualTo(TEST_LONGITUDE);
+
+            workProfile.setQuietMode(true);
+
+            loc = lm.getLastKnownLocation(FUSED_PROVIDER);
+            assertWithMessage("Location still available in quiet mode").that(loc).isNull();
         } finally {
             workProfile.setQuietMode(false);
         }
