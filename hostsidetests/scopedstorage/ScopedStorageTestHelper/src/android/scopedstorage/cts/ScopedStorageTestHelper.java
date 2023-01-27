@@ -27,6 +27,7 @@ import static android.scopedstorage.cts.lib.TestUtils.DELETE_FILE_QUERY;
 import static android.scopedstorage.cts.lib.TestUtils.DELETE_RECURSIVE_QUERY;
 import static android.scopedstorage.cts.lib.TestUtils.FILE_EXISTS_QUERY;
 import static android.scopedstorage.cts.lib.TestUtils.INTENT_EXCEPTION;
+import static android.scopedstorage.cts.lib.TestUtils.INTENT_EXTRA_ARGS;
 import static android.scopedstorage.cts.lib.TestUtils.INTENT_EXTRA_CALLING_PKG;
 import static android.scopedstorage.cts.lib.TestUtils.INTENT_EXTRA_PATH;
 import static android.scopedstorage.cts.lib.TestUtils.INTENT_EXTRA_URI;
@@ -40,6 +41,7 @@ import static android.scopedstorage.cts.lib.TestUtils.QUERY_MIN_ROW_ID;
 import static android.scopedstorage.cts.lib.TestUtils.QUERY_OWNER_PACKAGE_NAMES;
 import static android.scopedstorage.cts.lib.TestUtils.QUERY_TYPE;
 import static android.scopedstorage.cts.lib.TestUtils.QUERY_URI;
+import static android.scopedstorage.cts.lib.TestUtils.QUERY_WITH_ARGS;
 import static android.scopedstorage.cts.lib.TestUtils.READDIR_QUERY;
 import static android.scopedstorage.cts.lib.TestUtils.RENAME_FILE_PARAMS_SEPARATOR;
 import static android.scopedstorage.cts.lib.TestUtils.RENAME_FILE_QUERY;
@@ -146,6 +148,9 @@ public class ScopedStorageTestHelper extends Activity {
                 case QUERY_OWNER_PACKAGE_NAMES:
                     returnIntent = queryOwnerPackageNames(queryType);
                     break;
+                case QUERY_WITH_ARGS:
+                    returnIntent = queryWithArgs(queryType);
+                    break;
                 case "null":
                 default:
                     throw new IllegalStateException(
@@ -206,6 +211,21 @@ public class ScopedStorageTestHelper extends Activity {
                 }
             }
             intent.putExtra(queryType, ownerPackageNames.toArray(new String[0]));
+        } catch (Exception e) {
+            intent.putExtra(INTENT_EXCEPTION, e);
+        }
+
+        return intent;
+    }
+
+    private Intent queryWithArgs(String queryType) {
+        final Intent intent = new Intent(queryType);
+        final Uri uri = getIntent().getParcelableExtra(INTENT_EXTRA_URI);
+        final Bundle args = getIntent().getBundleExtra(INTENT_EXTRA_ARGS);
+        try {
+            final Cursor c = getContentResolver().query(uri,
+                    new String[]{MediaStore.MediaColumns.DISPLAY_NAME}, args, null);
+            intent.putExtra(queryType, c.getCount());
         } catch (Exception e) {
             intent.putExtra(INTENT_EXCEPTION, e);
         }
