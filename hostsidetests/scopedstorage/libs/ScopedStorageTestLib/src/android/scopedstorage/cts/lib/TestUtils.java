@@ -95,6 +95,7 @@ public class TestUtils {
     public static final String INTENT_EXTRA_PATH = "android.scopedstorage.cts.path";
     public static final String INTENT_EXTRA_URI = "android.scopedstorage.cts.uri";
     public static final String INTENT_EXTRA_CALLING_PKG = "android.scopedstorage.cts.calling_pkg";
+    public static final String INTENT_EXTRA_ARGS = "android.scopedstorage.cts.args";
     public static final String INTENT_EXCEPTION = "android.scopedstorage.cts.exception";
     public static final String FILE_EXISTS_QUERY = "android.scopedstorage.cts.file_exists";
     public static final String CREATE_FILE_QUERY = "android.scopedstorage.cts.createfile";
@@ -117,6 +118,7 @@ public class TestUtils {
     public static final String QUERY_MIN_ROW_ID = "android.scopedstorage.cts.query_min_row_id";
     public static final String QUERY_OWNER_PACKAGE_NAMES =
             "android.scopedstorage.cts.query_owner_package_names";
+    public static final String QUERY_WITH_ARGS = "android.scopedstorage.cts.query_with_args";
     public static final String OPEN_FILE_FOR_READ_QUERY =
             "android.scopedstorage.cts.openfile_read";
     public static final String OPEN_FILE_FOR_WRITE_QUERY =
@@ -317,6 +319,18 @@ public class TestUtils {
     public static String[] queryForOwnerPackageNamesAs(TestApp testApp, Uri uri) throws Exception {
         final String actionName = QUERY_OWNER_PACKAGE_NAMES;
         return getFromTestApp(testApp, uri, actionName).getStringArray(actionName);
+    }
+
+    /**
+     * Makes the given {@code testApp} query on {@code uri} with the provided {@code queryArgs}.
+     *
+     * Returns the number of rows in the result cursor.
+     *
+     * <p>This method drops shell permission identity.
+     */
+    public static int queryWithArgsAs(TestApp testApp, Uri uri, Bundle queryArgs) throws Exception {
+        final String actionName = QUERY_WITH_ARGS;
+        return getFromTestApp(testApp, uri, actionName, queryArgs).getInt(actionName);
     }
 
     /**
@@ -1605,7 +1619,8 @@ public class TestUtils {
      * <p>This method drops shell permission identity.
      */
     private static void sendIntentToTestApp(TestApp testApp, Uri uri, String actionName,
-            BroadcastReceiver broadcastReceiver, CountDownLatch latch) throws Exception {
+            BroadcastReceiver broadcastReceiver, CountDownLatch latch,
+            Bundle args) throws Exception {
         if (sShouldForceStopTestApp) {
             final String packageName = testApp.getPackageName();
             forceStopApp(packageName);
@@ -1613,6 +1628,7 @@ public class TestUtils {
 
         final Intent intent = new Intent(Intent.ACTION_MAIN);
         intent.putExtra(INTENT_EXTRA_URI, uri);
+        intent.putExtra(INTENT_EXTRA_ARGS, args);
         launchTestApp(testApp, actionName, broadcastReceiver, latch, intent);
     }
 
@@ -1684,6 +1700,14 @@ public class TestUtils {
      */
     private static Bundle getFromTestApp(TestApp testApp, Uri uri, String actionName)
             throws Exception {
+        return getFromTestApp(testApp, uri, actionName, null);
+    }
+
+    /**
+     * <p>This method drops shell permission identity.
+     */
+    private static Bundle getFromTestApp(TestApp testApp, Uri uri, String actionName, Bundle args)
+            throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         final Bundle[] bundle = new Bundle[1];
         final Exception[] exception = new Exception[1];
@@ -1700,7 +1724,7 @@ public class TestUtils {
             }
         };
 
-        sendIntentToTestApp(testApp, uri, actionName, broadcastReceiver, latch);
+        sendIntentToTestApp(testApp, uri, actionName, broadcastReceiver, latch, args);
         if (exception[0] != null) {
             throw exception[0];
         }

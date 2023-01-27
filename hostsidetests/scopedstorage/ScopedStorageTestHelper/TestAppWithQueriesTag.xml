@@ -26,7 +26,7 @@
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
 
     <queries>
-        <package android:name="android.scopedstorage.cts.testapp.filemanager" />
+        <package android:name="android.scopedstorage.cts.testapp.B.noperms" />
     </queries>
 
     <application android:label="TestAppWithQueriesTag">
