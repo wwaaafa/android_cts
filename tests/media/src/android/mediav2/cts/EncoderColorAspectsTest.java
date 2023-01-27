@@ -28,9 +28,9 @@ import android.media.MediaCodec;
 import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.mediav2.common.cts.CodecDecoderTestBase;
+import android.mediav2.common.cts.CodecEncoderTestBase;
 import android.mediav2.common.cts.CodecTestBase;
 import android.mediav2.common.cts.EncoderConfigParams;
-import android.mediav2.common.cts.EncoderTestBase;
 import android.mediav2.common.cts.OutputManager;
 import android.opengl.GLES20;
 import android.os.Build;
@@ -73,7 +73,7 @@ import java.util.List;
  * restricted to HLG/HDR profiles.
  */
 @RunWith(Parameterized.class)
-public class EncoderColorAspectsTest extends EncoderTestBase {
+public class EncoderColorAspectsTest extends CodecEncoderTestBase {
     private static final String LOG_TAG = EncoderColorAspectsTest.class.getSimpleName();
 
     private Surface mInpSurface;
