@@ -24,7 +24,7 @@
             canInteractAcrossProfiles_permissionIsSet_returnsTrue -->
     <uses-permission android:name="android.permission.INTERACT_ACROSS_PROFILES"/>
 
-    <!-- Seemingly the INTERNET permission cannot be adopted. -->
+    <!-- Seemingly the these permissions cannot be adopted. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- Add a network security config that trusts user added CAs for tests -->
