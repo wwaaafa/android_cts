@@ -684,7 +684,7 @@ public class ExtractorTest {
         private void checkExtractorOkForUrlDS(Map<String, String> headers) throws Exception {
             MediaExtractor testExtractor = new MediaExtractor();
             testExtractor.setDataSource(mInpMediaUrl, headers);
-            HttpRequest req = mWebServer.getLastRequest(mResString);
+            HttpRequest req = mWebServer.getLastAssetRequest(mResString);
             if (headers != null) {
                 for (String key : headers.keySet()) {
                     String value = headers.get(key);
