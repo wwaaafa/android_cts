@@ -65,7 +65,6 @@ public class TransactionalApisTest extends BaseTelecomTestWithMockServices {
     // CallControl
     private static final String SET_ACTIVE = "SetActive";
     private static final String SET_INACTIVE = "SetInactive";
-    private static final String REJECT = "Reject";
     private static final String DISCONNECT = "Disconnect";
 
     // Fail messages
@@ -83,6 +82,7 @@ public class TransactionalApisTest extends BaseTelecomTestWithMockServices {
             "Mute state was not updated at all or in time";
 
     // inner classes
+
     /**
      * simulates a VoIP app construct of a Call object that accepts every CallEventCallback
      */
@@ -340,9 +340,10 @@ public class TransactionalApisTest extends BaseTelecomTestWithMockServices {
     }
 
     /**
-     * Ensure the state transitions of a successful incoming call that was rejected
+     * Ensure the state transitions of a successful incoming call are correct.
+     * State Transitions:  Created -> Ringing -> Disconnected -> Destroyed
      */
-    public void testAddIncomingCallAndReject() {
+    public void testRejectIncomingCall() {
         if (!mShouldTestTelecom) {
             return;
         }
@@ -350,7 +351,14 @@ public class TransactionalApisTest extends BaseTelecomTestWithMockServices {
             cleanup();
             startCallWithAttributesAndVerify(mIncomingCallAttributes, mCall1);
             assertNumCalls(getInCallService(), 1);
-            callControlAction(REJECT, mCall1);
+            assertEquals(Call.STATE_RINGING, getLastAddedCall().getState());
+            try {
+                callControlAction(DISCONNECT, mCall1, DisconnectCause.ERROR);
+                fail("testRejectIncomingCall: forced fail b/c IllegalArgumentException not thrown");
+            } catch (IllegalArgumentException e) {
+                assertNotNull(e);
+            }
+            callControlAction(DISCONNECT, mCall1, DisconnectCause.REJECTED);
             assertNumCalls(getInCallService(), 0);
         } finally {
             cleanup();
@@ -360,7 +368,7 @@ public class TransactionalApisTest extends BaseTelecomTestWithMockServices {
     /**
      * Ensure the state transitions of a successful outgoing call are correct.
      * State Transitions:  New -> Connecting  -> Active -> Inactive ->
-     *                                                          Disconnecting -> Disconnected
+     * Disconnecting -> Disconnected
      */
     public void testAddOutgoingCallAndSetInactive() {
         if (!mShouldTestTelecom) {
@@ -733,14 +741,19 @@ public class TransactionalApisTest extends BaseTelecomTestWithMockServices {
     }
 
 
-    public void callControlAction(String action, TestVoipCall call) {
+    public void callControlAction(String action, TestVoipCall call, Object... objects) {
         final CountDownLatch latch = new CountDownLatch(1);
         final LatchedOutcomeReceiver outcome = new LatchedOutcomeReceiver(latch);
+        DisconnectCause disconnectCause = new DisconnectCause(DisconnectCause.LOCAL);
 
         CallControl callControl = call.mCallControl;
         if (callControl == null) {
             fail("callControl object is null");
             return;
+        }
+
+        if (objects != null && objects.length >= 1) {
+            disconnectCause = new DisconnectCause((int) objects[0]);
         }
 
         switch (action) {
@@ -751,11 +764,7 @@ public class TransactionalApisTest extends BaseTelecomTestWithMockServices {
                 call.mCallControl.setInactive(Runnable::run, outcome);
                 break;
             case DISCONNECT:
-                call.mCallControl.disconnect(new DisconnectCause(DisconnectCause.LOCAL),
-                        Runnable::run, outcome);
-                break;
-            case REJECT:
-                call.mCallControl.rejectCall(Runnable::run, outcome);
+                call.mCallControl.disconnect(disconnectCause, Runnable::run, outcome);
                 break;
             default:
                 fail("should never reach the default case");
