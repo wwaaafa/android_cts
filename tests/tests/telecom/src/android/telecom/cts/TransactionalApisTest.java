@@ -42,6 +42,8 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.android.compatibility.common.util.ApiTest;
+
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
@@ -83,6 +85,7 @@ public class TransactionalApisTest extends BaseTelecomTestWithMockServices {
             "Mute state was not updated at all or in time";
 
     // inner classes
+
     /**
      * simulates a VoIP app construct of a Call object that accepts every CallEventCallback
      */
@@ -360,7 +363,7 @@ public class TransactionalApisTest extends BaseTelecomTestWithMockServices {
     /**
      * Ensure the state transitions of a successful outgoing call are correct.
      * State Transitions:  New -> Connecting  -> Active -> Inactive ->
-     *                                                          Disconnecting -> Disconnected
+     * Disconnecting -> Disconnected
      */
     public void testAddOutgoingCallAndSetInactive() {
         if (!mShouldTestTelecom) {
@@ -383,6 +386,86 @@ public class TransactionalApisTest extends BaseTelecomTestWithMockServices {
             cleanup();
         }
     }
+
+    /**
+     * Calls that do not have the {@link CallAttributes#SUPPORTS_SET_INACTIVE} and call
+     * {@link CallControl#setInactive(Executor, OutcomeReceiver)} should always result in an
+     * OutcomeReceiver#onError with CallException#CODE_CANNOT_HOLD_CURRENT_ACTIVE_CALL
+     */
+    @ApiTest(apis = {"android.telecom.CallException(java.lang.String, int)"})
+    public void testCallDoesNotSupportHoldResultsInOnError() {
+        if (!mShouldTestTelecom) {
+            return;
+        }
+        final CallAttributes cannotSetInactiveAttributes =
+                new CallAttributes.Builder(HANDLE, DIRECTION_OUTGOING,
+                        TEST_NAME_1, TEST_URI_1)
+                        .setCallCapabilities(CallAttributes.SUPPORTS_STREAM)
+                        .build();
+
+        assertEquals(CallAttributes.SUPPORTS_STREAM,
+                cannotSetInactiveAttributes.getCallCapabilities());
+
+        CallException cannotSetInactiveException = new CallException("call does not support hold",
+                CallException.CODE_CANNOT_HOLD_CURRENT_ACTIVE_CALL);
+        try {
+            cleanup();
+            startCallWithAttributesAndVerify(cannotSetInactiveAttributes, mCall1);
+            mCall1.mCallControl.setInactive(Runnable::run, new OutcomeReceiver<>() {
+                @Override
+                public void onResult(Void result) {
+                    fail("testCannotSetInactiveExpectFail:"
+                            + " onResult should not be called");
+                }
+
+                @Override
+                public void onError(CallException exception) {
+                    assertEquals(cannotSetInactiveException.getCode(),
+                            exception.getCode());
+                }
+            });
+            callControlAction(DISCONNECT, mCall1);
+        } finally {
+            cleanup();
+        }
+    }
+
+    /**
+     * Calling any {@link CallControl} API after calling
+     * {@link CallControl#disconnect(DisconnectCause, Executor, OutcomeReceiver)} will always
+     * result in OutcomeReceiver#onError.
+     */
+    @ApiTest(apis = {"android.telecom.CallException(java.lang.String, int)"})
+    public void testUsingCallControlAfterDisconnect() {
+        if (!mShouldTestTelecom) {
+            return;
+        }
+        CallException callNotTrackedException = new CallException("does not contain call",
+                CallException.CODE_CALL_IS_NOT_BEING_TRACKED);
+        try {
+            cleanup();
+            startCallWithAttributesAndVerify(mOutgoingCallAttributes, mCall1);
+            callControlAction(DISCONNECT, mCall1);
+            assertNumCalls(getInCallService(), 0);
+
+            mCall1.mCallControl.setActive(Runnable::run, new OutcomeReceiver<>() {
+                @Override
+                public void onResult(Void result) {
+                    fail("testUsingCallControlAfterDisconnect:"
+                            + " onResult should not be called");
+                }
+
+                @Override
+                public void onError(CallException exception) {
+                    assertEquals(callNotTrackedException.getCode(),
+                            exception.getCode());
+                }
+            });
+        } finally {
+            cleanup();
+        }
+    }
+
 
     /**
      * Ensure {@link CallEventCallback#onReject} is being called and destroying the call.
