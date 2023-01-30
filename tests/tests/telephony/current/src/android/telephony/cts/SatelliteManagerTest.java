@@ -30,6 +30,8 @@ import android.util.Log;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.concurrent.LinkedBlockingQueue;
+
 public class SatelliteManagerTest {
     private static final String TAG = "SatelliteManagerTest";
 
@@ -79,5 +81,15 @@ public class SatelliteManagerTest {
         }
         assertThrows(IllegalArgumentException.class,
                 () -> mSatelliteManager.stopSatellitePositionUpdates(callback));
+    }
+
+    @Test
+    public void testGetMaxCharactersPerSatelliteTextMessage() throws Exception {
+        LinkedBlockingQueue<Integer> maxCharResult = new LinkedBlockingQueue<>(1);
+
+        // Throws SecurityException as we do not have SATELLITE_COMMUNICATION permission.
+        assertThrows(SecurityException.class,
+                ()-> mSatelliteManager.getMaxCharactersPerSatelliteTextMessage(
+                        getContext().getMainExecutor(), maxCharResult::offer));
     }
 }
