@@ -46,6 +46,7 @@ import android.car.hardware.property.AutomaticEmergencyBrakingState;
 import android.car.hardware.property.BlindSpotWarningState;
 import android.car.hardware.property.CarPropertyManager;
 import android.car.hardware.property.CarPropertyManager.CarPropertyEventCallback;
+import android.car.hardware.property.EmergencyLaneKeepAssistState;
 import android.car.hardware.property.ErrorState;
 import android.car.hardware.property.EvChargeState;
 import android.car.hardware.property.EvRegenerativeBrakingState;
@@ -199,6 +200,17 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     private static final ImmutableSet<Integer> HVAC_TEMPERATURE_DISPLAY_UNITS =
             ImmutableSet.<Integer>builder().add(VehicleUnit.CELSIUS,
                     VehicleUnit.FAHRENHEIT).build();
+    private static final ImmutableSet<Integer> EMERGENCY_LANE_KEEP_ASSIST_STATES =
+            ImmutableSet.<Integer>builder()
+                    .add(
+                            EmergencyLaneKeepAssistState.OTHER,
+                            EmergencyLaneKeepAssistState.ENABLED,
+                            EmergencyLaneKeepAssistState.WARNING_LEFT,
+                            EmergencyLaneKeepAssistState.WARNING_RIGHT,
+                            EmergencyLaneKeepAssistState.ACTIVATED_STEER_LEFT,
+                            EmergencyLaneKeepAssistState.ACTIVATED_STEER_RIGHT,
+                            EmergencyLaneKeepAssistState.USER_OVERRIDE)
+                    .build();
     private static final ImmutableSet<Integer> ERROR_STATES =
             ImmutableSet.<Integer>builder()
                     .add(
@@ -634,7 +646,8 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.BLIND_SPOT_WARNING_STATE,
                             VehiclePropertyIds.LANE_DEPARTURE_WARNING_STATE,
                             VehiclePropertyIds.LANE_KEEP_ASSIST_STATE,
-                            VehiclePropertyIds.LANE_CENTERING_ASSIST_STATE)
+                            VehiclePropertyIds.LANE_CENTERING_ASSIST_STATE,
+                            VehiclePropertyIds.EMERGENCY_LANE_KEEP_ASSIST_STATE)
                     .build();
     private static final ImmutableList<Integer> PERMISSION_CONTROL_ADAS_STATES_PROPERTIES =
             ImmutableList.<Integer>builder()
@@ -934,6 +947,30 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                 .addWritePermission(Car.PERMISSION_CONTROL_ADAS_SETTINGS)
                 .build()
                 .verify(mCarPropertyManager);
+    }
+
+    @Test
+    public void testEmergencyLaneKeepAssistStateIfSupported() {
+        ImmutableSet<Integer> possibleEnumValues = ImmutableSet.<Integer>builder()
+                .addAll(EMERGENCY_LANE_KEEP_ASSIST_STATES)
+                .addAll(ERROR_STATES)
+                .build();
+
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.EMERGENCY_LANE_KEEP_ASSIST_STATE,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Integer.class)
+                .setAllPossibleEnumValues(possibleEnumValues)
+                .addReadPermission(Car.PERMISSION_READ_ADAS_STATES)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
+    public void testEmergencyLaneKeepAssistStateAndErrorStateDontIntersect() {
+        verifyEnumValuesAreDistinct(EMERGENCY_LANE_KEEP_ASSIST_STATES, ERROR_STATES);
     }
 
     @Test
