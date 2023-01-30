@@ -19,7 +19,7 @@ package android.webkit.cts;
 import android.webkit.cts.HttpRequest;
 
 interface IWebServer {
-    void start(int sslMode);
+    void start(int sslMode, in @nullable byte[] acceptedIssuerDer);
 
     void shutdown();
 
