@@ -23,7 +23,6 @@ import static android.app.cts.shortfgstesthelper.ShortFgsHelper.FGS2;
 import static android.app.cts.shortfgstesthelper.ShortFgsHelper.HELPER_PACKAGE;
 import static android.app.cts.shortfgstesthelper.ShortFgsHelper.TAG;
 import static android.app.nano.AppProtoEnums.PROCESS_STATE_FOREGROUND_SERVICE;
-import static android.app.nano.AppProtoEnums.PROCESS_STATE_IMPORTANT_FOREGROUND;
 import static android.app.nano.AppProtoEnums.PROCESS_STATE_LAST_ACTIVITY;
 import static android.app.nano.AppProtoEnums.PROCESS_STATE_TOP;
 import static android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SHORT_SERVICE;
@@ -364,7 +363,7 @@ public class ActivityManagerShortFgsTest {
         // Short service's procstat is IMP-FG, and when it starts. It's not started from TOP,
         // so the oom-adj will be 225 + 1.
         // If it was started from TOP, it'd be 50 + 1.
-        assertHelperPackageProcState(PROCESS_STATE_IMPORTANT_FOREGROUND, 225 + 1);
+        assertHelperPackageProcState(PROCESS_STATE_FOREGROUND_SERVICE, 225 + 1);
 
         // Stop the service.
         sContext.stopService(new Intent().setComponent(FGS0));
@@ -402,7 +401,7 @@ public class ActivityManagerShortFgsTest {
         // Short service's procstat is IMP-FG, and when it starts. It's not started from TOP,
         // so the oom-adj will be 225 + 1.
         // If it was started from TOP, it'd be 50 + 1.
-        assertHelperPackageProcState(PROCESS_STATE_IMPORTANT_FOREGROUND, 225 + 1);
+        assertHelperPackageProcState(PROCESS_STATE_FOREGROUND_SERVICE, 225 + 1);
 
         // Stop the service, using Service.stopSelf().
         ShortFgsMessageReceiver.sendMessage(
@@ -444,7 +443,7 @@ public class ActivityManagerShortFgsTest {
         // Short service's procstat is IMP-FG, and when it starts. It's not started from TOP,
         // so the oom-adj will be 225 + 1.
         // If it was started from TOP, it'd be 50 + 1.
-        assertHelperPackageProcState(PROCESS_STATE_IMPORTANT_FOREGROUND, 225 + 1);
+        assertHelperPackageProcState(PROCESS_STATE_FOREGROUND_SERVICE, 225 + 1);
 
         // Wait for onTimeout()
         Thread.sleep(SHORTENED_TIMEOUT);
@@ -459,7 +458,7 @@ public class ActivityManagerShortFgsTest {
         }
 
         // At this point, the procstate should still be the same.
-        assertHelperPackageProcState(PROCESS_STATE_IMPORTANT_FOREGROUND, 225 + 1);
+        assertHelperPackageProcState(PROCESS_STATE_FOREGROUND_SERVICE, 225 + 1);
 
         assertServiceRunning(FGS0);
 
@@ -702,7 +701,7 @@ public class ActivityManagerShortFgsTest {
         assertServiceRunning(FGS0);
 
         // The procstate should be of the SHORT_FGS.
-        assertHelperPackageProcState(PROCESS_STATE_IMPORTANT_FOREGROUND, 225 + 1);
+        assertHelperPackageProcState(PROCESS_STATE_FOREGROUND_SERVICE, 225 + 1);
 
         // Stop the service.
         sContext.stopService(new Intent().setComponent(FGS0));
@@ -729,7 +728,7 @@ public class ActivityManagerShortFgsTest {
         waitForMethodCall(FGS0, "onStartCommand");
         assertServiceRunning(FGS0);
 
-        assertHelperPackageProcState(PROCESS_STATE_IMPORTANT_FOREGROUND, 225 + 1);
+        assertHelperPackageProcState(PROCESS_STATE_FOREGROUND_SERVICE, 225 + 1);
 
         // Because of the first Context.startForegroundService() for FGS0, the helper
         // app is temp-allowlisted for this duration, so another
@@ -774,7 +773,7 @@ public class ActivityManagerShortFgsTest {
         waitForMethodCall(FGS0, "onStartCommand");
         assertServiceRunning(FGS0);
 
-        assertHelperPackageProcState(PROCESS_STATE_IMPORTANT_FOREGROUND, 225 + 1);
+        assertHelperPackageProcState(PROCESS_STATE_FOREGROUND_SERVICE, 225 + 1);
 
         // Start another FGS, that's not a SHORT_SERVICE.
         startForegroundService(FGS1, FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
@@ -840,7 +839,7 @@ public class ActivityManagerShortFgsTest {
         // The service is still running, and the procstate should now be IMP_FG, but
         // the OOM-adjustment should be boosted.
         assertServiceRunning(FGS0);
-        assertHelperPackageProcState(PROCESS_STATE_IMPORTANT_FOREGROUND, 51);
+        assertHelperPackageProcState(PROCESS_STATE_FOREGROUND_SERVICE, 51);
 
         // TODO(short-service) We don't run an oomj after TOP_TO_FGS_GRACE_PERIOD, so this part
         // won't pass.
