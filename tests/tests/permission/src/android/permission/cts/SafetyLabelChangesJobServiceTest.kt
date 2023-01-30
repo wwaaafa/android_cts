@@ -22,7 +22,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Process
-import android.permission.cts.NotificationListenerUtils.getNotificationForPackageAndId
+import android.permission.cts.CtsNotificationListenerServiceUtils.getNotificationForPackageAndId
 import android.provider.DeviceConfig
 import android.safetylabel.SafetyLabelConstants
 import androidx.test.InstrumentationRegistry
@@ -76,14 +76,14 @@ class SafetyLabelChangesJobServiceTest {
         // Bypass battery saving restrictions
         SystemUtil.runShellCommand("cmd tare set-vip " +
             "${Process.myUserHandle().identifier} $permissionControllerPackageName true")
-        NotificationListenerUtils.cancelNotifications(permissionControllerPackageName)
+        CtsNotificationListenerServiceUtils.cancelNotifications(permissionControllerPackageName)
         resetPermissionControllerAndSimulateReboot()
     }
 
     @After
     fun tearDown() {
         cancelJob(SAFETY_LABEL_CHANGES_JOB_ID)
-        NotificationListenerUtils.cancelNotifications(permissionControllerPackageName)
+        CtsNotificationListenerServiceUtils.cancelNotifications(permissionControllerPackageName)
         // Reset battery saving restrictions
         SystemUtil.runShellCommand("cmd tare set-vip " +
             "${Process.myUserHandle().identifier} $permissionControllerPackageName default")
