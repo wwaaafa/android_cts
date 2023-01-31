@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,12 @@ package android.permission.cts;
 import android.service.notification.NotificationListenerService;
 import android.util.Log;
 
-public class NotificationListener extends NotificationListenerService {
-    private static final String LOG_TAG = NotificationListener.class.getSimpleName();
+public class CtsNotificationListenerService extends NotificationListenerService {
+    private static final String LOG_TAG = CtsNotificationListenerService.class.getSimpleName();
 
     private static final Object sLock = new Object();
 
-    private static NotificationListener sService;
+    private static CtsNotificationListenerService sService;
 
     @Override
     public void onListenerConnected() {
