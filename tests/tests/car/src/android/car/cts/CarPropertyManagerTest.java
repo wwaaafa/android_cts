@@ -501,6 +501,15 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.WINDOW_MOVE,
                             VehiclePropertyIds.WINDOW_LOCK)
                     .build();
+    private static final ImmutableList<Integer> PERMISSION_READ_WINDSHIELD_WIPERS_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.WINDSHIELD_WIPERS_PERIOD)
+                    .build();
+    private static final ImmutableList<Integer> PERMISSION_CONTROL_WINDSHIELD_WIPERS_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add()
+                    .build();
     private static final ImmutableList<Integer> PERMISSION_CONTROL_EXTERIOR_LIGHTS_PROPERTIES =
             ImmutableList.<Integer>builder()
                     .add(
@@ -1823,6 +1832,21 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                         Boolean.class)
                 .addReadPermission(Car.PERMISSION_CONTROL_CAR_WINDOWS)
                 .addWritePermission(Car.PERMISSION_CONTROL_CAR_WINDOWS)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
+    public void testWindshieldWipersPeriodIfSupported() {
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.WINDSHIELD_WIPERS_PERIOD,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_WINDOW,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Integer.class)
+                .requireMinMaxValues()
+                .requireMinValuesToBeZero()
+                .addReadPermission(Car.PERMISSION_READ_WINDSHIELD_WIPERS)
                 .build()
                 .verify(mCarPropertyManager);
     }
@@ -5839,6 +5863,40 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     }
                 },
                 Car.PERMISSION_CONTROL_CAR_WINDOWS);
+    }
+
+    @Test
+    public void testPermissionReadWindshieldWipersGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                "%s",
+                                VehiclePropertyIds.toString(
+                                        carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_READ_WINDSHIELD_WIPERS_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_READ_WINDSHIELD_WIPERS);
+    }
+
+    @Test
+    public void testPermissionControlWindshieldWipersGranted() {
+        runWithShellPermissionIdentity(
+                () -> {
+                    for (CarPropertyConfig<?> carPropertyConfig :
+                            mCarPropertyManager.getPropertyList()) {
+                        assertWithMessage(
+                                "%s",
+                                VehiclePropertyIds.toString(
+                                        carPropertyConfig.getPropertyId()))
+                                .that(carPropertyConfig.getPropertyId())
+                                .isIn(PERMISSION_CONTROL_WINDSHIELD_WIPERS_PROPERTIES);
+                    }
+                },
+                Car.PERMISSION_CONTROL_WINDSHIELD_WIPERS);
     }
 
     @Test
