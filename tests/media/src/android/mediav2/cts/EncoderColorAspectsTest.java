@@ -85,6 +85,7 @@ public class EncoderColorAspectsTest extends CodecEncoderTestBase {
     private static final ArrayList<String> IGNORE_COLOR_BOX_LIST = new ArrayList<>();
 
     static {
+        IGNORE_COLOR_BOX_LIST.add(MediaFormat.MIMETYPE_VIDEO_AV1);
         IGNORE_COLOR_BOX_LIST.add(MediaFormat.MIMETYPE_VIDEO_AVC);
         IGNORE_COLOR_BOX_LIST.add(MediaFormat.MIMETYPE_VIDEO_HEVC);
     }
@@ -146,7 +147,8 @@ public class EncoderColorAspectsTest extends CodecEncoderTestBase {
 
         List<Object[]> exhaustiveArgsList = new ArrayList<>();
 
-        String[] mediaTypes = {MediaFormat.MIMETYPE_VIDEO_AVC,
+        String[] mediaTypes = {MediaFormat.MIMETYPE_VIDEO_AV1,
+                MediaFormat.MIMETYPE_VIDEO_AVC,
                 MediaFormat.MIMETYPE_VIDEO_HEVC,
                 MediaFormat.MIMETYPE_VIDEO_VP8,
                 MediaFormat.MIMETYPE_VIDEO_VP9};
@@ -173,7 +175,8 @@ public class EncoderColorAspectsTest extends CodecEncoderTestBase {
         // above
         if (IS_AT_LEAST_T) {
             // ColorAspects for HDR profiles
-            String[] mediaTypesHighBitDepth = {MediaFormat.MIMETYPE_VIDEO_AVC,
+            String[] mediaTypesHighBitDepth = {MediaFormat.MIMETYPE_VIDEO_AV1,
+                    MediaFormat.MIMETYPE_VIDEO_AVC,
                     MediaFormat.MIMETYPE_VIDEO_HEVC,
                     MediaFormat.MIMETYPE_VIDEO_VP9};
             int[] standardsHighBitDepth = {-1,
