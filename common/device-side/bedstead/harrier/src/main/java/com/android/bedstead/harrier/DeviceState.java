@@ -40,6 +40,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
+import android.os.RemoteException;
+import android.os.UserManager;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -3505,7 +3507,15 @@ public final class DeviceState extends HarrierRule {
                 /* affiliationIds= */ Set.of());
 
         RemotePolicyManager dpc = profileOwner(onUser);
-        dpc.devicePolicyManager().addUserRestriction(dpc.componentName(), restriction);
+        try {
+            dpc.devicePolicyManager().addUserRestriction(dpc.componentName(), restriction);
+        } catch (SecurityException e) {
+            if (e.getMessage().contains("cannot set user restriction")) {
+                throw new AssumptionViolatedException(
+                        "Infra cannot set user restriction " + restriction);
+            }
+            throw e;
+        }
 
         if (mRemovedUserRestrictions.containsKey(onUser)
                 && mRemovedUserRestrictions.get(onUser).contains(restriction)) {
