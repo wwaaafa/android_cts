@@ -25,8 +25,9 @@ import static org.junit.Assert.assertTrue;
 
 import android.graphics.Color;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.filters.MediumTest;
 import androidx.test.rule.ActivityTestRule;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.compatibility.common.util.NullWebViewUtils;
 
@@ -41,6 +42,7 @@ import java.util.Map;
 /**
  * Tests for {@link android.webkit.WebSettings#setAlgorithmicDarkeningAllowed(boolean)}
  */
+@MediumTest
 @RunWith(AndroidJUnit4.class)
 public class WebViewDarkModeDarkThemeTest extends WebViewDarkModeTestBase {
 
