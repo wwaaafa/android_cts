@@ -37,7 +37,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
-import android.Manifest.permission;
 import android.app.Activity;
 import android.app.WallpaperColors;
 import android.app.WallpaperManager;
@@ -597,10 +596,8 @@ public class WallpaperManagerTest {
         mWallpaperManager.setResource(R.drawable.robot, FLAG_SYSTEM);
         mWallpaperManager.setResource(R.drawable.icon_red, FLAG_LOCK);
 
-        runWithShellPermissionIdentity(() -> {
-            assertThat(mWallpaperManager.getWallpaperInfo(FLAG_SYSTEM)).isNull();
-            assertThat(mWallpaperManager.getWallpaperInfo(FLAG_LOCK)).isNull();
-        }, permission.QUERY_ALL_PACKAGES);
+        assertThat(mWallpaperManager.getWallpaperInfo(FLAG_SYSTEM)).isNull();
+        assertThat(mWallpaperManager.getWallpaperInfo(FLAG_LOCK)).isNull();
     }
 
     @Test
@@ -612,12 +609,10 @@ public class WallpaperManagerTest {
             mWallpaperManager.setWallpaperComponentWithFlags(DEFAULT_COMPONENT_NAME, FLAG_SYSTEM);
         });
 
-        runWithShellPermissionIdentity(() -> {
-            assertWithMessage("Home screen").that(
-                    mWallpaperManager.getWallpaperInfo(FLAG_SYSTEM)).isNotNull();
-            assertWithMessage("Lock screen").that(
-                    mWallpaperManager.getWallpaperInfo(FLAG_LOCK)).isNull();
-        }, permission.QUERY_ALL_PACKAGES);
+        assertWithMessage("Home screen").that(
+                mWallpaperManager.getWallpaperInfo(FLAG_SYSTEM)).isNotNull();
+        assertWithMessage("Lock screen").that(
+                mWallpaperManager.getWallpaperInfo(FLAG_LOCK)).isNull();
     }
 
     @Test
@@ -630,12 +625,10 @@ public class WallpaperManagerTest {
             mWallpaperManager.setWallpaperComponentWithFlags(DEFAULT_COMPONENT_NAME, FLAG_LOCK);
         });
 
-        runWithShellPermissionIdentity(() -> {
-            assertWithMessage("Home screen").that(
-                    mWallpaperManager.getWallpaperInfo(FLAG_SYSTEM)).isNotNull();
-            assertWithMessage("Lock screen").that(
-                    mWallpaperManager.getWallpaperInfo(FLAG_LOCK)).isNull();
-        }, permission.QUERY_ALL_PACKAGES);
+        assertWithMessage("Home screen").that(
+                mWallpaperManager.getWallpaperInfo(FLAG_SYSTEM)).isNotNull();
+        assertWithMessage("Lock screen").that(
+                mWallpaperManager.getWallpaperInfo(FLAG_LOCK)).isNull();
     }
 
     @Test
@@ -648,12 +641,10 @@ public class WallpaperManagerTest {
             mWallpaperManager.setWallpaperComponentWithFlags(DEFAULT_COMPONENT_NAME, FLAG_LOCK);
         });
 
-        runWithShellPermissionIdentity(() -> {
-            assertWithMessage("Home screen").that(
-                    mWallpaperManager.getWallpaperInfo(FLAG_SYSTEM)).isNull();
-            assertWithMessage("Lock screen").that(
-                    mWallpaperManager.getWallpaperInfo(FLAG_LOCK)).isNotNull();
-        }, permission.QUERY_ALL_PACKAGES);
+        assertWithMessage("Home screen").that(
+                mWallpaperManager.getWallpaperInfo(FLAG_SYSTEM)).isNull();
+        assertWithMessage("Lock screen").that(
+                mWallpaperManager.getWallpaperInfo(FLAG_LOCK)).isNotNull();
     }
 
     @Test
