@@ -274,6 +274,11 @@ public final class SharedWebViewTestEnvironment {
                         return mWebServer.getAbsoluteUrl(path);
                     }
 
+                    public String getUserAgentUrl() {
+                        assertNotNull("The WebServer needs to be started", mWebServer);
+                        return mWebServer.getUserAgentUrl();
+                    }
+
                     public String getDelayedAssetUrl(String path) {
                         assertNotNull("The WebServer needs to be started", mWebServer);
                         return mWebServer.getDelayedAssetUrl(path);
@@ -297,6 +302,21 @@ public final class SharedWebViewTestEnvironment {
                     public String getBinaryUrl(String mimeType, int contentLength) {
                         assertNotNull("The WebServer needs to be started", mWebServer);
                         return mWebServer.getBinaryUrl(mimeType, contentLength);
+                    }
+
+                    public String getAppCacheUrl() {
+                        assertNotNull("The WebServer needs to be started", mWebServer);
+                        return mWebServer.getAppCacheUrl();
+                    }
+
+                    public int getRequestCount() {
+                        assertNotNull("The WebServer needs to be started", mWebServer);
+                        return mWebServer.getRequestCount();
+                    }
+
+                    public int getRequestCountWithPath(String path) {
+                        assertNotNull("The WebServer needs to be started", mWebServer);
+                        return mWebServer.getRequestCount(path);
                     }
 
                     public boolean wasResourceRequested(String url) {
