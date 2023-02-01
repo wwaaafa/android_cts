@@ -57,7 +57,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(BedsteadJUnit4.class)
 @RequireFeature("android.software.secure_lock_screen")
-public class LockTest {
+public class LockTest { // A bunch of failures already recorded - also btest struggles to run...
 
     @ClassRule @Rule
     public static final DeviceState sDeviceState = new DeviceState();
