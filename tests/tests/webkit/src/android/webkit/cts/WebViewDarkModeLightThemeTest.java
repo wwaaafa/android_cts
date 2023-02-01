@@ -31,6 +31,7 @@ import androidx.test.rule.ActivityTestRule;
 import com.android.compatibility.common.util.NullWebViewUtils;
 
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -51,6 +52,7 @@ public class WebViewDarkModeLightThemeTest extends WebViewDarkModeTestBase {
 
     @Before
     public void setUp() throws Exception {
+        Assume.assumeTrue("WebView is not available", NullWebViewUtils.isWebViewAvailable());
         init(mActivityRule.getActivity());
     }
 
@@ -62,10 +64,6 @@ public class WebViewDarkModeLightThemeTest extends WebViewDarkModeTestBase {
 
     @Test
     public void testSimplifedDarkMode_rendersLight() throws Throwable {
-        if (!NullWebViewUtils.isWebViewAvailable()) {
-            return;
-        }
-
         setWebViewSize(64, 64);
 
         // Set the webview non-focusable to avoid drawing the focus highlight.
