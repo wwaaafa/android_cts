@@ -35,6 +35,7 @@ import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -90,6 +91,7 @@ public class StubTvInteractiveAppService extends TvInteractiveAppService {
         public int mRecordingStartedCount;
         public int mRecordingStoppedCount;
         public int mSendTvRecordingInfoCount;
+        public int mSendTvRecordingInfoListCount;
 
         public Integer mKeyDownCode;
         public Integer mKeyUpCode;
@@ -105,6 +107,7 @@ public class StubTvInteractiveAppService extends TvInteractiveAppService {
         public BroadcastInfoResponse mBroadcastInfoResponse;
         public String mRecordingId;
         public TvRecordingInfo mTvRecordingInfo;
+        public ArrayList<TvRecordingInfo> mTvRecordingInfoList;
 
         StubSessionImpl(Context context) {
             super(context);
@@ -129,6 +132,7 @@ public class StubTvInteractiveAppService extends TvInteractiveAppService {
             mRecordingStartedCount = 0;
             mRecordingStoppedCount = 0;
             mSendTvRecordingInfoCount = 0;
+            mSendTvRecordingInfoListCount = 0;
 
             mKeyDownCode = null;
             mKeyUpCode = null;
@@ -144,6 +148,7 @@ public class StubTvInteractiveAppService extends TvInteractiveAppService {
             mBroadcastInfoResponse = null;
             mRecordingId = null;
             mTvRecordingInfo = null;
+            mTvRecordingInfoList = null;
         }
 
         @Override
