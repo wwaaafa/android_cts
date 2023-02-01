@@ -871,6 +871,21 @@ public class TvInteractiveAppServiceTest {
     }
 
     @Test
+    public void testSendTvRecordingInfoList() throws Throwable {
+        TvRecordingInfo mockRecordingInfo = createMockRecordingInfo("testRecordingId");
+        ArrayList<TvRecordingInfo> tvRecordingInfos = new ArrayList<>();
+        tvRecordingInfos.add(mockRecordingInfo);
+        mSession.resetValues();
+        mTvIAppView.sendTvRecordingInfoList(tvRecordingInfos);
+        mInstrumentation.waitForIdleSync();
+        PollingCheck.waitFor(TIME_OUT_MS, () -> mSession.mSendTvRecordingInfoListCount > 0);
+
+        assertThat(mSession.mSendTvRecordingInfoListCount).isEqualTo(1);
+        assertThat(mSession.mTvRecordingInfoList.size()).isEqualTo(1);
+        compareTvRecordingInfo(mockRecordingInfo, mSession.mTvRecordingInfoList.get(0));
+    }
+
+    @Test
     public void testSendPlaybackCommandRequest() throws Throwable {
         mSession.sendPlaybackCommandRequest(mStubInfo.getId(), createTestBundle());
         mInstrumentation.waitForIdleSync();
