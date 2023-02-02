@@ -431,10 +431,16 @@ public abstract class BaseVoiceInteractionService extends VoiceInteractionServic
         return null;
     }
 
-    HotwordDetector callCreateSoftwareHotwordDetector(HotwordDetector.Callback callback) {
-        Log.i(mTag, "callCreateSoftwareHotwordDetector()");
+    HotwordDetector callCreateSoftwareHotwordDetector(HotwordDetector.Callback callback,
+            boolean useExecutor) {
+        Log.i(mTag, "callCreateSoftwareHotwordDetector() useExecutor = " + useExecutor);
         try {
             resetValues();
+            if (useExecutor) {
+                return createHotwordDetector(Helper.createFakePersistableBundleData(),
+                        Helper.createFakeSharedMemoryData(), getDetectorCallbackExecutor(),
+                        callback);
+            }
             return createHotwordDetector(Helper.createFakePersistableBundleData(),
                     Helper.createFakeSharedMemoryData(), callback);
         } catch (Exception e) {
