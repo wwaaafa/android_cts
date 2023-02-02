@@ -34,6 +34,7 @@ import android.os.SystemClock;
 import android.platform.test.annotations.AppModeFull;
 import android.service.voice.AlwaysOnHotwordDetector;
 import android.service.voice.HotwordDetectionService;
+import android.service.voice.HotwordDetector;
 import android.service.voice.HotwordRejectedResult;
 import android.service.voice.VoiceInteractionService;
 import android.service.voice.VoiceInteractionSession;
@@ -185,8 +186,7 @@ public class VoiceInteractionServiceTest {
     }
 
     private void testCreateAlwaysOnHotwordDetector(boolean useExecutor, boolean runOnMainThread,
-            boolean callbackShouldRunOnMainThread)
-            throws Exception {
+            boolean callbackShouldRunOnMainThread) throws Exception {
         // Wait the original HotwordDetectionService finish clean up to avoid flaky
         SystemClock.sleep(10_000);
 
@@ -231,6 +231,81 @@ public class VoiceInteractionServiceTest {
 
             // destroy detector
             alwaysOnHotwordDetector.destroy();
+        } finally {
+            // Drop identity adopted.
+            InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                    .dropShellPermissionIdentity();
+        }
+    }
+
+    @ApiTest(apis = {
+            "android.service.voice.VoiceInteractionService#createHotwordDetector"})
+    @Test
+    public void testCreateHotwordDetectorNoExecutorMainThread_callbackRunsOnMainThread()
+            throws Exception {
+        testCreateHotwordDetector(/* useExecutor= */ false, /* runOnMainThread= */ true,
+                /* callbackShouldRunOnMainThread= */ true);
+    }
+
+    @ApiTest(apis = {
+            "android.service.voice.VoiceInteractionService#createHotwordDetector"})
+    @Test
+    public void testCreateHotwordDetectorNoExecutorOtherThread_callbackRunsOnMainThread()
+            throws Exception {
+        testCreateHotwordDetector(/* useExecutor= */ false, /* runOnMainThread= */ false,
+                /* callbackShouldRunOnMainThread= */ true);
+    }
+
+    @ApiTest(apis = {
+            "android.service.voice.VoiceInteractionService#createHotwordDetector"})
+    @Test
+    public void testCreateHotwordDetectorWithExecutor_callbackRunsOnNonMainThread()
+            throws Exception {
+        testCreateHotwordDetector(/* useExecutor= */ true, /* runOnMainThread= */ true,
+                /* callbackShouldRunOnMainThread= */ false);
+    }
+
+    private void testCreateHotwordDetector(boolean useExecutor, boolean runOnMainThread,
+            boolean callbackShouldRunOnMainThread) throws Exception {
+        // Wait the original HotwordDetectionService finish clean up to avoid flaky
+        SystemClock.sleep(10_000);
+
+        // Create SoftwareHotwordDetector and wait result
+        mService.createSoftwareHotwordDetector(useExecutor, runOnMainThread);
+
+        // reset the value to non-expected value
+        mService.setIsDetectorCallbackRunningOnMainThread(!callbackShouldRunOnMainThread);
+
+        // verify callback result
+        mService.waitSandboxedDetectionServiceInitializedCalledOrException();
+        assertThat(mService.getSandboxedDetectionServiceInitializedResult()).isEqualTo(
+                HotwordDetectionService.INITIALIZATION_STATUS_SUCCESS);
+        assertThat(mService.isDetectorCallbackRunningOnMainThread()).isEqualTo(
+                callbackShouldRunOnMainThread);
+
+        // The SoftwareHotwordDetector should be created correctly
+        HotwordDetector softwareHotwordDetector = mService.getSoftwareHotwordDetector();
+        Objects.requireNonNull(softwareHotwordDetector);
+
+        try {
+            adoptShellPermissionIdentityForHotword();
+
+            // reset the value to non-expected value
+            mService.setIsDetectorCallbackRunningOnMainThread(!callbackShouldRunOnMainThread);
+
+            mService.initDetectRejectLatch();
+            softwareHotwordDetector.startRecognition();
+
+            // wait onDetected() called and verify the result
+            mService.waitOnDetectOrRejectCalled();
+            AlwaysOnHotwordDetector.EventPayload detectResult =
+                    mService.getHotwordServiceOnDetectedResult();
+            Helper.verifyDetectedResult(detectResult, Helper.DETECTED_RESULT);
+            assertThat(mService.isDetectorCallbackRunningOnMainThread()).isEqualTo(
+                    callbackShouldRunOnMainThread);
+
+            // destroy detector
+            softwareHotwordDetector.destroy();
         } finally {
             // Drop identity adopted.
             InstrumentationRegistry.getInstrumentation().getUiAutomation()
