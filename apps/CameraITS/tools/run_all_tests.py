@@ -543,7 +543,8 @@ def main():
       unav_cameras = get_unavailable_physical_cameras(
           device_id, _FRONT_CAMERA_ID)
 
-    device_state = 'folded' if device_folded else 'opened'
+    if testing_foldable_device:
+      device_state = 'folded' if device_folded else 'opened'
 
     testing_folded_front_camera = (testing_foldable_device and
                                    device_folded and
