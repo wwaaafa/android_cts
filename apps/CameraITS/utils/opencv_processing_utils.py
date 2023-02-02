@@ -70,6 +70,42 @@ VGA_HEIGHT = 480
 VGA_WIDTH = 640
 
 
+def convert_to_gray(img):
+  """Returns openCV grayscale image.
+
+  Args:
+    img: A numpy image.
+  Returns:
+    An openCV image converted to grayscale.
+  """
+  return numpy.dot(img[..., :3], RGB_GRAY_WEIGHTS)
+
+
+def convert_to_y(img):
+  """Returns a Y image from a BGR image.
+
+  Args:
+    img: An openCV image.
+  Returns:
+    An openCV image converted to Y.
+  """
+  y, _, _ = cv2.split(cv2.cvtColor(img, cv2.COLOR_BGR2YUV))
+  return y
+
+
+def binarize_image(img_gray):
+  """Returns a binarized image based on cv2 thresholds.
+
+  Args:
+    img_gray: A grayscale openCV image.
+  Returns:
+    An openCV image binarized to 0 (black) and 255 (white).
+  """
+  _, img_bw = cv2.threshold(numpy.uint8(img_gray), 0, 255,
+                            cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+  return img_bw
+
+
 def find_all_contours(img):
   cv2_version = cv2.__version__
   logging.debug('cv2_version: %s', cv2_version)
@@ -367,11 +403,10 @@ def find_circle(img, img_name, min_area, color):
     circlish_atol = CIRCLISH_LOW_RES_ATOL
 
   # convert to gray-scale image
-  img_gray = numpy.dot(img[..., :3], RGB_GRAY_WEIGHTS)
+  img_gray = convert_to_gray(img)
 
   # otsu threshold to binarize the image
-  _, img_bw = cv2.threshold(numpy.uint8(img_gray), 0, 255,
-                            cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+  img_bw = binarize_image(img_gray)
 
   # find contours
   contours = find_all_contours(255-img_bw)
