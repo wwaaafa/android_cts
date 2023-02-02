@@ -25,6 +25,7 @@ import static com.android.compatibility.common.util.SystemUtil.runWithShellPermi
 
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.Looper;
 import android.service.voice.AlwaysOnHotwordDetector;
 import android.service.voice.HotwordDetectionService;
 import android.service.voice.HotwordDetector;
@@ -72,73 +73,88 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
      * Create AlwaysOnHotwordDetector.
      */
     public void createAlwaysOnHotwordDetector() {
+        createAlwaysOnHotwordDetector(/* useExecutor= */ false, /* runOnMainThread= */ false);
+    }
+
+    /**
+     * Create AlwaysOnHotwordDetector.
+     */
+    public void createAlwaysOnHotwordDetector(boolean useExecutor, boolean runOnMainThread) {
         Log.i(TAG, "createAlwaysOnHotwordDetector!!!!");
         mServiceTriggerLatch = new CountDownLatch(1);
-        mHandler.post(() -> runWithShellPermissionIdentity(() -> {
-            AlwaysOnHotwordDetector.Callback callback = new AlwaysOnHotwordDetector.Callback() {
-                @Override
-                public void onAvailabilityChanged(int status) {
-                    Log.i(TAG, "onAvailabilityChanged(" + status + ")");
-                    mAvailabilityStatus = status;
-                    if (mAvailabilityChangeLatch != null) {
-                        mAvailabilityChangeLatch.countDown();
-                    }
-                }
 
-                @Override
-                public void onDetected(AlwaysOnHotwordDetector.EventPayload eventPayload) {
-                    Log.i(TAG, "onDetected");
-                    mDetectedResult = eventPayload;
-                    if (mOnDetectRejectLatch != null) {
-                        mOnDetectRejectLatch.countDown();
-                    }
+        final AlwaysOnHotwordDetector.Callback callback = new AlwaysOnHotwordDetector.Callback() {
+            @Override
+            public void onAvailabilityChanged(int status) {
+                Log.i(TAG, "onAvailabilityChanged(" + status + ")");
+                mAvailabilityStatus = status;
+                setIsDetectorCallbackRunningOnMainThread(isRunningOnMainThread());
+                if (mAvailabilityChangeLatch != null) {
+                    mAvailabilityChangeLatch.countDown();
                 }
+            }
 
-                @Override
-                public void onRejected(@NonNull HotwordRejectedResult result) {
-                    Log.i(TAG, "onRejected");
-                    mRejectedResult = result;
-                    if (mOnDetectRejectLatch != null) {
-                        mOnDetectRejectLatch.countDown();
-                    }
+            @Override
+            public void onDetected(AlwaysOnHotwordDetector.EventPayload eventPayload) {
+                Log.i(TAG, "onDetected");
+                mDetectedResult = eventPayload;
+                setIsDetectorCallbackRunningOnMainThread(isRunningOnMainThread());
+                if (mOnDetectRejectLatch != null) {
+                    mOnDetectRejectLatch.countDown();
                 }
+            }
 
-                @Override
-                public void onError() {
-                    Log.i(TAG, "onError");
-                    if (mOnErrorLatch != null) {
-                        mOnErrorLatch.countDown();
-                    }
+            @Override
+            public void onRejected(@NonNull HotwordRejectedResult result) {
+                Log.i(TAG, "onRejected");
+                mRejectedResult = result;
+                setIsDetectorCallbackRunningOnMainThread(isRunningOnMainThread());
+                if (mOnDetectRejectLatch != null) {
+                    mOnDetectRejectLatch.countDown();
                 }
+            }
 
-                @Override
-                public void onRecognitionPaused() {
-                    Log.i(TAG, "onRecognitionPaused");
+            @Override
+            public void onError() {
+                Log.i(TAG, "onError");
+                setIsDetectorCallbackRunningOnMainThread(isRunningOnMainThread());
+                if (mOnErrorLatch != null) {
+                    mOnErrorLatch.countDown();
                 }
+            }
 
-                @Override
-                public void onRecognitionResumed() {
-                    Log.i(TAG, "onRecognitionResumed");
-                }
+            @Override
+            public void onRecognitionPaused() {
+                Log.i(TAG, "onRecognitionPaused");
+            }
 
-                @Override
-                public void onHotwordDetectionServiceInitialized(int status) {
-                    Log.i(TAG, "onHotwordDetectionServiceInitialized status = " + status);
-                    if (status != HotwordDetectionService.INITIALIZATION_STATUS_SUCCESS) {
-                        return;
-                    }
-                    mInitializedStatus = status;
-                    if (mServiceTriggerLatch != null) {
-                        mServiceTriggerLatch.countDown();
-                    }
-                }
+            @Override
+            public void onRecognitionResumed() {
+                Log.i(TAG, "onRecognitionResumed");
+            }
 
-                @Override
-                public void onHotwordDetectionServiceRestarted() {
-                    Log.i(TAG, "onHotwordDetectionServiceRestarted");
+            @Override
+            public void onHotwordDetectionServiceInitialized(int status) {
+                Log.i(TAG, "onHotwordDetectionServiceInitialized status = " + status);
+                if (status != HotwordDetectionService.INITIALIZATION_STATUS_SUCCESS) {
+                    return;
                 }
-            };
-            mAlwaysOnHotwordDetector = callCreateAlwaysOnHotwordDetector(callback);
+                mInitializedStatus = status;
+                setIsDetectorCallbackRunningOnMainThread(isRunningOnMainThread());
+                if (mServiceTriggerLatch != null) {
+                    mServiceTriggerLatch.countDown();
+                }
+            }
+
+            @Override
+            public void onHotwordDetectionServiceRestarted() {
+                Log.i(TAG, "onHotwordDetectionServiceRestarted");
+            }
+        };
+
+        final Handler handler = runOnMainThread ? new Handler(Looper.getMainLooper()) : mHandler;
+        handler.post(() -> runWithShellPermissionIdentity(() -> {
+            mAlwaysOnHotwordDetector = callCreateAlwaysOnHotwordDetector(callback, useExecutor);
         }, MANAGE_HOTWORD_DETECTION));
     }
 

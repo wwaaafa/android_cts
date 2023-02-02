@@ -19,6 +19,7 @@ package android.voiceinteraction.cts.services;
 import static android.voiceinteraction.cts.testcore.Helper.WAIT_TIMEOUT_IN_MS;
 
 import android.os.Bundle;
+import android.os.Looper;
 import android.service.voice.AlwaysOnHotwordDetector;
 import android.service.voice.HotwordDetector;
 import android.service.voice.HotwordRejectedResult;
@@ -31,6 +32,7 @@ import androidx.annotation.NonNull;
 
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -65,6 +67,8 @@ public abstract class BaseVoiceInteractionService extends VoiceInteractionServic
     AlwaysOnHotwordDetector mAlwaysOnHotwordDetector = null;
     // Throws IllegalStateException when calling createAlwaysOnHotwordDetector() API
     private boolean mIsCreateDetectorIllegalStateExceptionThrow;
+    // Whether the callback of the detector is running on main thread or not
+    private boolean mIsDetectorCallbackRunningOnMainThread = false;
     // Throws SecurityException when calling createAlwaysOnHotwordDetector() API
     private boolean mIsCreateDetectorSecurityExceptionThrow;
     private Bundle mPrepareToShowSessionArgs = new Bundle();
@@ -276,6 +280,14 @@ public abstract class BaseVoiceInteractionService extends VoiceInteractionServic
         return sService;
     }
 
+    static boolean isRunningOnMainThread() {
+        return Looper.getMainLooper().getThread() == Thread.currentThread();
+    }
+
+    private static Executor getDetectorCallbackExecutor() {
+        return Executors.newSingleThreadExecutor();
+    }
+
     /**
      * Returns if createAlwaysOnHotwordDetector throws IllegalStateException.
      */
@@ -288,6 +300,21 @@ public abstract class BaseVoiceInteractionService extends VoiceInteractionServic
      */
     public boolean isCreateDetectorSecurityExceptionThrow() {
         return mIsCreateDetectorSecurityExceptionThrow;
+    }
+
+    /**
+     * Returns if the callback of the detector is running on main thread
+     */
+    public boolean isDetectorCallbackRunningOnMainThread() {
+        return mIsDetectorCallbackRunningOnMainThread;
+    }
+
+    /**
+     * Set the value to mIsDetectorCallbackRunningOnMainThread
+     */
+    public void setIsDetectorCallbackRunningOnMainThread(
+            boolean isDetectorCallbackRunningOnMainThread) {
+        mIsDetectorCallbackRunningOnMainThread = isDetectorCallbackRunningOnMainThread;
     }
 
     /**
@@ -328,7 +355,7 @@ public abstract class BaseVoiceInteractionService extends VoiceInteractionServic
         mServiceTriggerLatch = null;
     }
 
-    private void resetVales() {
+    private void resetValues() {
         mIsCreateDetectorIllegalStateExceptionThrow = false;
         mIsCreateDetectorSecurityExceptionThrow = false;
     }
@@ -368,11 +395,25 @@ public abstract class BaseVoiceInteractionService extends VoiceInteractionServic
 
     AlwaysOnHotwordDetector callCreateAlwaysOnHotwordDetector(
             AlwaysOnHotwordDetector.Callback callback) {
-        Log.i(mTag, "callCreateAlwaysOnHotwordDetector()");
+        return callCreateAlwaysOnHotwordDetector(callback, /* useExecutor= */ false);
+    }
+
+    AlwaysOnHotwordDetector callCreateAlwaysOnHotwordDetector(
+            AlwaysOnHotwordDetector.Callback callback, boolean useExecutor) {
+        Log.i(mTag, "callCreateAlwaysOnHotwordDetector() useExecutor = " + useExecutor);
         try {
-            resetVales();
+            resetValues();
+            final Locale locale = Locale.forLanguageTag("en-US");
+            if (useExecutor) {
+                return createAlwaysOnHotwordDetector(/* keyphrase */ "Hello Android",
+                        locale,
+                        Helper.createFakePersistableBundleData(),
+                        Helper.createFakeSharedMemoryData(),
+                        getDetectorCallbackExecutor(),
+                        callback);
+            }
             return createAlwaysOnHotwordDetector(/* keyphrase */ "Hello Android",
-                    Locale.forLanguageTag("en-US"),
+                    locale,
                     Helper.createFakePersistableBundleData(),
                     Helper.createFakeSharedMemoryData(),
                     callback);
@@ -393,7 +434,7 @@ public abstract class BaseVoiceInteractionService extends VoiceInteractionServic
     HotwordDetector callCreateSoftwareHotwordDetector(HotwordDetector.Callback callback) {
         Log.i(mTag, "callCreateSoftwareHotwordDetector()");
         try {
-            resetVales();
+            resetValues();
             return createHotwordDetector(Helper.createFakePersistableBundleData(),
                     Helper.createFakeSharedMemoryData(), callback);
         } catch (Exception e) {
@@ -411,7 +452,7 @@ public abstract class BaseVoiceInteractionService extends VoiceInteractionServic
     VisualQueryDetector callCreateVisualQueryDetector(VisualQueryDetector.Callback callback) {
         Log.i(mTag, "callCreateVisualQueryDetector()");
         try {
-            resetVales();
+            resetValues();
             return createVisualQueryDetector(Helper.createFakePersistableBundleData(),
                     Helper.createFakeSharedMemoryData(), Executors.newSingleThreadExecutor(),
                     callback);
