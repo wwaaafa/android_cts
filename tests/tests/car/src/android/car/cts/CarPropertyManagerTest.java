@@ -46,6 +46,7 @@ import android.car.hardware.property.AutomaticEmergencyBrakingState;
 import android.car.hardware.property.BlindSpotWarningState;
 import android.car.hardware.property.CarPropertyManager;
 import android.car.hardware.property.CarPropertyManager.CarPropertyEventCallback;
+import android.car.hardware.property.CruiseControlCommand;
 import android.car.hardware.property.CruiseControlState;
 import android.car.hardware.property.CruiseControlType;
 import android.car.hardware.property.EmergencyLaneKeepAssistState;
@@ -230,6 +231,16 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             CruiseControlState.USER_OVERRIDE,
                             CruiseControlState.SUSPENDED,
                             CruiseControlState.FORCED_DEACTIVATION_WARNING)
+                    .build();
+    private static final ImmutableSet<Integer> CRUISE_CONTROL_COMMANDS =
+            ImmutableSet.<Integer>builder()
+                    .add(
+                            CruiseControlCommand.ACTIVATE,
+                            CruiseControlCommand.SUSPEND,
+                            CruiseControlCommand.INCREASE_TARGET_SPEED,
+                            CruiseControlCommand.DECREASE_TARGET_SPEED,
+                            CruiseControlCommand.INCREASE_TARGET_TIME_GAP,
+                            CruiseControlCommand.DECREASE_TARGET_TIME_GAP)
                     .build();
     private static final ImmutableSet<Integer> ERROR_STATES =
             ImmutableSet.<Integer>builder()
@@ -675,7 +686,8 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
             ImmutableList.<Integer>builder()
                     .add(
                             VehiclePropertyIds.LANE_CENTERING_ASSIST_COMMAND,
-                            VehiclePropertyIds.CRUISE_CONTROL_TYPE)
+                            VehiclePropertyIds.CRUISE_CONTROL_TYPE,
+                            VehiclePropertyIds.CRUISE_CONTROL_COMMAND)
                     .build();
     private static final ImmutableList<Integer> PERMISSION_CONTROL_GLOVE_BOX_PROPERTIES =
             ImmutableList.<Integer>builder()
@@ -1057,6 +1069,20 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     @Test
     public void testCruiseControlStateAndErrorStateDontIntersect() {
         verifyEnumValuesAreDistinct(CRUISE_CONTROL_STATES, ERROR_STATES);
+    }
+
+    @Test
+    public void testCruiseControlCommandIfSupported() {
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.CRUISE_CONTROL_COMMAND,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_WRITE,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Integer.class)
+                .setAllPossibleEnumValues(CRUISE_CONTROL_COMMANDS)
+                .addWritePermission(Car.PERMISSION_CONTROL_ADAS_STATES)
+                .build()
+                .verify(mCarPropertyManager);
     }
 
     @Test
