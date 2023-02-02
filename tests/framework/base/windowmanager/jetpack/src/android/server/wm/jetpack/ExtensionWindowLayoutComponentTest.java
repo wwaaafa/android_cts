@@ -39,7 +39,7 @@ import android.graphics.Rect;
 import android.platform.test.annotations.Presubmit;
 import android.server.wm.jetpack.utils.TestActivity;
 import android.server.wm.jetpack.utils.TestConfigChangeHandlingActivity;
-import android.server.wm.jetpack.utils.TestValueCountConsumer;
+import android.server.wm.jetpack.utils.TestValueCountJavaConsumer;
 import android.server.wm.jetpack.utils.WindowExtensionTestRule;
 import android.server.wm.jetpack.utils.WindowManagerJetpackTestBase;
 
@@ -107,8 +107,8 @@ public class ExtensionWindowLayoutComponentTest extends WindowManagerJetpackTest
         // Create the callback, onWindowLayoutChanged should only be called twice in this
         // test, not the third time when the orientation will change because the listener will be
         // removed.
-        TestValueCountConsumer<WindowLayoutInfo> windowLayoutInfoConsumer =
-                new TestValueCountConsumer<>();
+        TestValueCountJavaConsumer<WindowLayoutInfo> windowLayoutInfoConsumer =
+                new TestValueCountJavaConsumer<>();
         windowLayoutInfoConsumer.setCount(2);
 
         // Add window layout listener for mWindowToken - onWindowLayoutChanged should be called
@@ -132,8 +132,8 @@ public class ExtensionWindowLayoutComponentTest extends WindowManagerJetpackTest
 
     @Test
     public void testWindowLayoutComponent_WindowLayoutInfoListener() {
-        TestValueCountConsumer<WindowLayoutInfo> windowLayoutInfoConsumer =
-                new TestValueCountConsumer<>();
+        TestValueCountJavaConsumer<WindowLayoutInfo> windowLayoutInfoConsumer =
+                new TestValueCountJavaConsumer<>();
         // Test that adding and removing callback succeeds
         mWindowLayoutComponent.addWindowLayoutInfoListener(mActivity, windowLayoutInfoConsumer);
         mWindowLayoutComponent.removeWindowLayoutInfoListener(windowLayoutInfoConsumer);
