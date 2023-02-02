@@ -69,6 +69,68 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
         mHandler = Handler.createAsync(handlerThread.getLooper());
     }
 
+    public void createAlwaysOnHotwordDetectorNoHotwordDetectionService(boolean useExecutor,
+            boolean runOnMainThread) {
+        Log.i(TAG, "createAlwaysOnHotwordDetectorNoHotwordDetectionService");
+        mServiceTriggerLatch = new CountDownLatch(1);
+
+        AlwaysOnHotwordDetector.Callback callback = new AlwaysOnHotwordDetector.Callback() {
+            @Override
+            public void onAvailabilityChanged(int status) {
+                Log.i(TAG, "onAvailabilityChanged(" + status + ")");
+                mAvailabilityStatus = status;
+                setIsDetectorCallbackRunningOnMainThread(isRunningOnMainThread());
+                if (mAvailabilityChangeLatch != null) {
+                    mAvailabilityChangeLatch.countDown();
+                }
+            }
+
+            @Override
+            public void onDetected(AlwaysOnHotwordDetector.EventPayload eventPayload) {
+                // no-op
+            }
+
+            @Override
+            public void onRejected(@NonNull HotwordRejectedResult result) {
+                // no-op
+            }
+
+            @Override
+            public void onError() {
+                // no-op
+            }
+
+            @Override
+            public void onRecognitionPaused() {
+                // no-op
+            }
+
+            @Override
+            public void onRecognitionResumed() {
+                // no-op
+            }
+
+            @Override
+            public void onHotwordDetectionServiceInitialized(int status) {
+                // no-op
+            }
+
+            @Override
+            public void onHotwordDetectionServiceRestarted() {
+                // no-op
+            }
+        };
+
+        final Handler handler = runOnMainThread ? new Handler(Looper.getMainLooper()) : mHandler;
+        handler.post(() -> runWithShellPermissionIdentity(() -> {
+            mAlwaysOnHotwordDetector = callCreateAlwaysOnHotwordDetectorNoHotwordDetectionService(
+                    callback, useExecutor);
+            if (mServiceTriggerLatch != null) {
+                mServiceTriggerLatch.countDown();
+            }
+        }, MANAGE_HOTWORD_DETECTION));
+    }
+
     /**
      * Create AlwaysOnHotwordDetector.
      */

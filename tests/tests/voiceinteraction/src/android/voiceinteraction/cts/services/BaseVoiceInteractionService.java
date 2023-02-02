@@ -339,6 +339,23 @@ public abstract class BaseVoiceInteractionService extends VoiceInteractionServic
     }
 
     /**
+     * Wait for createAlwaysOnHotwordDetectorNoHotwordDetectionService be ready
+     */
+    public void waitCreateAlwaysOnHotwordDetectorNoHotwordDetectionServiceReady()
+            throws InterruptedException {
+        Log.d(mTag, "waitCreateAlwaysOnHotwordDetectorNoHotwordDetectionServiceReady(), latch="
+                + mServiceTriggerLatch);
+        if (mServiceTriggerLatch == null
+                || !mServiceTriggerLatch.await(WAIT_TIMEOUT_IN_MS, TimeUnit.MILLISECONDS)) {
+            Log.w(mTag, "waitCreateAlwaysOnHotwordDetectorNoHotwordDetectionServiceReady()");
+            mServiceTriggerLatch = null;
+            throw new AssertionError(
+                    "CreateAlwaysOnHotwordDetectorNoHotwordDetectionService is not ready");
+        }
+        mServiceTriggerLatch = null;
+    }
+
+    /**
      * Wait for onSandboxedDetectionServiceInitialized() be called or exception throws when creating
      * AlwaysOnHotwordDetector or VisualQueryDetector.
      */
@@ -391,6 +408,37 @@ public abstract class BaseVoiceInteractionService extends VoiceInteractionServic
      */
     public int getSandboxedDetectionServiceInitializedResult() {
         return mInitializedStatus;
+    }
+
+    AlwaysOnHotwordDetector callCreateAlwaysOnHotwordDetectorNoHotwordDetectionService(
+            AlwaysOnHotwordDetector.Callback callback, boolean useExecutor) {
+        Log.i(mTag,
+                "callCreateAlwaysOnHotwordDetectorNoHotwordDetectionService() useExecutor = "
+                        + useExecutor);
+        try {
+            resetValues();
+            final Locale locale = Locale.forLanguageTag("en-US");
+            if (useExecutor) {
+                return createAlwaysOnHotwordDetector(/* keyphrase */ "Hello Android",
+                        locale,
+                        getDetectorCallbackExecutor(),
+                        callback);
+            }
+            return createAlwaysOnHotwordDetector(/* keyphrase */ "Hello Android",
+                    locale,
+                    callback);
+        } catch (IllegalStateException | SecurityException e) {
+            Log.w(mTag, "callCreateAlwaysOnHotwordDetector() exception: " + e);
+            if (mServiceTriggerLatch != null) {
+                mServiceTriggerLatch.countDown();
+            }
+            if (e instanceof IllegalStateException) {
+                mIsCreateDetectorIllegalStateExceptionThrow = true;
+            } else {
+                mIsCreateDetectorSecurityExceptionThrow = true;
+            }
+        }
+        return null;
     }
 
     AlwaysOnHotwordDetector callCreateAlwaysOnHotwordDetector(

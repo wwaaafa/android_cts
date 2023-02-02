@@ -161,6 +161,54 @@ public class VoiceInteractionServiceTest {
     @ApiTest(apis = {
             "android.service.voice.VoiceInteractionService#createAlwaysOnHotwordDetector"})
     @Test
+    public void testCreateDspHotwordDetectorNoHDSNoExecutorMainThread_callbackRunsOnMainThread()
+            throws Exception {
+        testCreateAlwaysOnHotwordDetectorNoHotwordDetectionService(/* useExecutor= */
+                false, /* runOnMainThread= */ true, /* callbackShouldRunOnMainThread= */ true);
+    }
+
+    @ApiTest(apis = {
+            "android.service.voice.VoiceInteractionService#createAlwaysOnHotwordDetector"})
+    @Test
+    public void testCreateDspHotwordDetectorNoHDSNoExecutorOtherThread_callbackRunsOnNonMainThread()
+            throws Exception {
+        testCreateAlwaysOnHotwordDetectorNoHotwordDetectionService(/* useExecutor= */
+                false, /* runOnMainThread= */ false, /* callbackShouldRunOnMainThread= */ false);
+    }
+
+    @ApiTest(apis = {
+            "android.service.voice.VoiceInteractionService#createAlwaysOnHotwordDetector"})
+    @Test
+    public void testCreateDspHotwordDetectorNoHDSWithExecutor_callbackRunsOnNonMainThread()
+            throws Exception {
+        testCreateAlwaysOnHotwordDetectorNoHotwordDetectionService(/* useExecutor= */
+                true, /* runOnMainThread= */ true, /* callbackShouldRunOnMainThread= */ false);
+    }
+
+    private void testCreateAlwaysOnHotwordDetectorNoHotwordDetectionService(boolean useExecutor,
+            boolean runOnMainThread, boolean callbackShouldRunOnMainThread) throws Exception {
+        // reset the value to non-expected value and initAvailabilityChangeLatch
+        mService.setIsDetectorCallbackRunningOnMainThread(!callbackShouldRunOnMainThread);
+        mService.initAvailabilityChangeLatch();
+
+        // Create alwaysOnHotwordDetector and wait result
+        mService.createAlwaysOnHotwordDetectorNoHotwordDetectionService(useExecutor,
+                runOnMainThread);
+        mService.waitCreateAlwaysOnHotwordDetectorNoHotwordDetectionServiceReady();
+
+        // The AlwaysOnHotwordDetector should be created correctly
+        AlwaysOnHotwordDetector alwaysOnHotwordDetector = mService.getAlwaysOnHotwordDetector();
+        Objects.requireNonNull(alwaysOnHotwordDetector);
+
+        mService.waitAvailabilityChangedCalled();
+
+        assertThat(mService.isDetectorCallbackRunningOnMainThread()).isEqualTo(
+                callbackShouldRunOnMainThread);
+    }
+
+    @ApiTest(apis = {
+            "android.service.voice.VoiceInteractionService#createAlwaysOnHotwordDetector"})
+    @Test
     public void testCreateAlwaysOnHotwordDetectorNoExecutorMainThread_callbackRunsOnMainThread()
             throws Exception {
         testCreateAlwaysOnHotwordDetector(/* useExecutor= */ false, /* runOnMainThread= */ true,
