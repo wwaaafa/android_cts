@@ -583,7 +583,8 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     private static final ImmutableList<Integer> PERMISSION_CONTROL_GLOVE_BOX_PROPERTIES =
             ImmutableList.<Integer>builder()
                     .add(
-                            VehiclePropertyIds.GLOVE_BOX_DOOR_POS)
+                            VehiclePropertyIds.GLOVE_BOX_DOOR_POS,
+                            VehiclePropertyIds.GLOVE_BOX_LOCKED)
                   .build();
 
     private static final int VEHICLE_PROPERTY_GROUP_MASK = 0xf0000000;
@@ -1921,6 +1922,20 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                         Integer.class)
                 .requireMinMaxValues()
                 .requireMinValuesToBeZero()
+                .addReadPermission(Car.PERMISSION_CONTROL_GLOVE_BOX)
+                .addWritePermission(Car.PERMISSION_CONTROL_GLOVE_BOX)
+                .build()
+                .verify(mCarPropertyManager);
+    }
+
+    @Test
+    public void testGloveBoxLockedIfSupported() {
+        VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.GLOVE_BOX_LOCKED,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_SEAT,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Boolean.class)
                 .addReadPermission(Car.PERMISSION_CONTROL_GLOVE_BOX)
                 .addWritePermission(Car.PERMISSION_CONTROL_GLOVE_BOX)
                 .build()
