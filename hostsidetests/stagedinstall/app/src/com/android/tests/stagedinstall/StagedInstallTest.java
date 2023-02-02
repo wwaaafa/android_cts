@@ -1632,7 +1632,6 @@ public class StagedInstallTest {
         // Disable package verifier to prevent pop-up during installation
         final String oldVal = SystemUtil.runShellCommand(
                 "settings get global package_verifier_enable");
-        SystemUtil.runShellCommand("settings put global package_verifier_enable 0");
 
         try {
             Install.single(TestApp.B1).commit();
@@ -1679,7 +1678,6 @@ public class StagedInstallTest {
         } finally {
             Log.d(TAG, "finally restore settings");
             SystemUtil.runShellCommand("setprop " + propKey + " invalid");
-            SystemUtil.runShellCommand("settings put global package_verifier_enable " + oldVal);
         }
     }
 
