@@ -24,14 +24,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Mark that a test method requires bluetooth to be enabled.
+ * Mark that a test method requires wifi to be disabled.
  *
  * <p>You can use {@code DeviceState} to ensure that the device enters
  * the correct state for the method.
  */
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface EnsureBluetoothEnabled {
+public @interface EnsureWifiDisabled {
 
     /**
      * Weight sets the order that annotations will be resolved.
@@ -43,5 +43,6 @@ public @interface EnsureBluetoothEnabled {
      *
      * <p>Weight can be set to a {@link AnnotationRunPrecedence} constant, or to any {@link int}.
      */
+    // Must be before user restriction to avoid restrictions
     int weight() default LATE;
 }
