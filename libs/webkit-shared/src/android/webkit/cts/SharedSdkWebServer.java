@@ -96,6 +96,15 @@ public final class SharedSdkWebServer {
         }
     }
 
+    /** Returns a url that will contain the user agent in the header and in the body. */
+    public String getUserAgentUrl() {
+        try {
+            return mWebServer.getUserAgentUrl();
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /** Get a delayed assert url for an asset path. */
     public String getDelayedAssetUrl(String path) {
         try {
@@ -136,6 +145,33 @@ public final class SharedSdkWebServer {
     public String getBinaryUrl(String mimeType, int contentLength) {
         try {
             return mWebServer.getBinaryUrl(mimeType, contentLength);
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /** Returns the url to the app cache. */
+    public String getAppCacheUrl() {
+        try {
+            return mWebServer.getAppCacheUrl();
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /** Returns how many requests have been made. */
+    public int getRequestCount() {
+        try {
+            return mWebServer.getRequestCount();
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /** Returns the request count for a particular path */
+    public int getRequestCount(String path) {
+        try {
+            return mWebServer.getRequestCountWithPath(path);
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
