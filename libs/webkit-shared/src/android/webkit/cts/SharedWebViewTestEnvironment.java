@@ -39,6 +39,7 @@ import java.io.ByteArrayInputStream;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.List;
 
 import javax.net.ssl.X509TrustManager;
 
@@ -261,6 +262,18 @@ public final class SharedWebViewTestEnvironment {
                         mWebServer.resetRequestState();
                     }
 
+                    public String setResponse(
+                            String path, String responseString, List<HttpHeader> responseHeaders) {
+                        assertNotNull("The WebServer needs to be started", mWebServer);
+                        return mWebServer.setResponse(
+                                path, responseString, HttpHeader.asPairList(responseHeaders));
+                    }
+
+                    public String getAbsoluteUrl(String path) {
+                        assertNotNull("The WebServer needs to be started", mWebServer);
+                        return mWebServer.getAbsoluteUrl(path);
+                    }
+
                     public String getDelayedAssetUrl(String path) {
                         assertNotNull("The WebServer needs to be started", mWebServer);
                         return mWebServer.getDelayedAssetUrl(path);
@@ -291,14 +304,23 @@ public final class SharedWebViewTestEnvironment {
                         return mWebServer.wasResourceRequested(url);
                     }
 
+                    public HttpRequest getLastRequest(String path) {
+                        assertNotNull("The WebServer needs to be started", mWebServer);
+                        return toHttpRequest(path, mWebServer.getLastRequest(path));
+                    }
+
                     public HttpRequest getLastAssetRequest(String url) {
                         assertNotNull("The WebServer needs to be started", mWebServer);
-                        org.apache.http.HttpRequest request = mWebServer.getLastAssetRequest(url);
-                        if (request == null) {
+                        return toHttpRequest(url, mWebServer.getLastAssetRequest(url));
+                    }
+
+                    private HttpRequest toHttpRequest(
+                            String url, org.apache.http.HttpRequest apacheRequest) {
+                        if (apacheRequest == null) {
                             return null;
                         }
 
-                        return new HttpRequest(url, request);
+                        return new HttpRequest(url, apacheRequest);
                     }
                 };
             }
