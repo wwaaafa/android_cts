@@ -47,7 +47,7 @@ import android.hardware.display.DisplayManager;
 import android.platform.test.annotations.Presubmit;
 import android.server.wm.jetpack.utils.TestActivity;
 import android.server.wm.jetpack.utils.TestConfigChangeHandlingActivity;
-import android.server.wm.jetpack.utils.TestValueCountConsumer;
+import android.server.wm.jetpack.utils.TestValueCountJavaConsumer;
 import android.server.wm.jetpack.utils.WindowExtensionTestRule;
 import android.server.wm.jetpack.utils.WindowManagerJetpackTestBase;
 import android.view.Display;
@@ -146,8 +146,8 @@ public class ExtensionWindowLayoutComponentTest extends WindowManagerJetpackTest
         // Create the callback, onWindowLayoutChanged should only be called twice in this
         // test, not the third time when the orientation will change because the listener will be
         // removed.
-        TestValueCountConsumer<WindowLayoutInfo> windowLayoutInfoConsumer =
-                new TestValueCountConsumer<>();
+        TestValueCountJavaConsumer<WindowLayoutInfo> windowLayoutInfoConsumer =
+                new TestValueCountJavaConsumer<>();
         windowLayoutInfoConsumer.setCount(1);
 
         // Add window layout listener for mWindowToken - onWindowLayoutChanged should be called
@@ -180,8 +180,8 @@ public class ExtensionWindowLayoutComponentTest extends WindowManagerJetpackTest
     public void testWindowLayoutComponent_windowLayoutInfoListener() {
         TestActivity activity = (TestActivity) startFullScreenActivityNewTask(TestActivity.class,
                 null /* activityId */);
-        TestValueCountConsumer<WindowLayoutInfo> windowLayoutInfoConsumer =
-                new TestValueCountConsumer<>();
+        TestValueCountJavaConsumer<WindowLayoutInfo> windowLayoutInfoConsumer =
+                new TestValueCountJavaConsumer<>();
         // Test that adding and removing callback succeeds
         mWindowLayoutComponent.addWindowLayoutInfoListener(activity, windowLayoutInfoConsumer);
         mWindowLayoutComponent.removeWindowLayoutInfoListener(windowLayoutInfoConsumer);
