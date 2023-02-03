@@ -21,6 +21,7 @@ import cv2
 import numpy
 
 import capture_request_utils
+import error_util
 import image_processing_utils
 
 ANGLE_CHECK_TOL = 1  # degrees
@@ -52,6 +53,10 @@ FOV_THRESH_TELE25 = 25
 FOV_THRESH_TELE40 = 40
 FOV_THRESH_TELE = 60
 FOV_THRESH_WFOV = 90
+
+HAARCASCADE_FILE = os.path.join(
+    os.path.dirname(os.path.abspath(cv2.__file__)), 'opencv', 'haarcascades',
+    'haarcascade_frontalface_default.xml')
 
 LOW_RES_IMG_THRESH = 320 * 240
 
@@ -104,6 +109,39 @@ def binarize_image(img_gray):
   _, img_bw = cv2.threshold(numpy.uint8(img_gray), 0, 255,
                             cv2.THRESH_BINARY + cv2.THRESH_OTSU)
   return img_bw
+
+
+def _load_opencv_haarcascade_file():
+  """Return Haar Cascade file for face detection."""
+  logging.info('Haar Cascade file location: %s', HAARCASCADE_FILE)
+  if os.path.isfile(HAARCASCADE_FILE):
+    return HAARCASCADE_FILE
+  else:
+    raise error_util.CameraItsError('haarcascade_frontalface_default.xml file '
+                                    f'must be in {HAARCASCADE_FILE}')
+
+
+def find_opencv_faces(img, scale_factor, min_neighbors):
+  """Finds face rectangles with openCV.
+
+  Args:
+    img: numpy array; 3-D RBG image with [0,1] values
+    scale_factor: float, specifies how much image size is reduced at each scale
+    min_neighbors: int, specifies minimum number of neighbors to keep rectangle
+  Returns:
+    List of rectangles with faces
+  """
+  # prep opencv
+  opencv_haarcascade_file = _load_opencv_haarcascade_file()
+  face_cascade = cv2.CascadeClassifier(opencv_haarcascade_file)
+  img_255 = img * 255
+  img_gray = cv2.cvtColor(img_255.astype(numpy.uint8), cv2.COLOR_RGB2GRAY)
+
+  # find face rectangles with opencv
+  faces_opencv = face_cascade.detectMultiScale(
+      img_gray, scale_factor, min_neighbors)
+  logging.debug('%s', str(faces_opencv))
+  return faces_opencv
 
 
 def find_all_contours(img):
