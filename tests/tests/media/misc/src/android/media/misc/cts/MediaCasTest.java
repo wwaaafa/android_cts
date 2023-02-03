@@ -16,6 +16,9 @@
 
 package android.media.misc.cts;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
 
 import android.media.MediaCas;
@@ -32,15 +35,20 @@ import android.os.HandlerThread;
 import android.platform.test.annotations.AppModeFull;
 import android.platform.test.annotations.Presubmit;
 import android.platform.test.annotations.RequiresDevice;
-import android.test.AndroidTestCase;
 import android.util.Log;
 
 import androidx.test.InstrumentationRegistry;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 
 import com.android.compatibility.common.util.ApiLevelUtil;
 import com.android.compatibility.common.util.MediaUtils;
 import com.android.compatibility.common.util.PropertyUtil;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -53,7 +61,8 @@ import java.util.regex.Pattern;
 @SmallTest
 @RequiresDevice
 @AppModeFull(reason = "TODO: evaluate and port to instant")
-public class MediaCasTest extends AndroidTestCase {
+@RunWith(AndroidJUnit4.class)
+public class MediaCasTest {
     private static final String TAG = "MediaCasTest";
 
     // CA System Ids used for testing
@@ -156,29 +165,28 @@ public class MediaCasTest extends AndroidTestCase {
             "65 79 69 6e 74 5f 6d 69  6e 3d 32 35 20 73 63 65" +
             "6e 65                                           " ;
 
-    @Override
+    @Before
     public void setUp() throws Exception {
-        super.setUp();
         // Need MANAGE_USERS or CREATE_USERS permission to access ActivityManager#getCurrentUser in
         // MediaCas. It is used by all tests, then adopt it from shell in setup
         InstrumentationRegistry
             .getInstrumentation().getUiAutomation().adoptShellPermissionIdentity();
     }
 
-    @Override
-    protected void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         InstrumentationRegistry
             .getInstrumentation().getUiAutomation().dropShellPermissionIdentity();
-        super.tearDown();
     }
+
     /**
      * Test that all enumerated CA systems can be instantiated.
      *
-     * Due to the vendor-proprietary nature of CAS, we cannot verify all operations
-     * of an arbitrary plugin. We can only verify that isSystemIdSupported() is
-     * consistent with the enumeration results, and all enumerated CA system ids can
-     * be instantiated.
+     * <p>Due to the vendor-proprietary nature of CAS, we cannot verify all operations of an
+     * arbitrary plugin. We can only verify that isSystemIdSupported() is consistent with the
+     * enumeration results, and all enumerated CA system ids can be instantiated.
      */
+    @Test
     public void testEnumeratePlugins() throws Exception {
         PluginDescriptor[] descriptors = MediaCas.enumeratePlugins();
         for (int i = 0; i < descriptors.length; i++) {
@@ -240,6 +248,7 @@ public class MediaCasTest extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testInvalidSystemIdFails() throws Exception {
         assertFalse("Invalid id " + sInvalidSystemId + " should not be supported",
                 MediaCas.isSystemIdSupported(sInvalidSystemId));
@@ -271,6 +280,7 @@ public class MediaCasTest extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testClearKeyPluginInstalled() throws Exception {
         PluginDescriptor[] descriptors = MediaCas.enumeratePlugins();
         for (int i = 0; i < descriptors.length; i++) {
@@ -284,14 +294,19 @@ public class MediaCasTest extends AndroidTestCase {
     /**
      * Test that valid call sequences succeed.
      */
+    @Test
     public void testClearKeyApis() throws Exception {
         MediaCas mediaCas = null;
         MediaDescrambler descrambler = null;
 
         try {
             if (mIsAtLeastR) {
-                mediaCas = new MediaCas(getContext(), sClearKeySystemId, null,
-                    android.media.tv.TvInputService.PRIORITY_HINT_USE_CASE_TYPE_LIVE);
+                mediaCas =
+                        new MediaCas(
+                                InstrumentationRegistry.getContext(),
+                                sClearKeySystemId,
+                                null,
+                                android.media.tv.TvInputService.PRIORITY_HINT_USE_CASE_TYPE_LIVE);
             } else {
                 mediaCas = new MediaCas(sClearKeySystemId);
             }
@@ -381,6 +396,7 @@ public class MediaCasTest extends AndroidTestCase {
     /**
      * Test that all sessions are closed after a MediaCas object is released.
      */
+    @Test
     public void testClearKeySessionClosedAfterRelease() throws Exception {
         MediaCas mediaCas = null;
         MediaDescrambler descrambler = null;
@@ -432,6 +448,7 @@ public class MediaCasTest extends AndroidTestCase {
     /**
      * Test that invalid call sequences fail with expected exceptions.
      */
+    @Test
     public void testClearKeyExceptions() throws Exception {
         MediaCas mediaCas = null;
         MediaDescrambler descrambler = null;
@@ -559,13 +576,18 @@ public class MediaCasTest extends AndroidTestCase {
     /**
      * Test Resource Lost Event.
      */
+    @Test
     public void testResourceLostEvent() throws Exception {
         MediaCas mediaCas = null;
         if (!MediaUtils.check(mIsAtLeastR, "test needs Android 11")) return;
 
         try {
-            mediaCas = new MediaCas(getContext(), sClearKeySystemId, null,
-                android.media.tv.TvInputService.PRIORITY_HINT_USE_CASE_TYPE_LIVE);
+            mediaCas =
+                    new MediaCas(
+                            InstrumentationRegistry.getContext(),
+                            sClearKeySystemId,
+                            null,
+                            android.media.tv.TvInputService.PRIORITY_HINT_USE_CASE_TYPE_LIVE);
 
             mediaCas.provision(sProvisionStr);
 
@@ -598,6 +620,7 @@ public class MediaCasTest extends AndroidTestCase {
     /**
      * Test Set Event Listener in MediaCas Constructor.
      */
+    @Test
     public void testConstructWithEventListener() throws Exception {
         MediaCas mediaCas = null;
         if (!MediaUtils.check(mIsAtLeastS, "test needs Android 12")) return;
@@ -608,9 +631,14 @@ public class MediaCasTest extends AndroidTestCase {
             thread.start();
             Handler handler = new Handler(thread.getLooper());
 
-            mediaCas = new MediaCas(getContext(), sClearKeySystemId, null,
-                android.media.tv.TvInputService.PRIORITY_HINT_USE_CASE_TYPE_LIVE, handler,
-                listener);
+            mediaCas =
+                    new MediaCas(
+                            InstrumentationRegistry.getContext(),
+                            sClearKeySystemId,
+                            null,
+                            android.media.tv.TvInputService.PRIORITY_HINT_USE_CASE_TYPE_LIVE,
+                            handler,
+                            listener);
 
             thread.interrupt();
 
