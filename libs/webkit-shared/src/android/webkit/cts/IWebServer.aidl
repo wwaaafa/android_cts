@@ -33,6 +33,8 @@ interface IWebServer {
 
     String getAbsoluteUrl(String path);
 
+    String getUserAgentUrl();
+
     String getDelayedAssetUrl(String path);
 
     String getRedirectingAssetUrl(String path);
@@ -42,6 +44,12 @@ interface IWebServer {
     String getAuthAssetUrl(String path);
 
     String getBinaryUrl(String mimeType, int contentLength);
+
+    String getAppCacheUrl();
+
+    int getRequestCount();
+
+    int getRequestCountWithPath(String path);
 
     boolean wasResourceRequested(String url);
 
