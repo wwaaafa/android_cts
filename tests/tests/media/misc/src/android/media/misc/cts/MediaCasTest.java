@@ -16,6 +16,8 @@
 
 package android.media.misc.cts;
 
+import static org.junit.Assume.assumeFalse;
+
 import android.media.MediaCas;
 import android.media.MediaCas.PluginDescriptor;
 import android.media.MediaCas.Session;
@@ -33,14 +35,13 @@ import android.platform.test.annotations.RequiresDevice;
 import android.test.AndroidTestCase;
 import android.util.Log;
 
-import androidx.test.filters.SmallTest;
 import androidx.test.InstrumentationRegistry;
+import androidx.test.filters.SmallTest;
 
 import com.android.compatibility.common.util.ApiLevelUtil;
 import com.android.compatibility.common.util.MediaUtils;
 import com.android.compatibility.common.util.PropertyUtil;
 
-import java.lang.ArrayIndexOutOfBoundsException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
@@ -318,10 +319,12 @@ public class MediaCasTest extends AndroidTestCase {
             }
             streamSession.setPrivateData(pvtData);
 
-            descrambler.setMediaCasSession(session);
+            if (!descrambler.isAidlHal()) {
+                // Do not test AIDL descrambler
+                descrambler.setMediaCasSession(session);
 
-            descrambler.setMediaCasSession(streamSession);
-
+                descrambler.setMediaCasSession(streamSession);
+            }
             mediaCas.refreshEntitlements(3, null);
 
             byte[] refreshBytes = new byte[4];
@@ -355,12 +358,14 @@ public class MediaCasTest extends AndroidTestCase {
             session.processEcm(ecmData);
             streamSession.processEcm(ecmData);
 
-            ByteBuffer outputBuf = descrambleTestInputBuffer(descrambler);
-            ByteBuffer expectedOutputBuf = ByteBuffer.wrap(
-                    loadByteArrayFromString(sExpectedOutputBufferStr));
-            assertTrue("Incorrect decryption result",
-                    expectedOutputBuf.compareTo(outputBuf) == 0);
-
+            if (!descrambler.isAidlHal()) {
+                // Do not test AIDL descrambler
+                ByteBuffer outputBuf = descrambleTestInputBuffer(descrambler);
+                ByteBuffer expectedOutputBuf =
+                        ByteBuffer.wrap(loadByteArrayFromString(sExpectedOutputBufferStr));
+                assertTrue(
+                        "Incorrect decryption result", expectedOutputBuf.compareTo(outputBuf) == 0);
+            }
             session.close();
             streamSession.close();
         } finally {
@@ -383,6 +388,8 @@ public class MediaCasTest extends AndroidTestCase {
         try {
             mediaCas = new MediaCas(sClearKeySystemId);
             descrambler = new MediaDescrambler(sClearKeySystemId);
+            // Do not test AIDL Descrambler
+            assumeFalse(descrambler.isAidlHal());
             mediaCas.provision(sProvisionStr);
 
             Session session = mediaCas.openSession();
@@ -504,34 +511,40 @@ public class MediaCasTest extends AndroidTestCase {
                 Log.d(TAG, "processEcm throws " + e.getDiagnosticInfo() + " (as expected)");
             }
 
-            /*
-             * Test MediaDescrambler exceptions
-             */
+            if (!descrambler.isAidlHal()) {
+                // Do not test AIDL descrambler
+                /*
+                 * Test MediaDescrambler exceptions
+                 */
 
-            // setMediaCasSession should fail with an invalid session id
-            try {
-                descrambler.setMediaCasSession(invalidSession);
-                fail("setMediaCasSession shouldn't succeed with invalid session id");
-            } catch (MediaCasStateException e) {
-                Log.d(TAG, "setMediaCasSession throws "
-                        + e.getDiagnosticInfo() + " (as expected)");
-            }
+                // setMediaCasSession should fail with an invalid session id
+                try {
+                    descrambler.setMediaCasSession(invalidSession);
+                    fail("setMediaCasSession shouldn't succeed with invalid session id");
+                } catch (MediaCasStateException e) {
+                    Log.d(
+                            TAG,
+                            "setMediaCasSession throws "
+                                    + e.getDiagnosticInfo()
+                                    + " (as expected)");
+                }
 
-            // descramble should fail without a valid session
-            try {
-                ByteBuffer outputBuf = descrambleTestInputBuffer(descrambler);
-                fail("descramble should fail without a valid session");
-            } catch (MediaCasStateException e) {
-                Log.d(TAG, "descramble throws " + e.getDiagnosticInfo() + " (as expected)");
-            }
+                // descramble should fail without a valid session
+                try {
+                    ByteBuffer outputBuf = descrambleTestInputBuffer(descrambler);
+                    fail("descramble should fail without a valid session");
+                } catch (MediaCasStateException e) {
+                    Log.d(TAG, "descramble throws " + e.getDiagnosticInfo() + " (as expected)");
+                }
 
-            // Now set a valid session, should still fail because no valid ecm is processed
-            descrambler.setMediaCasSession(session);
-            try {
-                ByteBuffer outputBuf = descrambleTestInputBuffer(descrambler);
-                fail("descramble should fail without valid ecm");
-            } catch (MediaCasStateException e) {
-                Log.d(TAG, "descramble throws " + e.getDiagnosticInfo() + " (as expected)");
+                // Now set a valid session, should still fail because no valid ecm is processed
+                descrambler.setMediaCasSession(session);
+                try {
+                    ByteBuffer outputBuf = descrambleTestInputBuffer(descrambler);
+                    fail("descramble should fail without valid ecm");
+                } catch (MediaCasStateException e) {
+                    Log.d(TAG, "descramble throws " + e.getDiagnosticInfo() + " (as expected)");
+                }
             }
         } finally {
             if (mediaCas != null) {
