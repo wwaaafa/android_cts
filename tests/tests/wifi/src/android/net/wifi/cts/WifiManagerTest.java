@@ -20,6 +20,7 @@ import static android.net.NetworkCapabilities.NET_CAPABILITY_NOT_METERED;
 import static android.net.NetworkCapabilities.TRANSPORT_WIFI;
 import static android.net.wifi.WifiAvailableChannel.OP_MODE_SAP;
 import static android.net.wifi.WifiAvailableChannel.OP_MODE_STA;
+import static android.net.wifi.WifiAvailableChannel.OP_MODE_WIFI_DIRECT_GO;
 import static android.net.wifi.WifiConfiguration.INVALID_NETWORK_ID;
 import static android.net.wifi.WifiManager.COEX_RESTRICTION_SOFTAP;
 import static android.net.wifi.WifiManager.COEX_RESTRICTION_WIFI_AWARE;
@@ -5635,10 +5636,11 @@ public class WifiManagerTest extends WifiJUnit3TestBase {
     }
 
     /**
-     * Tests {@link WifiManager#getUsableChannels(int, int))} does not crash.
+     * Tests {@link WifiManager#getUsableChannels(int, int))} does not crash
+     * and returns at least one 2G channel in STA and WFD GO modes (if WFD is supported)
      */
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
-    public void testGetUsableChannels() throws Exception {
+    public void testGetUsableChannelsStaWfdMode() throws Exception {
         if (!WifiFeature.isWifiSupported(getContext())) {
             // skip the test if WiFi is not supported
             return;
@@ -5648,10 +5650,18 @@ public class WifiManagerTest extends WifiJUnit3TestBase {
         UiAutomation uiAutomation = InstrumentationRegistry.getInstrumentation().getUiAutomation();
         try {
             uiAutomation.adoptShellPermissionIdentity();
-            List<WifiAvailableChannel> usableChannels =
+            List<WifiAvailableChannel> usableStaChannels =
                 mWifiManager.getUsableChannels(WIFI_BAND_24_GHZ, OP_MODE_STA);
-            //There must be at least one usable channel in 2.4GHz band
-            assertFalse(usableChannels.isEmpty());
+            //There must be at least one usable STA channel in 2.4GHz band
+            assertFalse(usableStaChannels.isEmpty());
+
+            if (mWifiManager.isP2pSupported()) {
+                List<WifiAvailableChannel> usableGoChannels =
+                        mWifiManager.getUsableChannels(WIFI_BAND_24_GHZ, OP_MODE_WIFI_DIRECT_GO);
+                //There must be at least one usable P2P channel in 2.4GHz band
+                assertFalse(usableGoChannels.isEmpty());
+            }
+
         } catch (UnsupportedOperationException ex) {
             //expected if the device does not support this API
         } catch (Exception ex) {
