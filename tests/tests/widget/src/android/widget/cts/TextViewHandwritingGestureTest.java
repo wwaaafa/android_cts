@@ -881,7 +881,7 @@ public class TextViewHandwritingGestureTest {
         // The point is (mGestureLineMargin - 1) to the right of line 0.
         performInsertGesture(
                 new PointF(
-                        mEditText.getLayout().getLineRight(0) + mGestureLineMargin - 1f,
+                        mEditText.getLayout().getWidth() + mGestureLineMargin - 1f,
                         mEditText.getLayout().getLineTop(0) + 1f));
 
         assertGestureInsertedText(9, INSERT_TEXT);
@@ -894,7 +894,7 @@ public class TextViewHandwritingGestureTest {
 
         performInsertGesture(
                 new PointF(
-                        mEditText.getLayout().getLineRight(0) + mGestureLineMargin + 5f,
+                        mEditText.getLayout().getWidth() + mGestureLineMargin + 5f,
                         mEditText.getLayout().getLineTop(0) + 1f));
 
         assertFallbackTextInserted(/* initialCursorPosition= */ 6);
@@ -1068,10 +1068,10 @@ public class TextViewHandwritingGestureTest {
         // Both points are to the right of line 0.
         performRemoveSpaceGesture(
                 new PointF(
-                        mEditText.getLayout().getLineRight(0) + mGestureLineMargin + 5f,
+                        mEditText.getLayout().getWidth() + mGestureLineMargin + 5f,
                         mEditText.getLayout().getLineTop(0) + 1f),
                 new PointF(
-                        mEditText.getLayout().getLineRight(0) + mGestureLineMargin + 7f,
+                        mEditText.getLayout().getWidth() + mGestureLineMargin + 7f,
                         mEditText.getLayout().getLineTop(0) + 2f));
 
         assertFallbackTextInserted(/* initialCursorPosition= */ 6);
@@ -1202,7 +1202,7 @@ public class TextViewHandwritingGestureTest {
         // The point is to the right of line 0.
         performJoinOrSplitGesture(
                 new PointF(
-                        mEditText.getLayout().getLineRight(0) + mGestureLineMargin + 5f,
+                        mEditText.getLayout().getWidth() + mGestureLineMargin + 5f,
                         mEditText.getLayout().getLineTop(0) + 1f));
 
         assertFallbackTextInserted(/* initialCursorPosition= */ 6);
@@ -1372,7 +1372,7 @@ public class TextViewHandwritingGestureTest {
         // The point is (mGestureLineMargin - 1) to the right of line 0.
         InsertModeGesture gesture = performInsertModeGesture(
                 new PointF(
-                        mEditText.getLayout().getLineRight(0) + mGestureLineMargin - 1f,
+                        mEditText.getLayout().getWidth() + mGestureLineMargin - 1f,
                         mEditText.getLayout().getLineTop(0) + 1f));
 
         assertGestureInsertMode(/* offset= */ 9);
@@ -1389,7 +1389,7 @@ public class TextViewHandwritingGestureTest {
 
         performInsertModeGesture(
                 new PointF(
-                        mEditText.getLayout().getLineRight(0) + mGestureLineMargin + 5f,
+                        mEditText.getLayout().getWidth() + mGestureLineMargin + 5f,
                         mEditText.getLayout().getLineTop(0) + 1f));
 
         assertFallbackTextInserted(/* initialCursorPosition= */ 6);
@@ -1525,7 +1525,7 @@ public class TextViewHandwritingGestureTest {
         // The point is (mGestureLineMargin - 1) to the right of line 0.
         InsertModeGesture gesture = performInsertModeGesture(
                 new PointF(
-                        mEditText.getLayout().getLineRight(0) + mGestureLineMargin - 1f,
+                        mEditText.getLayout().getWidth() + mGestureLineMargin - 1f,
                         mEditText.getLayout().getLineTop(0) + 1f));
 
         assertGestureInsertMode(/* offset= */ 27);
@@ -1543,7 +1543,7 @@ public class TextViewHandwritingGestureTest {
 
         performInsertModeGesture(
                 new PointF(
-                        mEditText.getLayout().getLineRight(0) + mGestureLineMargin + 5f,
+                        mEditText.getLayout().getWidth() + mGestureLineMargin + 5f,
                         mEditText.getLayout().getLineTop(0) + 1f));
 
         assertFallbackTextInserted(/* initialCursorPosition= */ 6);
