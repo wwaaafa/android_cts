@@ -2789,6 +2789,13 @@
     <permission android:name="android.permission.BIND_CALL_REDIRECTION_SERVICE"
                 android:protectionLevel="signature|privileged" />
 
+    <!-- Must be required by a {@link android.telecom.CallStreamingService},
+         to ensure that only the system can bind to it.
+         <p>Protection level: signature
+         @SystemApi @hide-->
+    <permission android:name="android.permission.BIND_CALL_STREAMING_SERVICE"
+                android:protectionLevel="signature" />
+
     <!-- Must be required by a {@link android.telecom.ConnectionService},
          to ensure that only the system can bind to it.
          @deprecated {@link android.telecom.ConnectionService}s should require
