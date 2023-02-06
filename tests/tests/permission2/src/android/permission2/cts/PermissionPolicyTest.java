@@ -74,6 +74,10 @@ public class PermissionPolicyTest {
     private static final String SET_UNRESTRICTED_GESTURE_EXCLUSION
             = "android.permission.SET_UNRESTRICTED_GESTURE_EXCLUSION";
 
+    private static final String ACCESS_SHORTCUTS_PERMISSION = "android.permission.ACCESS_SHORTCUTS";
+    private static final String BIND_QUICK_SETTINGS_TILE =
+            "android.permission.BIND_QUICK_SETTINGS_TILE";
+
     private static final String LOG_TAG = "PermissionProtectionTest";
 
     private static final String PLATFORM_PACKAGE_NAME = "android";
@@ -512,6 +516,14 @@ public class PermissionPolicyTest {
             default:
                 return false;
         }
+    }
+
+    private static boolean shouldAllowProtectionFlagsChange(
+            String permissionName, int expectedFlags, int actualFlags) {
+        return (ACCESS_SHORTCUTS_PERMISSION.equals(permissionName)
+                        || BIND_QUICK_SETTINGS_TILE.equals(permissionName))
+                && ((expectedFlags | PermissionInfo.PROTECTION_FLAG_RECENTS)
+                        == (actualFlags | PermissionInfo.PROTECTION_FLAG_RECENTS));
     }
 
     private class ExpectedPermissionInfo {
