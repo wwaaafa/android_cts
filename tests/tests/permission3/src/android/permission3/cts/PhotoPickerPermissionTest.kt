@@ -278,8 +278,6 @@ class PhotoPickerPermissionTest : BaseUsePermissionTest() {
         installPackage(APP_APK_PATH_IMPLICIT_USER_SELECT_STORAGE)
         navigateToIndividualPermissionSetting(READ_MEDIA_IMAGES)
         click(By.res(SELECT_PHOTOS_RADIO_BUTTON))
-        clickImageOrVideo()
-        clickAllow()
 
         eventually {
             assertAppHasPermission(READ_MEDIA_IMAGES, expectPermission = false)
