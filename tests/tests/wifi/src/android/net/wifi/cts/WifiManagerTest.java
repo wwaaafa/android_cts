@@ -5825,6 +5825,88 @@ public class WifiManagerTest extends WifiJUnit3TestBase {
         }
     }
 
+    static class TestWifiNetworkStateChangeListener implements
+            WifiManager.WifiNetworkStateChangedListener {
+        final int mCmmRole;
+        private List<Integer> mStateList = new ArrayList<>();
+
+        TestWifiNetworkStateChangeListener(int cmmRole) {
+            mCmmRole = cmmRole;
+        }
+
+        @Override
+        public void onWifiNetworkStateChanged(int cmmRole, int state) {
+            if (cmmRole != mCmmRole) {
+                return;
+            }
+            if (mStateList.contains(state)) {
+                // ignore duplicate state transitions
+                return;
+            }
+            mStateList.add(state);
+        }
+
+        public List<Integer> getStateList() {
+            return mStateList;
+        }
+
+        public void clear() {
+            mStateList.clear();
+        }
+    }
+
+    public void testWifiNetworkStateChangeListener() throws Exception {
+        if (!WifiFeature.isWifiSupported(getContext())) {
+            // skip the test if WiFi is not supported
+            return;
+        }
+
+        TestWifiNetworkStateChangeListener testListener = new TestWifiNetworkStateChangeListener(
+                WifiManager.WifiNetworkStateChangedListener.WIFI_ROLE_CLIENT_PRIMARY);
+        // Verify permission check
+        assertThrows(SecurityException.class,
+                () -> mWifiManager.addWifiNetworkStateChangedListener(mExecutor, testListener));
+
+        // Disable wifi
+        setWifiEnabled(false);
+        waitForDisconnection();
+
+        try {
+            // Register listener then enable wifi
+            ShellIdentityUtils.invokeWithShellPermissions(
+                    () -> mWifiManager.addWifiNetworkStateChangedListener(mExecutor, testListener));
+            setWifiEnabled(true);
+
+            // Trigger a scan & wait for connection to one of the saved networks.
+            mWifiManager.startScan();
+            waitForConnection();
+
+            PollingCheck.check(
+                    "Wifi network state change listener did not receive connected!", 1_000,
+                    () -> testListener.getStateList().contains(
+                            WifiManager.WifiNetworkStateChangedListener
+                                    .WIFI_NETWORK_STATUS_CONNECTED));
+            int firstState = testListener.getStateList().get(0);
+            int lastState = testListener.getStateList().get(testListener.getStateList().size() - 1);
+            assertEquals(WifiManager.WifiNetworkStateChangedListener
+                    .WIFI_NETWORK_STATUS_CONNECTING, firstState);
+            assertEquals(WifiManager.WifiNetworkStateChangedListener
+                    .WIFI_NETWORK_STATUS_CONNECTED, lastState);
+
+            // Disable wifi and verify disconnect is reported.
+            testListener.clear();
+            setWifiEnabled(false);
+            waitForDisconnection();
+            PollingCheck.check(
+                    "Wifi network state change listener did not receive disconnected!", 1_000,
+                    () -> testListener.getStateList().contains(
+                            WifiManager.WifiNetworkStateChangedListener
+                                    .WIFI_NETWORK_STATUS_DISCONNECTED));
+        } finally {
+            mWifiManager.removeWifiNetworkStateChangedListener(testListener);
+        }
+    }
+
     /**
      * Tests {@link WifiConfiguration#setBssidAllowlist(List)}.
      */
