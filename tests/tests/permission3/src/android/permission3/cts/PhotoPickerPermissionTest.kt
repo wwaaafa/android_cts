@@ -159,8 +159,13 @@ class PhotoPickerPermissionTest : BaseUsePermissionTest() {
         eventually {
             // USER_SELECTED should be granted, but not returned in the result
             assertAppHasPermission(READ_MEDIA_VISUAL_USER_SELECTED, expectPermission = true)
+            assertAppHasPermission(READ_MEDIA_VIDEO, expectPermission = true)
             assertPermissionFlags(
                 READ_MEDIA_IMAGES,
+                FLAG_PERMISSION_ONE_TIME to true,
+                FLAG_PERMISSION_REVOKED_COMPAT to true)
+            assertPermissionFlags(
+                READ_MEDIA_VIDEO,
                 FLAG_PERMISSION_ONE_TIME to true,
                 FLAG_PERMISSION_REVOKED_COMPAT to true)
             assertPermissionFlags(
