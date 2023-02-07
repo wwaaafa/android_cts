@@ -35,6 +35,7 @@ android_test {
         "platform-test-annotations",
         "truth-prebuilt",
         "cts-install-lib",
+        "kotlin-test",
     ],
 
     test_suites: [
@@ -45,8 +46,9 @@ android_test {
         ":CtsEmptyTestApp",
         ":CtsEmptyInstallerApp",
         ":CtsEmptyTestApp_NotAllowUpdateOwnership",
+        ":CtsEmptyTestApp_FullScreenIntent",
     ],
-    java_resources:  [
+    java_resources: [
         ":HelloWorldSdk1",
         ":HelloWorldUsingSdk1",
     ],
