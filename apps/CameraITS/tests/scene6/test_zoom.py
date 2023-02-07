@@ -257,9 +257,8 @@ class ZoomTest(its_base_test.ItsBaseTest):
         cap_fl = cap['metadata']['android.lens.focalLength']
         radius_tol, offset_tol = test_tols[cap_fl]
 
-        # convert to [0, 255] images with unsigned integer
-        img *= 255
-        img = img.astype(np.uint8)
+        # convert [0, 1] image to [0, 255] and cast as uint8
+        img = image_processing_utils.convert_image_to_uint8(img)
 
         # Find the center circle in img
         try:
