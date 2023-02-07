@@ -16,6 +16,8 @@
 
 package android.media.metrics.cts;
 
+import static android.media.cts.MediaMetricsTestConstants.LOG_SESSION_ID_KEY;
+
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
@@ -740,8 +742,7 @@ public class MediaMetricsAtomTests extends BaseHostJUnit4Test {
         public void testEnded(TestDescription test, long endTime,
                 HashMap<String, MetricMeasurement.Metric> testMetrics) {
             LogUtil.CLog.i("testEnded  MetricMeasurement.Metric " + testMetrics);
-            // TODO(b/265311058): use a common constant for metrics keys.
-            mLogSessionId = testMetrics.get("log_session_id").getMeasurements().getSingleString();
+            mLogSessionId = testMetrics.get(LOG_SESSION_ID_KEY).getMeasurements().getSingleString();
         }
     }
 }
