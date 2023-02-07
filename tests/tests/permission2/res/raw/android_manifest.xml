@@ -5583,6 +5583,11 @@
     <permission android:name="android.permission.RECOVER_KEYSTORE"
         android:protectionLevel="signature|privileged" />
 
+    <!-- @SystemApi Allows application to verify lockscreen credentials provided by a remote device.
+         @hide -->
+    <permission android:name="android.permission.CHECK_REMOTE_LOCKSCREEN"
+        android:protectionLevel="signature|privileged" />
+
     <!-- Allows a package to launch the secure full-backup confirmation UI.
          ONLY the system process may hold this permission.
          @hide -->
