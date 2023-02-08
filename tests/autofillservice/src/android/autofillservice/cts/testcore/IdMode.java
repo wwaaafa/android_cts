@@ -22,6 +22,5 @@ package android.autofillservice.cts.testcore;
 public enum IdMode {
     RESOURCE_ID,
     HTML_NAME,
-    HTML_NAME_OR_RESOURCE_ID,
-    PCC_ID
+    HTML_NAME_OR_RESOURCE_ID
 }
