@@ -193,6 +193,7 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             ErrorState.NOT_AVAILABLE_DISABLED,
                             ErrorState.NOT_AVAILABLE_SPEED_LOW,
                             ErrorState.NOT_AVAILABLE_SPEED_HIGH,
+                            ErrorState.NOT_AVAILABLE_POOR_VISIBILITY,
                             ErrorState.NOT_AVAILABLE_SAFETY)
                     .build();
     private static final ImmutableSet<Integer> AUTOMATIC_EMERGENCY_BRAKING_STATES =
