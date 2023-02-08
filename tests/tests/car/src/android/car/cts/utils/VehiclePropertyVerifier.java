@@ -1422,8 +1422,9 @@ public class VehiclePropertyVerifier<T> {
         @Override
         public void onFailure(PropertyAsyncError getPropertyError) {
             assertWithMessage("PropertyAsyncError with requestId "
-                    + getPropertyError.getRequestId() + " returned with error code: "
-                    + getPropertyError.getErrorCode()).fail();
+                    + getPropertyError.getRequestId() + " returned with async error code: "
+                    + getPropertyError.getErrorCode() + " and vendor error code: "
+                    + getPropertyError.getVendorErrorCode()).fail();
         }
 
         CarPropertyCallback(int getPropertyResultsCount) {
