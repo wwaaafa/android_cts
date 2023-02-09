@@ -261,6 +261,20 @@ public class SatelliteManagerTest {
                 ()-> mSatelliteManager.pollPendingSatelliteDatagrams());
     }
 
+    @Test
+    public void testSendSatelliteDatagram() {
+        LinkedBlockingQueue<Integer> resultListener = new LinkedBlockingQueue<>(1);
+
+        String mText = "This is a test datagram message";
+        SatelliteDatagram datagram = new SatelliteDatagram(mText.getBytes());
+
+        // Throws SecurityException as we do not have SATELLITE_COMMUNICATION permission.
+        assertThrows(SecurityException.class,
+                ()-> mSatelliteManager.sendSatelliteDatagram(
+                        SatelliteManager.DATAGRAM_TYPE_SOS_SMS, datagram,
+                        getContext().getMainExecutor(), resultListener::offer));
+    }
+
     private Context getContext() {
         return InstrumentationRegistry.getContext();
     }
