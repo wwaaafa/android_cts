@@ -35,6 +35,7 @@ import android.net.wifi.WifiManager;
 import android.os.HardwarePropertiesManager;
 import android.os.UserManager;
 import android.security.KeyChain;
+import android.telecom.TelecomManager;
 import android.util.Log;
 
 import com.android.bedstead.testapp.processor.annotations.FrameworkClass;
@@ -59,7 +60,10 @@ import com.android.eventlib.premade.EventLibService;
                 @FrameworkClass(frameworkClass = BluetoothManager.class, constructor = "context.getSystemService(android.bluetooth.BluetoothManager.class)"),
                 @FrameworkClass(frameworkClass = BluetoothAdapter.class, constructor = "context.getSystemService(android.bluetooth.BluetoothManager.class).getAdapter()"),
                 @FrameworkClass(frameworkClass = KeyChain.class, constructor = "null"), // KeyChain can not be instantiated - all calls are static
-                @FrameworkClass(frameworkClass = NotificationManager.class, constructor = "context.getSystemService(android.app.NotificationManager.class)")
+                @FrameworkClass(frameworkClass = NotificationManager.class, constructor =
+                        "context.getSystemService(android.app.NotificationManager.class)"),
+                @FrameworkClass(frameworkClass = TelecomManager.class, constructor =
+                        "context.getSystemService(android.telecom.TelecomManager.class)"),
         }
 )
 public final class TestAppAppComponentFactory extends AppComponentFactory {
