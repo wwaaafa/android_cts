@@ -45,8 +45,8 @@ import org.junit.runner.RunWith;
 @SmallTest
 public class BluetoothLeAudioCodecConfigMetadataTest {
     private static final long TEST_AUDIO_LOCATION_FRONT_LEFT = 0x01;
-    private static final int TEST_SAMPLING_FREQUENCY_44100 = 0x07;
-    private static final int TEST_FRAME_DURATION_10000 = 0x01;
+    private static final int TEST_SAMPLE_RATE_44100 = 0x01 << 7;
+    private static final int TEST_FRAME_DURATION_10000 = 0x01 << 1;
     private static final int TEST_OCTETS_PER_FRAME = 100;
 
     // See Page 5 of Generic Audio assigned number specification
@@ -116,12 +116,12 @@ public class BluetoothLeAudioCodecConfigMetadataTest {
         BluetoothLeAudioCodecConfigMetadata codecMetadata =
                 new BluetoothLeAudioCodecConfigMetadata.Builder()
                         .setAudioLocation(TEST_AUDIO_LOCATION_FRONT_LEFT)
-                        .setSamplingFrequency(TEST_SAMPLING_FREQUENCY_44100)
+                        .setSampleRate(TEST_SAMPLE_RATE_44100)
                         .setFrameDuration(TEST_FRAME_DURATION_10000)
                         .setOctetsPerFrame(TEST_OCTETS_PER_FRAME)
                         .build();
         assertEquals(TEST_AUDIO_LOCATION_FRONT_LEFT, codecMetadata.getAudioLocation());
-        assertEquals(TEST_SAMPLING_FREQUENCY_44100, codecMetadata.getSamplingFrequency());
+        assertEquals(TEST_SAMPLE_RATE_44100, codecMetadata.getSampleRate());
         assertEquals(TEST_FRAME_DURATION_10000, codecMetadata.getFrameDuration());
         assertEquals(TEST_OCTETS_PER_FRAME, codecMetadata.getOctetsPerFrame());
         // TODO: Implement implicit LTV byte conversion in the API class
@@ -136,7 +136,7 @@ public class BluetoothLeAudioCodecConfigMetadataTest {
         BluetoothLeAudioCodecConfigMetadata codecMetadata =
                 new BluetoothLeAudioCodecConfigMetadata.Builder()
                         .setAudioLocation(TEST_AUDIO_LOCATION_FRONT_LEFT)
-                        .setSamplingFrequency(TEST_SAMPLING_FREQUENCY_44100)
+                        .setSampleRate(TEST_SAMPLE_RATE_44100)
                         .setFrameDuration(TEST_FRAME_DURATION_10000)
                         .setOctetsPerFrame(TEST_OCTETS_PER_FRAME)
                         .build();
@@ -144,7 +144,7 @@ public class BluetoothLeAudioCodecConfigMetadataTest {
                 new BluetoothLeAudioCodecConfigMetadata.Builder(codecMetadata).build();
         assertEquals(codecMetadata, codecMetadataCopy);
         assertEquals(TEST_AUDIO_LOCATION_FRONT_LEFT, codecMetadataCopy.getAudioLocation());
-        assertEquals(TEST_SAMPLING_FREQUENCY_44100, codecMetadataCopy.getSamplingFrequency());
+        assertEquals(TEST_SAMPLE_RATE_44100, codecMetadataCopy.getSampleRate());
         assertEquals(TEST_FRAME_DURATION_10000, codecMetadataCopy.getFrameDuration());
         assertEquals(TEST_OCTETS_PER_FRAME, codecMetadataCopy.getOctetsPerFrame());
         assertArrayEquals(codecMetadata.getRawMetadata(), codecMetadataCopy.getRawMetadata());
@@ -161,7 +161,7 @@ public class BluetoothLeAudioCodecConfigMetadataTest {
         assertNotNull(metadataBytes);
         assertArrayEquals(TEST_METADATA_BYTES, metadataBytes);
         assertEquals(TEST_AUDIO_LOCATION_FRONT_LEFT, codecMetadata.getAudioLocation());
-        assertEquals(TEST_SAMPLING_FREQUENCY_44100, codecMetadata.getSamplingFrequency());
+        assertEquals(TEST_SAMPLE_RATE_44100, codecMetadata.getSampleRate());
         assertEquals(TEST_FRAME_DURATION_10000, codecMetadata.getFrameDuration());
         assertEquals(TEST_OCTETS_PER_FRAME, codecMetadata.getOctetsPerFrame());
     }

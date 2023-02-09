@@ -83,8 +83,8 @@ public class BluetoothLeBroadcastTest {
     // For BluetoothLeAudioCodecConfigMetadata
     private static final long TEST_AUDIO_LOCATION_FRONT_LEFT = 0x01;
     private static final long TEST_AUDIO_LOCATION_FRONT_RIGHT = 0x02;
-    private static final int TEST_SAMPLING_FREQUENCY_16000 = 0x03;
-    private static final int TEST_FRAME_DURATION_7500 = 0x01;
+    private static final int TEST_SAMPLE_RATE_16000 = 0x01 << 2;
+    private static final int TEST_FRAME_DURATION_7500 = 0x01 << 0;
     private static final int TEST_OCTETS_PER_FRAME = 200;
 
     // For BluetoothLeAudioContentMetadata
@@ -123,7 +123,7 @@ public class BluetoothLeBroadcastTest {
         BluetoothLeAudioCodecConfigMetadata codecMetadata =
                 new BluetoothLeAudioCodecConfigMetadata.Builder()
                         .setAudioLocation(TEST_AUDIO_LOCATION_FRONT_LEFT)
-                        .setSamplingFrequency(TEST_SAMPLING_FREQUENCY_16000)
+                        .setSampleRate(TEST_SAMPLE_RATE_16000)
                         .setFrameDuration(TEST_FRAME_DURATION_7500)
                         .setOctetsPerFrame(TEST_OCTETS_PER_FRAME)
                         .build();
@@ -138,7 +138,7 @@ public class BluetoothLeBroadcastTest {
         BluetoothLeAudioCodecConfigMetadata channelCodecMetadata =
                 new BluetoothLeAudioCodecConfigMetadata.Builder()
                         .setAudioLocation(TEST_AUDIO_LOCATION_FRONT_RIGHT)
-                        .setSamplingFrequency(TEST_SAMPLING_FREQUENCY_16000)
+                        .setSampleRate(TEST_SAMPLE_RATE_16000)
                         .setFrameDuration(TEST_FRAME_DURATION_7500)
                         .setOctetsPerFrame(TEST_OCTETS_PER_FRAME)
                         .build();
