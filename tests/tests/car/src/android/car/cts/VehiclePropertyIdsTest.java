@@ -258,6 +258,10 @@ public class VehiclePropertyIdsTest extends AbstractCarLessTestCase {
                 .isEqualTo("MIRROR_AUTO_FOLD_ENABLED");
         assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.MIRROR_AUTO_TILT_ENABLED))
                 .isEqualTo("MIRROR_AUTO_TILT_ENABLED");
+        assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.GLOVE_BOX_DOOR_POS))
+                .isEqualTo("GLOVE_BOX_DOOR_POS");
+        assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.GLOVE_BOX_LOCKED))
+                .isEqualTo("GLOVE_BOX_LOCKED");
         assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.SEAT_BACKREST_ANGLE_1_MOVE))
                 .isEqualTo("SEAT_BACKREST_ANGLE_1_MOVE");
         assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.SEAT_BACKREST_ANGLE_1_POS))
