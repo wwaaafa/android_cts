@@ -544,6 +544,7 @@ package android.app.admin {
     method public void setDeviceOwnerType(@NonNull android.content.ComponentName, int);
     method @RequiresPermission(android.Manifest.permission.MANAGE_DEVICE_ADMINS) public void setNextOperationSafety(int, int);
     method @RequiresPermission(anyOf={android.Manifest.permission.MARK_DEVICE_ORGANIZATION_OWNED, android.Manifest.permission.MANAGE_PROFILE_AND_DEVICE_OWNERS}, conditional=true) public void setProfileOwnerOnOrganizationOwnedDevice(@NonNull android.content.ComponentName, boolean);
+    method @RequiresPermission(android.Manifest.permission.MANAGE_PROFILE_AND_DEVICE_OWNERS) public boolean triggerDevicePolicyEngineMigration(boolean);
     field public static final String ACTION_DATA_SHARING_RESTRICTION_APPLIED = "android.app.action.DATA_SHARING_RESTRICTION_APPLIED";
     field public static final String ACTION_DEVICE_POLICY_CONSTANTS_CHANGED = "android.app.action.DEVICE_POLICY_CONSTANTS_CHANGED";
     field public static final int DEVICE_OWNER_TYPE_DEFAULT = 0; // 0x0
@@ -592,8 +593,47 @@ package android.app.admin {
     field @Deprecated public static final int STATUS_SPLIT_SYSTEM_USER_DEVICE_SYSTEM_USER = 14; // 0xe
   }
 
+  public final class FlagUnion extends android.app.admin.ResolutionMechanism<java.lang.Integer> {
+    method public int describeContents();
+    method public void writeToParcel(@NonNull android.os.Parcel, int);
+    field @NonNull public static final android.os.Parcelable.Creator<android.app.admin.FlagUnion> CREATOR;
+  }
+
+  public final class MostRecent<V> extends android.app.admin.ResolutionMechanism<V> {
+    ctor public MostRecent();
+    method public int describeContents();
+    method public void writeToParcel(@NonNull android.os.Parcel, int);
+    field @NonNull public static final android.os.Parcelable.Creator<android.app.admin.MostRecent> CREATOR;
+  }
+
+  public final class MostRestrictive<V> extends android.app.admin.ResolutionMechanism<V> {
+    method public int describeContents();
+    method public void writeToParcel(@NonNull android.os.Parcel, int);
+    field @NonNull public static final android.os.Parcelable.Creator<android.app.admin.MostRestrictive<?>> CREATOR;
+  }
+
+  public final class PolicyState<V> implements android.os.Parcelable {
+    method @NonNull public android.app.admin.ResolutionMechanism<V> getResolutionMechanism();
+  }
+
+  public abstract class ResolutionMechanism<V> implements android.os.Parcelable {
+  }
+
   public static final class SecurityLog.SecurityEvent implements android.os.Parcelable {
     ctor public SecurityLog.SecurityEvent(long, byte[]);
+  }
+
+  public final class StringSetUnion extends android.app.admin.ResolutionMechanism<java.util.Set<java.lang.String>> {
+    ctor public StringSetUnion();
+    method public int describeContents();
+    method public void writeToParcel(@NonNull android.os.Parcel, int);
+    field @NonNull public static final android.os.Parcelable.Creator<android.app.admin.StringSetUnion> CREATOR;
+  }
+
+  public final class TopPriority<V> extends android.app.admin.ResolutionMechanism<V> {
+    method public int describeContents();
+    method public void writeToParcel(@NonNull android.os.Parcel, int);
+    field @NonNull public static final android.os.Parcelable.Creator<android.app.admin.TopPriority<?>> CREATOR;
   }
 
   public final class UnsafeStateException extends java.lang.IllegalStateException implements android.os.Parcelable {
@@ -2529,6 +2569,7 @@ package android.service.autofill {
 
   public final class Dataset implements android.os.Parcelable {
     method @Nullable public android.content.IntentSender getAuthentication();
+    method @Nullable public java.util.ArrayList<java.lang.String> getAutofillDatatypes();
     method @Nullable public android.content.ClipData getFieldContent();
     method @Nullable public java.util.ArrayList<android.view.autofill.AutofillId> getFieldIds();
     method @Nullable public java.util.ArrayList<android.view.autofill.AutofillValue> getFieldValues();
@@ -2549,6 +2590,7 @@ package android.service.autofill {
   }
 
   public final class FillResponse implements android.os.Parcelable {
+    method @NonNull public java.util.Set<android.service.assist.classification.FieldClassification> getDetectedFieldClassifications();
     method public int getFlags();
   }
 
@@ -3278,6 +3320,7 @@ package android.view.autofill {
     field public static final String DEVICE_CONFIG_AUTOFILL_CREDENTIAL_MANAGER_IGNORE_VIEWS = "autofill_credential_manager_ignore_views";
     field public static final String DEVICE_CONFIG_AUTOFILL_DIALOG_ENABLED = "autofill_dialog_enabled";
     field public static final String DEVICE_CONFIG_AUTOFILL_PCC_CLASSIFICATION_ENABLED = "pcc_classification_enabled";
+    field public static final String DEVICE_CONFIG_AUTOFILL_PCC_FEATURE_PROVIDER_HINTS = "pcc_classification_hints";
     field public static final String DEVICE_CONFIG_AUTOFILL_SMART_SUGGESTION_SUPPORTED_MODES = "smart_suggestion_supported_modes";
     field public static final String DEVICE_CONFIG_NON_AUTOFILLABLE_IME_ACTION_IDS = "non_autofillable_ime_action_ids";
     field public static final String DEVICE_CONFIG_PACKAGE_DENYLIST_FOR_UNIMPORTANT_VIEW = "package_deny_list_for_unimportant_view";
