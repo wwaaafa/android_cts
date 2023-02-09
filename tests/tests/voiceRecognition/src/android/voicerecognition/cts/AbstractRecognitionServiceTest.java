@@ -38,6 +38,7 @@ import static org.junit.Assert.fail;
 import android.content.Intent;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.speech.ModelDownloadListener;
 import android.speech.RecognitionService;
 import android.speech.RecognitionSupport;
 import android.speech.RecognitionSupportCallback;
@@ -215,6 +216,59 @@ abstract class AbstractRecognitionServiceTest {
         PollingCheck.waitFor(SEQUENCE_TEST_WAIT_TIMEOUT_MS,
                 () -> CtsRecognitionService.sDownloadTriggers.size() > 0);
         assertThat(CtsRecognitionService.sDownloadTriggers).hasSize(1);
+    }
+
+    @Test
+    public void testCanSetModelDownloadListener() throws Throwable {
+        mUiDevice.waitForIdle();
+        SpeechRecognizer recognizer = mActivity.getRecognizerInfoDefault().mRecognizer;
+        assertThat(recognizer).isNotNull();
+        setCurrentRecognizer(recognizer, IN_PACKAGE_RECOGNITION_SERVICE);
+
+        mUiDevice.waitForIdle();
+        CtsRecognitionService.sDownloadTriggers.clear();
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        List<String> callbackCalls = new ArrayList<>();
+        ModelDownloadListener listener = new ModelDownloadListener() {
+            @Override
+            public void onProgress(int completedPercent) {
+                callbackCalls.add("progress");
+            }
+
+            @Override
+            public void onSuccess() {
+                callbackCalls.add("success");
+            }
+
+            @Override
+            public void onScheduled() {
+                callbackCalls.add("scheduled");
+            }
+
+            @Override
+            public void onError(int error) {
+                callbackCalls.add("error");
+            }
+        };
+        mActivity.setModelDownloadListenerDefault(intent, listener);
+        mActivity.triggerModelDownloadDefault(intent);
+        PollingCheck.waitFor(SEQUENCE_TEST_WAIT_TIMEOUT_MS,
+                () -> CtsRecognitionService.sDownloadTriggers.size() > 0);
+        PollingCheck.waitFor(SEQUENCE_TEST_WAIT_TIMEOUT_MS,
+                () -> callbackCalls.size() > 0);
+        assertThat(callbackCalls)
+                .containsExactly("progress", "scheduled", "success", "error")
+                .inOrder();
+
+        CtsRecognitionService.sDownloadTriggers.clear();
+        callbackCalls.clear();
+        assertThat(callbackCalls).isEmpty();
+        mActivity.setModelDownloadListenerDefault(intent, listener);
+        mActivity.clearModelDownloadListenerDefault(intent);
+        mActivity.triggerModelDownloadDefault(intent);
+        PollingCheck.waitFor(SEQUENCE_TEST_WAIT_TIMEOUT_MS,
+                () -> CtsRecognitionService.sDownloadTriggers.size() > 0);
+        assertThat(callbackCalls).isEmpty();
     }
 
     @Test
