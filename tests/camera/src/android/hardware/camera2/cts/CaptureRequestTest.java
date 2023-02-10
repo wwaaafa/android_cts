@@ -3198,7 +3198,7 @@ public class CaptureRequestTest extends Camera2SurfaceViewTestCase {
         long expTimeErrorMargin = (long)(Math.max(EXPOSURE_TIME_ERROR_MARGIN_NS, request
                 * EXPOSURE_TIME_ERROR_MARGIN_RATE));
         // First, round down not up, second, need close enough.
-        mCollector.expectTrue("Exposture time is invalid for AE manaul control test, request: "
+        mCollector.expectTrue("Exposure time is invalid for AE manual control test, request: "
                 + request + " result: " + result,
                 expTimeDelta < expTimeErrorMargin && expTimeDelta >= 0);
     }
@@ -3213,7 +3213,7 @@ public class CaptureRequestTest extends Camera2SurfaceViewTestCase {
         float sensitivityDelta = request - result;
         float sensitivityErrorMargin = request * SENSITIVITY_ERROR_MARGIN_RATE;
         // First, round down not up, second, need close enough.
-        mCollector.expectTrue("Sensitivity is invalid for AE manaul control test, request: "
+        mCollector.expectTrue("Sensitivity is invalid for AE manual control test, request: "
                 + request + " result: " + result,
                 sensitivityDelta < sensitivityErrorMargin && sensitivityDelta >= 0);
     }
