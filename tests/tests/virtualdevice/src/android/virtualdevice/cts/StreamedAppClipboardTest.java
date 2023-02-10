@@ -78,6 +78,7 @@ import android.media.ImageReader;
 import android.os.Bundle;
 import android.os.ResultReceiver;
 import android.os.SystemClock;
+import android.platform.test.annotations.AppModeFull;
 import android.provider.DeviceConfig;
 import android.provider.Settings;
 import android.support.test.uiautomator.UiDevice;
@@ -88,6 +89,7 @@ import android.virtualdevice.cts.util.FakeAssociationRule;
 import android.virtualdevice.cts.util.VirtualDeviceTestUtils;
 
 import androidx.annotation.NonNull;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.compatibility.common.util.AdoptShellPermissionsRule;
@@ -102,6 +104,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -109,6 +112,8 @@ import org.mockito.MockitoAnnotations;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+@RunWith(AndroidJUnit4.class)
+@AppModeFull(reason = "VirtualDeviceManager cannot be accessed by instant apps")
 public class StreamedAppClipboardTest {
     private static final String TAG = "StreamedAppClipboardTest";
 
