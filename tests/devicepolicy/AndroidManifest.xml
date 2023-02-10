@@ -27,6 +27,10 @@
     <!-- Seemingly the these permissions cannot be adopted. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Required for QuietModeTest#quietMode_sensitiveAppOpsNotAllowed -->
+    <uses-permission android:name="android.permission.BODY_SENSORS"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"/>
+
     <!-- Add a network security config that trusts user added CAs for tests -->
     <application android:testOnly="true"
                  android:appComponentFactory="com.android.eventlib.premade.EventLibAppComponentFactory"

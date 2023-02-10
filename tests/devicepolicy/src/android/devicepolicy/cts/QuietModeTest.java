@@ -22,7 +22,11 @@ import static android.location.LocationManager.FUSED_PROVIDER;
 import static com.android.bedstead.nene.permissions.CommonPermissions.ACCESS_BACKGROUND_LOCATION;
 import static com.android.bedstead.nene.permissions.CommonPermissions.ACCESS_COARSE_LOCATION;
 import static com.android.bedstead.nene.permissions.CommonPermissions.ACCESS_FINE_LOCATION;
+import static com.android.bedstead.nene.permissions.CommonPermissions.ACTIVITY_RECOGNITION;
+import static com.android.bedstead.nene.permissions.CommonPermissions.CAMERA;
 import static com.android.bedstead.nene.permissions.CommonPermissions.INTERACT_ACROSS_USERS_FULL;
+import static com.android.bedstead.nene.permissions.CommonPermissions.NEARBY_WIFI_DEVICES;
+import static com.android.bedstead.nene.permissions.CommonPermissions.RECORD_AUDIO;
 import static com.android.queryable.queries.ActivityQuery.activity;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -31,6 +35,7 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
+import android.app.AppOpsManager;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
@@ -45,7 +50,9 @@ import com.android.bedstead.harrier.annotations.EnsureHasPermission;
 import com.android.bedstead.harrier.annotations.EnsureHasWorkProfile;
 import com.android.bedstead.harrier.annotations.Postsubmit;
 import com.android.bedstead.harrier.annotations.RequireRunOnWorkProfile;
+import com.android.bedstead.harrier.annotations.StringTestParameter;
 import com.android.bedstead.nene.TestApis;
+import com.android.bedstead.nene.appops.AppOpsMode;
 import com.android.bedstead.nene.location.LocationProvider;
 import com.android.bedstead.nene.users.UserReference;
 import com.android.bedstead.nene.utils.Poll;
@@ -142,9 +149,9 @@ public class QuietModeTest {
     public void quietMode_profileStopped() throws Exception {
         assumeFalse("Keep profiles available feature is enabled", keepProfilesRunningEnabled());
         UserReference workProfile = sDeviceState.workProfile();
-        try {
-            workProfile.setQuietMode(true);
 
+        workProfile.setQuietMode(true);
+        try {
             // Profile should be stopped.
             Poll.forValue("profile running", workProfile::isRunning).toBeEqualTo(false)
                     .errorOnFail().await();
@@ -180,6 +187,40 @@ public class QuietModeTest {
 
             loc = lm.getLastKnownLocation(FUSED_PROVIDER);
             assertWithMessage("Location still available in quiet mode").that(loc).isNull();
+        } finally {
+            workProfile.setQuietMode(false);
+        }
+    }
+
+    @Postsubmit(reason = "new test")
+    @RequireRunOnWorkProfile
+    @EnsureHasPermission({ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, ACCESS_BACKGROUND_LOCATION,
+            ACTIVITY_RECOGNITION, NEARBY_WIFI_DEVICES, RECORD_AUDIO, CAMERA})
+    @Test
+    public void quietMode_sensitiveAppOpsNotAllowed(@StringTestParameter({
+            AppOpsManager.OPSTR_COARSE_LOCATION,
+            AppOpsManager.OPSTR_FINE_LOCATION,
+            AppOpsManager.OPSTR_GPS,
+            AppOpsManager.OPSTR_BODY_SENSORS,
+            AppOpsManager.OPSTR_ACTIVITY_RECOGNITION,
+            AppOpsManager.OPSTR_BLUETOOTH_SCAN,
+            AppOpsManager.OPSTR_NEARBY_WIFI_DEVICES,
+            AppOpsManager.OPSTR_RECORD_AUDIO,
+            AppOpsManager.OPSTR_CAMERA,
+    }) String opStr) throws Exception {
+
+        assumeTrue("Keep profiles available feature not enabled", keepProfilesRunningEnabled());
+
+        assertWithMessage("App op " + opStr + " isn't allowed")
+                .that(TestApis.packages().instrumented().appOps().get(opStr))
+                .isEqualTo(AppOpsMode.ALLOWED);
+
+        UserReference workProfile = sDeviceState.workProfile();
+        workProfile.setQuietMode(true);
+        try {
+            assertWithMessage("App op " + opStr + " is allowed")
+                    .that(TestApis.packages().instrumented().appOps().get(opStr))
+                    .isEqualTo(AppOpsMode.IGNORED);
         } finally {
             workProfile.setQuietMode(false);
         }
