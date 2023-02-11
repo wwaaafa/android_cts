@@ -1201,6 +1201,7 @@ public class WifiManagerTest extends WifiJUnit3TestBase {
         mWifiManager.isMakeBeforeBreakWifiSwitchingSupported();
         mWifiManager.isStaBridgedApConcurrencySupported();
         mWifiManager.isDualBandSimultaneousSupported();
+        mWifiManager.isTidToLinkMappingNegotiationSupported();
     }
 
     /**
