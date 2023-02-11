@@ -15,6 +15,7 @@
  */
 package com.android.cts.devicepolicy;
 
+import com.android.tradefed.util.RunUtil;
 import static com.android.cts.devicepolicy.metrics.DevicePolicyEventLogVerifier.assertMetricsLogged;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -526,7 +527,7 @@ public class ManagedProfileTest extends BaseManagedProfileTest {
                     "startSwitchToOtherProfileIntent", mProfileUserId);
 
             // TODO(b/223178698): Investigate potential increase in latency
-            Thread.sleep(30000);
+            RunUtil.getDefault().sleep(30000);
 
             assertResolverActivityInForeground(mProfileUserId);
         } finally {
@@ -569,7 +570,7 @@ public class ManagedProfileTest extends BaseManagedProfileTest {
             runDeviceTestsAsUser(MANAGED_PROFILE_PKG, ".CrossProfileSharingTest",
                     "startSwitchToOtherProfileIntent_chooser", mProfileUserId);
 
-            Thread.sleep(30000);
+            RunUtil.getDefault().sleep(30000);
 
             assertChooserActivityInForeground(mProfileUserId);
         } finally {
