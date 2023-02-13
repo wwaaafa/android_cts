@@ -22,9 +22,11 @@ import static org.testng.Assert.assertThrows;
 
 import com.android.bedstead.harrier.BedsteadJUnit4;
 import com.android.bedstead.harrier.DeviceState;
+import com.android.bedstead.harrier.annotations.Postsubmit;
 import com.android.bedstead.harrier.annotations.enterprise.CanSetPolicyTest;
 import com.android.bedstead.harrier.annotations.enterprise.CannotSetPolicyTest;
 import com.android.bedstead.harrier.policies.SecurityLogging;
+import com.android.compatibility.common.util.ApiTest;
 
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -37,6 +39,8 @@ public final class SecurityLoggingTest {
     public static final DeviceState sDeviceState = new DeviceState();
 
     @CannotSetPolicyTest(policy = SecurityLogging.class)
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = "android.app.admin.DevicePolicyManager#setSecurityLoggingEnabled")
     public void setSecurityLoggingEnabled_notPermitted_throwsException() {
         assertThrows(SecurityException.class,
                 () -> sDeviceState.dpc().devicePolicyManager().setSecurityLoggingEnabled(
@@ -50,6 +54,9 @@ public final class SecurityLoggingTest {
     }
 
     @CanSetPolicyTest(policy = SecurityLogging.class)
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = {"android.app.admin.DevicePolicyManager#setSecurityLoggingEnabled",
+            "android.app.admin.DevicePolicyManager#isSecurityLoggingEnabled"})
     public void setSecurityLoggingEnabled_true_securityLoggingIsEnabled() {
         boolean originalSecurityLoggingEnabled = sDeviceState.dpc()
                 .devicePolicyManager().isSecurityLoggingEnabled(sDeviceState.dpc().componentName());
@@ -67,6 +74,9 @@ public final class SecurityLoggingTest {
     }
 
     @CanSetPolicyTest(policy = SecurityLogging.class)
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = {"android.app.admin.DevicePolicyManager#setSecurityLoggingEnabled",
+            "android.app.admin.DevicePolicyManager#isSecurityLoggingEnabled"})
     public void setSecurityLoggingEnabled_false_securityLoggingIsNotEnabled() {
         boolean originalSecurityLoggingEnabled = sDeviceState.dpc()
                 .devicePolicyManager().isSecurityLoggingEnabled(sDeviceState.dpc().componentName());
@@ -90,6 +100,8 @@ public final class SecurityLoggingTest {
     }
 
     @CannotSetPolicyTest(policy = SecurityLogging.class)
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = "android.app.admin.DevicePolicyManager#isSecurityLoggingEnabled")
     public void isSecurityLoggingEnabled_notPermitted_throwsException() {
         assertThrows(SecurityException.class,
                 () -> sDeviceState.dpc().devicePolicyManager().isSecurityLoggingEnabled(
@@ -103,6 +115,8 @@ public final class SecurityLoggingTest {
     }
 
     @CannotSetPolicyTest(policy = SecurityLogging.class)
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = "android.app.admin.DevicePolicyManager#retrieveSecurityLogs")
     public void retrieveSecurityLogs_notPermitted_throwsException() {
         assertThrows(SecurityException.class,
                 () -> sDeviceState.dpc().devicePolicyManager().retrieveSecurityLogs(
@@ -110,6 +124,8 @@ public final class SecurityLoggingTest {
     }
 
     @CanSetPolicyTest(policy = SecurityLogging.class)
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = "android.app.admin.DevicePolicyManager#retrieveSecurityLogs")
     public void retrieveSecurityLogs_returnsSecurityLogs() {
         boolean originalSecurityLoggingEnabled =
                 sDeviceState.dpc().devicePolicyManager()
@@ -139,6 +155,8 @@ public final class SecurityLoggingTest {
     }
 
     @CannotSetPolicyTest(policy = SecurityLogging.class)
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = "android.app.admin.DevicePolicyManager#retrievePreRebootSecurityLogs")
     public void retrievePreRebootSecurityLogs_notPermitted_throwsException() {
         assertThrows(SecurityException.class,
                 () -> sDeviceState.dpc().devicePolicyManager().retrievePreRebootSecurityLogs(
@@ -146,6 +164,8 @@ public final class SecurityLoggingTest {
     }
 
     @CanSetPolicyTest(policy = SecurityLogging.class)
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = "android.app.admin.DevicePolicyManager#retrievePreRebootSecurityLogs")
     public void retrievePreRebootSecurityLogs_doesNotThrow() {
         boolean originalSecurityLoggingEnabled =
                 sDeviceState.dpc().devicePolicyManager()

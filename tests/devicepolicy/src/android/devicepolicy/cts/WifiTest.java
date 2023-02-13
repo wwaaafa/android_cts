@@ -174,10 +174,10 @@ public final class WifiTest {
                 .isTrue();
     }
 
-    @CanSetPolicyTest(policy = DisallowConfigWifiState.class) // TODO: Remove
-    public void setUserRestriction_disallowConfigWifiState_doesNotThrowException() {
+    @CanSetPolicyTest(policy = DisallowChangeWifiState.class) // TODO: Remove
+    public void setUserRestriction_disallowChangeWifiState_doesNotThrowException() {
         sDeviceState.dpc().devicePolicyManager().addUserRestriction(
-                sDeviceState.dpc().componentName(), DISALLOW_CONFIG_WIFI_STATE);
+                sDeviceState.dpc().componentName(), DISALLOW_CHANGE_WIFI_STATE);
     }
 
     @CannotSetPolicyTest(
@@ -253,10 +253,10 @@ public final class WifiTest {
                 .isTrue();
     }
 
-    @CanSetPolicyTest(policy = DisallowConfigWifiTethering.class) // TODO: Remove
-    public void setUserRestriction_disallowConfigWifiTethering_doesNotThrowException() {
+    @CanSetPolicyTest(policy = DisallowWifiTethering.class) // TODO: Remove
+    public void setUserRestriction_disallowWifiTethering_doesNotThrowException() {
         sDeviceState.dpc().devicePolicyManager().addUserRestriction(
-                sDeviceState.dpc().componentName(), DISALLOW_CONFIG_WIFI_TETHERING);
+                sDeviceState.dpc().componentName(), DISALLOW_WIFI_TETHERING);
     }
 
     @CannotSetPolicyTest(policy = DisallowWifiTethering.class)
@@ -391,7 +391,7 @@ public final class WifiTest {
     @Interactive
     @ApiTest(apis = "android.os.UserManager#DISALLOW_CONFIG_TETHERING")
     public void disallowConfigTetheringIsNotSet_todo() throws Exception {
-        // TODO
+        // TODO: Test
     }
 
     @EnsureDoesNotHaveUserRestriction(DISALLOW_CONFIG_WIFI)
@@ -558,30 +558,32 @@ public final class WifiTest {
         assertThat(Step.execute(CanYouAddWifiConfigStep.class)).isFalse();
     }
 
-//    @CannotSetPolicyTest(policy = Wifi.class)
-//    @Postsubmit(reason = "new test")
-//    @ApiTest(apis = "android.app.admin.DevicePolicyManager#getWifiMacAddress")
-//    public void getWifiMacAddress_notPermitted_throwsException() {
-//        assertThrows(SecurityException.class,
-//                () -> sDeviceState.dpc().devicePolicyManager()
-//                        .getWifiMacAddress(sDeviceState.dpc().componentName()));
-//    }
-//
-//    @CanSetPolicyTest(policy = Wifi.class)
-//    @Postsubmit(reason = "new test")
-//    @ApiTest(apis = "android.app.admin.DevicePolicyManager#getWifiMacAddress")
-//    public void getWifiMacAddress_doesNotThrow() {
-//        sDeviceState.dpc().devicePolicyManager()
-//                .getWifiMacAddress(sDeviceState.dpc().componentName());
-//    }
+    @CannotSetPolicyTest(policy = Wifi.class, includeNonDeviceAdminStates = false)
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = "android.app.admin.DevicePolicyManager#getWifiMacAddress")
+    public void getWifiMacAddress_notPermitted_throwsException() {
+        assertThrows(SecurityException.class,
+                () -> sDeviceState.dpc().devicePolicyManager()
+                        .getWifiMacAddress(sDeviceState.dpc().componentName()));
+    }
 
     @CanSetPolicyTest(policy = Wifi.class)
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = "android.app.admin.DevicePolicyManager#getWifiMacAddress")
+    public void getWifiMacAddress_doesNotThrow() {
+        sDeviceState.dpc().devicePolicyManager()
+                .getWifiMacAddress(sDeviceState.dpc().componentName());
+    }
+
+    @CanSetPolicyTest(policy = Wifi.class) // TODO: Remove
     public void setMinimumRequiredWifiSecurityLevel_doesNotThrowException() {
         sDeviceState.dpc().devicePolicyManager()
                 .setMinimumRequiredWifiSecurityLevel(WIFI_SECURITY_LEVEL);
     }
 
     @CannotSetPolicyTest(policy = Wifi.class)
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = "android.app.admin.DevicePolicyManager#setMinimumRequiredWifiSecurityLevel")
     public void setMinimumRequiredWifiSecurityLevel_notPermitted_throwsException() {
         assertThrows(SecurityException.class,
                 () -> sDeviceState.dpc().devicePolicyManager()
@@ -589,6 +591,9 @@ public final class WifiTest {
     }
     
     @PolicyAppliesTest(policy = Wifi.class)
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = {"android.app.admin.DevicePolicyManager#setMinimumRequiredWifiSecurityLevel",
+            "android.app.admin.DevicePolicyManager#getMinimumRequiredWifiSecurityLevel"})
     public void setMinimumRequiredWifiSecurityLevel_minimumRequiredWifiSecurityLevelIsSet() {
         int originalWifiSecurityLevel = sDeviceState.dpc().devicePolicyManager()
                 .getMinimumRequiredWifiSecurityLevel();
@@ -605,6 +610,9 @@ public final class WifiTest {
     }
 
     @PolicyDoesNotApplyTest(policy = Wifi.class)
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = {"android.app.admin.DevicePolicyManager#setMinimumRequiredWifiSecurityLevel",
+            "android.app.admin.DevicePolicyManager#getMinimumRequiredWifiSecurityLevel"})
     public void setMinimumRequiredWifiSecurityLevel_doesNotApply_minimumRequiredWifiSecurityLevelIsNotSet() {
         int originalWifiSecurityLevel = sDeviceState.dpc().devicePolicyManager()
                 .getMinimumRequiredWifiSecurityLevel();
@@ -620,13 +628,15 @@ public final class WifiTest {
         }
     }
 
-    @CanSetPolicyTest(policy = Wifi.class)
+    @CanSetPolicyTest(policy = Wifi.class) // TODO: Remove
     public void setWifiSsidPolicy_doesNotThrowException() {
         sDeviceState.dpc().devicePolicyManager()
                 .setWifiSsidPolicy(WIFI_SSID_POLICY);
     }
 
     @CannotSetPolicyTest(policy = Wifi.class)
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = "android.app.admin.DevicePolicyManager#setWifiSsidPolicy")
     public void setWifiSsidPolicy_notPermitted_throwsException() {
         assertThrows(SecurityException.class,
                 () -> sDeviceState.dpc().devicePolicyManager()
@@ -634,6 +644,9 @@ public final class WifiTest {
     }
 
     @CanSetPolicyTest(policy = Wifi.class)
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = {"android.app.admin.DevicePolicyManager#setWifiSsidPolicy",
+            "android.app.admin.DevicePolicyManager#getWifiSsidPolicy"})
     public void setWifiSsidPolicy_wifiSsidPolicyIsSet() {
         WifiSsidPolicy originalWifiSsidPolicy = sDeviceState.dpc().devicePolicyManager()
                 .getWifiSsidPolicy();
@@ -644,6 +657,73 @@ public final class WifiTest {
                     .isEqualTo(WIFI_SSID_POLICY);
         } finally {
             sDeviceState.dpc().devicePolicyManager().setWifiSsidPolicy(originalWifiSsidPolicy);
+        }
+    }
+
+    @CanSetPolicyTest(policy = Wifi.class) // TODO: Remove
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = "android.app.admin.DevicePolicyManager#setConfiguredNetworksLockdownState")
+    public void setConfiguredNetworksLockdownState_doesNotThrow() {
+        sDeviceState.dpc()
+                .devicePolicyManager().setConfiguredNetworksLockdownState(
+                        sDeviceState.dpc().componentName(), /* lockdown= */ true);
+    }
+
+    @CannotSetPolicyTest(policy = Wifi.class)
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = "android.app.admin.DevicePolicyManager#setConfiguredNetworksLockdownState")
+    public void setConfiguredNetworksLockdownState_notPermitted_throwsException() {
+        assertThrows(SecurityException.class, () -> sDeviceState.dpc()
+                .devicePolicyManager().setConfiguredNetworksLockdownState(
+                        sDeviceState.dpc().componentName(), /* lockdown= */ true));
+    }
+
+    // We can't have a simple policyappliestest + policydoesnotapplytest because we can't fetch the
+    // policy for a given user - once we can adopt MANAGE_DEVICE_POLICY_WIFI we can add the correct
+    // tests
+    @CanSetPolicyTest(policy = Wifi.class)
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = {
+            "android.app.admin.DevicePolicyManager#setConfiguredNetworksLockdownState",
+            "android.app.admin.DevicePolicyManager#hasLockdownAdminConfiguredNetworks"
+    })
+    public void setConfiguredNetworksLockdownState_true_isSet() {
+        boolean originalLockdown = sDeviceState.dpc().devicePolicyManager()
+                .hasLockdownAdminConfiguredNetworks(sDeviceState.dpc().componentName());
+        try {
+            sDeviceState.dpc().devicePolicyManager()
+                    .setConfiguredNetworksLockdownState(
+                            sDeviceState.dpc().componentName(), /* lockdown= */ true);
+
+            assertThat(sDeviceState.dpc().devicePolicyManager().hasLockdownAdminConfiguredNetworks(
+                    sDeviceState.dpc().componentName())).isTrue();
+        } finally {
+            sDeviceState.dpc().devicePolicyManager()
+                    .setConfiguredNetworksLockdownState(
+                            sDeviceState.dpc().componentName(), originalLockdown);
+        }
+    }
+
+    @CanSetPolicyTest(policy = Wifi.class)
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = {
+            "android.app.admin.DevicePolicyManager#setConfiguredNetworksLockdownState",
+            "android.app.admin.DevicePolicyManager#hasLockdownAdminConfiguredNetworks"
+    })
+    public void setConfiguredNetworksLockdownState_false_isSet() {
+        boolean originalLockdown = sDeviceState.dpc().devicePolicyManager()
+                .hasLockdownAdminConfiguredNetworks(sDeviceState.dpc().componentName());
+        try {
+            sDeviceState.dpc().devicePolicyManager()
+                    .setConfiguredNetworksLockdownState(
+                            sDeviceState.dpc().componentName(), /* lockdown= */ false);
+
+            assertThat(sDeviceState.dpc().devicePolicyManager().hasLockdownAdminConfiguredNetworks(
+                    sDeviceState.dpc().componentName())).isFalse();
+        } finally {
+            sDeviceState.dpc().devicePolicyManager()
+                    .setConfiguredNetworksLockdownState(
+                            sDeviceState.dpc().componentName(), originalLockdown);
         }
     }
 }

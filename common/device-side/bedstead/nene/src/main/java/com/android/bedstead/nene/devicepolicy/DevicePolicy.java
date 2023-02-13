@@ -670,4 +670,44 @@ public final class DevicePolicy {
             return devicePolicyManager(user).getUserProvisioningState();
         }
     }
+
+    /**
+     * Get password expiration timeout for the instrumented user.
+     */
+    @Experimental
+    public long getPasswordExpirationTimeout() {
+        return getPasswordExpirationTimeout(TestApis.users().instrumented());
+    }
+
+    /**
+     * See {@link DevicePolicyManager#getPasswordExpirationTimeout}.
+     */
+    @Experimental
+    public long getPasswordExpirationTimeout(UserReference user) {
+        try (PermissionContext p =
+                     TestApis.permissions().withPermission(INTERACT_ACROSS_USERS)) {
+            return devicePolicyManager(user)
+                    .getPasswordExpirationTimeout(/* componentName= */ null);
+        }
+    }
+
+    /**
+     * Get strong auth timeout for the instrumented user.
+     */
+    @Experimental
+    public long getRequiredStrongAuthTimeout() {
+        return getRequiredStrongAuthTimeout(TestApis.users().instrumented());
+    }
+
+    /**
+     * See {@link DevicePolicyManager#getRequiredStrongAuthTimeout}.
+     */
+    @Experimental
+    public long getRequiredStrongAuthTimeout(UserReference user) {
+        try (PermissionContext p =
+                     TestApis.permissions().withPermission(INTERACT_ACROSS_USERS)) {
+            return devicePolicyManager(user)
+                    .getRequiredStrongAuthTimeout(/* componentName= */ null);
+        }
+    }
 }
