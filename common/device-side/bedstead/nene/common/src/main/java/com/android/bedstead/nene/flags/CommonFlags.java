@@ -134,5 +134,7 @@ public final class CommonFlags {
         public static final String PERMISSION_BASED_ACCESS_EXPERIMENT_FLAG =
                 "enable_permission_based_access";
         public static final String ENABLE_COEXISTENCE_FLAG = "enable_coexistence";
+        public static final String ENABLE_DEVICE_POLICY_ENGINE_FLAG =
+                "enable_device_policy_engine";
     }
 }
