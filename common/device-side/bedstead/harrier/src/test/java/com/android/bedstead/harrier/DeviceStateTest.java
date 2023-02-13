@@ -52,6 +52,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.UserManager;
 import android.provider.Settings;
+import android.view.contentcapture.ContentCaptureManager;
 
 import com.android.bedstead.harrier.annotations.EnsureBluetoothDisabled;
 import com.android.bedstead.harrier.annotations.EnsureBluetoothEnabled;
@@ -119,6 +120,7 @@ import com.android.bedstead.harrier.annotations.RequireRunOnSystemUser;
 import com.android.bedstead.harrier.annotations.RequireRunOnTvProfile;
 import com.android.bedstead.harrier.annotations.RequireRunOnWorkProfile;
 import com.android.bedstead.harrier.annotations.RequireSdkVersion;
+import com.android.bedstead.harrier.annotations.RequireSystemServiceAvailable;
 import com.android.bedstead.harrier.annotations.RequireUserSupported;
 import com.android.bedstead.harrier.annotations.RequireVisibleBackgroundUsers;
 import com.android.bedstead.harrier.annotations.RequireVisibleBackgroundUsersOnDefaultDisplay;
@@ -1405,5 +1407,12 @@ public class DeviceStateTest {
     @Test
     public void ensureWifiDisabledAnnotation_wifiIsNotEnabled() {
         assertThat(TestApis.wifi().isEnabled()).isFalse();
+    }
+
+    @RequireSystemServiceAvailable(ContentCaptureManager.class)
+    @Test
+    public void requireSystemServiceAvailable_systemServiceIsAvailable() {
+        assertThat(TestApis.context().instrumentedContext()
+                .getSystemService(ContentCaptureManager.class)).isNotNull();
     }
 }

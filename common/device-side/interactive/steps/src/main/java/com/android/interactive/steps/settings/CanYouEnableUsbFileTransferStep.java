@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 
 package com.android.interactive.steps.settings;
 
-import com.android.interactive.steps.ActAndConfirmStep;
+import com.android.interactive.steps.YesNoStep;
 
-/** Beginning at the Settings app main menu, navigate to the Account settings area. */
-public class NavigateToInternetOrWifiSettingsStep extends ActAndConfirmStep {
-    public NavigateToInternetOrWifiSettingsStep() {
-        super("Navigate to internet or wifi settings");
+/**
+ * Starting from the screen with usb settings, confirm if you are able to enable usd file transfer
+ */
+public class CanYouEnableUsbFileTransferStep extends YesNoStep {
+    public CanYouEnableUsbFileTransferStep() {
+        super("Are you able to enable USB file transfers?");
     }
 }
