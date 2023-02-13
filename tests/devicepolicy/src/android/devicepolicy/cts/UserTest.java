@@ -16,9 +16,6 @@
 
 package android.devicepolicy.cts;
 
-import static com.android.bedstead.nene.flags.CommonFlags.DevicePolicyManager.ENABLE_COEXISTENCE_FLAG;
-import static com.android.bedstead.nene.flags.CommonFlags.DevicePolicyManager.PERMISSION_BASED_ACCESS_EXPERIMENT_FLAG;
-import static com.android.bedstead.nene.flags.CommonFlags.NAMESPACE_DEVICE_POLICY_MANAGER;
 import static com.android.bedstead.nene.userrestrictions.CommonUserRestrictions.DISALLOW_REMOVE_USER;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -28,7 +25,6 @@ import static org.testng.Assert.assertThrows;
 import com.android.bedstead.harrier.BedsteadJUnit4;
 import com.android.bedstead.harrier.DeviceState;
 import com.android.bedstead.harrier.annotations.EnsureDoesNotHaveUserRestriction;
-import com.android.bedstead.harrier.annotations.EnsureFeatureFlagEnabled;
 import com.android.bedstead.harrier.annotations.EnsureHasUserRestriction;
 import com.android.bedstead.harrier.annotations.Postsubmit;
 import com.android.bedstead.harrier.annotations.enterprise.CannotSetPolicyTest;
@@ -44,14 +40,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-@EnsureFeatureFlagEnabled(
-        namespace = NAMESPACE_DEVICE_POLICY_MANAGER,
-        key = ENABLE_COEXISTENCE_FLAG
-)
-@EnsureFeatureFlagEnabled(
-        namespace = NAMESPACE_DEVICE_POLICY_MANAGER,
-        key = PERMISSION_BASED_ACCESS_EXPERIMENT_FLAG
-)
 @RunWith(BedsteadJUnit4.class)
 public final class UserTest {
 
