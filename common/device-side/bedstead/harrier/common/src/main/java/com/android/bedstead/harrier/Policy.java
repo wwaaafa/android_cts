@@ -58,6 +58,7 @@ import static com.android.bedstead.nene.devicepolicy.CommonDevicePolicy.DELEGATI
 import com.android.bedstead.harrier.annotations.EnsureTestAppHasAppOp;
 import com.android.bedstead.harrier.annotations.EnsureTestAppHasPermission;
 import com.android.bedstead.harrier.annotations.EnsureTestAppInstalled;
+import com.android.bedstead.harrier.annotations.FailureMode;
 import com.android.bedstead.harrier.annotations.enterprise.EnsureHasDelegate;
 import com.android.bedstead.harrier.annotations.enterprise.EnsureHasDevicePolicyManagerRoleHolder;
 import com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy;
@@ -232,13 +233,14 @@ public final class Policy {
     }
 
     @AutoAnnotation
-    private static EnsureTestAppHasPermission ensureTestAppHasPermission(String[] value) {
-        return new AutoAnnotation_Policy_ensureTestAppHasPermission(value);
+    private static EnsureTestAppHasPermission ensureTestAppHasPermission(
+            String testAppKey, String[] value, FailureMode failureMode) {
+        return new AutoAnnotation_Policy_ensureTestAppHasPermission(testAppKey, value, failureMode);
     }
 
     @AutoAnnotation
-    private static EnsureTestAppHasAppOp ensureTestAppHasAppOp(String[] value) {
-        return new AutoAnnotation_Policy_ensureTestAppHasAppOp(value);
+    private static EnsureTestAppHasAppOp ensureTestAppHasAppOp(String testAppKey, String[] value) {
+        return new AutoAnnotation_Policy_ensureTestAppHasAppOp(testAppKey, value);
     }
 
     @AutoAnnotation
@@ -455,11 +457,24 @@ public final class Policy {
             Annotation[] withAppOpAnnotations = new Annotation[]{
                     ensureTestAppInstalled(DELEGATE_KEY, DELEGATE_PACKAGE_NAME,
                             UserType.INSTRUMENTED_USER, /* isPrimary= */ true),
-                    ensureTestAppHasAppOp(new String[]{appOp.appliedWith()})
+                    ensureTestAppHasAppOp(DELEGATE_KEY, new String[]{appOp.appliedWith()})
             };
             annotations.add(
                     new DynamicParameterizedAnnotation(
-                            "AppOp:" + appOp.appliedWith(), withAppOpAnnotations));
+                            "AppOp_" + appOp.appliedWith(), withAppOpAnnotations));
+        }
+
+        for (Permission permission : enterprisePolicy.permissions()) {
+            // TODO(b/219750042): Currently we only test that permissions apply to the current user
+            Annotation[] withPermissionAnnotations = new Annotation[]{
+                    ensureTestAppInstalled(DELEGATE_KEY, DELEGATE_PACKAGE_NAME,
+                            UserType.INSTRUMENTED_USER, /* isPrimary= */ true),
+                    ensureTestAppHasPermission(DELEGATE_KEY,
+                            new String[]{permission.appliedWith()}, FailureMode.SKIP)
+            };
+            annotations.add(
+                    new DynamicParameterizedAnnotation(
+                            "Permission_" + formatPermissionForTestName(permission.appliedWith()), withPermissionAnnotations));
         }
 
         removeShadowingAnnotations(annotations);
@@ -621,13 +636,26 @@ public final class Policy {
                     ensureTestAppInstalled(DELEGATE_KEY,
                             DELEGATE_PACKAGE_NAME, UserType.INSTRUMENTED_USER,
                             /* isPrimary= */ true),
-                    ensureTestAppHasAppOp(new String[]{appOp.appliedWith()})
+                    ensureTestAppHasAppOp(DELEGATE_KEY, new String[]{appOp.appliedWith()})
             };
             annotations.add(
                     new DynamicParameterizedAnnotation(
-                            "AppOp:" + appOp.appliedWith(), withAppOpAnnotations));
+                            "AppOp_" + appOp.appliedWith(), withAppOpAnnotations));
         }
 
+        for (Permission permission : enterprisePolicy.permissions()) {
+            // TODO(b/219750042): Currently we only test that permissions can be set as the primary user
+            Annotation[] withPermissionAnnotations = new Annotation[]{
+                    ensureTestAppInstalled(DELEGATE_KEY,
+                            DELEGATE_PACKAGE_NAME, UserType.INSTRUMENTED_USER,
+                            /* isPrimary= */ true),
+                    ensureTestAppHasPermission(
+                            DELEGATE_KEY, new String[]{permission.appliedWith()}, FailureMode.SKIP)
+            };
+            annotations.add(
+                    new DynamicParameterizedAnnotation(
+                            "Permission_" + formatPermissionForTestName(permission.appliedWith()), withPermissionAnnotations));
+        }
 
         List<Annotation> annotationList = new ArrayList<>(annotations);
 
@@ -805,5 +833,12 @@ public final class Policy {
 
             recordShadowedInReverseShadowMap(annotation, shadowedParameterizedAnnotation);
         }
+    }
+
+    private static String formatPermissionForTestName(String permission) {
+        if (permission.startsWith("android.permission.")) {
+            return permission.substring(19);
+        }
+        return permission;
     }
 }
