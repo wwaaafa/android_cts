@@ -33,9 +33,11 @@ import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePoli
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_UNAFFILIATED_PROFILE_OWNER_USER;
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIES_IN_BACKGROUND;
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIES_TO_AFFILIATED_OTHER_USERS;
+import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIES_TO_CHILD_PROFILES;
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIES_TO_OWN_USER;
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIES_TO_PARENT;
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIES_TO_UNAFFILIATED_CHILD_PROFILES;
+import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIES_TO_UNAFFILIATED_CHILD_PROFILES_WITHOUT_INHERITANCE;
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIES_TO_UNAFFILIATED_OTHER_USERS;
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.CANNOT_BE_APPLIED_BY_ROLE_HOLDER;
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.CAN_BE_DELEGATED;
@@ -145,7 +147,7 @@ public final class Policy {
 
                     .put(APPLIED_BY_DPM_ROLE_HOLDER | APPLIES_TO_OWN_USER, singleAnnotation(includeRunOnDevicePolicyManagementRoleHolderUser()))
                     .put(APPLIED_BY_DPM_ROLE_HOLDER | APPLIES_TO_UNAFFILIATED_OTHER_USERS, singleAnnotation(includeRunOnDevicePolicyManagementRoleHolderSecondaryUser()))
-                    .put(APPLIED_BY_DPM_ROLE_HOLDER | APPLIES_TO_UNAFFILIATED_CHILD_PROFILES, singleAnnotation(includeRunOnDevicePolicyManagementRoleHolderProfile()))
+                    .put(APPLIED_BY_DPM_ROLE_HOLDER | APPLIES_TO_UNAFFILIATED_CHILD_PROFILES_WITHOUT_INHERITANCE, singleAnnotation(includeRunOnDevicePolicyManagementRoleHolderProfile()))
 
                     .put(APPLIED_BY_AFFILIATED_PROFILE_OWNER_USER | APPLIES_TO_OWN_USER, generateDevicePolicyManagerRoleHolderAnnotation(includeRunOnAffiliatedProfileOwnerSecondaryUser(), /* roleHolderUser= */ SECONDARY_USER))
                     .put(APPLIED_BY_AFFILIATED_PROFILE_OWNER_USER | APPLIES_TO_OWN_USER | CAN_BE_DELEGATED, generateDelegateAnnotation(includeRunOnAffiliatedProfileOwnerSecondaryUser(), /* isPrimary= */ true))
@@ -180,10 +182,6 @@ public final class Policy {
                     .put(APPLIED_BY_PARENT_INSTANCE_OF_NON_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE | APPLIES_TO_OWN_USER
                             | INHERITABLE, generateDevicePolicyManagerRoleHolderAnnotation(
                             includeRunOnCloneProfileAlongsideManagedProfileUsingParentInstance(),
-                            /* roleHolderUser= */ WORK_PROFILE))
-                    .put(APPLIED_BY_PARENT_INSTANCE_OF_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE | APPLIES_TO_OWN_USER
-                            | INHERITABLE, generateDevicePolicyManagerRoleHolderAnnotation(
-                            includeRunOnCloneProfileAlongsideOrganizationOwnedProfileUsingParentInstance(),
                             /* roleHolderUser= */ WORK_PROFILE))
                     .build();
     // This must contain one key for every APPLIED_BY that is being used, and maps to the
