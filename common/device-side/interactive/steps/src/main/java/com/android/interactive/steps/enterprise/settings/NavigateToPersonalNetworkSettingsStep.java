@@ -17,17 +17,18 @@
 package com.android.interactive.steps.enterprise.settings;
 
 import com.android.interactive.steps.CompositionStep;
-import com.android.interactive.steps.settings.NavigateToInternetOrWifiSettingsStep;
+import com.android.interactive.steps.settings.NavigateToNetworkSettingsStep;
+import com.android.interactive.steps.settings.NavigateToWifiSettingsStep;
 
 import java.util.Arrays;
 
 /**
- * Starting from anywhere, navigate to the internet or wifi settings section of the personal settings app.
+ * Starting from anywhere, navigate to the network settings section of the personal settings app.
  *
  * <p>This will be the only settings app if there is no separate work settings app.
  */
-public final class NavigateToPersonalInternetOrWifiSettingsStep extends CompositionStep {
-    public NavigateToPersonalInternetOrWifiSettingsStep() {
-        super(Arrays.asList(LaunchPersonalSettingsStep.class, NavigateToInternetOrWifiSettingsStep.class));
+public final class NavigateToPersonalNetworkSettingsStep extends CompositionStep {
+    public NavigateToPersonalNetworkSettingsStep() {
+        super(Arrays.asList(LaunchPersonalSettingsStep.class, NavigateToNetworkSettingsStep.class));
     }
 }

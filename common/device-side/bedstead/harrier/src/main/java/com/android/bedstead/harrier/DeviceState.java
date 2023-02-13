@@ -99,6 +99,7 @@ import com.android.bedstead.harrier.annotations.RequirePackageInstalled;
 import com.android.bedstead.harrier.annotations.RequirePackageNotInstalled;
 import com.android.bedstead.harrier.annotations.RequireRunOnAdditionalUser;
 import com.android.bedstead.harrier.annotations.RequireSdkVersion;
+import com.android.bedstead.harrier.annotations.RequireSystemServiceAvailable;
 import com.android.bedstead.harrier.annotations.RequireTargetSdkVersion;
 import com.android.bedstead.harrier.annotations.RequireUserSupported;
 import com.android.bedstead.harrier.annotations.RequireVisibleBackgroundUsers;
@@ -707,6 +708,14 @@ public final class DeviceState extends HarrierRule {
                         (RequireNotVisibleBackgroundUsersOnDefaultDisplay) annotation;
                 requireVisibleBackgroundUsersOnDefaultDisplayNotSupported(castedAnnotation.reason(),
                         castedAnnotation.failureMode());
+                continue;
+            }
+
+            if (annotation instanceof RequireSystemServiceAvailable) {
+                RequireSystemServiceAvailable requireSystemServiceAvailableAnnotation =
+                        (RequireSystemServiceAvailable) annotation;
+                requireSystemServiceAvailable(requireSystemServiceAvailableAnnotation.value(),
+                        requireSystemServiceAvailableAnnotation.failureMode());
                 continue;
             }
 
@@ -3681,5 +3690,12 @@ public final class DeviceState extends HarrierRule {
             throw new NeneException("Error removing user restriction " + restriction + ". "
                     + "It's possible this is set by the system and cannot be removed");
         }
+    }
+
+    private void requireSystemServiceAvailable(Class<?> serviceClass, FailureMode failureMode) {
+        Object service = mContext.getSystemService(serviceClass);
+
+        checkFailOrSkip("Requires " + serviceClass + " to be available",
+                service != null, failureMode);
     }
 }

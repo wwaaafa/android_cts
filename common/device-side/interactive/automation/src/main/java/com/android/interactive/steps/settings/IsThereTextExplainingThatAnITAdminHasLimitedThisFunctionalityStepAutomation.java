@@ -32,6 +32,8 @@ public final class IsThereTextExplainingThatAnITAdminHasLimitedThisFunctionality
         return TestApis.ui().device().findObject(
                 new UiSelector().textContains("contact your IT admin")).exists()
                 || TestApis.ui().device().findObject(
-                new UiSelector().textContains("Not allowed by your organization")).exists();
+                new UiSelector().textContains("Not allowed by your organization")).exists()
+                || TestApis.ui().device().findObject(
+                new UiSelector().textContains("disabled by admin")).exists();
     }
 }
