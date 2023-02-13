@@ -20,9 +20,6 @@ package android.devicepolicy.cts;
 import static android.os.UserManager.DISALLOW_BLUETOOTH_SHARING;
 
 import static com.android.bedstead.nene.bluetooth.Bluetooth.OPP_LAUNCHER_CLASS;
-import static com.android.bedstead.nene.flags.CommonFlags.DevicePolicyManager.ENABLE_COEXISTENCE_FLAG;
-import static com.android.bedstead.nene.flags.CommonFlags.DevicePolicyManager.PERMISSION_BASED_ACCESS_EXPERIMENT_FLAG;
-import static com.android.bedstead.nene.flags.CommonFlags.NAMESPACE_DEVICE_POLICY_MANAGER;
 import static com.android.bedstead.nene.packages.CommonPackages.FEATURE_AUTOMOTIVE;
 import static com.android.bedstead.nene.packages.CommonPackages.FEATURE_BLUETOOTH;
 import static com.android.bedstead.nene.permissions.CommonPermissions.BLUETOOTH_CONNECT;
@@ -50,7 +47,6 @@ import com.android.bedstead.harrier.DeviceState;
 import com.android.bedstead.harrier.annotations.EnsureBluetoothDisabled;
 import com.android.bedstead.harrier.annotations.EnsureBluetoothEnabled;
 import com.android.bedstead.harrier.annotations.EnsureDoesNotHaveUserRestriction;
-import com.android.bedstead.harrier.annotations.EnsureFeatureFlagEnabled;
 import com.android.bedstead.harrier.annotations.EnsureHasPermission;
 import com.android.bedstead.harrier.annotations.EnsureHasUserRestriction;
 import com.android.bedstead.harrier.annotations.Postsubmit;
@@ -90,14 +86,6 @@ import java.util.UUID;
 
 @RunWith(BedsteadJUnit4.class)
 @RequireFeature(FEATURE_BLUETOOTH)
-@EnsureFeatureFlagEnabled(
-        namespace = NAMESPACE_DEVICE_POLICY_MANAGER,
-        key = ENABLE_COEXISTENCE_FLAG
-)
-@EnsureFeatureFlagEnabled(
-        namespace = NAMESPACE_DEVICE_POLICY_MANAGER,
-        key = PERMISSION_BASED_ACCESS_EXPERIMENT_FLAG
-)
 public final class BluetoothTest {
     @ClassRule
     @Rule

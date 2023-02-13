@@ -16,6 +16,12 @@
 
 package android.devicepolicy.cts;
 
+import static android.content.pm.PackageManager.FEATURE_AUTOMOTIVE;
+import static android.os.Build.VERSION_CODES.N;
+import static android.os.Build.VERSION_CODES.O;
+
+import static com.android.bedstead.harrier.Defaults.DEFAULT_PASSWORD;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.testng.Assert.assertThrows;
@@ -23,10 +29,13 @@ import static org.testng.Assert.assertThrows;
 import com.android.bedstead.harrier.BedsteadJUnit4;
 import com.android.bedstead.harrier.DeviceState;
 import com.android.bedstead.harrier.annotations.Postsubmit;
+import com.android.bedstead.harrier.annotations.RequireDoesNotHaveFeature;
+import com.android.bedstead.harrier.annotations.RequireTargetSdkVersion;
 import com.android.bedstead.harrier.annotations.enterprise.CanSetPolicyTest;
 import com.android.bedstead.harrier.annotations.enterprise.CannotSetPolicyTest;
 import com.android.bedstead.harrier.annotations.enterprise.PolicyAppliesTest;
 import com.android.bedstead.harrier.annotations.enterprise.PolicyDoesNotApplyTest;
+import com.android.bedstead.harrier.policies.DeprecatedResetPassword;
 import com.android.bedstead.harrier.policies.FailedPasswordAttempts;
 import com.android.bedstead.harrier.policies.PasswordExpirationTimeout;
 import com.android.bedstead.harrier.policies.StrongAuthTimeout;
@@ -178,5 +187,22 @@ public final class PasswordTest {
         }
     }
 
+    @RequireDoesNotHaveFeature(FEATURE_AUTOMOTIVE)
+    @RequireTargetSdkVersion(max = N)
+    @PolicyAppliesTest(policy = DeprecatedResetPassword.class)
+    @ApiTest(apis = "android.app.admin.DevicePolicyManager#resetPassword")
+    public void resetPassword_targetBeforeN_returnsFalse() {
+        assertThat(sDeviceState.dpc()
+                .devicePolicyManager().resetPassword(DEFAULT_PASSWORD, /* flags= */ 0)).isFalse();
+    }
 
+    @RequireDoesNotHaveFeature(FEATURE_AUTOMOTIVE)
+    @RequireTargetSdkVersion(min = O)
+    @PolicyAppliesTest(policy = DeprecatedResetPassword.class)
+    @ApiTest(apis = "android.app.admin.DevicePolicyManager#resetPassword")
+    public void resetPassword_targetAfterO_throwsSecurityException() {
+        assertThrows(SecurityException.class,
+                () -> sDeviceState.dpc().devicePolicyManager()
+                        .resetPassword(DEFAULT_PASSWORD, /* flags= */ 0));
+    }
 }
