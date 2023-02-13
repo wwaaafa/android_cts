@@ -37,7 +37,6 @@ import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -128,7 +127,7 @@ public class StubTvInteractiveAppService extends TvInteractiveAppService {
         public Bundle mTvMessageData;
         public AdBuffer mAdBuffer;
         public TvRecordingInfo mTvRecordingInfo;
-        public ArrayList<TvRecordingInfo> mTvRecordingInfoList;
+        public List<TvRecordingInfo> mTvRecordingInfoList;
         public Rect mCurrentVideoBounds;
 
         StubSessionImpl(Context context) {
@@ -556,6 +555,13 @@ public class StubTvInteractiveAppService extends TvInteractiveAppService {
             super.onTvRecordingInfo(tvRecordingInfo);
             mSendTvRecordingInfoCount++;
             mTvRecordingInfo = tvRecordingInfo;
+        }
+
+        @Override
+        public void onTvRecordingInfoList(List<TvRecordingInfo> recordingInfoList) {
+            super.onTvRecordingInfoList(recordingInfoList);
+            mSendTvRecordingInfoListCount++;
+            mTvRecordingInfoList = recordingInfoList;
         }
     }
 }
