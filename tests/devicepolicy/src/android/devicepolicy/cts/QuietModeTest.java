@@ -54,6 +54,7 @@ import com.android.bedstead.harrier.annotations.StringTestParameter;
 import com.android.bedstead.nene.TestApis;
 import com.android.bedstead.nene.appops.AppOpsMode;
 import com.android.bedstead.nene.location.LocationProvider;
+import com.android.bedstead.nene.packages.Package;
 import com.android.bedstead.nene.users.UserReference;
 import com.android.bedstead.nene.utils.Poll;
 import com.android.bedstead.nene.utils.ShellCommand;
@@ -78,13 +79,14 @@ public class QuietModeTest {
     @ClassRule
     @Rule
     public static final DeviceState sDeviceState = new DeviceState();
+    private static final Context sContext = TestApis.context().instrumentedContext();
 
     private static final TestApp sTestApp = sDeviceState.testApps().query()
             .whereActivities()
             .contains(activity().where().exported().isTrue())
             .get();
-
-    private static final Context sContext = TestApis.context().instrumentedContext();
+    private static final String UNSUSPENDABLE_PKG_NAME = TestApis.context().instrumentedContext()
+            .getPackageManager().getPermissionControllerPackageName();
 
     @Postsubmit(reason = "new test")
     @EnsureHasWorkProfile
@@ -224,6 +226,129 @@ public class QuietModeTest {
         } finally {
             workProfile.setQuietMode(false);
         }
+    }
+
+    /** Admin suspends package while in quiet mode - should remain suspended after leaving. */
+    @Postsubmit(reason = "new test")
+    @RequireRunOnWorkProfile
+    @Test
+    public void quietMode_suspendedApp_remainsSuspended() throws Exception {
+        assumeTrue("Keep profiles available feature not enabled", keepProfilesRunningEnabled());
+        UserReference workProfile = sDeviceState.workProfile();
+
+        try (TestAppInstance instance = sTestApp.install(workProfile)) {
+            String[] pkgs = new String[]{sTestApp.packageName()};
+
+            workProfile.setQuietMode(true);
+            try {
+                assertWithMessage("Failed to suspend package while in quiet mode")
+                        .that(sDeviceState.dpc().devicePolicyManager().setPackagesSuspended(
+                                sDeviceState.dpc().componentName(), pkgs, true).length)
+                        .isEqualTo(0);
+            } finally {
+                workProfile.setQuietMode(false);
+            }
+
+            assertWithMessage("Admin-suspended package unsuspended after leaving quiet mode")
+                    .that(sTestApp.pkg().isSuspended(workProfile)).isTrue();
+        }
+    }
+
+    /** Package already suspended by admin should not get unsuspended after toggling quiet mode. */
+    @Postsubmit(reason = "new test")
+    @RequireRunOnWorkProfile
+    @Test
+    public void quietMode_alreadySuspendedApp_remainsSuspended() throws Exception {
+        assumeTrue("Keep profiles available feature not enabled", keepProfilesRunningEnabled());
+        UserReference workProfile = sDeviceState.workProfile();
+
+        try (TestAppInstance instance = sTestApp.install(workProfile)) {
+            String[] pkgs = new String[]{sTestApp.packageName()};
+            sDeviceState.dpc().devicePolicyManager()
+                    .setPackagesSuspended(sDeviceState.dpc().componentName(), pkgs, true);
+
+            workProfile.setQuietMode(true);
+            workProfile.setQuietMode(false);
+
+            assertWithMessage("Admin-suspended package unsuspended after leaving quiet mode")
+                    .that(sTestApp.pkg().isSuspended(workProfile)).isTrue();
+        }
+    }
+
+    /** Verifies that package not suspendable by admin is still suspended in quiet mode */
+    @Postsubmit(reason = "new test")
+    @RequireRunOnWorkProfile
+    @Test
+    public void quietMode_unsuspendablePackageGetsSuspended() throws Exception {
+        assumeTrue("Keep profiles available feature not enabled", keepProfilesRunningEnabled());
+        UserReference workProfile = sDeviceState.workProfile();
+        Package permController = Package.of(TestApis.context().instrumentedContext()
+                .getPackageManager().getPermissionControllerPackageName());
+
+        String[] pkgs = new String[]{permController.packageName()};
+
+        workProfile.setQuietMode(true);
+        try {
+            assertWithMessage("Unsuspendable not suspended in quiet mode")
+                    .that(permController.isSuspended(workProfile)).isTrue();
+        } finally {
+            workProfile.setQuietMode(false);
+        }
+    }
+
+    /** Verifies that unsuspendable for admin package remains such in quiet mode */
+    @Postsubmit(reason = "new test")
+    @RequireRunOnWorkProfile
+    @Test
+    public void quietMode_adminCannotSuspendUnsuspendablePackage() throws Exception {
+        assumeTrue("Keep profiles available feature not enabled", keepProfilesRunningEnabled());
+        UserReference workProfile = sDeviceState.workProfile();
+        Package permController = Package.of(UNSUSPENDABLE_PKG_NAME);
+
+
+        String[] pkgs = new String[]{permController.packageName()};
+
+        workProfile.setQuietMode(true);
+        try {
+            assertWithMessage("Was able to suspend unsuspendable package")
+                    .that(sDeviceState.dpc().devicePolicyManager().setPackagesSuspended(
+                            sDeviceState.dpc().componentName(), pkgs, true))
+                    .asList().containsExactly(permController.packageName());
+        } finally {
+            workProfile.setQuietMode(false);
+        }
+
+        assertWithMessage("Unsuspendable package still suspended after leaving quiet mode")
+                .that(permController.isSuspended(workProfile)).isFalse();
+    }
+
+    /** Verifies that admin cannot unsuspend unsuspendable package while in quiet mode. */
+    @Postsubmit(reason = "new test")
+    @RequireRunOnWorkProfile
+    @Test
+    public void quietMode_adminCannotUnsuspendUnsuspendablePackage() throws Exception {
+        assumeTrue("Keep profiles available feature not enabled", keepProfilesRunningEnabled());
+        UserReference workProfile = sDeviceState.workProfile();
+        Package permController = Package.of(UNSUSPENDABLE_PKG_NAME);
+
+        String[] pkgs = new String[]{permController.packageName()};
+
+        workProfile.setQuietMode(true);
+        try {
+            // When admin tries to unsuspend an unsuspendable package, the existing behavior is to
+            // ignore it as if it succeeded - verify it is observed in quiet mode as well
+            assertWithMessage("Unexpected failure to unsuspend unsuspendable package")
+                    .that(sDeviceState.dpc().devicePolicyManager().setPackagesSuspended(
+                            sDeviceState.dpc().componentName(), pkgs, false))
+                    .asList().isEmpty();
+            assertWithMessage("Unsuspendable package was unsuspended by admin in quiet mode")
+                    .that(permController.isSuspended(workProfile)).isTrue();
+        } finally {
+            workProfile.setQuietMode(false);
+        }
+
+        assertWithMessage("Unsuspendable package still suspended after leaving quiet mode")
+                .that(permController.isSuspended(workProfile)).isFalse();
     }
 
     private boolean keepProfilesRunningEnabled() throws Exception {
