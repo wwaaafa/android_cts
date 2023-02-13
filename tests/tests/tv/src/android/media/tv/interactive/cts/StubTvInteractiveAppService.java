@@ -458,6 +458,7 @@ public class StubTvInteractiveAppService extends TvInteractiveAppService {
         public void onTvMessage(String type, Bundle data) {
             super.onTvMessage(type, data);
             mTvMessageCount++;
+            mTvMessageType = type;
             mTvMessageData = data;
         }
 
