@@ -17,6 +17,9 @@
 package android.devicepolicy.cts;
 
 import static com.android.bedstead.metricsrecorder.truth.MetricQueryBuilderSubject.assertThat;
+import static com.android.bedstead.nene.flags.CommonFlags.DevicePolicyManager.ENABLE_COEXISTENCE_FLAG;
+import static com.android.bedstead.nene.flags.CommonFlags.DevicePolicyManager.PERMISSION_BASED_ACCESS_EXPERIMENT_FLAG;
+import static com.android.bedstead.nene.flags.CommonFlags.NAMESPACE_DEVICE_POLICY_MANAGER;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -34,6 +37,7 @@ import androidx.test.InstrumentationRegistry;
 
 import com.android.bedstead.harrier.BedsteadJUnit4;
 import com.android.bedstead.harrier.DeviceState;
+import com.android.bedstead.harrier.annotations.EnsureFeatureFlagEnabled;
 import com.android.bedstead.harrier.annotations.EnsureScreenIsOn;
 import com.android.bedstead.harrier.annotations.EnsureUnlocked;
 import com.android.bedstead.harrier.annotations.Postsubmit;
@@ -56,6 +60,14 @@ import org.junit.runner.RunWith;
 
 import java.time.Duration;
 
+@EnsureFeatureFlagEnabled(
+        namespace = NAMESPACE_DEVICE_POLICY_MANAGER,
+        key = ENABLE_COEXISTENCE_FLAG
+)
+@EnsureFeatureFlagEnabled(
+        namespace = NAMESPACE_DEVICE_POLICY_MANAGER,
+        key = PERMISSION_BASED_ACCESS_EXPERIMENT_FLAG
+)
 @RunWith(BedsteadJUnit4.class)
 public final class ScreenCaptureDisabledTest {
 
@@ -101,7 +113,13 @@ public final class ScreenCaptureDisabledTest {
         assertThat(mDevicePolicyManager.getScreenCaptureDisabled(mAdmin)).isFalse();
     }
 
-    @CannotSetPolicyTest(policy = ScreenCaptureDisabled.class, includeNonDeviceAdminStates = false)
+    @CanSetPolicyTest(policy = ScreenCaptureDisabled.class)
+    @Postsubmit(reason = "new test") // TODO: Remove
+    public void setScreenCaptureDisabled_doesNotThrowSecurityException() {
+        mDevicePolicyManager.setScreenCaptureDisabled(mAdmin, false);
+    }
+
+    @CannotSetPolicyTest(policy = ScreenCaptureDisabled.class)
     @Postsubmit(reason = "new test")
     public void setScreenCaptureDisabled_true_throwsSecurityException() {
         assertThrows(SecurityException.class,
