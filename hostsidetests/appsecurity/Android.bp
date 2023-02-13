@@ -80,6 +80,13 @@ java_test_host {
         ":CtsMediaStorageApp",
         ":CtsMediaStorageApp28",
         ":CtsMediaStorageApp29",
+        ":CtsEphemeralTestsNormalApp",
+        ":CtsEphemeralTestsUnexposedApp",
+        ":CtsEphemeralTestsImplicitApp",
+        ":CtsEphemeralTestsEphemeralApp1",
+        ":CtsEphemeralTestsEphemeralApp2",
+        ":CtsEphemeralTestsUserApp",
+        ":CtsEphemeralTestsUserAppTest",
     ],
     per_testcase_directory: true,
 }
