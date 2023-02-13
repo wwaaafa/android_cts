@@ -79,6 +79,7 @@ import static android.scopedstorage.cts.lib.TestUtils.installAppWithStoragePermi
 import static android.scopedstorage.cts.lib.TestUtils.isAppInstalled;
 import static android.scopedstorage.cts.lib.TestUtils.listAs;
 import static android.scopedstorage.cts.lib.TestUtils.openWithMediaProvider;
+import static android.scopedstorage.cts.lib.TestUtils.pollForPermission;
 import static android.scopedstorage.cts.lib.TestUtils.queryAudioFile;
 import static android.scopedstorage.cts.lib.TestUtils.queryFile;
 import static android.scopedstorage.cts.lib.TestUtils.queryFileExcludingPending;
@@ -1321,7 +1322,7 @@ public class ScopedStorageDeviceTest extends ScopedStorageBaseDeviceTest {
                     getExifMetadataFromRawResource(R.raw.img_with_metadata);
             try (InputStream in =
                          getContext().getResources().openRawResource(R.raw.img_with_metadata);
-                FileOutputStream out = new FileOutputStream(imgFile)) {
+                 FileOutputStream out = new FileOutputStream(imgFile)) {
                 // Dump the image we have to external storage
                 FileUtils.copy(in, out);
                 // Sync file to disk to ensure file is fully written to the lower fs.
@@ -1335,6 +1336,8 @@ public class ScopedStorageDeviceTest extends ScopedStorageBaseDeviceTest {
 
             // Grant A_M_L and verify access to sensitive data
             grantPermission(APP_C.getPackageName(), Manifest.permission.ACCESS_MEDIA_LOCATION);
+            pollForPermission(APP_C.getPackageName(),
+                    Manifest.permission.ACCESS_MEDIA_LOCATION, /* granted */ true);
             HashMap<String, String> exifFromTestApp =
                     readExifMetadataFromTestApp(APP_C, imgFile.getPath());
             assertExifMetadataMatch(exifFromTestApp, originalExif);
@@ -1344,6 +1347,8 @@ public class ScopedStorageDeviceTest extends ScopedStorageBaseDeviceTest {
                     APP_C.getPackageName(), Manifest.permission.ACCESS_MEDIA_LOCATION);
             // revokePermission waits for permission status to be updated, but MediaProvider still
             // needs to get permission change callback and clear its permission cache.
+            pollForPermission(APP_C.getPackageName(),
+                    Manifest.permission.ACCESS_MEDIA_LOCATION, /* granted */ false);
             Thread.sleep(500);
             exifFromTestApp = readExifMetadataFromTestApp(APP_C, imgFile.getPath());
             assertExifMetadataMismatch(exifFromTestApp, originalExif);
@@ -1352,6 +1357,8 @@ public class ScopedStorageDeviceTest extends ScopedStorageBaseDeviceTest {
             grantPermission(APP_C.getPackageName(), Manifest.permission.ACCESS_MEDIA_LOCATION);
             // grantPermission waits for permission status to be updated, but MediaProvider still
             // needs to get permission change callback and clear its permission cache.
+            pollForPermission(APP_C.getPackageName(),
+                    Manifest.permission.ACCESS_MEDIA_LOCATION, /* granted */ true);
             Thread.sleep(500);
             exifFromTestApp = readExifMetadataFromTestApp(APP_C, imgFile.getPath());
             assertExifMetadataMatch(exifFromTestApp, originalExif);
