@@ -1842,4 +1842,8 @@ public class CommonPermissions {
     /** See {@code Manifest#MANAGE_DEVICE_POLICY_APP_EXEMPTIONS} */
     public static final String MANAGE_DEVICE_POLICY_APP_EXEMPTIONS =
             "android.permission.MANAGE_DEVICE_POLICY_APP_EXEMPTIONS";
+
+    /** See {@code Manifest#MANAGE_DEVICE_POLICY_RUNTIME_PERMISSIONS}. */
+    public static final String MANAGE_DEVICE_POLICY_RUNTIME_PERMISSIONS =
+            "android.permission.MANAGE_DEVICE_POLICY_RUNTIME_PERMISSIONS";
 }

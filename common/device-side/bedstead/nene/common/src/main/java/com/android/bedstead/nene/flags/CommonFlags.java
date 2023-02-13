@@ -131,5 +131,8 @@ public final class CommonFlags {
                 "disable_resources_updatability";
         public static final String DEPRECATE_USERMANAGERINTERNAL_DEVICEPOLICY_FLAG =
                 "deprecate_usermanagerinternal_devicepolicy";
+        public static final String PERMISSION_BASED_ACCESS_EXPERIMENT_FLAG =
+                "enable_permission_based_access";
+        public static final String ENABLE_COEXISTENCE_FLAG = "enable_coexistence";
     }
 }

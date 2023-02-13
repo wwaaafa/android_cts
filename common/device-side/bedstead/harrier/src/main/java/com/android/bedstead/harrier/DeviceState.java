@@ -550,7 +550,8 @@ public final class DeviceState extends HarrierRule {
                         ensureTestAppHasPermissionAnnotation.testAppKey(),
                         ensureTestAppHasPermissionAnnotation.value(),
                         ensureTestAppHasPermissionAnnotation.minVersion(),
-                        ensureTestAppHasPermissionAnnotation.maxVersion()
+                        ensureTestAppHasPermissionAnnotation.maxVersion(),
+                        ensureTestAppHasPermissionAnnotation.failureMode()
                 );
                 continue;
             }
@@ -2536,11 +2537,20 @@ public final class DeviceState extends HarrierRule {
     }
 
     private void ensureTestAppHasPermission(
-            String testAppKey, String[] permissions, int minVersion, int maxVersion) {
+            String testAppKey, String[] permissions, int minVersion, int maxVersion,
+            FailureMode failureMode) {
         checkTestAppExistsWithKey(testAppKey);
 
-        mTestApps.get(testAppKey).permissions()
-                .withPermissionOnVersionBetween(minVersion, maxVersion, permissions);
+        try {
+            mTestApps.get(testAppKey).permissions()
+                    .withPermissionOnVersionBetween(minVersion, maxVersion, permissions);
+        } catch (NeneException e) {
+            if (failureMode.equals(FailureMode.SKIP) && e.getMessage().contains("Cannot grant")) {
+                failOrSkip(e.getMessage(), FailureMode.SKIP);
+            } else {
+                throw e;
+            }
+        }
     }
 
     private void ensureTestAppHasAppOp(
