@@ -55,7 +55,11 @@ import static com.android.bedstead.nene.devicepolicy.CommonDevicePolicy.DELEGATI
 import static com.android.bedstead.nene.devicepolicy.CommonDevicePolicy.DELEGATION_PACKAGE_ACCESS;
 import static com.android.bedstead.nene.devicepolicy.CommonDevicePolicy.DELEGATION_PERMISSION_GRANT;
 import static com.android.bedstead.nene.devicepolicy.CommonDevicePolicy.DELEGATION_SECURITY_LOGGING;
+import static com.android.bedstead.nene.flags.CommonFlags.DevicePolicyManager.ENABLE_COEXISTENCE_FLAG;
+import static com.android.bedstead.nene.flags.CommonFlags.DevicePolicyManager.PERMISSION_BASED_ACCESS_EXPERIMENT_FLAG;
+import static com.android.bedstead.nene.flags.CommonFlags.NAMESPACE_DEVICE_POLICY_MANAGER;
 
+import com.android.bedstead.harrier.annotations.EnsureFeatureFlagEnabled;
 import com.android.bedstead.harrier.annotations.EnsureTestAppHasAppOp;
 import com.android.bedstead.harrier.annotations.EnsureTestAppHasPermission;
 import com.android.bedstead.harrier.annotations.EnsureTestAppInstalled;
@@ -365,6 +369,11 @@ public final class Policy {
         return new AutoAnnotation_Policy_includeRunOnDevicePolicyManagementRoleHolderSecondaryUser();
     }
 
+    @AutoAnnotation
+    private static EnsureFeatureFlagEnabled ensureFeatureFlagEnabled(String namespace, String key) {
+        return new AutoAnnotation_Policy_ensureFeatureFlagEnabled(namespace, key);
+    }
+
     private static Function<EnterprisePolicy, Set<Annotation>> singleAnnotation(
             Annotation annotation) {
         return (i) -> ImmutableSet.of(annotation);
@@ -475,7 +484,11 @@ public final class Policy {
                     ensureTestAppInstalled(DELEGATE_KEY, DELEGATE_PACKAGE_NAME,
                             UserType.INSTRUMENTED_USER, /* isPrimary= */ true),
                     ensureTestAppHasPermission(DELEGATE_KEY,
-                            new String[]{permission.appliedWith()}, FailureMode.SKIP)
+                            new String[]{permission.appliedWith()}, FailureMode.SKIP),
+                    ensureFeatureFlagEnabled(
+                            NAMESPACE_DEVICE_POLICY_MANAGER, ENABLE_COEXISTENCE_FLAG),
+                    ensureFeatureFlagEnabled(
+                            NAMESPACE_DEVICE_POLICY_MANAGER, PERMISSION_BASED_ACCESS_EXPERIMENT_FLAG)
             };
             annotations.add(
                     new DynamicParameterizedAnnotation(

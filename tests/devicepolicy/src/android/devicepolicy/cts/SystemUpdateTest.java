@@ -26,11 +26,13 @@ import android.app.admin.SystemUpdatePolicy;
 import com.android.bedstead.harrier.BedsteadJUnit4;
 import com.android.bedstead.harrier.DeviceState;
 import com.android.bedstead.harrier.annotations.enterprise.CanSetPolicyTest;
+import com.android.bedstead.harrier.annotations.Postsubmit;
 import com.android.bedstead.harrier.annotations.enterprise.CannotSetPolicyTest;
 import com.android.bedstead.harrier.annotations.enterprise.PolicyAppliesTest;
 import com.android.bedstead.harrier.annotations.enterprise.PolicyDoesNotApplyTest;
 import com.android.bedstead.harrier.policies.SystemUpdate;
 import com.android.bedstead.nene.TestApis;
+import com.android.compatibility.common.util.ApiTest;
 
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -56,6 +58,8 @@ public final class SystemUpdateTest {
     }
 
     @CannotSetPolicyTest(policy = SystemUpdate.class)
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = {"android.app.admin.DevicePolicyManager#setSystemUpdatePolicy"})
     public void setSystemUpdatePolicy_notPermitted_throwsException() {
         assertThrows(SecurityException.class,
                 () -> sDeviceState.dpc().devicePolicyManager()
@@ -65,6 +69,9 @@ public final class SystemUpdateTest {
     }
 
     @PolicyAppliesTest(policy = SystemUpdate.class)
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = {"android.app.admin.DevicePolicyManager#setSystemUpdatePolicy",
+            "android.app.admin.DevicePolicyManager#getSystemUpdatePolicy"})
     public void setSystemUpdatePolicy_policyIsSet() {
         SystemUpdatePolicy originalPolicy = sDeviceState.dpc()
                 .devicePolicyManager().getSystemUpdatePolicy();
@@ -73,6 +80,7 @@ public final class SystemUpdateTest {
                     .setSystemUpdatePolicy(
                             sDeviceState.dpc().componentName(), SYSTEM_UPDATE_POLICY);
 
+            // String comparison as SystemUpdatePolicy doesn't have a good equals method
             assertThat(sLocalDevicePolicyManager.getSystemUpdatePolicy().toString())
                     .isEqualTo(SYSTEM_UPDATE_POLICY.toString());
         } finally {
@@ -82,6 +90,9 @@ public final class SystemUpdateTest {
     }
 
     @PolicyDoesNotApplyTest(policy = SystemUpdate.class)
+    @Postsubmit(reason = "new test")
+    @ApiTest(apis = {"android.app.admin.DevicePolicyManager#setSystemUpdatePolicy",
+            "android.app.admin.DevicePolicyManager#getSystemUpdatePolicy"})
     public void setSystemUpdatePolicy_doesNotApply_policyIsNotSet() {
         SystemUpdatePolicy originalPolicy =
                 sDeviceState.dpc().devicePolicyManager().getSystemUpdatePolicy();
@@ -89,6 +100,7 @@ public final class SystemUpdateTest {
             sDeviceState.dpc().devicePolicyManager().setSystemUpdatePolicy(
                     sDeviceState.dpc().componentName(), SYSTEM_UPDATE_POLICY);
 
+            // String comparison as SystemUpdatePolicy doesn't have a good equals method
             assertThat(sLocalDevicePolicyManager.getSystemUpdatePolicy().toString())
                     .isNotEqualTo(SYSTEM_UPDATE_POLICY.toString());
         } finally {
