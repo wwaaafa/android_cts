@@ -114,15 +114,13 @@ public class SatelliteManagerTest {
 
     @Test
     public void testRegisterForSatelliteProvisionStateChanged() {
-        LinkedBlockingQueue<Integer> error = new LinkedBlockingQueue<>(1);
         SatelliteProvisionStateListenerTest satelliteProvisionStateListener =
                 new SatelliteProvisionStateListenerTest();
 
         // Throws SecurityException as we do not have SATELLITE_COMMUNICATION permission.
         assertThrows(SecurityException.class,
                 () -> mSatelliteManager.registerForSatelliteProvisionStateChanged(
-                        getContext().getMainExecutor(), error::offer,
-                        satelliteProvisionStateListener));
+                        getContext().getMainExecutor(), satelliteProvisionStateListener));
     }
 
     @Test
@@ -284,6 +282,51 @@ public class SatelliteManagerTest {
                         getContext().getMainExecutor(), resultListener::offer));
     }
 
+    @Test
+    public void testRequestIsSatelliteCommunicationAllowedForCurrentLocation() {
+        final AtomicReference<Boolean> enabled = new AtomicReference<>();
+        final AtomicReference<Integer> errorCode = new AtomicReference<>();
+        OutcomeReceiver<Boolean, SatelliteManager.SatelliteException> receiver =
+                new OutcomeReceiver<>() {
+                    @Override
+                    public void onResult(Boolean result) {
+                        enabled.set(result);
+                    }
+
+                    @Override
+                    public void onError(SatelliteManager.SatelliteException exception) {
+                        errorCode.set(exception.getErrorCode());
+                    }
+                };
+
+        // Throws SecurityException as we do not have SATELLITE_COMMUNICATION permission.
+        assertThrows(SecurityException.class, () -> mSatelliteManager.requestIsSatelliteEnabled(
+                getContext().getMainExecutor(), receiver));
+    }
+
+    @Test
+    public void testRequestTimeForNextSatelliteVisibility() {
+        final AtomicReference<Integer> nextVisibilityDuration = new AtomicReference<>();
+        final AtomicReference<Integer> errorCode = new AtomicReference<>();
+        OutcomeReceiver<Integer, SatelliteManager.SatelliteException> receiver =
+                new OutcomeReceiver<>() {
+                    @Override
+                    public void onResult(Integer result) {
+                        nextVisibilityDuration.set(result);
+                    }
+
+                    @Override
+                    public void onError(SatelliteManager.SatelliteException exception) {
+                        errorCode.set(exception.getErrorCode());
+                    }
+                };
+
+        // Throws SecurityException as we do not have SATELLITE_COMMUNICATION permission.
+        assertThrows(SecurityException.class,
+                () -> mSatelliteManager.requestTimeForNextSatelliteVisibility(
+                        getContext().getMainExecutor(), receiver));
+    }
+
     private Context getContext() {
         return InstrumentationRegistry.getContext();
     }
@@ -301,8 +344,11 @@ public class SatelliteManagerTest {
         }
 
         @Override
-        public void onMessageTransferStateUpdate(int state) {
-            Log.d(TAG, "onMessageTransferStateUpdate: state=" + state);
+        public void onMessageTransferStateUpdate(int state, int sendPendingCount,
+                int receivePendingCount, int errorCode) {
+            Log.d(TAG, "onMessageTransferStateUpdate: state=" + state + ", sendPendingCount="
+                    + sendPendingCount + ", receivePendingCount=" + receivePendingCount
+                    + ", errorCode=" + errorCode);
         }
     }
 
