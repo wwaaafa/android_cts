@@ -6707,6 +6707,28 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                 Car.PERMISSION_SPEED);
     }
 
+    @Test
+    @ApiTest(apis = {"android.car.hardware.property.CarPropertyManager#generateSetPropertyRequest",
+            "android.car.hardware.property.CarPropertyManager$SetPropertyRequest#setUpdateRateHz",
+            "android.car.hardware.property.CarPropertyManager$SetPropertyRequest#getPropertyId",
+            "android.car.hardware.property.CarPropertyManager$SetPropertyRequest#getAreaId",
+            "android.car.hardware.property.CarPropertyManager$SetPropertyRequest#getValue",
+            "android.car.hardware.property.CarPropertyManager$SetPropertyRequest#getUpdateRateHz"})
+    public void testSetPropertyRequestSettersGetters() throws Exception {
+        int testPropId = 1;
+        int testAreaId = 2;
+        Float valueToSet = Float.valueOf(3.1f);
+        float testUpdateRateHz = 4.1f;
+        CarPropertyManager.SetPropertyRequest spr =
+                mCarPropertyManager.generateSetPropertyRequest(testPropId, testAreaId, valueToSet);
+        spr.setUpdateRateHz(testUpdateRateHz);
+
+        assertThat(spr.getPropertyId()).isEqualTo(testPropId);
+        assertThat(spr.getAreaId()).isEqualTo(testAreaId);
+        assertThat(spr.getValue()).isEqualTo(valueToSet);
+        assertThat(spr.getUpdateRateHz()).isEqualTo(testUpdateRateHz);
+    }
+
     private int getCounterBySampleRate(float maxSampleRateHz) {
         if (Float.compare(maxSampleRateHz, (float) FAST_OR_FASTEST_EVENT_COUNTER) > 0) {
             return FAST_OR_FASTEST_EVENT_COUNTER;
