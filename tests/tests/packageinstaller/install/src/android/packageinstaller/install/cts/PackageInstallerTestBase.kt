@@ -66,8 +66,10 @@ open class PackageInstallerTestBase {
 
         const val TEST_APK_NAME = "CtsEmptyTestApp.apk"
         const val TEST_APK_NAME_PL = "CtsEmptyTestApp_pl.apk"
+        const val TEST_APK_NAME_V2 = "CtsEmptyTestAppV2.apk"
         const val TEST_APP_LABEL = "Empty Test App"
         const val TEST_APP_LABEL_PL = "Empty Test App Polish"
+        const val TEST_APP_LABEL_V2 = "Empty Test App V2"
         const val TEST_FAKE_APP_LABEL = "Fake Test App"
         const val TEST_APK_PACKAGE_NAME = "android.packageinstaller.emptytestapp.cts"
         const val TEST_APK_LOCATION = "/data/local/tmp/cts/packageinstaller"
@@ -99,6 +101,7 @@ open class PackageInstallerTestBase {
     protected val uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
     private val apkFile = File(context.filesDir, TEST_APK_NAME)
     private val apkFile_pl = File(context.filesDir, TEST_APK_NAME_PL)
+    private val apkFile_v2 = File(context.filesDir, TEST_APK_NAME_V2)
 
     data class SessionResult(val status: Int?, val preapproval: Boolean?)
 
@@ -126,6 +129,7 @@ open class PackageInstallerTestBase {
     fun copyTestApk() {
         File(TEST_APK_LOCATION, TEST_APK_NAME).copyTo(target = apkFile, overwrite = true)
         File(TEST_APK_LOCATION, TEST_APK_NAME_PL).copyTo(target = apkFile_pl, overwrite = true)
+        File(TEST_APK_LOCATION, TEST_APK_NAME_V2).copyTo(target = apkFile_v2, overwrite = true)
     }
 
     @Before
@@ -427,6 +431,10 @@ open class PackageInstallerTestBase {
 
     protected fun preparePreapprovalDetails(): PreapprovalDetails {
         return preparePreapprovalDetails(TEST_APP_LABEL, ULocale.US, TEST_APK_PACKAGE_NAME)
+    }
+
+    protected fun preparePreapprovalDetailsV2(): PreapprovalDetails {
+        return preparePreapprovalDetails(TEST_APP_LABEL_V2, ULocale.US, TEST_APK_PACKAGE_NAME)
     }
 
     protected fun preparePreapprovalDetailsInPl(): PreapprovalDetails {
