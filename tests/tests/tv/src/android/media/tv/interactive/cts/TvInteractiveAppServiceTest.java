@@ -135,6 +135,7 @@ public class TvInteractiveAppServiceTest {
         private String mBiIAppId = null;
         private Uri mProgramUri = null;
         private String mRecordingId = null;
+        private String mRequestId = null;
         private TvRecordingInfo mTvRecordingInfo = null;
         private Integer mRecordingType = null;
 
@@ -157,6 +158,7 @@ public class TvInteractiveAppServiceTest {
             mBiIAppId = null;
             mProgramUri = null;
             mRecordingId = null;
+            mRequestId = null;
             mTvRecordingInfo = null;
             mRecordingType = null;
         }
@@ -235,10 +237,11 @@ public class TvInteractiveAppServiceTest {
         }
 
         @Override
-        public void onRequestStartRecording(String id, Uri programUri) {
-            super.onRequestStartRecording(id, programUri);
+        public void onRequestStartRecording(String requestId, String inputId, Uri programUri) {
+            super.onRequestStartRecording(requestId, inputId, programUri);
             mRequestStartRecordingCount++;
             mProgramUri = programUri;
+            mRequestId = requestId;
         }
 
         @Override
@@ -478,10 +481,12 @@ public class TvInteractiveAppServiceTest {
         final String recordingId = "testRecording";
         assertNotNull(mSession);
         mSession.resetValues();
-        mTvIAppView.notifyRecordingStarted(recordingId);
+        mTvIAppView.notifyRecordingStarted(recordingId, "request_1");
         PollingCheck.waitFor(TIME_OUT_MS, () -> mSession.mRecordingStartedCount > 0);
         assertThat(mSession.mRecordingStartedCount).isEqualTo(1);
         assertThat(mSession.mRecordingId).isEqualTo(recordingId);
+        assertThat(mSession.mRequestId).isEqualTo("request_1");
+        // TODO: test schedule recording
     }
 
     @Test
@@ -943,13 +948,14 @@ public class TvInteractiveAppServiceTest {
     @Test
     public void testRequestStartRecording() throws Throwable {
         final Uri testUri = createTestUri();
-        mSession.requestStartRecording(testUri);
+        mSession.requestStartRecording("request_id1", testUri);
         mCallback.resetValues();
         mInstrumentation.waitForIdleSync();
         PollingCheck.waitFor(TIME_OUT_MS, () -> mCallback.mRequestStartRecordingCount > 0);
 
         assertThat(mCallback.mRequestStartRecordingCount).isEqualTo(1);
         assertThat(mCallback.mProgramUri).isEqualTo(testUri);
+        assertThat(mCallback.mRequestId).isEqualTo("request_id1");
     }
 
     @Test

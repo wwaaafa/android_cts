@@ -116,6 +116,7 @@ public class StubTvInteractiveAppService extends TvInteractiveAppService {
         public AdResponse mAdResponse;
         public BroadcastInfoResponse mBroadcastInfoResponse;
         public String mRecordingId;
+        public String mRequestId;
         public PlaybackParams mPlaybackParams;
         public Integer mTimeShiftMode;
         public float[] mAvailableSpeeds;
@@ -177,6 +178,7 @@ public class StubTvInteractiveAppService extends TvInteractiveAppService {
             mAdResponse = null;
             mBroadcastInfoResponse = null;
             mRecordingId = null;
+            mRequestId = null;
             mPlaybackParams = null;
             mTimeShiftMode = null;
             mAvailableSpeeds = new float[]{};
@@ -478,10 +480,11 @@ public class StubTvInteractiveAppService extends TvInteractiveAppService {
         }
 
         @Override
-        public void onRecordingStarted(String recordingId) {
-            super.onRecordingStarted(recordingId);
+        public void onRecordingStarted(String recordingId, String requestId) {
+            super.onRecordingStarted(recordingId, requestId);
             mRecordingStartedCount++;
             mRecordingId = recordingId;
+            mRequestId = requestId;
         }
 
         @Override
