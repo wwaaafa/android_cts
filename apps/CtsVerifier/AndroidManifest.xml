@@ -4403,6 +4403,38 @@
         </activity>
 
         <!--
+           CTS Verifier BLE Rx/Tx Offset Precision Test Screen
+               test category : BLE
+               test parent : PresenceTestActivity
+        -->
+        <activity
+            android:name=".presence.BleRxTxOffsetPrecisionActivity"
+            android:exported="true"
+            android:label="@string/ble_rx_tx_offset_precision_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.cts.intent.category.MANUAL_TEST" />
+            </intent-filter>
+
+            <meta-data
+                android:name="test_category"
+                android:value="@string/ble" />
+            <meta-data
+                android:name="test_parent"
+                android:value="com.android.cts.verifier.presence.PresenceTestActivity" />
+            <meta-data
+                android:name="test_required_features"
+                android:value="android.hardware.bluetooth_le" />
+            <meta-data
+                android:name="display_mode"
+                android:value="single_display_mode" />
+            <meta-data
+                android:name="CddTest"
+                android:value="7.4.3/C-10-3,C-10-4" />
+        </activity>
+
+        <!--
            CTS Verifier NAN Precision Test Screen
                test category : NAN
                test parent : PresenceTestActivity
