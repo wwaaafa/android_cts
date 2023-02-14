@@ -49,7 +49,7 @@ public final class FileTransferTest {
     @ClassRule @Rule
     public static final DeviceState sDeviceState = new DeviceState();
 
-    @CannotSetPolicyTest(policy = DisallowUsbFileTransfer.class, includeNonDeviceAdminStates = false)
+    @CannotSetPolicyTest(policy = DisallowUsbFileTransfer.class)
     @Postsubmit(reason = "new test")
     @ApiTest(apis = "android.os.UserManager#DISALLOW_USB_FILE_TRANSFER")
     public void setUserRestriction_disallowUsbFileTransfer_cannotSet_throwsException() {

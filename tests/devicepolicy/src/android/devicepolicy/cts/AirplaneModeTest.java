@@ -51,7 +51,7 @@ public final class AirplaneModeTest {
     @ClassRule @Rule
     public static final DeviceState sDeviceState = new DeviceState();
 
-    @CannotSetPolicyTest(policy = DisallowAirplaneMode.class, includeNonDeviceAdminStates = false)
+    @CannotSetPolicyTest(policy = DisallowAirplaneMode.class)
     @Postsubmit(reason = "new test")
     @ApiTest(apis = "android.os.UserManager#DISALLOW_AIRPLANE_MODE")
     public void setUserRestriction_disallowAirplaneMode_cannotSet_throwsException() {
