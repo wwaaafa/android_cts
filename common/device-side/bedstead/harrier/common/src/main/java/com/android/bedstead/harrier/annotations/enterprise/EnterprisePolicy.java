@@ -134,7 +134,7 @@ public @interface EnterprisePolicy {
     int APPLIED_BY_PARENT_INSTANCE_OF_PROFILE_OWNER_PROFILE =
             APPLIED_BY_PARENT_INSTANCE_OF_NON_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE | APPLIED_BY_PARENT_INSTANCE_OF_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE;
 
-    /** A policy that has not yet been migrated to allow for DPM Role holder access. */
+    /** A policy that the DPM Role Holder has permission access to */
     int APPLIED_BY_DPM_ROLE_HOLDER = 1 << 16;
 
     // Modifiers

@@ -113,7 +113,7 @@ public final class KeyguardTest {
         }
     }
 
-    @PolicyAppliesTest(policy = KeyguardDisableWidgetsAll.class)
+    @PolicyDoesNotApplyTest(policy = KeyguardDisableWidgetsAll.class)
     @Postsubmit(reason = "New test")
     @ApiTest(apis = {
             "android.app.admin.DevicePolicyManager#setKeyguardDisabledFeatures",
@@ -179,7 +179,7 @@ public final class KeyguardTest {
         }
     }
 
-    @PolicyAppliesTest(policy = KeyguardDisableSecureCamera.class)
+    @PolicyDoesNotApplyTest(policy = KeyguardDisableSecureCamera.class)
     @Postsubmit(reason = "New test")
     @ApiTest(apis = {
             "android.app.admin.DevicePolicyManager#setKeyguardDisabledFeatures",
@@ -245,7 +245,7 @@ public final class KeyguardTest {
         }
     }
 
-    @PolicyAppliesTest(policy = KeyguardDisableSecureNotifications.class)
+    @PolicyDoesNotApplyTest(policy = KeyguardDisableSecureNotifications.class)
     @Postsubmit(reason = "New test")
     @ApiTest(apis = {
             "android.app.admin.DevicePolicyManager#setKeyguardDisabledFeatures",
@@ -311,7 +311,7 @@ public final class KeyguardTest {
         }
     }
 
-    @PolicyAppliesTest(policy = KeyguardDisableTrustAgents.class)
+    @PolicyDoesNotApplyTest(policy = KeyguardDisableTrustAgents.class)
     @Postsubmit(reason = "New test")
     @ApiTest(apis = {
             "android.app.admin.DevicePolicyManager#setKeyguardDisabledFeatures",
@@ -376,7 +376,7 @@ public final class KeyguardTest {
         }
     }
 
-    @PolicyAppliesTest(policy = KeyguardDisableUnredactedNotifications.class)
+    @PolicyDoesNotApplyTest(policy = KeyguardDisableUnredactedNotifications.class)
     @Postsubmit(reason = "New test")
     @ApiTest(apis = {
             "android.app.admin.DevicePolicyManager#setKeyguardDisabledFeatures",
@@ -441,7 +441,7 @@ public final class KeyguardTest {
         }
     }
 
-    @PolicyAppliesTest(policy = KeyguardDisableFingerprint.class)
+    @PolicyDoesNotApplyTest(policy = KeyguardDisableFingerprint.class)
     @Postsubmit(reason = "New test")
     @ApiTest(apis = {
             "android.app.admin.DevicePolicyManager#setKeyguardDisabledFeatures",
@@ -506,7 +506,7 @@ public final class KeyguardTest {
         }
     }
 
-    @PolicyAppliesTest(policy = KeyguardDisableFace.class)
+    @PolicyDoesNotApplyTest(policy = KeyguardDisableFace.class)
     @Postsubmit(reason = "New test")
     @ApiTest(apis = {
             "android.app.admin.DevicePolicyManager#setKeyguardDisabledFeatures",
@@ -571,7 +571,7 @@ public final class KeyguardTest {
         }
     }
 
-    @PolicyAppliesTest(policy = KeyguardDisableIris.class)
+    @PolicyDoesNotApplyTest(policy = KeyguardDisableIris.class)
     @Postsubmit(reason = "New test")
     @ApiTest(apis = {
             "android.app.admin.DevicePolicyManager#setKeyguardDisabledFeatures",
