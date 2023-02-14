@@ -1009,6 +1009,11 @@
     <permission android:name="android.permission.SATELLITE_COMMUNICATION"
                 android:protectionLevel="internal|role" />
 
+    <!-- @SystemApi @hide Allows an application to bind with satellite service.
+         Only granted if the application is a system app.-->
+    <permission android:name="android.permission.BIND_SATELLITE_SERVICE"
+                android:protectionLevel="signature|privileged|vendorPrivileged" />
+
     <!-- ====================================================================== -->
     <!-- Permissions for accessing external storage                             -->
     <!-- ====================================================================== -->
