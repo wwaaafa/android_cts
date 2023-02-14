@@ -36,6 +36,8 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.runner.RunWith;
 
+import java.util.List;
+
 @RunWith(BedsteadJUnit4.class)
 public final class FactoryResetProtectionTest {
 
@@ -43,7 +45,9 @@ public final class FactoryResetProtectionTest {
     public static final DeviceState sDeviceState = new DeviceState();
 
     private static final FactoryResetProtectionPolicy FACTORY_RESET_PROTECTION_POLICY =
-            new FactoryResetProtectionPolicy.Builder().build();
+            new FactoryResetProtectionPolicy.Builder()
+                    .setFactoryResetProtectionEnabled(true)
+                    .setFactoryResetProtectionAccounts(List.of("test@account.com")).build();
 
     @CanSetPolicyTest(policy = FactoryResetProtection.class) // TODO: Remove
     @Postsubmit(reason = "New test")
