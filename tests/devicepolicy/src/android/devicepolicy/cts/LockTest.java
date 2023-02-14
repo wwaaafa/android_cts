@@ -34,6 +34,7 @@ import com.android.bedstead.harrier.DeviceState;
 import com.android.bedstead.harrier.annotations.EnsurePasswordNotSet;
 import com.android.bedstead.harrier.annotations.EnsurePasswordSet;
 import com.android.bedstead.harrier.annotations.EnsureScreenIsOn;
+import com.android.bedstead.harrier.annotations.LocalPresubmit;
 import com.android.bedstead.harrier.annotations.Postsubmit;
 import com.android.bedstead.harrier.annotations.RequireDoesNotHaveFeature;
 import com.android.bedstead.harrier.annotations.RequireFeature;
@@ -144,6 +145,7 @@ public class LockTest { // A bunch of failures already recorded - also btest str
     @Postsubmit(reason = "New test")
     @ApiTest(apis = {"android.app.admin.DevicePolicyManager#setMaximumTimeToLock",
             "android.app.admin.DevicePolicyManager#getMaximumTimeToLock"})
+    @LocalPresubmit
     public void setMaximumTimeToLock_maximumTimeToLockIsSet() {
         long originalTimeout = sDeviceState.dpc().devicePolicyManager()
                 .getMaximumTimeToLock(sDeviceState.dpc().componentName());
