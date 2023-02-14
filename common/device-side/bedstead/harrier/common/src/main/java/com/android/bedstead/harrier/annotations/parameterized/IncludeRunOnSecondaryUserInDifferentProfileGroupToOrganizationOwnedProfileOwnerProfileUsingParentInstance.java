@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
-package com.android.bedstead.harrier.annotations;
+package com.android.bedstead.harrier.annotations.parameterized;
 
-import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.FIRST;
+import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.EARLY;
+
+import com.android.bedstead.harrier.annotations.AnnotationRunPrecedence;
+import com.android.bedstead.harrier.annotations.EnsureHasWorkProfile;
+import com.android.bedstead.harrier.annotations.RequireRunOnAdditionalUser;
+import com.android.bedstead.harrier.annotations.meta.ParameterizedAnnotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -24,19 +29,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Mark that a test method should only run in an apk targeting the specified sdk version.
- *
- * <p>Your test configuration may be configured so that this test is only run in an apk with the
- * given version. Otherwise, you can use {@code DeviceState} to ensure that the test is
- * not run when the target sdk version is not correct.
+ * Parameterize a test so that it runs on a device which has a primary and organization owned work
+ * profile, but runs the test on a secondary user which is in a different profile group. The DPC
+ * uses the parent instance.
  */
-@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.TYPE})
+@Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface RequireTargetSdkVersion {
-    int min() default 1;
-    int max() default Integer.MAX_VALUE;
-    FailureMode failureMode() default FailureMode.SKIP;
-
+@ParameterizedAnnotation
+@RequireRunOnAdditionalUser
+@EnsureHasWorkProfile(dpcIsPrimary = true, isOrganizationOwned = true, useParentInstanceOfDpc = true)
+public @interface IncludeRunOnSecondaryUserInDifferentProfileGroupToOrganizationOwnedProfileOwnerProfileUsingParentInstance {
     /**
      * Weight sets the order that annotations will be resolved.
      *
@@ -47,5 +49,5 @@ public @interface RequireTargetSdkVersion {
      *
      * <p>Weight can be set to a {@link AnnotationRunPrecedence} constant, or to any {@link int}.
      */
-    int weight() default FIRST;
+    int weight() default EARLY;
 }

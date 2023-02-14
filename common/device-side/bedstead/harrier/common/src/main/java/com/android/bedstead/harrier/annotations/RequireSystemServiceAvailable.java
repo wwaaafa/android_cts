@@ -24,17 +24,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Mark that a test method should only run in an apk targeting the specified sdk version.
+ * Mark that a test method should only run when a particular system service is available via
+ * {@code context.getSystemService}.
  *
- * <p>Your test configuration may be configured so that this test is only run in an apk with the
- * given version. Otherwise, you can use {@code DeviceState} to ensure that the test is
- * not run when the target sdk version is not correct.
+ * <p>You can use {@code DeviceState} to ensure that the test is only run when in the correct state
  */
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface RequireTargetSdkVersion {
-    int min() default 1;
-    int max() default Integer.MAX_VALUE;
+public @interface RequireSystemServiceAvailable {
+    Class<?> value();
+
     FailureMode failureMode() default FailureMode.SKIP;
 
     /**

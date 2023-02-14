@@ -870,11 +870,17 @@ def create_user(device_state, args):
     commands.append("user")
 
     output, err = execute_shell_command("Test", args, commands)
-    id = int(output.rsplit(" ", 1)[1].strip())
+    try:
+        id = int(output.rsplit(" ", 1)[1].strip())
+    except IndexError:
+        print("Error parsing user id. Output: " + output + ", err: " + err)
+        sys.exit(1)
     execute_shell_command("Test", args, ["adb", "shell", "am start-user " + str(id)])
     return id
 
 def create_work_profile(device_state, args, parent_id):
+    ensure_no_device_owner(device_state, args)
+
     commands = ["adb", "shell", "pm", "create-user", "--managed", "--profileOf", str(parent_id)]
 
     if device_state["sdk_version"] >= 33:
@@ -939,7 +945,24 @@ def get_users(args):
     return users
 
 def get_current_user(args):
-    return int(execute_shell_command("Test", args, ["adb", "shell", "am", "get-current-user"])[0].strip())
+    output = execute_shell_command("Test", args, ["adb", "shell", "am", "get-current-user"])[0]
+    try:
+        return int(output.strip())
+    except IndexError:
+        print("Error parsing current user. Output: " + output)
+        sys.exit(1)
+
+def ensure_no_device_owner(device_state, args):
+    device_policy_output = execute_shell_command("", args, ["adb", "shell", "dumpsys", "device_policy"])[0]
+    if "Device Owner: \n" not in device_policy_output:
+        return
+
+    try:
+        admin_name = device_policy_output.split("Device Owner: \n", 1)[1].split("admin=ComponentInfo{", 1)[1].split("}", 1)[0]
+    except IndexError:
+        print("Error parsing admin name. Output: " + device_policy_output)
+        sys.exit(1)
+    execute_shell_command("", args, ["adb", "shell", "dpm", "remove-active-admin", admin_name])
 
 def main():
     args = get_args()
