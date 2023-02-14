@@ -666,9 +666,15 @@ public final class UserReference implements AutoCloseable {
             return true;
         }
 
-        try (PermissionContext p = TestApis.permissions().withPermission(MODIFY_QUIET_MODE)) {
+        UserReference parent = parent();
+        if (parent == null) {
+            throw new NeneException("Can't set quiet mode, no parent for user " + this);
+        }
+
+        try (PermissionContext p = TestApis.permissions().withPermission(
+                MODIFY_QUIET_MODE, INTERACT_ACROSS_USERS_FULL)) {
             BlockingBroadcastReceiver r = BlockingBroadcastReceiver.create(
-                            TestApis.context().instrumentedContext(),
+                            TestApis.context().androidContextAsUser(parent),
                             enabled
                                     ? ACTION_MANAGED_PROFILE_UNAVAILABLE
                                     : ACTION_MANAGED_PROFILE_AVAILABLE)
