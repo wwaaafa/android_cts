@@ -53,7 +53,7 @@ public final class AudioTest {
     private static final AudioManager sAudioManager = TestApis.context().instrumentedContext()
             .getSystemService(AudioManager.class);
 
-    @CannotSetPolicyTest(policy = DisallowUnmuteMicrophone.class, includeNonDeviceAdminStates = false)
+    @CannotSetPolicyTest(policy = DisallowUnmuteMicrophone.class)
     @Postsubmit(reason = "new test")
     @ApiTest(apis = "android.os.UserManager#DISALLOW_UNMUTE_MICROPHONE")
     public void setUserRestriction_disallowUnmuteMicrophone_cannotSet_throwsException() {
