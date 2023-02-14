@@ -201,6 +201,9 @@ public final class Policy {
                     .put(APPLIED_BY_ORGANIZATION_OWNED_PROFILE_OWNER_PROFILE, singleAnnotation(includeRunOnOrganizationOwnedProfileOwner()))
                     .put(APPLIED_BY_UNAFFILIATED_PROFILE_OWNER_PROFILE, singleAnnotation(includeRunOnProfileOwnerProfileWithNoDeviceOwner()))
                     .put(APPLIED_BY_FINANCED_DEVICE_OWNER, singleAnnotation(includeRunOnFinancedDeviceOwnerUser()))
+                    // TODO: Add APPLIED_BY_PARENT_INSTANCE_OF_NON_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE
+                    //  and APPLIED_BY_PARENT_INSTANCE_OF_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE
+                    .put(APPLIED_BY_DPM_ROLE_HOLDER, singleAnnotation(includeRunOnDevicePolicyManagementRoleHolderUser()))
                     .build();
     private static final Map<Integer, Function<EnterprisePolicy, Set<Annotation>>>
             DPC_STATE_ANNOTATIONS = DPC_STATE_ANNOTATIONS_BASE.entrySet().stream()
@@ -439,10 +442,10 @@ public final class Policy {
         return (policy) -> {
             if (hasFlag(policy.dpc(), entry.getKey() | CAN_BE_DELEGATED)) {
                 Set<Annotation> results = new HashSet<>(entry.getValue().apply(policy));
-                results.addAll(results.stream().flatMap(
-                        t -> generateDelegateAnnotation(t, /* isPrimary= */ true).apply(
-                                policy).stream())
-                        .collect(Collectors.toSet()));
+//                results.addAll(results.stream().flatMap(
+//                        t -> generateDelegateAnnotation(t, /* isPrimary= */ true).apply(
+//                                policy).stream())
+//                        .collect(Collectors.toSet()));
 
                 return results;
             }

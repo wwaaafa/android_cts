@@ -31,7 +31,7 @@ import com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy;
  */
 @EnterprisePolicy(dpc = {
         // applies to parent only counts if there is no separate work challenge
-        APPLIED_BY_DEVICE_OWNER | APPLIED_BY_DPM_ROLE_HOLDER | APPLIES_TO_OWN_USER | CANNOT_BE_APPLIED_BY_ROLE_HOLDER
+        APPLIED_BY_DEVICE_OWNER | APPLIED_BY_FINANCED_DEVICE_OWNER | APPLIED_BY_DPM_ROLE_HOLDER | APPLIES_TO_OWN_USER | CANNOT_BE_APPLIED_BY_ROLE_HOLDER
 }, permissions = {
         @EnterprisePolicy.Permission(appliedWith = MANAGE_DEVICE_POLICY_KEYGUARD, appliesTo = APPLIES_TO_OWN_USER)
 })
