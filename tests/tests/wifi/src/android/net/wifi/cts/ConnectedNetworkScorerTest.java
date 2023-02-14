@@ -524,6 +524,18 @@ public class ConnectedNetworkScorerTest extends WifiJUnit4TestBase {
             }
         }
 
+        @Override
+        public void onNetworkSwitchAccepted(
+                int sessionId, int targetNetworkId, @NonNull String targetBssid) {
+            // Not possible to fake via CTS since it requires two networks and UI interaction.
+        }
+
+        @Override
+        public void onNetworkSwitchRejected(
+                int sessionId, int targetNetworkId, @NonNull String targetBssid) {
+            // Not possible to fake via CTS since it requires two networks and UI interaction.
+        }
+
         public void resetCountDownLatch(CountDownLatch countDownLatch) {
             synchronized (mCountDownLatch) {
                 mCountDownLatch = countDownLatch;
