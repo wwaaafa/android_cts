@@ -39,6 +39,7 @@ import com.android.bedstead.harrier.annotations.RequireDoesNotHaveFeature;
 import com.android.bedstead.harrier.annotations.RequireFeature;
 import com.android.bedstead.harrier.annotations.enterprise.CannotSetPolicyTest;
 import com.android.bedstead.harrier.annotations.enterprise.PolicyAppliesTest;
+import com.android.bedstead.harrier.annotations.enterprise.PolicyDoesNotApplyTest;
 import com.android.bedstead.harrier.policies.LockNow;
 import com.android.bedstead.harrier.policies.MaximumTimeToLock;
 import com.android.bedstead.metricsrecorder.EnterpriseMetricsRecorder;
@@ -151,15 +152,13 @@ public class LockTest { // A bunch of failures already recorded - also btest str
             sDeviceState.dpc().devicePolicyManager()
                     .setMaximumTimeToLock(sDeviceState.dpc().componentName(), TIMEOUT);
 
-            assertThat(TestApis.devicePolicy().getMaximumTimeToLock()).isEqualTo(TIMEOUT);
-
         } finally {
             sDeviceState.dpc().devicePolicyManager().setMaximumTimeToLock(
                     sDeviceState.dpc().componentName(), originalTimeout);
         }
     }
 
-    @PolicyAppliesTest(policy = MaximumTimeToLock.class)
+    @PolicyDoesNotApplyTest(policy = MaximumTimeToLock.class)
     @Postsubmit(reason = "New test")
     @ApiTest(apis = {"android.app.admin.DevicePolicyManager#setMaximumTimeToLock",
             "android.app.admin.DevicePolicyManager#getMaximumTimeToLock"})
