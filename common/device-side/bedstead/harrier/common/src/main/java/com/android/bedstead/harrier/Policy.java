@@ -28,7 +28,6 @@ import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePoli
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_ORGANIZATION_OWNED_PROFILE_OWNER_PROFILE;
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_PARENT_INSTANCE_OF_NON_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE;
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_PARENT_INSTANCE_OF_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE;
-import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_PARENT_INSTANCE_OF_PROFILE_OWNER_USER;
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_PROFILE_OWNER_USER_WITH_NO_DO;
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_UNAFFILIATED_PROFILE_OWNER_PROFILE;
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_UNAFFILIATED_PROFILE_OWNER_USER;
@@ -83,6 +82,7 @@ import com.android.bedstead.harrier.annotations.parameterized.IncludeRunOnParent
 import com.android.bedstead.harrier.annotations.parameterized.IncludeRunOnParentOfProfileOwnerWithNoDeviceOwner;
 import com.android.bedstead.harrier.annotations.parameterized.IncludeRunOnProfileOwnerPrimaryUser;
 import com.android.bedstead.harrier.annotations.parameterized.IncludeRunOnProfileOwnerProfileWithNoDeviceOwner;
+import com.android.bedstead.harrier.annotations.parameterized.IncludeRunOnSecondaryUserInDifferentProfileGroupToOrganizationOwnedProfileOwnerProfileUsingParentInstance;
 import com.android.bedstead.harrier.annotations.parameterized.IncludeRunOnSecondaryUserInDifferentProfileGroupToProfileOwnerProfile;
 import com.android.bedstead.harrier.annotations.parameterized.IncludeRunOnUnaffiliatedDeviceOwnerSecondaryUser;
 import com.android.bedstead.harrier.annotations.parameterized.IncludeRunOnUnaffiliatedProfileOwnerSecondaryUser;
@@ -167,6 +167,9 @@ public final class Policy {
                     .put(APPLIED_BY_UNAFFILIATED_PROFILE_OWNER_PROFILE | APPLIES_TO_UNAFFILIATED_OTHER_USERS, generateDevicePolicyManagerRoleHolderAnnotation(includeRunOnSecondaryUserInDifferentProfileGroupToProfileOwnerProfile(), /* roleHolderUser= */ WORK_PROFILE))
                     .put(APPLIED_BY_UNAFFILIATED_PROFILE_OWNER_PROFILE | APPLIES_TO_UNAFFILIATED_OTHER_USERS | CAN_BE_DELEGATED, generateDelegateAnnotation(includeRunOnSecondaryUserInDifferentProfileGroupToProfileOwnerProfile(), /* isPrimary= */ true))
 
+                    .put(APPLIED_BY_PARENT_INSTANCE_OF_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE | APPLIES_TO_UNAFFILIATED_OTHER_USERS, generateDevicePolicyManagerRoleHolderAnnotation(includeRunOnSecondaryUserInDifferentProfileGroupToOrganizationOwnedProfileOwnerProfileUsingParentInstance(), /* roleHolderUser= */ WORK_PROFILE))
+                    .put(APPLIED_BY_PARENT_INSTANCE_OF_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE | APPLIES_TO_UNAFFILIATED_OTHER_USERS | CAN_BE_DELEGATED, generateDelegateAnnotation(includeRunOnSecondaryUserInDifferentProfileGroupToOrganizationOwnedProfileOwnerProfileUsingParentInstance(), /* isPrimary= */ true))
+
                     // The model here is that APPLIED_BY_PARENT + APPLIES_TO_OWN_USER means it applies to the parent of the DPC - I'm not sure this is the best model (APPLIES_TO_PARENT would also be reasonable)
                     .put(APPLIED_BY_PARENT_INSTANCE_OF_NON_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE
                             | APPLIES_TO_OWN_USER, generateDevicePolicyManagerRoleHolderAnnotation(includeRunOnParentOfProfileOwnerUsingParentInstance(), /* roleHolderUser= */ WORK_PROFILE))
@@ -205,7 +208,6 @@ public final class Policy {
                     | APPLIED_BY_AFFILIATED_PROFILE_OWNER_PROFILE
                     | APPLIED_BY_UNAFFILIATED_PROFILE_OWNER_USER
                     | APPLIED_BY_AFFILIATED_PROFILE_OWNER_USER
-                    | APPLIED_BY_PARENT_INSTANCE_OF_PROFILE_OWNER_USER
                     | APPLIED_BY_FINANCED_DEVICE_OWNER
                     | APPLIED_BY_ORGANIZATION_OWNED_PROFILE_OWNER_PROFILE
                     | APPLIED_BY_PARENT_INSTANCE_OF_NON_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE
@@ -281,6 +283,11 @@ public final class Policy {
     @AutoAnnotation
     private static IncludeRunOnSecondaryUserInDifferentProfileGroupToProfileOwnerProfile includeRunOnSecondaryUserInDifferentProfileGroupToProfileOwnerProfile() {
         return new AutoAnnotation_Policy_includeRunOnSecondaryUserInDifferentProfileGroupToProfileOwnerProfile();
+    }
+
+    @AutoAnnotation
+    public static IncludeRunOnSecondaryUserInDifferentProfileGroupToOrganizationOwnedProfileOwnerProfileUsingParentInstance includeRunOnSecondaryUserInDifferentProfileGroupToOrganizationOwnedProfileOwnerProfileUsingParentInstance() {
+        return new AutoAnnotation_Policy_includeRunOnSecondaryUserInDifferentProfileGroupToOrganizationOwnedProfileOwnerProfileUsingParentInstance();
     }
 
     @AutoAnnotation

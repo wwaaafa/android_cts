@@ -18,22 +18,32 @@ package com.android.interactive.steps.enterprise.settings;
 
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 
+import static com.android.bedstead.nene.permissions.CommonPermissions.MANAGE_USB;
+
+import android.content.ComponentName;
 import android.content.Intent;
 import android.provider.Settings;
 
 import com.android.bedstead.nene.TestApis;
+import com.android.bedstead.nene.permissions.PermissionContext;
 import com.android.interactive.Automation;
 import com.android.interactive.Nothing;
 import com.android.interactive.annotations.AutomationFor;
 
-@AutomationFor("com.android.interactive.steps.enterprise.settings.NavigateToPersonalInternetOrWifiSettingsStep")
-public final class NavigateToPersonalInternetOrWifiSettingsStepAutomation implements Automation<Nothing> {
+@AutomationFor("com.android.interactive.steps.enterprise.settings.NavigateToPersonalUsbSettingsStep")
+public final class NavigateToPersonalUsbSettingsStepAutomation implements Automation<Nothing> {
     @Override
     public Nothing automate() {
-        Intent intent = new Intent(Settings.ACTION_WIFI_SETTINGS);
-        intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
+        try (PermissionContext p = TestApis.permissions().withPermission(MANAGE_USB)) {
+            Intent intent = new Intent();
+            intent.setComponent(
+                    new ComponentName(
+                            "com.android.settings",
+                            "com.android.settings.Settings$UsbDetailsActivity"));
+            intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
 
-        TestApis.context().instrumentedContext().startActivity(intent);
+            TestApis.context().instrumentedContext().startActivity(intent);
+        }
 
         return Nothing.NOTHING;
     }
