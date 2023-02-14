@@ -36,7 +36,6 @@ import android.content.pm.PackageInstaller.STATUS_PENDING_USER_ACTION
 import android.content.pm.PackageInstaller.Session
 import android.content.pm.PackageInstaller.SessionParams.MODE_FULL_INSTALL
 import android.content.pm.PackageManager
-import android.icu.util.ULocale
 import android.provider.DeviceConfig
 import android.support.test.uiautomator.By
 import android.support.test.uiautomator.UiDevice
@@ -65,12 +64,6 @@ open class PackageInstallerTestBase {
         const val CANCEL_BUTTON_ID = "button2"
 
         const val TEST_APK_NAME = "CtsEmptyTestApp.apk"
-        const val TEST_APK_NAME_PL = "CtsEmptyTestApp_pl.apk"
-        const val TEST_APK_NAME_V2 = "CtsEmptyTestAppV2.apk"
-        const val TEST_APP_LABEL = "Empty Test App"
-        const val TEST_APP_LABEL_PL = "Empty Test App Polish"
-        const val TEST_APP_LABEL_V2 = "Empty Test App V2"
-        const val TEST_FAKE_APP_LABEL = "Fake Test App"
         const val TEST_APK_PACKAGE_NAME = "android.packageinstaller.emptytestapp.cts"
         const val TEST_APK_LOCATION = "/data/local/tmp/cts/packageinstaller"
 
@@ -100,8 +93,6 @@ open class PackageInstallerTestBase {
     protected val pi = pm.packageInstaller
     protected val uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
     private val apkFile = File(context.filesDir, TEST_APK_NAME)
-    private val apkFile_pl = File(context.filesDir, TEST_APK_NAME_PL)
-    private val apkFile_v2 = File(context.filesDir, TEST_APK_NAME_V2)
 
     data class SessionResult(val status: Int?, val preapproval: Boolean?)
 
@@ -128,8 +119,6 @@ open class PackageInstallerTestBase {
     @Before
     fun copyTestApk() {
         File(TEST_APK_LOCATION, TEST_APK_NAME).copyTo(target = apkFile, overwrite = true)
-        File(TEST_APK_LOCATION, TEST_APK_NAME_PL).copyTo(target = apkFile_pl, overwrite = true)
-        File(TEST_APK_LOCATION, TEST_APK_NAME_V2).copyTo(target = apkFile_v2, overwrite = true)
     }
 
     @Before
@@ -427,33 +416,5 @@ open class PackageInstallerTestBase {
             DeviceConfig.setProperty(DeviceConfig.NAMESPACE_PACKAGE_MANAGER_SERVICE, name, value,
                     false /* makeDefault */)
         }
-    }
-
-    protected fun preparePreapprovalDetails(): PreapprovalDetails {
-        return preparePreapprovalDetails(TEST_APP_LABEL, ULocale.US, TEST_APK_PACKAGE_NAME)
-    }
-
-    protected fun preparePreapprovalDetailsV2(): PreapprovalDetails {
-        return preparePreapprovalDetails(TEST_APP_LABEL_V2, ULocale.US, TEST_APK_PACKAGE_NAME)
-    }
-
-    protected fun preparePreapprovalDetailsInPl(): PreapprovalDetails {
-        return preparePreapprovalDetails(TEST_APP_LABEL_PL, ULocale("pl"), TEST_APK_PACKAGE_NAME)
-    }
-
-    protected fun prepareWrongPreapprovalDetails(): PreapprovalDetails {
-        return preparePreapprovalDetails(TEST_FAKE_APP_LABEL, ULocale.US, TEST_APK_PACKAGE_NAME)
-    }
-
-    private fun preparePreapprovalDetails(
-        appLabel: String,
-        locale: ULocale,
-        appPackageName: String
-    ): PreapprovalDetails {
-        return PreapprovalDetails.Builder()
-                .setLabel(appLabel)
-                .setLocale(locale)
-                .setPackageName(appPackageName)
-                .build()
     }
 }
