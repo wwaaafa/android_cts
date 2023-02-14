@@ -25,6 +25,7 @@ import static com.android.bedstead.nene.permissions.CommonPermissions.ACCESS_FIN
 import static com.android.bedstead.nene.permissions.CommonPermissions.ACTIVITY_RECOGNITION;
 import static com.android.bedstead.nene.permissions.CommonPermissions.CAMERA;
 import static com.android.bedstead.nene.permissions.CommonPermissions.INTERACT_ACROSS_USERS_FULL;
+import static com.android.bedstead.nene.permissions.CommonPermissions.MANAGE_PROFILE_AND_DEVICE_OWNERS;
 import static com.android.bedstead.nene.permissions.CommonPermissions.NEARBY_WIFI_DEVICES;
 import static com.android.bedstead.nene.permissions.CommonPermissions.RECORD_AUDIO;
 import static com.android.queryable.queries.ActivityQuery.activity;
@@ -33,9 +34,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
 import static org.junit.Assume.assumeFalse;
-import static org.junit.Assume.assumeTrue;
 
 import android.app.AppOpsManager;
+import android.app.admin.DevicePolicyManager;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
@@ -55,6 +56,7 @@ import com.android.bedstead.nene.TestApis;
 import com.android.bedstead.nene.appops.AppOpsMode;
 import com.android.bedstead.nene.location.LocationProvider;
 import com.android.bedstead.nene.packages.Package;
+import com.android.bedstead.nene.permissions.PermissionContext;
 import com.android.bedstead.nene.users.UserReference;
 import com.android.bedstead.nene.utils.Poll;
 import com.android.bedstead.nene.utils.ShellCommand;
@@ -62,6 +64,7 @@ import com.android.bedstead.testapp.TestApp;
 import com.android.bedstead.testapp.TestAppActivityReference;
 import com.android.bedstead.testapp.TestAppInstance;
 
+import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -87,6 +90,16 @@ public class QuietModeTest {
             .get();
     private static final String UNSUSPENDABLE_PKG_NAME = TestApis.context().instrumentedContext()
             .getPackageManager().getPermissionControllerPackageName();
+
+    private boolean mKeepProfilesRunningOverridden = false;
+
+    @After
+    public void cleanupKeepProfilesRunningOverride() {
+        if (mKeepProfilesRunningOverridden) {
+            overrideKeepProfilesRunning(false);
+            mKeepProfilesRunningOverridden = false;
+        }
+    }
 
     @Postsubmit(reason = "new test")
     @EnsureHasWorkProfile
@@ -124,7 +137,8 @@ public class QuietModeTest {
     @EnsureHasPermission(INTERACT_ACROSS_USERS_FULL)
     @Test
     public void quietMode_profileKeptRunning() throws Exception {
-        assumeTrue("Keep profiles available feature not enabled", keepProfilesRunningEnabled());
+        ensureKeepProfilesRunningEnabled();
+
         UserReference workProfile = sDeviceState.workProfile();
         try {
             workProfile.setQuietMode(true);
@@ -170,7 +184,8 @@ public class QuietModeTest {
     @EnsureHasPermission({ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, ACCESS_BACKGROUND_LOCATION})
     @Test
     public void quietMode_noLocationAccess() throws Exception {
-        assumeTrue("Keep profiles available feature not enabled", keepProfilesRunningEnabled());
+        ensureKeepProfilesRunningEnabled();
+
         UserReference workProfile = sDeviceState.workProfile();
 
         try (LocationProvider provider = TestApis.location().addLocationProvider(FUSED_PROVIDER)) {
@@ -211,7 +226,7 @@ public class QuietModeTest {
             AppOpsManager.OPSTR_CAMERA,
     }) String opStr) throws Exception {
 
-        assumeTrue("Keep profiles available feature not enabled", keepProfilesRunningEnabled());
+        ensureKeepProfilesRunningEnabled();
 
         assertWithMessage("App op " + opStr + " isn't allowed")
                 .that(TestApis.packages().instrumented().appOps().get(opStr))
@@ -233,7 +248,8 @@ public class QuietModeTest {
     @RequireRunOnWorkProfile
     @Test
     public void quietMode_suspendedApp_remainsSuspended() throws Exception {
-        assumeTrue("Keep profiles available feature not enabled", keepProfilesRunningEnabled());
+        ensureKeepProfilesRunningEnabled();
+
         UserReference workProfile = sDeviceState.workProfile();
 
         try (TestAppInstance instance = sTestApp.install(workProfile)) {
@@ -259,7 +275,8 @@ public class QuietModeTest {
     @RequireRunOnWorkProfile
     @Test
     public void quietMode_alreadySuspendedApp_remainsSuspended() throws Exception {
-        assumeTrue("Keep profiles available feature not enabled", keepProfilesRunningEnabled());
+        ensureKeepProfilesRunningEnabled();
+
         UserReference workProfile = sDeviceState.workProfile();
 
         try (TestAppInstance instance = sTestApp.install(workProfile)) {
@@ -280,7 +297,8 @@ public class QuietModeTest {
     @RequireRunOnWorkProfile
     @Test
     public void quietMode_unsuspendablePackageGetsSuspended() throws Exception {
-        assumeTrue("Keep profiles available feature not enabled", keepProfilesRunningEnabled());
+        ensureKeepProfilesRunningEnabled();
+
         UserReference workProfile = sDeviceState.workProfile();
         Package permController = Package.of(TestApis.context().instrumentedContext()
                 .getPackageManager().getPermissionControllerPackageName());
@@ -301,7 +319,8 @@ public class QuietModeTest {
     @RequireRunOnWorkProfile
     @Test
     public void quietMode_adminCannotSuspendUnsuspendablePackage() throws Exception {
-        assumeTrue("Keep profiles available feature not enabled", keepProfilesRunningEnabled());
+        ensureKeepProfilesRunningEnabled();
+
         UserReference workProfile = sDeviceState.workProfile();
         Package permController = Package.of(UNSUSPENDABLE_PKG_NAME);
 
@@ -327,7 +346,8 @@ public class QuietModeTest {
     @RequireRunOnWorkProfile
     @Test
     public void quietMode_adminCannotUnsuspendUnsuspendablePackage() throws Exception {
-        assumeTrue("Keep profiles available feature not enabled", keepProfilesRunningEnabled());
+        ensureKeepProfilesRunningEnabled();
+
         UserReference workProfile = sDeviceState.workProfile();
         Package permController = Package.of(UNSUSPENDABLE_PKG_NAME);
 
@@ -349,6 +369,22 @@ public class QuietModeTest {
 
         assertWithMessage("Unsuspendable package still suspended after leaving quiet mode")
                 .that(permController.isSuspended(workProfile)).isFalse();
+    }
+
+    private void overrideKeepProfilesRunning(boolean enabled) {
+        try (PermissionContext p = TestApis.permissions()
+                .withPermission(MANAGE_PROFILE_AND_DEVICE_OWNERS)) {
+            sContext.getSystemService(DevicePolicyManager.class)
+                    .setOverrideKeepProfilesRunning(enabled);
+        }
+    }
+
+    private void ensureKeepProfilesRunningEnabled() throws Exception {
+        if (keepProfilesRunningEnabled()) {
+            return;
+        }
+        mKeepProfilesRunningOverridden = true;
+        overrideKeepProfilesRunning(true);
     }
 
     private boolean keepProfilesRunningEnabled() throws Exception {
