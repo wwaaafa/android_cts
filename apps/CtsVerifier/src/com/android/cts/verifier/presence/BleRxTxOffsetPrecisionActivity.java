@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,15 +43,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Random;
 
-public class BleRssiPrecisionActivity extends PassFailButtons.Activity {
-    private static final String TAG = BleRssiPrecisionActivity.class.getName();
+public class BleRxTxOffsetPrecisionActivity extends PassFailButtons.Activity {
+    private static final String TAG = BleRxTxOffsetPrecisionActivity.class.getName();
     private static final String DEVICE_NAME = Build.MODEL;
 
     // Report log schema
     private static final String KEY_REFERENCE_DEVICE = "reference_device";
 
     // Thresholds
-    private static final int MAX_RSSI_RANGE_DBM = 18;
+    private static final int MIN_RSSI_MEDIAN_DBM = -65;
+    private static final int MAX_RSSI_MEDIAN_DBM = -45;
 
     private boolean isReferenceDevice;
     private BleScanner mBleScanner;
@@ -66,15 +67,19 @@ public class BleRssiPrecisionActivity extends PassFailButtons.Activity {
     private LinearLayout mRefModeLayout;
     private TextView mDeviceIdInfoTextView;
     private TextView mDeviceFoundTextView;
+    private TextView mDutTestInfoTextView;
+    private TextView mRefTestInfoTextView;
     private EditText mReferenceDeviceIdInput;
     private String mReferenceDeviceName;
     private CheckBox mIsReferenceDeviceCheckbox;
     private boolean mTestPassed;
+    private byte mCurrentReferenceDeviceId = 0;
+    private byte mRssiMedianFromReferenceDevice = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.ble_rssi_precision);
+        setContentView(R.layout.ble_rx_tx_offset_precision);
         setPassFailButtonClickListeners();
         getPassButton().setEnabled(false);
         mStartTestButton = findViewById(R.id.start_test);
@@ -87,6 +92,8 @@ public class BleRssiPrecisionActivity extends PassFailButtons.Activity {
         mIsReferenceDeviceCheckbox = findViewById(R.id.is_reference_device);
         mDutModeLayout = findViewById(R.id.dut_mode_layout);
         mRefModeLayout = findViewById(R.id.ref_mode_layout);
+        mDutTestInfoTextView = findViewById(R.id.dut_test_result_info);
+        mRefTestInfoTextView = findViewById(R.id.ref_test_result_info);
         DeviceFeatureChecker.checkFeatureSupported(this, getPassButton(),
                 PackageManager.FEATURE_BLUETOOTH_LE);
         BluetoothManager bluetoothManager = getSystemService(BluetoothManager.class);
@@ -98,19 +105,21 @@ public class BleRssiPrecisionActivity extends PassFailButtons.Activity {
         mStopAdvertisingButton.setEnabled(false);
         mDeviceIdInfoTextView.setVisibility(View.GONE);
         mDeviceFoundTextView.setVisibility(View.GONE);
+        mRefTestInfoTextView.setVisibility(View.GONE);
+        mDutTestInfoTextView.setVisibility(View.GONE);
         isReferenceDevice = mIsReferenceDeviceCheckbox.isChecked();
         checkUiMode();
         mIsReferenceDeviceCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
             isReferenceDevice = isChecked;
             checkUiMode();
         });
-        mStartTestButton.setOnClickListener(v -> startTest());
+        mStartTestButton.setOnClickListener(v -> startTestAsDut());
         mStopTestButton.setOnClickListener(v -> stopTest());
-        mStartAdvertisingButton.setOnClickListener(v -> startAdvertising());
-        mStopAdvertisingButton.setOnClickListener(v -> stopAdvertising());
+        mStartAdvertisingButton.setOnClickListener(v -> startTestAsReferenceDevice());
+        mStopAdvertisingButton.setOnClickListener(v -> stopTest());
     }
 
-    private void startTest() {
+    private void startTestAsDut() {
         if (!checkBluetoothEnabled()) {
             return;
         }
@@ -120,7 +129,9 @@ public class BleRssiPrecisionActivity extends PassFailButtons.Activity {
         }
         mStartTestButton.setEnabled(false);
         mStopTestButton.setEnabled(true);
+        mCurrentReferenceDeviceId = Byte.parseByte(mReferenceDeviceIdInput.getText().toString());
         mIsReferenceDeviceCheckbox.setEnabled(false);
+        startAdvertising();
         mBleScanner.startScanning((uuids,
                 macAddress,
                 deviceName,
@@ -129,7 +140,7 @@ public class BleRssiPrecisionActivity extends PassFailButtons.Activity {
                 rssiMedian,
                 rawRssi) -> {
 
-            if (deviceId != Byte.parseByte(mReferenceDeviceIdInput.getText().toString())) {
+            if (deviceId != mCurrentReferenceDeviceId) {
                 //reference device does not match discovered device and scan should be discarded
                 Log.i(TAG, "Reference device does not match discovered device. Skipping");
                 return;
@@ -139,34 +150,87 @@ public class BleRssiPrecisionActivity extends PassFailButtons.Activity {
             resultList.add(rawRssi);
             mDeviceFoundTextView.setVisibility(View.VISIBLE);
             mReferenceDeviceName = referenceDeviceName;
+            mRssiMedianFromReferenceDevice = rssiMedian;
+            if (resultList.size() >= 1000) {
+                Log.i(TAG, "Data collection complete");
+                if (mRssiMedianFromReferenceDevice == 0) {
+                    Log.i(TAG, "Awaiting rssi median from reference device");
+                    return;
+                }
+                mBleScanner.stopScanning();
+                computeTestResults(resultList);
+            }
             String deviceFoundText = getString(R.string.device_found_presence,
                     resultList.size(), 1000);
             mDeviceFoundTextView.setText(deviceFoundText);
+        });
+    }
+
+    private void startTestAsReferenceDevice() {
+        if (!checkBluetoothEnabled()) {
+            return;
+        }
+        startAdvertising();
+        mBleScanner.startScanning((uuids,
+                macAddress,
+                deviceName,
+                referenceDeviceName,
+                deviceId,
+                rssiMedian,
+                rawRssi) -> {
+
+            if (deviceId != mCurrentReferenceDeviceId) {
+                //reference device does not match discovered device and scan should be discarded
+                Log.i(TAG, "Reference device does not match discovered device. Skipping");
+                return;
+            }
+            mRssiResultMap.computeIfAbsent(deviceName, k -> new ArrayList<>());
+            ArrayList<Integer> resultList = mRssiResultMap.get(deviceName);
+            resultList.add(rawRssi);
             if (resultList.size() >= 1000) {
                 Log.i(TAG, "Data collection complete");
                 mBleScanner.stopScanning();
-                mStartTestButton.setEnabled(true);
-                mStopTestButton.setEnabled(false);
                 computeTestResults(resultList);
             }
         });
+        mIsReferenceDeviceCheckbox.setEnabled(false);
     }
 
     private void computeTestResults(ArrayList<Integer> data) {
         Collections.sort(data);
-        // Calculate range at 95th percentile
-        int rssiRange = data.get(975) - data.get(25);
-        if (rssiRange <= MAX_RSSI_RANGE_DBM) {
-            makeToast("Test passed! Rssi range is: " + rssiRange);
-            getPassButton().performClick();
-            mTestPassed = true;
-        } else {
-            makeToast("Test failed! Rssi range is: " + rssiRange);
+        // Calculate median. Must be within -65dBm and -45dBm percentile
+        int rssiMedian = data.get(500);
+        if (isReferenceDevice) {
+            mRssiMedianFromReferenceDevice = (byte) rssiMedian;
+            String refDeviceTestInfo = getString(R.string.ref_test_result_info_presence,
+                    rssiMedian);
+            mRefTestInfoTextView.setText(refDeviceTestInfo);
+            mRefTestInfoTextView.setVisibility(View.VISIBLE);
+            mBleAdvertiser.stopAdvertising();
+            // Starts advertising with the median test result
+            startAdvertising();
+            return;
         }
-        data.clear();
+        String dutDeviceTestInfo = getString(R.string.dut_test_result_info_presence,
+                rssiMedian, mRssiMedianFromReferenceDevice);
+        mDutTestInfoTextView.setVisibility(View.VISIBLE);
+        mDutTestInfoTextView.setText(dutDeviceTestInfo);
+        if (rssiMedian >= MIN_RSSI_MEDIAN_DBM && rssiMedian <= MAX_RSSI_MEDIAN_DBM
+                && mRssiMedianFromReferenceDevice >= MIN_RSSI_MEDIAN_DBM
+                && mRssiMedianFromReferenceDevice <= MAX_RSSI_MEDIAN_DBM) {
+            makeToast("Test passed! TX Rssi median is: " + rssiMedian + ". Rx Rssi median is: "
+                    + mRssiMedianFromReferenceDevice);
+            mTestPassed = true;
+            getPassButton().performClick();
+        } else {
+            makeToast("Test failed! TX Rssi median is: " + rssiMedian + ". Rx Rssi median is: "
+                    + mRssiMedianFromReferenceDevice);
+        }
+        stopTest();
     }
 
     private void stopTest() {
+        stopAdvertising();
         mBleScanner.stopScanning();
         for (String device : mRssiResultMap.keySet()) {
             mRssiResultMap.get(device).clear();
@@ -174,13 +238,18 @@ public class BleRssiPrecisionActivity extends PassFailButtons.Activity {
         mStopTestButton.setEnabled(false);
         mStartTestButton.setEnabled(true);
         mIsReferenceDeviceCheckbox.setEnabled(true);
+        mRssiMedianFromReferenceDevice = 0;
+        mCurrentReferenceDeviceId = 0;
+        mRefTestInfoTextView.setVisibility(View.GONE);
+        mDeviceFoundTextView.setVisibility(View.GONE);
+        mDutTestInfoTextView.setVisibility(View.GONE);
     }
 
     private void startAdvertising() {
         if (!checkBluetoothEnabled()) {
             return;
         }
-        byte randomAdvertiserDeviceId = getRandomDeviceId();
+        byte randomAdvertiserDeviceId = getAdvertiserDeviceId();
         String deviceIdInfoText = getString(R.string.device_id_info_presence,
                 randomAdvertiserDeviceId);
         mDeviceIdInfoTextView.setText(deviceIdInfoText);
@@ -193,7 +262,8 @@ public class BleRssiPrecisionActivity extends PassFailButtons.Activity {
             packetDeviceName = DEVICE_NAME;
         }
         mBleAdvertiser.startAdvertising(
-                new BleAdvertisingPacket(packetDeviceName, randomAdvertiserDeviceId, (byte)0).toBytes());
+                new BleAdvertisingPacket(packetDeviceName, randomAdvertiserDeviceId,
+                        mRssiMedianFromReferenceDevice).toBytes());
         mStartAdvertisingButton.setEnabled(false);
         mStopAdvertisingButton.setEnabled(true);
     }
@@ -202,6 +272,8 @@ public class BleRssiPrecisionActivity extends PassFailButtons.Activity {
         mBleAdvertiser.stopAdvertising();
         mStopAdvertisingButton.setEnabled(false);
         mStartAdvertisingButton.setEnabled(true);
+        mCurrentReferenceDeviceId = 0;
+        mRssiMedianFromReferenceDevice = 0;
         mDeviceIdInfoTextView.setVisibility(View.GONE);
     }
 
@@ -224,11 +296,15 @@ public class BleRssiPrecisionActivity extends PassFailButtons.Activity {
         }
     }
 
-    private static byte getRandomDeviceId() {
+    private byte getAdvertiserDeviceId() {
+        if (mCurrentReferenceDeviceId != 0) {
+            return mCurrentReferenceDeviceId;
+        }
         Random random = new Random();
         byte[] randomDeviceIdArray = new byte[1];
         random.nextBytes(randomDeviceIdArray);
-        return randomDeviceIdArray[0];
+        mCurrentReferenceDeviceId = randomDeviceIdArray[0];
+        return mCurrentReferenceDeviceId;
     }
 
     private void makeToast(String message) {

@@ -6732,6 +6732,8 @@ Follow the instructions on the screen to measure the frequency response for the 
     <string name="stop_advertising_presence">Stop Advertising</string>
     <string name="device_id_info_presence">You are advertising with deviceId: %1$d</string>
     <string name="device_found_presence">Reference device found. %1$d of %2$d samples collected</string>
+    <string name="dut_test_result_info_presence">Tx RSSI median: %1$d. Rx RSSI median received from reference device: %2$d</string>
+    <string name="ref_test_result_info_presence">Rx RSSI median computed: %1$d.</string>
     <string name="reference_device_id_input_presence">Enter the device ID displayed on the advertising device</string>
 
     <!-- Strings for BLE RSSI Precision Test -->
@@ -6742,6 +6744,19 @@ Follow the instructions on the screen to measure the frequency response for the 
         \n1. Ensure that the reference device is already advertising.
         \n2. Input the device ID of the reference device (displayed on the reference device) into the provided field and click "Start Test"
         \n3. The test is automatically stopped and passed (or failed )when all the required data is collected
+        \nReference device instructions
+        \n1. Ensure that the "Is reference device" checkbox is checked, then click, "Start Advertising"
+    </string>
+
+    <!-- Strings for BLE Rx/Tx Offset Precision Test -->
+    <string name="ble_rx_tx_offset_precision_name">BLE Rx/Tx Offset Precision Test</string>
+    <string name="ble_rx_tx_offset_precision_test_instructions">
+        Place the device under test (DUT) at 1m from the reference device (advertising device) in line of sight environment
+        \nDUT instructions
+        \n1. Ensure that the test is already started on the reference device.
+        \n2. Input the device ID of the reference device (displayed on the reference device) into the provided field and click "Start Test"
+        \n3. The test is automatically stopped and passed (or failed) when all the required data is collected
+        \n4. The test is passed if the median RSSI from both DUT and reference device is between -45dBm and 65dBm.
         \nReference device instructions
         \n1. Ensure that the "Is reference device" checkbox is checked, then click, "Start Advertising"
     </string>
