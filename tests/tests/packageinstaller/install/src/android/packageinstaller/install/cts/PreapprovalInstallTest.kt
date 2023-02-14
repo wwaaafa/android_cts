@@ -148,13 +148,37 @@ class PreapprovalInstallTest : PackageInstallerTestBase() {
 
         val (sessionId, session) = createSession(0 /* flags */, false /* isMultiPackage */,
                 null /* packageSource */)
+        startRequestUserPreapproval(session, preparePreapprovalDetailsV2())
+        clickInstallerUIButton(INSTALL_BUTTON_ID)
+
+        // request should have succeeded
+        getInstallSessionResult()
+
+        writeSession(session, TEST_APK_NAME_V2)
+        startInstallationViaPreapprovalSession(session)
+        // No need to click installer UI here.
+        val result = getInstallSessionResult()
+        assertEquals(PackageInstaller.STATUS_SUCCESS, result.status)
+    }
+
+    /**
+     * Check that we can update an app with current app label even if the given label is
+     * different from the label from the APK file.
+     */
+    @Test
+    fun commitPreapprovalSession_updateUsingCurrentLabel_success() {
+        installTestPackage()
+        assertInstalled()
+
+        val (sessionId, session) = createSession(0 /* flags */, false /* isMultiPackage */,
+                null /* packageSource */)
         startRequestUserPreapproval(session, preparePreapprovalDetails())
         clickInstallerUIButton(INSTALL_BUTTON_ID)
 
         // request should have succeeded
         getInstallSessionResult()
 
-        writeSession(session, TEST_APK_NAME)
+        writeSession(session, TEST_APK_NAME_V2)
         startInstallationViaPreapprovalSession(session)
         // No need to click installer UI here.
         val result = getInstallSessionResult()
