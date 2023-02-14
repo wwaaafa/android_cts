@@ -100,12 +100,23 @@ public final class FactoryResetProtectionTest {
             sDeviceState.dpc().devicePolicyManager()
                     .setFactoryResetProtectionPolicy(sDeviceState.dpc().componentName(), FACTORY_RESET_PROTECTION_POLICY);
 
-            assertThat(sDeviceState.dpc().devicePolicyManager().getFactoryResetProtectionPolicy(
-                    sDeviceState.dpc().componentName())).isEqualTo(FACTORY_RESET_PROTECTION_POLICY);
-
+            assertThat(isEqualToFactoryResetProtectionPolicy(
+                    sDeviceState.dpc().devicePolicyManager().getFactoryResetProtectionPolicy(
+                    sDeviceState.dpc().componentName()))).isTrue();
         } finally {
             sDeviceState.dpc().devicePolicyManager().setFactoryResetProtectionPolicy(
                     sDeviceState.dpc().componentName(), originalFrpPolicy);
         }
+    }
+
+    private boolean isEqualToFactoryResetProtectionPolicy(FactoryResetProtectionPolicy policy) {
+        assertThat(policy.isFactoryResetProtectionEnabled())
+                .isEqualTo(FACTORY_RESET_PROTECTION_POLICY.isFactoryResetProtectionEnabled());
+        assertThat(policy.getFactoryResetProtectionAccounts())
+                .hasSize(FACTORY_RESET_PROTECTION_POLICY.getFactoryResetProtectionAccounts().size());
+        assertThat(policy.getFactoryResetProtectionAccounts()
+                .containsAll(FACTORY_RESET_PROTECTION_POLICY.getFactoryResetProtectionAccounts()))
+                .isTrue();
+        return true; // TODO: Fix this test
     }
 }

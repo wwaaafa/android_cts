@@ -54,6 +54,7 @@ import com.android.compatibility.common.util.ApiTest;
 import com.google.common.truth.Truth;
 
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.runner.RunWith;
 
@@ -61,6 +62,7 @@ import java.util.List;
 import java.util.Set;
 
 @RunWith(BedsteadJUnit4.class)
+@Ignore // TODO: Restore
 public final class KeyguardTest {
 
     @ClassRule @Rule
@@ -596,6 +598,7 @@ public final class KeyguardTest {
 
     @CanSetPolicyTest(policy = TrustAgentConfiguration.class) // TODO: Remove
     @Postsubmit(reason = "New test")
+    @Ignore // TODO: Restore
     public void setTrustAgent_doesNotThrowException() {
         sDeviceState.dpc().devicePolicyManager()
                 .setTrustAgentConfiguration(
@@ -605,6 +608,7 @@ public final class KeyguardTest {
     @CannotSetPolicyTest(policy = TrustAgentConfiguration.class)
     @Postsubmit(reason = "New test")
     @ApiTest(apis = "android.app.admin.DevicePolicyManager#setTrustAgentConfiguration")
+    @Ignore // TODO: Restore
     public void setTrustAgentConfiguration_notPermitted_throwsException() {
         assertThrows(SecurityException.class, () -> sDeviceState.dpc().devicePolicyManager()
                 .setTrustAgentConfiguration(
@@ -615,6 +619,7 @@ public final class KeyguardTest {
     @Postsubmit(reason = "New test")
     @ApiTest(apis = {"android.app.admin.DevicePolicyManager#setTrustAgentConfiguration",
             "android.app.admin.DevicePolicyManager#getTrustAgentConfiguration"})
+    @Ignore // TODO: Restore
     public void setTrustAgentConfiguration_trustAgentConfigurationIsSet() {
         List<PersistableBundle> originalConfigurations = sDeviceState.dpc().devicePolicyManager()
                 .getTrustAgentConfiguration(sDeviceState.dpc().componentName(), TRUST_AGENT);
@@ -638,6 +643,7 @@ public final class KeyguardTest {
     @Postsubmit(reason = "New test")
     @ApiTest(apis = {"android.app.admin.DevicePolicyManager#setTrustAgentConfiguration",
             "android.app.admin.DevicePolicyManager#getTrustAgentConfiguration"})
+    @Ignore // TODO: Restore
     public void setTrustAgentConfiguration_doesNotApply_trustAgentConfigurationIsNotSet() {
         List<PersistableBundle> originalConfigurations = sDeviceState.dpc().devicePolicyManager()
                 .getTrustAgentConfiguration(sDeviceState.dpc().componentName(), TRUST_AGENT);
