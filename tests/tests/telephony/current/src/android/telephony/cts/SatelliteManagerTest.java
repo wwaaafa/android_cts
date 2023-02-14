@@ -37,7 +37,6 @@ import androidx.test.InstrumentationRegistry;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -100,6 +99,16 @@ public class SatelliteManagerTest {
         assertThrows(SecurityException.class,
                 () -> mSatelliteManager.provisionSatelliteService(
                         "", null, getContext().getMainExecutor(), error::offer));
+    }
+
+    @Test
+    public void testDeprovisionSatelliteService() {
+        LinkedBlockingQueue<Integer> error = new LinkedBlockingQueue<>(1);
+
+        // Throws SecurityException as we do not have SATELLITE_COMMUNICATION permission.
+        assertThrows(SecurityException.class,
+                () -> mSatelliteManager.deprovisionSatelliteService(
+                        "", getContext().getMainExecutor(), error::offer));
     }
 
     @Test
@@ -251,10 +260,9 @@ public class SatelliteManagerTest {
     private static class SatelliteProvisionStateListenerTest extends SatelliteCallback
             implements SatelliteCallback.SatelliteProvisionStateListener {
         @Override
-        public void onSatelliteProvisionStateChanged(int[] features,
-                boolean provisioned) {
+        public void onSatelliteProvisionStateChanged(boolean provisioned) {
             Log.d(TAG, "onSatelliteProvisionStateChanged: features="
-                    + Arrays.toString(features) + ", provisioned=" + provisioned);
+                    + ", provisioned=" + provisioned);
         }
     }
 }
