@@ -18,6 +18,7 @@ package android.voicerecognition.cts;
 
 import static android.voicerecognition.cts.CallbackMethod.CALLBACK_METHOD_END_SEGMENTED_SESSION;
 import static android.voicerecognition.cts.CallbackMethod.CALLBACK_METHOD_ERROR;
+import static android.voicerecognition.cts.CallbackMethod.CALLBACK_METHOD_LANGUAGE_DETECTION;
 import static android.voicerecognition.cts.CallbackMethod.CALLBACK_METHOD_RESULTS;
 import static android.voicerecognition.cts.CallbackMethod.CALLBACK_METHOD_SEGMENTS_RESULTS;
 import static android.voicerecognition.cts.CallbackMethod.CALLBACK_METHOD_UNSPECIFIED;
@@ -290,7 +291,8 @@ abstract class AbstractRecognitionServiceTest {
                 SequenceExecutionInfo.Scenario.START_START,
                 SequenceExecutionInfo.Scenario.START_STOP_CANCEL,
                 SequenceExecutionInfo.Scenario.START_ERROR_CANCEL,
-                SequenceExecutionInfo.Scenario.START_ERROR_DESTROY};
+                SequenceExecutionInfo.Scenario.START_ERROR_DESTROY,
+                SequenceExecutionInfo.Scenario.START_DETECTION_STOP_RESULTS};
     }
 
     @Test
@@ -314,7 +316,8 @@ abstract class AbstractRecognitionServiceTest {
                 SequenceExecutionInfo.Scenario.START_SEGMENT_ENDOFSESSION,
                 SequenceExecutionInfo.Scenario.START_CANCEL,
                 SequenceExecutionInfo.Scenario.START_START,
-                SequenceExecutionInfo.Scenario.START_STOP_CANCEL);
+                SequenceExecutionInfo.Scenario.START_STOP_CANCEL,
+                SequenceExecutionInfo.Scenario.START_DETECTION_STOP_RESULTS);
 
         List<Object[]> scenarios = new ArrayList<>();
         for (int i = 0; i < concurrencyObservableScenarios.size(); i++) {
@@ -572,6 +575,7 @@ abstract class AbstractRecognitionServiceTest {
             START_STOP_CANCEL,
             START_ERROR_CANCEL,
             START_ERROR_DESTROY,
+            START_DETECTION_STOP_RESULTS,
 
             // TODO(kiridza): Investigate why these scenarios are flaky (5-10% failure).
             START_STOP_DESTROY,
@@ -758,6 +762,21 @@ abstract class AbstractRecognitionServiceTest {
                             true,
                             false),
                             /* expected callback methods invoked: */ ImmutableList.of(),
+                            /* expected error codes received: */ ImmutableList.of());
+                case START_DETECTION_STOP_RESULTS:
+                    return new SequenceExecutionInfo(
+                            /* service methods to call: */ ImmutableList.of(
+                            RECOGNIZER_METHOD_START_LISTENING,
+                            RECOGNIZER_METHOD_STOP_LISTENING),
+                            /* callback methods to call: */ ImmutableList.of(
+                            CALLBACK_METHOD_LANGUAGE_DETECTION,
+                            CALLBACK_METHOD_RESULTS),
+                            /* expected service methods propagated: */ ImmutableList.of(
+                            true,
+                            true),
+                            /* expected callback methods invoked: */ ImmutableList.of(
+                            CALLBACK_METHOD_LANGUAGE_DETECTION,
+                            CALLBACK_METHOD_RESULTS),
                             /* expected error codes received: */ ImmutableList.of());
 
                 // Sad scenarios.

@@ -255,6 +255,11 @@ public class SpeechRecognitionActivity extends Activity {
             }
 
             @Override
+            public void onLanguageDetection(@NonNull Bundle results) {
+                mCallbackMethodsInvoked.add(CallbackMethod.CALLBACK_METHOD_LANGUAGE_DETECTION);
+            }
+
+            @Override
             public void onEvent(int eventType, Bundle params) {
             }
         }
