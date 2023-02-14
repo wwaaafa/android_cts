@@ -88,6 +88,8 @@ import com.android.bedstead.harrier.annotations.EnsureScreenIsOn;
 import com.android.bedstead.harrier.annotations.EnsureTestAppHasAppOp;
 import com.android.bedstead.harrier.annotations.EnsureTestAppHasPermission;
 import com.android.bedstead.harrier.annotations.EnsureTestAppInstalled;
+import com.android.bedstead.harrier.annotations.EnsureWifiDisabled;
+import com.android.bedstead.harrier.annotations.EnsureWifiEnabled;
 import com.android.bedstead.harrier.annotations.OtherUser;
 import com.android.bedstead.harrier.annotations.RequireAospBuild;
 import com.android.bedstead.harrier.annotations.RequireCnGmsBuild;
@@ -1391,5 +1393,17 @@ public class DeviceStateTest {
     @Test
     public void ensureDoesNotHaveUserRestrictionAnnotation_differentUser_userRestrictionIsNotSet() {
         assertThat(TestApis.devicePolicy().userRestrictions().isSet(USER_RESTRICTION)).isFalse();
+    }
+
+    @EnsureWifiEnabled
+    @Test
+    public void ensureWifiEnabledAnnotation_wifiIsEnabled() {
+        assertThat(TestApis.wifi().isEnabled()).isTrue();
+    }
+
+    @EnsureWifiDisabled
+    @Test
+    public void ensureWifiDisabledAnnotation_wifiIsNotEnabled() {
+        assertThat(TestApis.wifi().isEnabled()).isFalse();
     }
 }

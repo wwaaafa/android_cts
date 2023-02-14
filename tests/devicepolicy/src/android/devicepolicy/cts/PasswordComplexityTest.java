@@ -55,7 +55,7 @@ import org.junit.Rule;
 import org.junit.runner.RunWith;
 
 @RunWith(BedsteadJUnit4.class)
-public final class PasswordComplexityTest {
+public final class PasswordComplexityTest { // Skipped checking on headless because of known password bugs
 
     @ClassRule @Rule
     public static final DeviceState sDeviceState = new DeviceState();
