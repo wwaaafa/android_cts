@@ -137,7 +137,6 @@ public final class ScreenCaptureDisabledTest {
     @Postsubmit(reason = "new test")
     @ApiTest(apis = {"android.app.admin.DevicePolicyManager#setScreenCaptureDisabled",
             "android.app.admin.DevicePolicyManager#getScreenCaptureDisabled"})
-    @LocalPresubmit
     public void setScreenCaptureDisabled_true_checkWithDPC_works() {
         mDevicePolicyManager.setScreenCaptureDisabled(mAdmin, true);
 
