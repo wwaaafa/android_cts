@@ -848,6 +848,7 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                         CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
                         Integer.class)
                 .requireProperty()
+                .setAllPossibleEnumValues(VEHICLE_GEARS)
                 .setPossibleConfigArrayValues(VEHICLE_GEARS)
                 .requirePropertyValueTobeInConfigArray()
                 .addReadPermission(Car.PERMISSION_POWERTRAIN)
@@ -1486,6 +1487,7 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                         VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
                         CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
                         Integer.class)
+                .setAllPossibleEnumValues(VEHICLE_GEARS)
                 .setPossibleConfigArrayValues(VEHICLE_GEARS)
                 .requirePropertyValueTobeInConfigArray()
                 .addReadPermission(Car.PERMISSION_POWERTRAIN)
@@ -2097,6 +2099,7 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                         VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
                         CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
                         Integer.class)
+                .setAllPossibleEnumValues(DISTANCE_DISPLAY_UNITS)
                 .setPossibleConfigArrayValues(DISTANCE_DISPLAY_UNITS)
                 .requirePropertyValueTobeInConfigArray()
                 .verifySetterWithConfigArrayValues()
@@ -2115,6 +2118,7 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                         VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
                         CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
                         Integer.class)
+                .setAllPossibleEnumValues(VOLUME_DISPLAY_UNITS)
                 .setPossibleConfigArrayValues(VOLUME_DISPLAY_UNITS)
                 .requirePropertyValueTobeInConfigArray()
                 .verifySetterWithConfigArrayValues()
@@ -2199,6 +2203,7 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                         VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
                         CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
                         Integer.class)
+                .setAllPossibleEnumValues(PRESSURE_DISPLAY_UNITS)
                 .setPossibleConfigArrayValues(PRESSURE_DISPLAY_UNITS)
                 .requirePropertyValueTobeInConfigArray()
                 .verifySetterWithConfigArrayValues()
@@ -2217,6 +2222,7 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                         VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
                         CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
                         Integer.class)
+                .setAllPossibleEnumValues(BATTERY_DISPLAY_UNITS)
                 .setPossibleConfigArrayValues(BATTERY_DISPLAY_UNITS)
                 .requirePropertyValueTobeInConfigArray()
                 .verifySetterWithConfigArrayValues()
@@ -2235,6 +2241,7 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                         VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
                         CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
                         Integer.class)
+                .setAllPossibleEnumValues(SPEED_DISPLAY_UNITS)
                 .setPossibleConfigArrayValues(SPEED_DISPLAY_UNITS)
                 .requirePropertyValueTobeInConfigArray()
                 .verifySetterWithConfigArrayValues()
@@ -4215,6 +4222,7 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                         VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
                         CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
                         Integer.class)
+                .setAllPossibleEnumValues(HVAC_TEMPERATURE_DISPLAY_UNITS)
                 .setPossibleConfigArrayValues(HVAC_TEMPERATURE_DISPLAY_UNITS)
                 .requirePropertyValueTobeInConfigArray()
                 .verifySetterWithConfigArrayValues()
