@@ -43,6 +43,7 @@ android_test {
     ],
     data: [
         ":CtsEmptyTestApp",
+        ":CtsEmptyTestAppV2",
         ":CtsEmptyInstallerApp",
         ":CtsEmptyTestApp_NotAllowUpdateOwnership",
     ],
