@@ -515,6 +515,7 @@ public class TvInteractiveAppServiceTest {
         assertNotNull(mSession);
         mSession.resetValues();
         final float[] testSpeeds = new float[] {1.0f, 0.0f, 1.5f};
+        mTvIAppView.sendAvailableSpeeds(testSpeeds);
         PollingCheck.waitFor(TIME_OUT_MS, () -> mSession.mAvailableSpeedsCount > 0);
         assertThat(mSession.mAvailableSpeedsCount).isEqualTo(1);
         assertThat(mSession.mAvailableSpeeds).isEqualTo(testSpeeds);
@@ -579,7 +580,7 @@ public class TvInteractiveAppServiceTest {
         PollingCheck.waitFor(TIME_OUT_MS, () -> mSession.mTvMessageCount > 0);
         assertThat(mSession.mTvMessageCount).isEqualTo(1);
         assertThat(mSession.mTvMessageType).isEqualTo(TvInputManager.TV_MESSAGE_TYPE_WATERMARK);
-        assertThat(mSession.mTvMessageData).isEqualTo(testBundle);
+        assertBundlesAreEqual(mSession.mTvMessageData, testBundle);
     }
 
     @Test
