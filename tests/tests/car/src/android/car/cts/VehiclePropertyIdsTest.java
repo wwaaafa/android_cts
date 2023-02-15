@@ -53,8 +53,17 @@ public class VehiclePropertyIdsTest extends AbstractCarLessTestCase {
         assertThat(VehiclePropertyIds.toString(
                 VehiclePropertyIds.EMERGENCY_LANE_KEEP_ASSIST_ENABLED))
                 .isEqualTo("EMERGENCY_LANE_KEEP_ASSIST_ENABLED");
-        assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.ADAPTIVE_CRUISE_CONTROL_ENABLED))
-                .isEqualTo("ADAPTIVE_CRUISE_CONTROL_ENABLED");
+        assertThat(VehiclePropertyIds.toString(
+                VehiclePropertyIds.EMERGENCY_LANE_KEEP_ASSIST_STATE))
+                .isEqualTo("EMERGENCY_LANE_KEEP_ASSIST_STATE");
+        assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.CRUISE_CONTROL_ENABLED))
+                .isEqualTo("CRUISE_CONTROL_ENABLED");
+        assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.CRUISE_CONTROL_TYPE))
+                .isEqualTo("CRUISE_CONTROL_TYPE");
+        assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.CRUISE_CONTROL_STATE))
+                .isEqualTo("CRUISE_CONTROL_STATE");
+        assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.CRUISE_CONTROL_COMMAND))
+                .isEqualTo("CRUISE_CONTROL_COMMAND");
         assertThat(VehiclePropertyIds.toString(VehiclePropertyIds.HANDS_ON_DETECTION_ENABLED))
                 .isEqualTo("HANDS_ON_DETECTION_ENABLED");
         assertThat(
