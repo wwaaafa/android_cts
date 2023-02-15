@@ -597,7 +597,7 @@ public final class KeyguardTest {
 
     @CanSetPolicyTest(policy = TrustAgentConfiguration.class) // TODO: Remove
     @Postsubmit(reason = "New test")
-    public void setTrustAgent_doesNotThrowException() {
+    public void setTrustAgentConfiguration_doesNotThrowException() {
         sDeviceState.dpc().devicePolicyManager()
                 .setTrustAgentConfiguration(
                         sDeviceState.dpc().componentName(), TRUST_AGENT, CONFIGURATION);
