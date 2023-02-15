@@ -247,7 +247,7 @@ class PermissionTest23 : BaseUsePermissionTest() {
             android.Manifest.permission.CALL_PHONE,
             android.Manifest.permission.RECORD_AUDIO,
             android.Manifest.permission.CAMERA,
-            android.Manifest.permission.READ_EXTERNAL_STORAGE, targetSdk = 23
+            android.Manifest.permission.READ_EXTERNAL_STORAGE
         )
         // Don't use UI for granting location and sensor permissions as they show another dialog
         uiAutomation.grantRuntimePermission(
@@ -307,12 +307,12 @@ class PermissionTest23 : BaseUsePermissionTest() {
         Assume.assumeFalse("other form factors might not support the ask button",
                 isTv || isAutomotive || isWatch)
 
-        grantAppPermissions(android.Manifest.permission.ACCESS_BACKGROUND_LOCATION, targetSdk = 23)
+        grantAppPermissions(android.Manifest.permission.ACCESS_BACKGROUND_LOCATION)
         assertAppHasPermission(android.Manifest.permission.ACCESS_BACKGROUND_LOCATION, true)
         assertAppHasPermission(android.Manifest.permission.ACCESS_FINE_LOCATION, true)
         assertAppHasPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION, true)
 
-        revokeAppPermissions(android.Manifest.permission.ACCESS_BACKGROUND_LOCATION, targetSdk = 23)
+        revokeAppPermissions(android.Manifest.permission.ACCESS_BACKGROUND_LOCATION)
         SystemUtil.runWithShellPermissionIdentity {
             val perms = listOf(android.Manifest.permission.ACCESS_BACKGROUND_LOCATION,
                     android.Manifest.permission.ACCESS_FINE_LOCATION,
