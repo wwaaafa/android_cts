@@ -138,12 +138,6 @@ public class WebViewClientTest extends SharedWebViewTest {
         return environment;
     }
 
-    private void startServer() {
-        assertNull(mWebServer);
-        mWebServer = getTestEnvironment().getWebServer();
-        mWebServer.start(SslMode.INSECURE);
-    }
-
     /**
      * This should remain functionally equivalent to
      * androidx.webkit.WebViewClientCompatTest#testShouldOverrideUrlLoadingDefault. Modifications
@@ -184,7 +178,7 @@ public class WebViewClientTest extends SharedWebViewTest {
     // TODO(sgurun) upstream this test to Aw.
     @Test
     public void testShouldOverrideUrlLoadingOnCreateWindow() throws Exception {
-        startServer();
+        mWebServer = getTestEnvironment().getSetupWebServer(SslMode.INSECURE);
         // WebViewClient for main window
         final MockWebViewClient mainWebViewClient = new MockWebViewClient();
         // WebViewClient for child window
@@ -258,7 +252,7 @@ public class WebViewClientTest extends SharedWebViewTest {
     public void testLoadPage() throws Exception {
         final MockWebViewClient webViewClient = new MockWebViewClient();
         mOnUiThread.setWebViewClient(webViewClient);
-        startServer();
+        mWebServer = getTestEnvironment().getSetupWebServer(SslMode.INSECURE);
         String url = mWebServer.getAssetUrl(TestHtmlConstants.HELLO_WORLD_URL);
 
         assertFalse(webViewClient.hasOnPageStartedCalled());
@@ -301,7 +295,7 @@ public class WebViewClientTest extends SharedWebViewTest {
         List<HttpHeader> headers = new ArrayList<HttpHeader>();
         headers.add(HttpHeader.create(headerName, headerValue));
 
-        startServer();
+        mWebServer = getTestEnvironment().getSetupWebServer(SslMode.INSECURE);
         String url = mWebServer.setResponse(path, page, headers);
         assertFalse(webViewClient.hasOnReceivedLoginRequest());
         mOnUiThread.loadUrlAndWaitForCompletion(url);
@@ -340,7 +334,7 @@ public class WebViewClientTest extends SharedWebViewTest {
      */
     @Test
     public void testOnReceivedErrorForSubresource() throws Exception {
-        startServer();
+        mWebServer = getTestEnvironment().getSetupWebServer(SslMode.INSECURE);
 
         final MockWebViewClient webViewClient = new MockWebViewClient();
         mOnUiThread.setWebViewClient(webViewClient);
@@ -355,7 +349,7 @@ public class WebViewClientTest extends SharedWebViewTest {
 
     @Test
     public void testOnReceivedHttpError() throws Exception {
-        startServer();
+        mWebServer = getTestEnvironment().getSetupWebServer(SslMode.INSECURE);
         final MockWebViewClient webViewClient = new MockWebViewClient();
         mOnUiThread.setWebViewClient(webViewClient);
 
@@ -368,7 +362,7 @@ public class WebViewClientTest extends SharedWebViewTest {
 
     @Test
     public void testOnFormResubmission() throws Exception {
-        startServer();
+        mWebServer = getTestEnvironment().getSetupWebServer(SslMode.INSECURE);
         final MockWebViewClient webViewClient = new MockWebViewClient();
         mOnUiThread.setWebViewClient(webViewClient);
         final WebSettings settings = mOnUiThread.getSettings();
@@ -394,7 +388,7 @@ public class WebViewClientTest extends SharedWebViewTest {
 
     @Test
     public void testDoUpdateVisitedHistory() throws Exception {
-        startServer();
+        mWebServer = getTestEnvironment().getSetupWebServer(SslMode.INSECURE);
         final MockWebViewClient webViewClient = new MockWebViewClient();
         mOnUiThread.setWebViewClient(webViewClient);
 
@@ -413,7 +407,7 @@ public class WebViewClientTest extends SharedWebViewTest {
 
     @Test
     public void testOnReceivedHttpAuthRequest() throws Exception {
-        startServer();
+        mWebServer = getTestEnvironment().getSetupWebServer(SslMode.INSECURE);
         final MockWebViewClient webViewClient = new MockWebViewClient();
         mOnUiThread.setWebViewClient(webViewClient);
 
@@ -453,7 +447,7 @@ public class WebViewClientTest extends SharedWebViewTest {
 
     @Test
     public void testOnScaleChanged() throws Throwable {
-        startServer();
+        mWebServer = getTestEnvironment().getSetupWebServer(SslMode.INSECURE);
         final MockWebViewClient webViewClient = new MockWebViewClient();
         mOnUiThread.setWebViewClient(webViewClient);
 
@@ -516,7 +510,7 @@ public class WebViewClientTest extends SharedWebViewTest {
         TestClient client = new TestClient();
         mOnUiThread.setWebViewClient(client);
 
-        startServer();
+        mWebServer = getTestEnvironment().getSetupWebServer(SslMode.INSECURE);
         String mainUrl = mWebServer.setResponse(mainPath, mainPage, null);
         mOnUiThread.loadUrlAndWaitForCompletion(mainUrl, headers);
         // Inspect the fields of the saved WebResourceRequest
@@ -565,7 +559,7 @@ public class WebViewClientTest extends SharedWebViewTest {
         TestClient client = new TestClient();
         mOnUiThread.setWebViewClient(client);
 
-        startServer();
+        mWebServer = getTestEnvironment().getSetupWebServer(SslMode.INSECURE);
         String interceptUrl = mWebServer.getAbsoluteUrl(interceptPath);
         // JavaScript which makes a synchronous AJAX request and logs and returns the status
         String js =
@@ -622,7 +616,7 @@ public class WebViewClientTest extends SharedWebViewTest {
      */
     @Test
     public void testOnSafeBrowsingHitBackToSafety() throws Throwable {
-        startServer();
+        mWebServer = getTestEnvironment().getSetupWebServer(SslMode.INSECURE);
         String url = mWebServer.getAssetUrl(TestHtmlConstants.HELLO_WORLD_URL);
         mOnUiThread.loadUrlAndWaitForCompletion(url);
         final String ORIGINAL_URL = mOnUiThread.getUrl();
@@ -657,7 +651,7 @@ public class WebViewClientTest extends SharedWebViewTest {
      */
     @Test
     public void testOnSafeBrowsingHitProceed() throws Throwable {
-        startServer();
+        mWebServer = getTestEnvironment().getSetupWebServer(SslMode.INSECURE);
         String url = mWebServer.getAssetUrl(TestHtmlConstants.HELLO_WORLD_URL);
         mOnUiThread.loadUrlAndWaitForCompletion(url);
         final String ORIGINAL_URL = mOnUiThread.getUrl();
@@ -681,7 +675,7 @@ public class WebViewClientTest extends SharedWebViewTest {
 
     private void testOnSafeBrowsingCode(String expectedUrl, int expectedThreatType)
             throws Throwable {
-        startServer();
+        mWebServer = getTestEnvironment().getSetupWebServer(SslMode.INSECURE);
         String url = mWebServer.getAssetUrl(TestHtmlConstants.HELLO_WORLD_URL);
         mOnUiThread.loadUrlAndWaitForCompletion(url);
         final String ORIGINAL_URL = mOnUiThread.getUrl();
