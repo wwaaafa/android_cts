@@ -28,6 +28,7 @@ import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.RestrictionsManager;
 import android.content.pm.CrossProfileApps;
 import android.content.pm.LauncherApps;
 import android.content.pm.PackageManager;
@@ -64,6 +65,8 @@ import com.android.eventlib.premade.EventLibService;
                         "context.getSystemService(android.app.NotificationManager.class)"),
                 @FrameworkClass(frameworkClass = TelecomManager.class, constructor =
                         "context.getSystemService(android.telecom.TelecomManager.class)"),
+                @FrameworkClass(frameworkClass = RestrictionsManager.class, constructor =
+                        "context.getSystemService(android.content.RestrictionsManager.class)")
         }
 )
 public final class TestAppAppComponentFactory extends AppComponentFactory {
