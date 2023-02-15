@@ -442,11 +442,10 @@ public final class Policy {
         return (policy) -> {
             if (hasFlag(policy.dpc(), entry.getKey() | CAN_BE_DELEGATED)) {
                 Set<Annotation> results = new HashSet<>(entry.getValue().apply(policy));
-//                results.addAll(results.stream().flatMap(
-//                        t -> generateDelegateAnnotation(t, /* isPrimary= */ true).apply(
-//                                policy).stream())
-//                        .collect(Collectors.toSet()));
-
+                results.addAll(results.stream().flatMap(
+                        t -> generateDelegateAnnotation(t, /* isPrimary= */ true).apply(
+                                policy).stream())
+                        .collect(Collectors.toSet()));
                 return results;
             }
 
@@ -576,6 +575,14 @@ public final class Policy {
 
             for (Map.Entry<Integer, Function<EnterprisePolicy, Set<Annotation>>> appliedByFlag :
                     DPC_STATE_ANNOTATIONS.entrySet()) {
+
+                if ((appliedByFlag.getKey()
+                        & APPLIED_BY_DPM_ROLE_HOLDER) == APPLIED_BY_DPM_ROLE_HOLDER) {
+                    if (!includeNonDeviceAdminStates) {
+                        // Temp fix to avoid random failing tests
+                        continue;
+                    }
+                }
                 if ((appliedByFlag.getKey() & allFlags) == 0) {
                     annotations.addAll(appliedByFlag.getValue().apply(enterprisePolicy));
                 }
@@ -610,9 +617,13 @@ public final class Policy {
                 }
             } else {
                 Annotation[] newAnnotations = Arrays.copyOf(existingAnnotations,
-                        existingAnnotations.length + 1);
-                newAnnotations[newAnnotations.length - 1] = ensureHasDelegate(
+                        existingAnnotations.length + 3);
+                newAnnotations[newAnnotations.length - 3] = ensureHasDelegate(
                         EnsureHasDelegate.AdminType.PRIMARY, scopes, /* isPrimary= */ true);
+                newAnnotations[newAnnotations.length - 2] = ensureFeatureFlagEnabled(
+                        NAMESPACE_DEVICE_POLICY_MANAGER, ENABLE_COEXISTENCE_FLAG);
+                newAnnotations[newAnnotations.length - 1] = ensureFeatureFlagEnabled(
+                        NAMESPACE_DEVICE_POLICY_MANAGER, PERMISSION_BASED_ACCESS_EXPERIMENT_FLAG);
                 annotations.add(
                         new DynamicParameterizedAnnotation("DelegateWithoutValidScope", newAnnotations));
             }

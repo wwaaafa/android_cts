@@ -145,10 +145,11 @@ public class LockTest { // A bunch of failures already recorded - also btest str
     @Postsubmit(reason = "New test")
     @ApiTest(apis = {"android.app.admin.DevicePolicyManager#setMaximumTimeToLock",
             "android.app.admin.DevicePolicyManager#getMaximumTimeToLock"})
-    @LocalPresubmit
     public void setMaximumTimeToLock_maximumTimeToLockIsSet() {
         long originalTimeout = sDeviceState.dpc().devicePolicyManager()
                 .getMaximumTimeToLock(sDeviceState.dpc().componentName());
+
+        assertThat(TestApis.devicePolicy().getMaximumTimeToLock()).isEqualTo(TIMEOUT);
 
         try {
             sDeviceState.dpc().devicePolicyManager()
