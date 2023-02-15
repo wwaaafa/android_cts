@@ -349,7 +349,8 @@ public class ConnectedNetworkScorerTest extends WifiJUnit4TestBase {
                             assertThat(statsEntry.getRssi(link)).isLessThan(0);
                             assertThat(statsEntry.getRadioId(link)).isAtLeast(0);
                             assertThat(statsEntry.getTxLinkSpeedMbps(link)).isAtLeast(0);
-                            assertThat(statsEntry.getRxLinkSpeedMbps(link)).isAtLeast(0);
+                            // -1 is a default value for rx link speed if it is not available.
+                            assertThat(statsEntry.getRxLinkSpeedMbps(link)).isAtLeast(-1);
                             assertThat(statsEntry.getTotalTxSuccess(link)).isAtLeast(0L);
                             assertThat(statsEntry.getTotalTxRetries(link)).isAtLeast(0L);
                             assertThat(statsEntry.getTotalTxBad(link)).isAtLeast(0L);
