@@ -6541,6 +6541,29 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                 .isNotEqualTo(requestId2);
     }
 
+    @Test
+    @ApiTest(apis = {"android.car.hardware.property.CarPropertyManager#getProperty(int, int)"})
+    public void testGetProperty_multipleRequestsAtOnce_mustNotThrowException() throws Exception {
+        runWithShellPermissionIdentity(
+                () -> {
+                    // We only allow 16 sync operations at once at car service. The client will
+                    // try to issue 32 requests at the same time, but 16 of them will be bounced
+                    // back and will be retried later.
+                    Executor executor = Executors.newFixedThreadPool(32);
+                    CountDownLatch cd = new CountDownLatch(1000);
+                    for (int i = 0; i < 1000; i++) {
+                        executor.execute(() -> {
+                            mCarPropertyManager.getProperty(
+                                                VehiclePropertyIds.PERF_VEHICLE_SPEED,
+                                                VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL);
+                            cd.countDown();
+                        });
+                    }
+                    cd.await(ASYNC_WAIT_TIMEOUT_IN_SEC, TimeUnit.SECONDS);
+                },
+                Car.PERMISSION_SPEED);
+    }
+
     private int getCounterBySampleRate(float maxSampleRateHz) {
         if (Float.compare(maxSampleRateHz, (float) FAST_OR_FASTEST_EVENT_COUNTER) > 0) {
             return FAST_OR_FASTEST_EVENT_COUNTER;
