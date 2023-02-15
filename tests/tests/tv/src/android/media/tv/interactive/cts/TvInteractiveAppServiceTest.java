@@ -526,11 +526,19 @@ public class TvInteractiveAppServiceTest {
         assertNotNull(mSession);
         mSession.resetValues();
         final PlaybackParams testParams = new PlaybackParams().setSpeed(2.0f)
-                .setAudioFallbackMode(PlaybackParams.AUDIO_FALLBACK_MODE_DEFAULT);
+                .setAudioFallbackMode(PlaybackParams.AUDIO_FALLBACK_MODE_DEFAULT)
+                .setPitch(0.5f)
+                .setAudioStretchMode(PlaybackParams.AUDIO_STRETCH_MODE_VOICE);
         mTvIAppView.notifyTimeShiftPlaybackParams(testParams);
         PollingCheck.waitFor(TIME_OUT_MS, () -> mSession.mPlaybackParamCount > 0);
         assertThat(mSession.mPlaybackParamCount).isEqualTo(1);
-        assertThat(mSession.mPlaybackParams).isEqualTo(testParams);
+        assertThat(mSession.mPlaybackParams.getSpeed()).isEqualTo(testParams.getSpeed());
+        assertThat(mSession.mPlaybackParams.getAudioFallbackMode())
+                .isEqualTo(testParams.getAudioFallbackMode());
+        assertThat(mSession.mPlaybackParams.getPitch())
+                .isEqualTo(testParams.getPitch());
+        assertThat(mSession.mPlaybackParams.getAudioStretchMode())
+                .isEqualTo(testParams.getAudioStretchMode());
     }
 
     @Test
