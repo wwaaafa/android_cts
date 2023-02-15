@@ -17,6 +17,7 @@
 package android.voicerecognition.cts;
 
 import static android.voicerecognition.cts.TestObjects.ERROR_CODE;
+import static android.voicerecognition.cts.TestObjects.LANGUAGE_DETECTION_BUNDLE;
 import static android.voicerecognition.cts.TestObjects.PARTIAL_RESULTS_BUNDLE;
 import static android.voicerecognition.cts.TestObjects.READY_FOR_SPEECH_BUNDLE;
 import static android.voicerecognition.cts.TestObjects.RESULTS_BUNDLE;
@@ -220,6 +221,9 @@ public class CtsRecognitionService extends RecognitionService {
                     break;
                 case CALLBACK_METHOD_END_SEGMENTED_SESSION:
                     listener.endOfSegmentedSession();
+                    break;
+                case CALLBACK_METHOD_LANGUAGE_DETECTION:
+                    listener.languageDetection(LANGUAGE_DETECTION_BUNDLE);
                     break;
                 default:
                     fail();
