@@ -221,6 +221,15 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
     }
 
     /**
+     * Create a VisualQueryDetector but doesn't hold MANAGE_HOTWORD_DETECTION
+     */
+    public void createVisualQueryDetectorWithoutManageHotwordDetectionPermission() {
+        mServiceTriggerLatch = new CountDownLatch(1);
+        mHandler.post(() -> runWithShellPermissionIdentity(
+                () -> callCreateVisualQueryDetector(mNoOpVisualQueryDetectorCallback)));
+    }
+
+    /**
      * Create a VisualQueryDetector but doesn't hold MANAGE_HOTWORD_DETECTION but hold
      * BIND_VISUAL_QUERY_DETECTION_SERVICE.
      */
@@ -287,7 +296,7 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
                 }
             };
             mVisualQueryDetector = callCreateVisualQueryDetector(callback);
-        }, MANAGE_HOTWORD_DETECTION)); //Permission placeholder - Don't really need any
+        }, MANAGE_HOTWORD_DETECTION));
     }
 
     /**
