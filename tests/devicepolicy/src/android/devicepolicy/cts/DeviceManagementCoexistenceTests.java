@@ -62,6 +62,7 @@ import com.android.bedstead.harrier.BedsteadJUnit4;
 import com.android.bedstead.harrier.DeviceState;
 import com.android.bedstead.harrier.annotations.AfterClass;
 import com.android.bedstead.harrier.annotations.EnsureFeatureFlagEnabled;
+import com.android.bedstead.harrier.annotations.LocalPresubmit;
 import com.android.bedstead.harrier.annotations.Postsubmit;
 import com.android.bedstead.harrier.annotations.enterprise.EnsureHasDeviceOwner;
 import com.android.bedstead.harrier.annotations.enterprise.EnsureHasDevicePolicyManagerRoleHolder;
@@ -80,6 +81,7 @@ import java.util.List;
 import java.util.Set;
 
 @RunWith(BedsteadJUnit4.class)
+@LocalPresubmit
 public final class DeviceManagementCoexistenceTests {
     @ClassRule
     @Rule
