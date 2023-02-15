@@ -14,3 +14,4 @@ android.bluetooth.BluetoothManager
 android.bluetooth.BluetoothAdapter
 android.app.NotificationManager
 android.telecom.TelecomManager
+android.content.RestrictionsManager

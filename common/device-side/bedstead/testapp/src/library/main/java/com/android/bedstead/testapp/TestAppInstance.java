@@ -22,6 +22,8 @@ import android.accounts.RemoteAccountManagerWrapper;
 import android.app.NotificationManager;
 import android.app.RemoteNotificationManager;
 import android.app.RemoteNotificationManagerWrapper;
+import android.content.RemoteRestrictionsManager;
+import android.content.RemoteRestrictionsManagerWrapper;
 import android.app.admin.DevicePolicyManager;
 import android.app.admin.RemoteDevicePolicyManager;
 import android.app.admin.RemoteDevicePolicyManagerWrapper;
@@ -422,6 +424,15 @@ public class TestAppInstance implements AutoCloseable, ConnectionListener {
      */
     public RemoteTelecomManager telecomManager() {
         return new RemoteTelecomManagerWrapper(mConnector);
+    }
+
+    /**
+     * Access the {@link android.content.RestrictionsManager} using this test app.
+     *
+     * <p>Almost all methods are available. Those that are not will be missing from the interface.
+     */
+    public RemoteRestrictionsManager restrictionsManager() {
+        return new RemoteRestrictionsManagerWrapper(mConnector);
     }
 
     /**
