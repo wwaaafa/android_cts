@@ -267,7 +267,7 @@ public final class CameraTest {
         }
     }
 
-    @CannotSetPolicyTest(policy = DisallowCamera.class)
+    @CannotSetPolicyTest(policy = DisallowCamera.class, includeNonDeviceAdminStates = false)
     @Postsubmit(reason = "new test")
     @ApiTest(apis = "android.os.UserManager#DISALLOW_CAMERA")
     public void setUserRestriction_disallowCamera_cannotSet_throwsException() {
