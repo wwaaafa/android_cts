@@ -5729,7 +5729,7 @@
      <p>Not for use by third-party applications.</p>
      @hide -->
     <permission android:name="android.permission.CALL_AUDIO_INTERCEPTION"
-                android:protectionLevel="signature|privileged" />
+                android:protectionLevel="signature|privileged|role" />
 
     <!--@SystemApi Allows an application to modify system audio settings that shouldn't be
          controllable by external apps, such as volume settings or volume behaviors for audio
