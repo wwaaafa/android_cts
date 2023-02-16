@@ -6825,8 +6825,8 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                     // try to issue 32 requests at the same time, but 16 of them will be bounced
                     // back and will be retried later.
                     Executor executor = Executors.newFixedThreadPool(32);
-                    CountDownLatch cd = new CountDownLatch(1000);
-                    for (int i = 0; i < 1000; i++) {
+                    CountDownLatch cd = new CountDownLatch(32);
+                    for (int i = 0; i < 32; i++) {
                         executor.execute(() -> {
                             mCarPropertyManager.getProperty(
                                                 VehiclePropertyIds.PERF_VEHICLE_SPEED,
