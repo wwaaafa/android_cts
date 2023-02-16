@@ -2130,11 +2130,11 @@ public class AudioManagerTest extends InstrumentationTestCase {
         }
     }
 
-    @AppModeFull(reason = "Instant apps cannot hold permission.MODIFY_AUDIO_SYSTEM_SETTINGS")
+    @AppModeFull(reason = "Instant apps cannot hold permission.MODIFY_AUDIO_SETTINGS_PRIVILEGED")
     public void testIndependentStreamTypes() throws Exception {
         Log.i(TAG, "starting testIndependentStreamTypes");
         getInstrumentation().getUiAutomation()
-                .adoptShellPermissionIdentity(Manifest.permission.MODIFY_AUDIO_SYSTEM_SETTINGS);
+                .adoptShellPermissionIdentity(Manifest.permission.MODIFY_AUDIO_SETTINGS_PRIVILEGED);
         try {
             final List<Integer> independentStreamTypes = mAudioManager.getIndependentStreamTypes();
             assertNotNull("Null list of independent stream types", independentStreamTypes);
@@ -2172,7 +2172,7 @@ public class AudioManagerTest extends InstrumentationTestCase {
         }
     }
 
-    @AppModeFull(reason = "Instant apps cannot hold permission.MODIFY_AUDIO_SYSTEM_SETTINGS")
+    @AppModeFull(reason = "Instant apps cannot hold permission.MODIFY_AUDIO_SETTINGS_PRIVILEGED")
     public void testStreamTypeAliasChange() throws Exception {
         if (!mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {
             Log.i(TAG, "skipping testStreamTypeAliasChange, not a phone");
@@ -2180,7 +2180,7 @@ public class AudioManagerTest extends InstrumentationTestCase {
         }
         Log.i(TAG, "starting testStreamTypeAliasChange");
         getInstrumentation().getUiAutomation()
-                .adoptShellPermissionIdentity(Manifest.permission.MODIFY_AUDIO_SYSTEM_SETTINGS);
+                .adoptShellPermissionIdentity(Manifest.permission.MODIFY_AUDIO_SETTINGS_PRIVILEGED);
 
         // get initial state
         final int notifAliasAtStart = mAudioManager.getStreamTypeAlias(STREAM_NOTIFICATION);
@@ -2351,7 +2351,7 @@ public class AudioManagerTest extends InstrumentationTestCase {
 
     public void testAdjustVolumeGroupVolume() {
         getInstrumentation().getUiAutomation().adoptShellPermissionIdentity(
-                Manifest.permission.MODIFY_AUDIO_SYSTEM_SETTINGS,
+                Manifest.permission.MODIFY_AUDIO_SETTINGS_PRIVILEGED,
                 Manifest.permission.MODIFY_AUDIO_ROUTING,
                 Manifest.permission.QUERY_AUDIO_STATE,
                 Manifest.permission.MODIFY_PHONE_STATE);
