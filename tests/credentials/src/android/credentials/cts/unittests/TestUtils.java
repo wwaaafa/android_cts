@@ -78,17 +78,18 @@ public class TestUtils {
         }
     }
 
+    public static void assertEquals(SigningInfo a, SigningInfo b) {
+        assertThat(b.getApkContentsSigners()).isEqualTo(a.getApkContentsSigners());
+        assertThat(b.getSigningCertificateHistory()).isEqualTo(
+                a.getSigningCertificateHistory());
+        assertThat(b.hasPastSigningCertificates()).isEqualTo(
+                a.hasPastSigningCertificates());
+        assertThat(b.hasMultipleSigners()).isEqualTo(a.hasMultipleSigners());
+    }
+
     public static void assertEquals(CallingAppInfo a, CallingAppInfo b) {
         assertThat(a.getPackageName()).isEqualTo(b.getPackageName());
-
-        final SigningInfo signingA = a.getSigningInfo();
-        final SigningInfo signingB = b.getSigningInfo();
-        assertThat(signingB.getApkContentsSigners()).isEqualTo(signingA.getApkContentsSigners());
-        assertThat(signingB.getSigningCertificateHistory()).isEqualTo(
-                signingA.getSigningCertificateHistory());
-        assertThat(signingB.hasPastSigningCertificates()).isEqualTo(
-                signingA.hasPastSigningCertificates());
-        assertThat(signingB.hasMultipleSigners()).isEqualTo(signingB.hasMultipleSigners());
+        assertEquals(a.getSigningInfo(), b.getSigningInfo());
     }
 
     public static <T extends Parcelable> T cloneParcelable(T obj) {
