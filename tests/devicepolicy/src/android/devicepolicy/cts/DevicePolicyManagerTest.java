@@ -1129,6 +1129,7 @@ public final class DevicePolicyManagerTest {
     @Postsubmit(reason = "New test")
     @Test
     @EnsureHasPermission(MANAGE_PROFILE_AND_DEVICE_OWNERS)
+    @RequireFeature(FEATURE_MANAGED_USERS)
     @RequireDoesNotHaveFeature(FEATURE_DEVICE_ADMIN)
     public void checkProvisioningPreCondition_withoutDeviceAdminFeature_returnsDeviceAdminNotSupported() {
         assertThat(
