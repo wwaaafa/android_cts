@@ -43,6 +43,8 @@ import androidx.window.extensions.embedding.SplitAttributes.LayoutDirection;
 import androidx.window.extensions.embedding.SplitAttributes.SplitType;
 import androidx.window.extensions.embedding.SplitPairRule;
 
+import com.android.compatibility.common.util.ApiTest;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -57,6 +59,7 @@ import java.util.Set;
  * Build/Install/Run:
  *     atest CtsWindowManagerJetpackTestCases:ActivityEmbeddingBoundsTests
  */
+@ApiTest(apis = "androidx.window.extensions.embedding.SplitPairRule#getDefaultSplitAttributes")
 @Presubmit
 @RunWith(AndroidJUnit4.class)
 public class ActivityEmbeddingBoundsTests extends ActivityEmbeddingTestBase {
@@ -67,6 +70,7 @@ public class ActivityEmbeddingBoundsTests extends ActivityEmbeddingTestBase {
      * Tests that when two activities are in a split and the parent bounds shrink such that
      * they can no longer support split activities, then the activities become stacked.
      */
+    @ApiTest(apis = "androidx.window.extensions.embedding.SplitRule")
     @Test
     public void testParentWindowMetricsPredicate() {
         // Launch primary activity
@@ -115,16 +119,18 @@ public class ActivityEmbeddingBoundsTests extends ActivityEmbeddingTestBase {
      * Tests that the activity bounds for activities in a split match the LTR layout direction
      * provided in the {@link SplitPairRule}.
      */
+    @ApiTest(apis = "androidx.window.extensions.embedding.SplitAttributes"
+            + ".LayoutDirection#LEFT_TO_RIGHT")
     @Test
     public void testLayoutDirection_LeftToRight() {
-        // Create a split pair rule with layout direction LTR and a split ratio that results in
-        // uneven bounds between the primary and secondary containers.
+        // Create a split pair rule with layout direction LEFT_TO_RIGHT and a split ratio that
+        // results in uneven bounds between the primary and secondary containers.
         final SplitPairRule splitPairRule = createUnevenWidthSplitPairRule(
                 LayoutDirection.LEFT_TO_RIGHT);
         mActivityEmbeddingComponent.setEmbeddingRules(Collections.singleton(splitPairRule));
 
-        // Start activities in a split and verify that the layout direction is LTR, which is
-        // checked in {@link ActivityEmbeddingUtil#startActivityAndVerifySplit}.
+        // Start activities in a split and verify that the layout direction is LEFT_TO_RIGHT,
+        // which is checked in {@link ActivityEmbeddingUtil#startActivityAndVerifySplit}.
         Activity primaryActivity = startFullScreenActivityNewTask(
                 TestConfigChangeHandlingActivity.class);
         startActivityAndVerifySplit(primaryActivity, TestActivityWithId.class, splitPairRule,
@@ -135,16 +141,18 @@ public class ActivityEmbeddingBoundsTests extends ActivityEmbeddingTestBase {
      * Tests that the activity bounds for activities in a split match the RTL layout direction
      * provided in the {@link SplitPairRule}.
      */
+    @ApiTest(apis = "androidx.window.extensions.embedding.SplitAttributes"
+            + ".LayoutDirection#RIGHT_TO_LEFT")
     @Test
     public void testLayoutDirection_RightToLeft() {
-        // Create a split pair rule with layout direction RTL and a split ratio that results in
-        // uneven bounds between the primary and secondary containers.
+        // Create a split pair rule with layout direction RIGHT_TO_LEFT and a split ratio that
+        // results in uneven bounds between the primary and secondary containers.
         final SplitPairRule splitPairRule = createUnevenWidthSplitPairRule(
                 LayoutDirection.RIGHT_TO_LEFT);
         mActivityEmbeddingComponent.setEmbeddingRules(Collections.singleton(splitPairRule));
 
-        // Start activities in a split and verify that the layout direction is RTL, which is
-        // checked in {@link ActivityEmbeddingUtil#startActivityAndVerifySplit}.
+        // Start activities in a split and verify that the layout direction is RIGHT_TO_LEFT,
+        // which is checked in {@link ActivityEmbeddingUtil#startActivityAndVerifySplit}.
         Activity primaryActivity = startFullScreenActivityNewTask(
                 TestConfigChangeHandlingActivity.class);
         startActivityAndVerifySplit(primaryActivity, TestActivityWithId.class, splitPairRule,
@@ -155,6 +163,8 @@ public class ActivityEmbeddingBoundsTests extends ActivityEmbeddingTestBase {
      * Tests that the activity bounds for activities in a split match the Locale layout direction
      * provided in the {@link SplitPairRule}.
      */
+    @ApiTest(apis = "androidx.window.extensions.embedding.SplitAttributes"
+            + ".LayoutDirection#LOCALE")
     @Test
     public void testLayoutDirection_Locale() {
         // Create a split pair rule with layout direction LOCALE and a split ratio that results in
@@ -170,12 +180,50 @@ public class ActivityEmbeddingBoundsTests extends ActivityEmbeddingTestBase {
                 "secondaryActivityId", mSplitInfoConsumer);
     }
 
+    @ApiTest(apis = "androidx.window.extensions.embedding.SplitAttributes"
+            + ".LayoutDirection#TOP_TO_BOTTOM")
+    @Test
+    public void testLayoutDirection_TopToBottom() {
+        // Create a split pair rule with layout direction TOP_TO_BOTTOM and a split ratio that
+        // results in uneven bounds between the primary and secondary containers.
+        final SplitPairRule splitPairRule = createUnevenWidthSplitPairRule(
+                LayoutDirection.TOP_TO_BOTTOM);
+        mActivityEmbeddingComponent.setEmbeddingRules(Collections.singleton(splitPairRule));
+
+        // Start activities in a split and verify that the layout direction is TOP_TO_BOTTOM,
+        // which is checked in {@link ActivityEmbeddingUtil#startActivityAndVerifySplit}.
+        Activity primaryActivity = startFullScreenActivityNewTask(
+                TestConfigChangeHandlingActivity.class);
+        startActivityAndVerifySplit(primaryActivity, TestActivityWithId.class, splitPairRule,
+                "secondaryActivityId", mSplitInfoConsumer);
+    }
+
+    @ApiTest(apis = "androidx.window.extensions.embedding.SplitAttributes"
+            + ".LayoutDirection#BOTTOM_TO_TOP")
+    @Test
+    public void testLayoutDirection_BottomToTop() {
+        // Create a split pair rule with layout direction BOTTOM_TO_TOP and a split ratio that
+        // results in uneven bounds between the primary and secondary containers.
+        final SplitPairRule splitPairRule = createUnevenWidthSplitPairRule(
+                LayoutDirection.TOP_TO_BOTTOM);
+        mActivityEmbeddingComponent.setEmbeddingRules(Collections.singleton(splitPairRule));
+
+        // Start activities in a split and verify that the layout direction is BOTTOM_TO_TOP,
+        // which is checked in {@link ActivityEmbeddingUtil#startActivityAndVerifySplit}.
+        Activity primaryActivity = startFullScreenActivityNewTask(
+                TestConfigChangeHandlingActivity.class);
+        startActivityAndVerifySplit(primaryActivity, TestActivityWithId.class, splitPairRule,
+                "secondaryActivityId", mSplitInfoConsumer);
+    }
+
     /**
      * Tests that when two activities enter a split, then their split ratio matches what is in their
      * {@link SplitPairRule}, and is not assumed to be 0.5 or match the split ratio of the previous
      * top-most activity split.
      */
     @FlakyTest(bugId = 213322133)
+    @ApiTest(apis = "androidx.window.extensions.embedding.SplitAttributes"
+            + ".SplitType.RatioSplitType")
     @Test
     public void testSplitRatio() {
         final String activityAId = "activityA";
