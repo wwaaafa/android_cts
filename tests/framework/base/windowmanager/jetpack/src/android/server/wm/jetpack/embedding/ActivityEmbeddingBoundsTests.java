@@ -16,10 +16,9 @@
 
 package android.server.wm.jetpack.embedding;
 
-import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.DEFAULT_SPLIT_RATIO;
-import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.UNEVEN_CONTAINERS_DEFAULT_SPLIT_RATIO;
+import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.DEFAULT_SPLIT_ATTRS;
 import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.assertValidSplit;
-import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.createSplitPairRuleBuilderWithJava8Predicate;
+import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.createSplitPairRuleBuilder;
 import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.startActivityAndVerifySplit;
 import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.waitAndAssertNotVisible;
 import static android.server.wm.jetpack.utils.ActivityEmbeddingUtil.waitForFillsTask;
@@ -34,12 +33,14 @@ import android.platform.test.annotations.Presubmit;
 import android.server.wm.jetpack.utils.TestActivity;
 import android.server.wm.jetpack.utils.TestActivityWithId;
 import android.server.wm.jetpack.utils.TestConfigChangeHandlingActivity;
-import android.util.LayoutDirection;
 import android.util.Pair;
 import android.util.Size;
 
 import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.window.extensions.embedding.SplitAttributes;
+import androidx.window.extensions.embedding.SplitAttributes.LayoutDirection;
+import androidx.window.extensions.embedding.SplitAttributes.SplitType;
 import androidx.window.extensions.embedding.SplitPairRule;
 
 import org.junit.Test;
@@ -59,6 +60,8 @@ import java.util.Set;
 @Presubmit
 @RunWith(AndroidJUnit4.class)
 public class ActivityEmbeddingBoundsTests extends ActivityEmbeddingTestBase {
+    public static SplitType UNEVEN_CONTAINERS_DEFAULT_SPLIT_TYPE =
+            new SplitType.RatioSplitType(0.7f);
 
     /**
      * Tests that when two activities are in a split and the parent bounds shrink such that
@@ -74,12 +77,12 @@ public class ActivityEmbeddingBoundsTests extends ActivityEmbeddingTestBase {
         // the parent cannot support a split.
         final int originalTaskWidth = getTaskWidth();
         final int originalTaskHeight = getTaskHeight();
-        final SplitPairRule splitPairRule = createSplitPairRuleBuilderWithJava8Predicate(
+        final SplitPairRule splitPairRule = createSplitPairRuleBuilder(
                 activityActivityPair -> true /* activityPairPredicate */,
                 activityIntentPair -> true /* activityIntentPredicate */,
                 parentWindowMetrics -> parentWindowMetrics.getBounds().width() >= originalTaskWidth
                         && parentWindowMetrics.getBounds().height() >= originalTaskHeight)
-                .setSplitRatio(DEFAULT_SPLIT_RATIO).build();
+                .setDefaultSplitAttributes(DEFAULT_SPLIT_ATTRS).build();
         mActivityEmbeddingComponent.setEmbeddingRules(Collections.singleton(splitPairRule));
 
         // Launch the secondary activity
@@ -113,10 +116,11 @@ public class ActivityEmbeddingBoundsTests extends ActivityEmbeddingTestBase {
      * provided in the {@link SplitPairRule}.
      */
     @Test
-    public void testLayoutDirection_LTR() {
+    public void testLayoutDirection_LeftToRight() {
         // Create a split pair rule with layout direction LTR and a split ratio that results in
         // uneven bounds between the primary and secondary containers.
-        final SplitPairRule splitPairRule = createUnevenWidthSplitPairRule(LayoutDirection.LTR);
+        final SplitPairRule splitPairRule = createUnevenWidthSplitPairRule(
+                LayoutDirection.LEFT_TO_RIGHT);
         mActivityEmbeddingComponent.setEmbeddingRules(Collections.singleton(splitPairRule));
 
         // Start activities in a split and verify that the layout direction is LTR, which is
@@ -132,10 +136,11 @@ public class ActivityEmbeddingBoundsTests extends ActivityEmbeddingTestBase {
      * provided in the {@link SplitPairRule}.
      */
     @Test
-    public void testLayoutDirection_RTL() {
+    public void testLayoutDirection_RightToLeft() {
         // Create a split pair rule with layout direction RTL and a split ratio that results in
         // uneven bounds between the primary and secondary containers.
-        final SplitPairRule splitPairRule = createUnevenWidthSplitPairRule(LayoutDirection.RTL);
+        final SplitPairRule splitPairRule = createUnevenWidthSplitPairRule(
+                LayoutDirection.RIGHT_TO_LEFT);
         mActivityEmbeddingComponent.setEmbeddingRules(Collections.singleton(splitPairRule));
 
         // Start activities in a split and verify that the layout direction is RTL, which is
@@ -176,24 +181,26 @@ public class ActivityEmbeddingBoundsTests extends ActivityEmbeddingTestBase {
         final String activityAId = "activityA";
         final String activityBId = "activityB";
         final String activityCId = "activityC";
-        final float activityABSplitRatio = 0.37f;
-        final float activityBCSplitRatio = 0.85f;
+        final SplitType activityABSplitRatio = new SplitType.RatioSplitType(0.37f);
+        final SplitType activityBCSplitRatio = new SplitType.RatioSplitType(0.85f);
 
         // Create a split rule for activity A and activity B where the split ratio is 0.37.
-        final SplitPairRule splitPairRuleAB = createSplitPairRuleBuilderWithJava8Predicate(
+        final SplitPairRule splitPairRuleAB = createSplitPairRuleBuilder(
                 activityActivityPair -> false /* activityPairPredicate */,
                 activityIntentPair -> matchesActivityIntentPair(activityIntentPair, activityAId,
                         activityBId) /* activityIntentPredicate */,
                 parentWindowMetrics -> true /* parentWindowMetricsPredicate */)
-                .setSplitRatio(activityABSplitRatio).build();
+                .setDefaultSplitAttributes(new SplitAttributes.Builder().setSplitType(
+                        activityABSplitRatio).build()).build();
 
         // Create a split rule for activity B and activity C where the split ratio is 0.65.
-        final SplitPairRule splitPairRuleBC = createSplitPairRuleBuilderWithJava8Predicate(
+        final SplitPairRule splitPairRuleBC = createSplitPairRuleBuilder(
                 activityActivityPair -> false /* activityPairPredicate */,
                 activityIntentPair -> matchesActivityIntentPair(activityIntentPair, activityBId,
                         activityCId) /* activityIntentPredicate */,
                 parentWindowMetrics -> true /* parentWindowMetricsPredicate */)
-                .setSplitRatio(activityBCSplitRatio).build();
+                .setDefaultSplitAttributes(new SplitAttributes.Builder().setSplitType(
+                        activityBCSplitRatio).build()).build();
 
         // Register the two split pair rules
         mActivityEmbeddingComponent.setEmbeddingRules(Set.of(splitPairRuleAB, splitPairRuleBC));
@@ -216,12 +223,15 @@ public class ActivityEmbeddingBoundsTests extends ActivityEmbeddingTestBase {
     }
 
     private SplitPairRule createUnevenWidthSplitPairRule(int layoutDir) {
-        return createSplitPairRuleBuilderWithJava8Predicate(
+        return createSplitPairRuleBuilder(
                 activityActivityPair -> true /* activityPairPredicate */,
                 activityIntentPair -> true /* activityIntentPredicate */,
                 parentWindowMetrics -> true /* parentWindowMetricsPredicate */)
-                .setSplitRatio(UNEVEN_CONTAINERS_DEFAULT_SPLIT_RATIO)
-                .setLayoutDirection(layoutDir).build();
+                .setDefaultSplitAttributes(new SplitAttributes.Builder()
+                        .setSplitType(UNEVEN_CONTAINERS_DEFAULT_SPLIT_TYPE)
+                        .setLayoutDirection(layoutDir)
+                        .build())
+                .build();
     }
 
     private boolean matchesActivityIntentPair(@NonNull Pair<Activity, Intent> activityIntentPair,
