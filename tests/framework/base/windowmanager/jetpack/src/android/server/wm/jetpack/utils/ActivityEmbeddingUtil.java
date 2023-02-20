@@ -438,7 +438,6 @@ public class ActivityEmbeddingUtil {
         return secondaryActivityStack.get(secondaryActivityStack.size() - 1);
     }
 
-    // TODO(b/241043377): extent the method to calculate horizontal split bounds.
     /** Returns the expected bounds of the primary and secondary containers */
     @NonNull
     private static Pair<Rect, Rect> getExpectedBoundsPair(@NonNull Activity primaryActivity,
@@ -458,33 +457,67 @@ public class ActivityEmbeddingUtil {
         int layoutDir = (splitAttributes.getLayoutDirection() == LayoutDirection.LOCALE)
                 ? primaryActivity.getResources().getConfiguration().getLayoutDirection()
                 : splitAttributes.getLayoutDirection();
+        final boolean isPrimaryRightOrBottomContainer = isPrimaryRightOrBottomContainer(layoutDir);
 
         float splitRatio = ((SplitType.RatioSplitType) splitType).getRatio();
-        // Normalize the split ratio so that parent left + (parent width * split ratio) is always
-        // the position of the split divider in the parent.
-        if (layoutDir == LayoutDirection.RIGHT_TO_LEFT) {
+        // Normalize the split ratio so that parent start + (parent dimension * split ratio) is
+        // always the position of the split divider in the parent.
+        if (isPrimaryRightOrBottomContainer) {
             splitRatio = 1 - splitRatio;
         }
 
-        // Create the left and right container bounds
-        final Rect leftContainerBounds = new Rect(parentBounds.left, parentBounds.top,
-                (int)  (parentBounds.left + parentBounds.width() * splitRatio),
-                parentBounds.bottom);
-        final Rect rightContainerBounds = new Rect(
-                (int)  (parentBounds.left + parentBounds.width() * splitRatio),
-                parentBounds.top, parentBounds.right, parentBounds.bottom);
+        // Calculate the container bounds
+        final boolean isHorizontal = isHorizontal(layoutDir);
+        final Rect leftOrTopContainerBounds = isHorizontal
+                ? new Rect(
+                        parentBounds.left,
+                        parentBounds.top,
+                        parentBounds.right,
+                        (int) (parentBounds.top + parentBounds.height() * splitRatio)
+                ) : new Rect(
+                        parentBounds.left,
+                        parentBounds.top,
+                        (int) (parentBounds.left + parentBounds.width() * splitRatio),
+                        parentBounds.bottom);
+
+        final Rect rightOrBottomContainerBounds = isHorizontal
+                ? new Rect(
+                        parentBounds.left,
+                        (int) (parentBounds.top + parentBounds.height() * splitRatio),
+                        parentBounds.right,
+                        parentBounds.bottom
+                ) : new Rect(
+                        (int) (parentBounds.left + parentBounds.width() * splitRatio),
+                        parentBounds.top,
+                        parentBounds.right,
+                        parentBounds.bottom);
 
         // Assign the primary and secondary bounds depending on layout direction
-        if (layoutDir == LayoutDirection.LEFT_TO_RIGHT) {
-            /*******************|*********************
-             * primary activity | secondary activity *
-             *******************|*********************/
-            return new Pair<>(leftContainerBounds, rightContainerBounds);
+        if (isPrimaryRightOrBottomContainer) {
+            return new Pair<>(rightOrBottomContainerBounds, leftOrTopContainerBounds);
         } else {
-            /*********************|*******************
-             * secondary activity | primary activity *
-             *********************|*******************/
-            return new Pair<>(rightContainerBounds, leftContainerBounds);
+            return new Pair<>(leftOrTopContainerBounds, rightOrBottomContainerBounds);
+        }
+    }
+
+    private static boolean isHorizontal(int layoutDirection) {
+        switch (layoutDirection) {
+            case LayoutDirection.TOP_TO_BOTTOM:
+            case LayoutDirection.BOTTOM_TO_TOP:
+                return true;
+            default :
+                return false;
+        }
+    }
+
+    /** Indicates that whether the primary container is at right or bottom or not. */
+    private static boolean isPrimaryRightOrBottomContainer(int layoutDirection) {
+        switch (layoutDirection) {
+            case LayoutDirection.RIGHT_TO_LEFT:
+            case LayoutDirection.BOTTOM_TO_TOP:
+                return true;
+            default:
+                return false;
         }
     }
 
