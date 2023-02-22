@@ -51,6 +51,7 @@ import com.android.compatibility.common.util.SystemUtil.eventually
 import com.android.compatibility.common.util.SystemUtil.runShellCommandOrThrow
 import com.android.compatibility.common.util.SystemUtil.runWithShellPermissionIdentity
 import com.android.compatibility.common.util.UiAutomatorUtils
+import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import org.hamcrest.CoreMatchers
@@ -293,6 +294,10 @@ class AppHibernationIntegrationTest {
         assumeFalse(
             "Remove permissions and free up space toggle may be unavailable on Wear",
             hasFeatureWatch())
+        // This assumption is not needed for U or above.
+        assumeFalse(
+            "The device can be treated as U for its Build.VERSION.CODENAME",
+            isCodeNameAtLeastU())
 
         withApp(APK_PATH_S_APP, APK_PACKAGE_NAME_S_APP) {
             // Open app info
@@ -353,5 +358,10 @@ class AppHibernationIntegrationTest {
 
     private fun waitFindObject(selector: BySelector): UiObject2 {
         return waitFindObject(instrumentation.uiAutomation, selector)
+    }
+
+    private fun isCodeNameAtLeastU(): Boolean {
+        val buildCodeName = Build.VERSION.CODENAME.toUpperCase(Locale.ROOT)
+        return buildCodeName.compareTo("UPSIDEDOWNCAKE") >= 0
     }
 }
