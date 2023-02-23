@@ -488,6 +488,8 @@ public class VehiclePropertyVerifier<T> {
             verifyIntegerPropertySetter();
         } else if (Float.class.equals(carPropertyConfig.getPropertyType())) {
             verifyFloatPropertySetter();
+        } else if (mPropertyId == VehiclePropertyIds.HVAC_TEMPERATURE_VALUE_SUGGESTION) {
+            verifyHvacTemperatureValueSuggestionSetter();
         }
     }
 
@@ -622,6 +624,40 @@ public class VehiclePropertyVerifier<T> {
         verifyCarPropertyValue(updatedCarPropertyValue, areaId, CAR_PROPERTY_VALUE_SOURCE_CALLBACK);
     }
 
+    private void verifyHvacTemperatureValueSuggestionSetter() {
+        CarPropertyConfig<T> carPropertyConfig = getCarPropertyConfig();
+        CarPropertyConfig<?> hvacTemperatureSetCarPropertyConfig =
+                mCarPropertyManager.getCarPropertyConfig(VehiclePropertyIds.HVAC_TEMPERATURE_SET);
+        if (hvacTemperatureSetCarPropertyConfig == null) {
+            return;
+        }
+        List<Integer> hvacTemperatureSetConfigArray =
+                hvacTemperatureSetCarPropertyConfig.getConfigArray();
+        float minTempInCelsius = hvacTemperatureSetConfigArray.get(0).floatValue() / 10f;
+        float minTempInFahrenheit = hvacTemperatureSetConfigArray.get(3).floatValue() / 10f;
+
+        Float[] temperatureRequest = new Float[] {
+            /* requestedValue = */ minTempInCelsius,
+            /* units = */ (float) 0x30, // VehicleUnit#CELSIUS
+            /* suggestedValueInCelsius = */ 0f,
+            /* suggestedValueInFahrenheit = */ 0f
+        };
+        Float[] expectedTemperatureResponse = new Float[] {
+            /* requestedValue = */ minTempInCelsius,
+            /* units = */ (float) 0x30, // VehicleUnit#CELSIUS
+            /* suggestedValueInCelsius = */ minTempInCelsius,
+            /* suggestedValueInFahrenheit = */ minTempInFahrenheit
+        };
+        for (int areaId: carPropertyConfig.getAreaIds()) {
+            CarPropertyValue<Float[]> updatedCarPropertyValue = setPropertyAndWaitForChange(
+                    mCarPropertyManager, mPropertyId, Float[].class, areaId,
+                    temperatureRequest, expectedTemperatureResponse);
+            verifyCarPropertyValue(updatedCarPropertyValue, areaId,
+                    CAR_PROPERTY_VALUE_SOURCE_CALLBACK);
+            verifyHvacTemperatureValueSuggestionResponse(updatedCarPropertyValue.getValue());
+        }
+    }
+
     private void verifySetPropertyOkayOrThrowExpectedExceptions(int areaId, T valueToSet) {
         try {
             mCarPropertyManager.setProperty(mPropertyType, mPropertyId, areaId, valueToSet);
@@ -721,6 +757,10 @@ public class VehiclePropertyVerifier<T> {
             for (CarPropertyValue<?> carPropertyValue : carPropertyValues) {
                 verifyCarPropertyValue(carPropertyValue, carPropertyValue.getAreaId(),
                         CAR_PROPERTY_VALUE_SOURCE_CALLBACK);
+                if (mPropertyId == VehiclePropertyIds.HVAC_TEMPERATURE_VALUE_SUGGESTION) {
+                    verifyHvacTemperatureValueSuggestionResponse(
+                            (Float[]) carPropertyValue.getValue());
+                }
             }
         }
     }
@@ -997,6 +1037,9 @@ public class VehiclePropertyVerifier<T> {
             }
 
             verifyCarPropertyValue(carPropertyValue, areaId, CAR_PROPERTY_VALUE_SOURCE_GETTER);
+            if (mPropertyId == VehiclePropertyIds.HVAC_TEMPERATURE_VALUE_SUGGESTION) {
+                verifyHvacTemperatureValueSuggestionResponse((Float[]) carPropertyValue.getValue());
+            }
         }
     }
 
@@ -1259,6 +1302,71 @@ public class VehiclePropertyVerifier<T> {
             // TODO(b/269891334): registerCallback needs to fix exception handling
             mCarPropertyManager.unregisterCallback(carPropertyValueCallback, mPropertyId);
         }
+    }
+
+    private void verifyHvacTemperatureValueSuggestionResponse(Float[] temperatureSuggestion) {
+        Float suggestedTempInCelsius = temperatureSuggestion[2];
+        Float suggestedTempInFahrenheit = temperatureSuggestion[3];
+        CarPropertyConfig<?> hvacTemperatureSetCarPropertyConfig =
+                mCarPropertyManager.getCarPropertyConfig(VehiclePropertyIds.HVAC_TEMPERATURE_SET);
+        if (hvacTemperatureSetCarPropertyConfig == null) {
+            return;
+        }
+        List<Integer> hvacTemperatureSetConfigArray =
+                hvacTemperatureSetCarPropertyConfig.getConfigArray();
+
+        Integer minTempInCelsiusTimesTen =
+                hvacTemperatureSetConfigArray.get(0);
+        Integer maxTempInCelsiusTimesTen =
+                hvacTemperatureSetConfigArray.get(1);
+        Integer incrementInCelsiusTimesTen =
+                hvacTemperatureSetConfigArray.get(2);
+        verifyHvacTemperatureIsValid(suggestedTempInCelsius, minTempInCelsiusTimesTen,
+                maxTempInCelsiusTimesTen, incrementInCelsiusTimesTen);
+
+        Integer minTempInFahrenheitTimesTen =
+                hvacTemperatureSetConfigArray.get(3);
+        Integer maxTempInFahrenheitTimesTen =
+                hvacTemperatureSetConfigArray.get(4);
+        Integer incrementInFahrenheitTimesTen =
+                hvacTemperatureSetConfigArray.get(5);
+        verifyHvacTemperatureIsValid(suggestedTempInFahrenheit, minTempInFahrenheitTimesTen,
+                maxTempInFahrenheitTimesTen, incrementInFahrenheitTimesTen);
+
+        int suggestedTempInCelsiusTimesTen = suggestedTempInCelsius.intValue() * 10;
+        int suggestedTempInFahrenheitTimesTen = suggestedTempInFahrenheit.intValue() * 10;
+        int numIncrementsCelsius =
+                (suggestedTempInCelsiusTimesTen - minTempInCelsiusTimesTen)
+                        / incrementInCelsiusTimesTen;
+        int numIncrementsFahrenheit =
+                (suggestedTempInFahrenheitTimesTen - minTempInFahrenheitTimesTen)
+                        / incrementInFahrenheitTimesTen;
+        assertWithMessage(
+                        "The temperature in Celsius must be equivalent to the temperature in"
+                            + " Fahrenheit.")
+                .that(numIncrementsFahrenheit)
+                .isEqualTo(numIncrementsCelsius);
+    }
+
+    public static void verifyHvacTemperatureIsValid(float temp, int minTempTimesTen,
+            int maxTempTimesTen, int incrementTimesTen) {
+        Float tempMultiplied = temp * 10.0f;
+        int intTempTimesTen = tempMultiplied.intValue();
+        assertWithMessage(
+                        "The temperature value " + intTempTimesTen + " must be at least "
+                            + minTempTimesTen + " and at most " + maxTempTimesTen)
+                .that(intTempTimesTen >= minTempTimesTen && intTempTimesTen <= maxTempTimesTen)
+                .isTrue();
+
+        int remainder = (intTempTimesTen - minTempTimesTen) % incrementTimesTen;
+        assertWithMessage(
+                        "The temperature value " + intTempTimesTen
+                            + " is not a valid temperature value. Valid values start from "
+                            + minTempTimesTen
+                            + " and increment by " + incrementTimesTen
+                            + " until the max temperature setting of " + maxTempTimesTen)
+                .that(remainder)
+                .isEqualTo(0);
     }
 
     public interface ConfigArrayVerifier {
@@ -1655,6 +1763,10 @@ public class VehiclePropertyVerifier<T> {
                     CarPropertyValue.STATUS_AVAILABLE, getPropertyResult.getTimestampNanos(),
                     (T) getPropertyResult.getValue(), expectedAreaId,
                     CAR_PROPERTY_VALUE_SOURCE_CALLBACK);
+            if (mPropertyId == VehiclePropertyIds.HVAC_TEMPERATURE_VALUE_SUGGESTION) {
+                verifyHvacTemperatureValueSuggestionResponse(
+                        (Float[]) getPropertyResult.getValue());
+            }
         }
     }
 
@@ -1679,7 +1791,14 @@ public class VehiclePropertyVerifier<T> {
     private static <U> CarPropertyValue<U> setPropertyAndWaitForChange(
             CarPropertyManager carPropertyManager, int propertyId, Class<U> propertyType,
             int areaId, U valueToSet) {
-        SetterCallback setterCallback = new SetterCallback(propertyId, areaId, valueToSet);
+        return setPropertyAndWaitForChange(carPropertyManager, propertyId, propertyType, areaId,
+                valueToSet, valueToSet);
+    }
+
+    private static <U> CarPropertyValue<U> setPropertyAndWaitForChange(
+            CarPropertyManager carPropertyManager, int propertyId, Class<U> propertyType,
+            int areaId, U valueToSet, U expectedValueToGet) {
+        SetterCallback setterCallback = new SetterCallback(propertyId, areaId, expectedValueToGet);
         assertWithMessage("Failed to register setter callback for " + VehiclePropertyIds.toString(
                 propertyId)).that(carPropertyManager.registerCallback(setterCallback, propertyId,
                 CarPropertyManager.SENSOR_RATE_FASTEST)).isTrue();
