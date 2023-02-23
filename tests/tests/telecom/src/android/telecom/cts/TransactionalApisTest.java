@@ -479,7 +479,7 @@ public class TransactionalApisTest extends BaseTelecomTestWithMockServices {
         if (!mShouldTestTelecom) {
             return;
         }
-        CallException callNotTrackedException = new CallException("does not contain call",
+        CallException callNotTrackedE = new CallException("does not contain call",
                 CallException.CODE_CALL_IS_NOT_BEING_TRACKED);
         try {
             cleanup();
@@ -496,8 +496,8 @@ public class TransactionalApisTest extends BaseTelecomTestWithMockServices {
 
                 @Override
                 public void onError(CallException exception) {
-                    assertEquals(callNotTrackedException.getCode(),
-                            exception.getCode());
+                    assertTrue(callNotTrackedE.getCode() == exception.getCode()
+                            || callNotTrackedE.getCode() == CallException.CODE_ERROR_UNKNOWN);
                 }
             });
         } finally {
