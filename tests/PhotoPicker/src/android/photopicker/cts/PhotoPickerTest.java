@@ -18,8 +18,12 @@ package android.photopicker.cts;
 
 import static android.photopicker.cts.util.GetContentActivityAliasUtils.clearPackageData;
 import static android.photopicker.cts.util.GetContentActivityAliasUtils.getDocumentsUiPackageName;
+import static android.photopicker.cts.util.PhotoPickerFilesUtils.createImageWithUnknownMimeType;
 import static android.photopicker.cts.util.PhotoPickerFilesUtils.createImagesAndGetUris;
 import static android.photopicker.cts.util.PhotoPickerFilesUtils.createMj2VideosAndGetUris;
+import static android.photopicker.cts.util.PhotoPickerFilesUtils.createMpegVideo;
+import static android.photopicker.cts.util.PhotoPickerFilesUtils.createSvgImage;
+import static android.photopicker.cts.util.PhotoPickerFilesUtils.createVideoWithUnknownMimeType;
 import static android.photopicker.cts.util.PhotoPickerFilesUtils.createVideosAndGetUris;
 import static android.photopicker.cts.util.PhotoPickerFilesUtils.deleteMedia;
 import static android.photopicker.cts.util.PhotoPickerUiUtils.REGEX_PACKAGE_NAME;
@@ -30,6 +34,7 @@ import static android.photopicker.cts.util.PhotoPickerUiUtils.findItemList;
 import static android.photopicker.cts.util.PhotoPickerUiUtils.findPreviewAddButton;
 import static android.photopicker.cts.util.PhotoPickerUiUtils.findPreviewAddOrSelectButton;
 import static android.photopicker.cts.util.ResultsAssertionsUtils.assertContainsMimeType;
+import static android.photopicker.cts.util.ResultsAssertionsUtils.assertExtension;
 import static android.photopicker.cts.util.ResultsAssertionsUtils.assertMimeType;
 import static android.photopicker.cts.util.ResultsAssertionsUtils.assertPersistedGrant;
 import static android.photopicker.cts.util.ResultsAssertionsUtils.assertPickerUriFormat;
@@ -63,6 +68,7 @@ import org.junit.runners.Parameterized.Parameters;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Photo Picker Device only tests for common flows.
@@ -657,6 +663,53 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
             assertPersistedGrant(uri, mContext.getContentResolver());
             assertRedactedReadOnlyAccess(uri);
             assertMimeType(uri, mimeType);
+        }
+    }
+
+    @Test
+    public void testPickerUriFileExtensions() throws Exception {
+        // 1. Create test media items
+        mUriList.add(createSvgImage(mContext.getUserId()));
+        mUriList.add(createImageWithUnknownMimeType(mContext.getUserId()));
+        mUriList.add(createMpegVideo(mContext.getUserId()));
+        mUriList.add(createVideoWithUnknownMimeType(mContext.getUserId()));
+
+        final int expectedItemCount = mUriList.size();
+
+        final Map<String, String> mimeTypeToExpectedExtensionMap = Map.of(
+                "image/svg+xml", "svg",
+                "image/foo", "jpg",
+                "video/mpeg", "mpeg",
+                "video/foo", "mp4"
+        );
+
+        // 2. Launch Picker in multi-select mode for the test mime types
+        final Intent intent = new Intent(mAction);
+        addMultipleSelectionFlag(intent);
+        launchPhotoPickerForIntent(intent);
+
+        // 3. Add all items
+        final List<UiObject> itemList = findItemList(expectedItemCount);
+        final int itemCount = itemList.size();
+        assertWithMessage("Unexpected number of media items found in the picker ui")
+                .that(itemCount)
+                .isEqualTo(expectedItemCount);
+
+        for (UiObject item : itemList) {
+            clickAndWait(sDevice, item);
+        }
+        clickAndWait(sDevice, findAddButton());
+
+        // 4. Get the activity result data to extract the picker uris
+        final ClipData clipData = mActivity.getResult().data.getClipData();
+        assertWithMessage("Unexpected number of items returned from the picker activity")
+                .that(clipData.getItemCount())
+                .isEqualTo(itemCount);
+
+        // 5. Assert the picker uri file extension as expected for each item
+        for (int i = 0; i < itemCount; i++) {
+            final Uri uri = clipData.getItemAt(i).getUri();
+            assertExtension(uri, mimeTypeToExpectedExtensionMap);
         }
     }
 
