@@ -329,8 +329,10 @@ public class BluetoothAdapterTest extends AndroidTestCase {
             // Skip the test if bluetooth is not present.
             return;
         }
+        TestUtils.adoptPermissionAsShellUid(BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED);
         assertNotSame(BluetoothStatusCodes.ERROR_UNKNOWN,
                 mAdapter.isDistanceMeasurementSupported());
+        TestUtils.dropPermissionAsShellUid();
     }
 
     public void test_getMaxConnectedAudioDevices() {
