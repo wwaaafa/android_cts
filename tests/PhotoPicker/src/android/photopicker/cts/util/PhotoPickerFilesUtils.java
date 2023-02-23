@@ -91,10 +91,10 @@ public class PhotoPickerFilesUtils {
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/jpeg", userId, isFavorite);
     }
 
-    public static List<Uri> createDNGVideosAndGetUris(int count, int userId) throws Exception {
+    public static List<Uri> createMj2VideosAndGetUris(int count, int userId) throws Exception {
         List<Uri> uriList = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            final Uri uri = createDNGVideo(userId);
+            final Uri uri = createMj2Video(userId);
             uriList.add(uri);
             clearMediaOwner(uri, userId);
         }
@@ -131,8 +131,8 @@ public class PhotoPickerFilesUtils {
         ShellUtils.runShellCommand(cmd);
     }
 
-    private static Uri createDNGVideo(int userId) throws Exception {
-        return getPermissionAndStageMedia(R.raw.test_video_dng,
+    private static Uri createMj2Video(int userId) throws Exception {
+        return getPermissionAndStageMedia(R.raw.test_video_mj2,
                 MediaStore.Video.Media.EXTERNAL_CONTENT_URI, "video/mp4", userId,
                 /* isFavorite */ false).first;
     }
