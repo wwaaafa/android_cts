@@ -5175,6 +5175,15 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                                 }
                             }
                         })
+                .setCarPropertyValueVerifier(
+                        (carPropertyConfig, propertyId, areaId, timestampNanos, tempInCelsius) -> {
+                            List<Integer> configArray = carPropertyConfig.getConfigArray();
+                            Integer minTempInCelsius = configArray.get(0);
+                            Integer maxTempInCelsius = configArray.get(1);
+                            Integer incrementInCelsius = configArray.get(2);
+                            VehiclePropertyVerifier.verifyHvacTemperatureIsValid(tempInCelsius,
+                                    minTempInCelsius, maxTempInCelsius, incrementInCelsius);
+                        })
                 .addReadPermission(Car.PERMISSION_CONTROL_CAR_CLIMATE)
                 .addWritePermission(Car.PERMISSION_CONTROL_CAR_CLIMATE)
                 .build()
