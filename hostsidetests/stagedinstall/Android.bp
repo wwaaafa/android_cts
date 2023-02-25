@@ -101,6 +101,9 @@ prebuilt_apex {
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v2_signed_bob.apex",
         },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v2_signed_bob.apex",
+        },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v2_signed_bob.apex",
         },
@@ -120,6 +123,9 @@ prebuilt_apex {
         },
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v2_signed_bob_rot.apex",
+        },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v2_signed_bob_rot.apex",
         },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v2_signed_bob_rot.apex",
@@ -141,6 +147,9 @@ prebuilt_apex {
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v2_signed_bob_rot_rollback.apex",
         },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v2_signed_bob_rot_rollback.apex",
+        },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v2_signed_bob_rot_rollback.apex",
         },
@@ -160,6 +169,9 @@ prebuilt_apex {
         },
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v3_signed_bob.apex",
+        },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v3_signed_bob.apex",
         },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v3_signed_bob.apex",
@@ -181,6 +193,9 @@ prebuilt_apex {
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v3_signed_bob_rot.apex",
         },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v3_signed_bob_rot.apex",
+        },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v3_signed_bob_rot.apex",
         },
@@ -200,6 +215,9 @@ prebuilt_apex {
         },
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v1.apex",
+        },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v1.apex",
         },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v1.apex",
@@ -221,6 +239,9 @@ prebuilt_apex {
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v2.apex",
         },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v2.apex",
+        },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v2.apex",
         },
@@ -240,6 +261,9 @@ prebuilt_apex {
         },
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v3.apex",
+        },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v3.apex",
         },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v3.apex",
@@ -261,6 +285,9 @@ prebuilt_apex {
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v2_additional_file.apex",
         },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v2_additional_file.apex",
+        },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v2_additional_file.apex",
         },
@@ -280,6 +307,9 @@ prebuilt_apex {
         },
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v2_additional_folder.apex",
+        },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v2_additional_folder.apex",
         },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v2_additional_folder.apex",
@@ -301,6 +331,9 @@ prebuilt_apex {
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v2_with_post_install_hook.apex",
         },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v2_with_post_install_hook.apex",
+        },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v2_with_post_install_hook.apex",
         },
@@ -320,6 +353,9 @@ prebuilt_apex {
         },
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v2_with_pre_install_hook.apex",
+        },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v2_with_pre_install_hook.apex",
         },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v2_with_pre_install_hook.apex",
@@ -341,6 +377,9 @@ prebuilt_apex {
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v2_wrong_sha.apex",
         },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v2_wrong_sha.apex",
+        },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v2_wrong_sha.apex",
         },
@@ -360,6 +399,9 @@ prebuilt_apex {
         },
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v2_without_apk_in_apex.apex",
+        },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v2_without_apk_in_apex.apex",
         },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v2_without_apk_in_apex.apex",
@@ -381,6 +423,9 @@ prebuilt_apex {
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim_not_pre_installed.apex",
         },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim_not_pre_installed.apex",
+        },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim_not_pre_installed.apex",
         },
@@ -400,6 +445,9 @@ prebuilt_apex {
         },
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v2_different_certificate.apex",
+        },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v2_different_certificate.apex",
         },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v2_different_certificate.apex",
@@ -421,6 +469,9 @@ prebuilt_apex {
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v2_different_package_name.apex",
         },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v2_different_package_name.apex",
+        },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v2_different_package_name.apex",
         },
@@ -440,6 +491,9 @@ prebuilt_apex {
         },
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v2_no_hashtree.apex",
+        },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v2_no_hashtree.apex",
         },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v2_no_hashtree.apex",
@@ -461,6 +515,9 @@ prebuilt_apex {
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v2_sdk_target_p.apex",
         },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v2_sdk_target_p.apex",
+        },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v2_sdk_target_p.apex",
         },
@@ -480,6 +537,9 @@ prebuilt_apex {
         },
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v2_apk_in_apex_sdk_target_p.apex",
+        },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v2_apk_in_apex_sdk_target_p.apex",
         },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v2_apk_in_apex_sdk_target_p.apex",
@@ -508,6 +568,9 @@ prebuilt_apex {
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v2_unsigned_apk_container.apex",
         },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v2_unsigned_apk_container.apex",
+        },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v2_unsigned_apk_container.apex",
         },
@@ -527,6 +590,9 @@ prebuilt_apex {
         },
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v2_unsigned_payload.apex",
+        },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v2_unsigned_payload.apex",
         },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v2_unsigned_payload.apex",
@@ -569,6 +635,9 @@ prebuilt_apex {
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v2_rebootless.apex",
         },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v2_rebootless.apex",
+        },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v2_rebootless.apex",
         },
@@ -588,6 +657,9 @@ prebuilt_apex {
         },
         arm64: {
             src: "testdata/apex/arm/com.android.apex.cts.shim.v3_rebootless.apex",
+        },
+        riscv64: {
+            src: "testdata/apex/riscv64/com.android.apex.cts.shim.v3_rebootless.apex",
         },
         x86: {
             src: "testdata/apex/x86/com.android.apex.cts.shim.v3_rebootless.apex",
