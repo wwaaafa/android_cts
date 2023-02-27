@@ -72,14 +72,13 @@ import com.android.queryable.info.ActivityInfo;
 import com.android.queryable.queries.Query;
 
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 // TODO(b/228016400): replace usages of createAndProvisionManagedProfile with a nene API
 @RunWith(BedsteadJUnit4.class)
-public class DevicePolicyManagementRoleHolderTest { // TODO: This is crashing on non-headless - figure it out - on headless it d't run with btest so follow up....
+public class DevicePolicyManagementRoleHolderTest {
     @ClassRule
     @Rule
     public static final DeviceState sDeviceState = new DeviceState();
@@ -137,7 +136,6 @@ public class DevicePolicyManagementRoleHolderTest { // TODO: This is crashing on
                                     + ".TestAppAccountAuthenticatorService"))
             .get();
 
-    @Ignore("b/268616097 fix issue with pre-existing accounts on the device")
     @Postsubmit(reason = "new test")
     @RequireFeature(FEATURE_MANAGED_USERS)
     @EnsureHasPermission(MANAGE_PROFILE_AND_DEVICE_OWNERS)
@@ -161,7 +159,6 @@ public class DevicePolicyManagementRoleHolderTest { // TODO: This is crashing on
             }
     }
 
-    @Ignore("b/268616097 fix issue with pre-existing accounts on the device")
     @Postsubmit(reason = "new test")
     @RequireFeature(FEATURE_MANAGED_USERS)
     @EnsureHasDeviceOwner
@@ -187,7 +184,6 @@ public class DevicePolicyManagementRoleHolderTest { // TODO: This is crashing on
         }
     }
 
-    @Ignore("b/268616097 fix issue with pre-existing accounts on the device")
     @Postsubmit(reason = "new test")
     @RequireFeature(FEATURE_MANAGED_USERS)
     @EnsureHasPermission(MANAGE_PROFILE_AND_DEVICE_OWNERS)
@@ -206,7 +202,6 @@ public class DevicePolicyManagementRoleHolderTest { // TODO: This is crashing on
                 .eventOccurred();
     }
 
-    @Ignore("b/268616097 fix issue with pre-existing accounts on the device")
     @Postsubmit(reason = "new test")
     @RequireFeature(FEATURE_MANAGED_USERS)
     @EnsureHasPermission(MANAGE_PROFILE_AND_DEVICE_OWNERS)
@@ -225,7 +220,6 @@ public class DevicePolicyManagementRoleHolderTest { // TODO: This is crashing on
                 .eventOccurred();
     }
 
-    @Ignore("b/268616097 fix issue with pre-existing accounts on the device")
     @Postsubmit(reason = "new test")
     @RequireFeature(FEATURE_MANAGED_USERS)
     @EnsureHasPermission(MANAGE_PROFILE_AND_DEVICE_OWNERS)
@@ -245,7 +239,6 @@ public class DevicePolicyManagementRoleHolderTest { // TODO: This is crashing on
                 .eventOccurred();
     }
 
-    @Ignore("b/268616097 fix issue with pre-existing accounts on the device")
     @Postsubmit(reason = "New test")
     @Test
     @EnsureHasPermission(MANAGE_ROLE_HOLDERS)
@@ -262,7 +255,6 @@ public class DevicePolicyManagementRoleHolderTest { // TODO: This is crashing on
     }
 
     // TODO(b/222669810): add ensureHasNoAccounts annotation
-    @Ignore("b/268616097 fix issue with pre-existing accounts on the device")
     @Postsubmit(reason = "New test")
     @Test
     @EnsureHasPermission(MANAGE_ROLE_HOLDERS)
@@ -285,7 +277,6 @@ public class DevicePolicyManagementRoleHolderTest { // TODO: This is crashing on
     }
 
     // TODO(b/222669810): add ensureHasNoAccounts annotation
-    @Ignore("b/268616097 fix issue with pre-existing accounts on the device")
     @Postsubmit(reason = "New test")
     @Test
     @RequireFeature(FEATURE_MANAGED_USERS)
@@ -307,7 +298,6 @@ public class DevicePolicyManagementRoleHolderTest { // TODO: This is crashing on
                 .isFalse();
     }
 
-    @Ignore("b/268616097 fix issue with pre-existing accounts on the device")
     @Postsubmit(reason = "New test")
     @Test
     @EnsureHasPermission(MANAGE_ROLE_HOLDERS)
@@ -326,7 +316,6 @@ public class DevicePolicyManagementRoleHolderTest { // TODO: This is crashing on
         }
     }
 
-    @Ignore("b/268616097 fix issue with pre-existing accounts on the device")
     @Postsubmit(reason = "New test")
     @Test
     @EnsureDoesNotHavePermission(MANAGE_ROLE_HOLDERS)
