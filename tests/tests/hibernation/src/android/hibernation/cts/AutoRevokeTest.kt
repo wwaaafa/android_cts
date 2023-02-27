@@ -54,6 +54,7 @@ import com.android.compatibility.common.util.depthFirstSearch
 import com.android.compatibility.common.util.uiDump
 import com.android.modules.utils.build.SdkLevel
 import java.lang.reflect.Modifier
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import java.util.regex.Pattern
@@ -351,6 +352,10 @@ class AutoRevokeTest {
     @AppModeFull(reason = "Uses separate apps for testing")
     @Test
     fun testInstallGrants_notRevokedImmediately() {
+        // This assumption is not needed for U or above.
+        assumeFalse(
+            "The device can be treated as U for its Build.VERSION.CODENAME",
+            isCodeNameAtLeastU())
         withUnusedThresholdMs(TimeUnit.DAYS.toMillis(30)) {
             withDummyApp {
                 // Setup
@@ -574,6 +579,11 @@ class AutoRevokeTest {
 
     private fun waitFindObject(selector: BySelector): UiObject2 {
         return waitFindObject(instrumentation.uiAutomation, selector)
+    }
+
+    private fun isCodeNameAtLeastU(): Boolean {
+        val buildCodeName = Build.VERSION.CODENAME.toUpperCase(Locale.ROOT)
+        return buildCodeName.compareTo("UPSIDEDOWNCAKE") >= 0
     }
 }
 
