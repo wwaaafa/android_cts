@@ -62,7 +62,6 @@ java_test_host {
         "core_cts_test_resources",
         "cts-tradefed",
         "host-libprotobuf-java-full",
-        "platformprotos",
         "tradefed",
         "truth-prebuilt",
     ],
