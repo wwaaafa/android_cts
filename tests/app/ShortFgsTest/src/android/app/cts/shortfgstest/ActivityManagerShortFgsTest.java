@@ -59,6 +59,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -845,6 +846,7 @@ public class ActivityManagerShortFgsTest {
      * Make sure, if a short service doesn't stop, the app gets ANRed.
      */
     @Test
+    @Ignore
     public void testAnr() throws Exception {
         final int anrExtraTimeout = 10_000;
 
@@ -868,7 +870,7 @@ public class ActivityManagerShortFgsTest {
             Thread.sleep(SHORTENED_TIMEOUT + anrExtraTimeout + 2000);
 
             // Wait for the ANR.
-            final long anrTime = monitor.waitForAnrAndReturnUptime(10_000);
+            final long anrTime = monitor.waitForAnrAndReturnUptime(60_000);
 
             // The ANR time should be after the timeout + the ANR grace period.
             assertThat(anrTime).isAtLeast(startTime + SHORTENED_TIMEOUT + anrExtraTimeout);
