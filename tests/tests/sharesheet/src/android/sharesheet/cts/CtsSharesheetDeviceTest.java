@@ -369,6 +369,47 @@ public class CtsSharesheetDeviceTest {
         }
     }
 
+    // Launch the chooser with an EXTRA_INTENT of type "test/cts" and EXTRA_ALTERNATE_INTENTS with
+    // one of "test/cts_alternate". Ensure that the "alternate type" app, which only accepts
+    // "test/cts_alternate" shows up and can be chosen.
+    @Test
+    public void testAlternateTargetsShown() throws InterruptedException {
+        if (!mMeetsResolutionRequirements) return; // Skip test if resolution is too low
+
+        final CountDownLatch chooserCallbackInvoked = new CountDownLatch(1);
+
+        BroadcastReceiver chooserCallbackReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                ComponentName chosenComponent = intent.getParcelableExtra(
+                        Intent.EXTRA_CHOSEN_COMPONENT, ComponentName.class);
+                assertEquals("android.sharesheet.cts.packages.alternatetype",
+                        chosenComponent.getPackageName());
+                assertEquals("android.sharesheet.cts.packages.LabelTestActivity",
+                        chosenComponent.getClassName());
+                chooserCallbackInvoked.countDown();
+            }
+        };
+
+        mContext.registerReceiver(chooserCallbackReceiver,
+                new IntentFilter(ACTION_INTENT_SENDER_FIRED_ON_CLICK),
+                Context.RECEIVER_EXPORTED);
+
+
+        try {
+            Intent shareIntent = createShareIntent(false, 0, 0, null);
+            Intent alternateIntent = new Intent(Intent.ACTION_SEND);
+            alternateIntent.setType(CTS_ALTERNATE_DATA_TYPE);
+            shareIntent.putExtra(Intent.EXTRA_ALTERNATE_INTENTS, new Intent[] {alternateIntent});
+            launchSharesheet(shareIntent);
+            findTextContains(mContext.getString(R.string.test_alternate_app_label)).click();
+            assertTrue(chooserCallbackInvoked.await(1000, TimeUnit.MILLISECONDS));
+        } finally {
+            mContext.unregisterReceiver(chooserCallbackReceiver);
+            closeSharesheet();
+        }
+    }
+
     @Test
     @ApiTest(apis = "android.content.Intent#EXTRA_CHOOSER_CUSTOM_ACTIONS")
     public void testCustomAction() {
