@@ -67,6 +67,7 @@ import androidx.test.filters.MediumTest;
 import androidx.test.filters.SmallTest;
 
 import com.android.compatibility.common.util.ApiLevelUtil;
+import com.android.compatibility.common.util.ApiTest;
 import com.android.compatibility.common.util.MediaUtils;
 import com.android.compatibility.common.util.Preconditions;
 
@@ -141,6 +142,18 @@ public class MediaCodecTest {
      * A selective test to ensure proper exceptions are thrown from MediaCodec
      * methods when called in incorrect operational states.
      */
+    @ApiTest(apis = {"MediaCodec#createByCodecName", "MediaCodec#createDecoderByType",
+            "MediaCodec#createEncoderByType", "MediaCodec#start", "MediaCodec#flush",
+            "MediaCodec#configure", "MediaCodec#dequeueInputBuffer",
+            "MediaCodec#dequeueOutputBuffer", "MediaCodec#createInputSurface",
+            "MediaCodec#getInputBuffers", "MediaCodec#getQueueRequest",
+            "MediaCodec#getOutputFrame", "MediaCodec#stop", "MediaCodec#release",
+            "MediaCodec#getCodecInfo", "MediaCodec#getSupportedVendorParameters",
+            "MediaCodec#getParameterDescriptor",
+            "MediaCodec#subscribeToVendorParameters",
+            "MediaCodec#unsubscribeFromVendorParameters",
+            "MediaCodec#getInputBuffer", "MediaCodec#getOutputBuffer",
+            "MediaCodec#setCallback", "MediaCodec#getName"})
     @Test
     public void testException() throws Exception {
         boolean tested = false;
@@ -542,6 +555,7 @@ public class MediaCodecTest {
      * <br> calling createInputSurface() after start() throws exception
      * <br> calling createInputSurface() with a non-Surface color format is not required to throw exception
      */
+    @ApiTest(apis = "MediaCodec#createInputSurface")
     @Test
     public void testCreateInputSurfaceErrors() {
         if (!supportsCodec(MIME_TYPE, true)) {
@@ -593,6 +607,7 @@ public class MediaCodecTest {
      * <br> signaling EOS twice throws exception
      * <br> submitting a frame after EOS throws exception [TODO]
      */
+    @ApiTest(apis = "MediaCodec#signalEndOfInputStream")
     @Test
     public void testSignalSurfaceEOS() {
         if (!supportsCodec(MIME_TYPE, true)) {
@@ -651,6 +666,7 @@ public class MediaCodecTest {
      * Tests:
      * <br> stopping with buffers in flight doesn't crash or hang
      */
+    @ApiTest(apis = "MediaCodec#stop")
     @Test
     public void testAbruptStop() {
         if (!supportsCodec(MIME_TYPE, true)) {
@@ -707,6 +723,7 @@ public class MediaCodecTest {
         }
     }
 
+    @ApiTest(apis = {"MediaCodec#flush", "MediaCodec#release"})
     @Test
     public void testReleaseAfterFlush() throws IOException, InterruptedException {
         String mimes[] = new String[] { MIME_TYPE, MIME_TYPE_AUDIO};
@@ -770,11 +787,13 @@ public class MediaCodecTest {
         callbackThread.join();
     }
 
+    @ApiTest(apis = {"MediaCodec#setCallback", "MediaCodec#flush", "MediaCodec#reset"})
     @Test
     public void testAsyncFlushAndReset() throws Exception, InterruptedException {
         testAsyncReset(false /* testStop */);
     }
 
+    @ApiTest(apis = {"MediaCodec#setCallback", "MediaCodec#stop", "MediaCodec#reset"})
     @Test
     public void testAsyncStopAndReset() throws Exception, InterruptedException {
         testAsyncReset(true /* testStop */);
@@ -1105,6 +1124,7 @@ public class MediaCodecTest {
      * Tests:
      * <br> dequeueInputBuffer() fails when encoder configured with an input Surface
      */
+    @ApiTest(apis = {"MediaCodec#dequeueInputBuffer", "MediaCodec#getMetrics"})
     @Test
     public void testDequeueSurface() {
         if (!supportsCodec(MIME_TYPE, true)) {
@@ -1164,6 +1184,8 @@ public class MediaCodecTest {
      * <br> configure() encoder with Surface, re-configure() without Surface works
      * <br> sending EOS with signalEndOfInputStream on non-Surface encoder fails
      */
+    @ApiTest(apis = {"MediaCodec#configure", "MediaCodec#signalEndOfInputStream",
+            "MediaCodec#getMetrics"})
     @Test
     public void testReconfigureWithoutSurface() {
         if (!supportsCodec(MIME_TYPE, true)) {
@@ -1233,6 +1255,7 @@ public class MediaCodecTest {
         }
     }
 
+    @ApiTest(apis = "MediaCodec#flush")
     @Test
     public void testDecodeAfterFlush() throws InterruptedException {
         testDecodeAfterFlush(true /* audio */);
@@ -1414,6 +1437,7 @@ public class MediaCodecTest {
      * Tests whether decoding a short group-of-pictures succeeds. The test queues a few video frames
      * then signals end-of-stream. The test fails if the decoder doesn't output the queued frames.
      */
+    @ApiTest(apis = {"MediaCodecInfo.CodecCapabilities#COLOR_FormatSurface"})
     @Test
     public void testDecodeShortInput() throws InterruptedException {
         // Input buffers from this input video are queued up to and including the video frame with
@@ -1525,6 +1549,10 @@ public class MediaCodecTest {
     /**
      * Tests creating two decoders for {@link #MIME_TYPE_AUDIO} at the same time.
      */
+    @ApiTest(apis = {"MediaCodec#createDecoderByType",
+            "android.media.MediaFormat#KEY_MIME",
+            "android.media.MediaFormat#KEY_SAMPLE_RATE",
+            "android.media.MediaFormat#KEY_CHANNEL_COUNT"})
     @Test
     public void testCreateTwoAudioDecoders() {
         final MediaFormat format = MediaFormat.createAudioFormat(
@@ -1572,6 +1600,10 @@ public class MediaCodecTest {
     /**
      * Tests creating an encoder and decoder for {@link #MIME_TYPE_AUDIO} at the same time.
      */
+    @ApiTest(apis = {"MediaCodec#createDecoderByType", "MediaCodec#createEncoderByType",
+            "android.media.MediaFormat#KEY_MIME",
+            "android.media.MediaFormat#KEY_SAMPLE_RATE",
+            "android.media.MediaFormat#KEY_CHANNEL_COUNT"})
     @Test
     public void testCreateAudioDecoderAndEncoder() {
         if (!supportsCodec(MIME_TYPE_AUDIO, true)) {
@@ -1630,6 +1662,12 @@ public class MediaCodecTest {
         }
     }
 
+    @ApiTest(apis = {"MediaCodec#createEncoderByType",
+            "android.media.MediaFormat#KEY_MIME",
+            "android.media.MediaFormat#KEY_SAMPLE_RATE",
+            "android.media.MediaFormat#KEY_CHANNEL_COUNT",
+            "android.media.MediaFormat#KEY_WIDTH",
+            "android.media.MediaFormat#KEY_HEIGHT"})
     @Test
     public void testConcurrentAudioVideoEncodings() throws InterruptedException {
         if (!supportsCodec(MIME_TYPE_AUDIO, true)) {
@@ -1678,6 +1716,7 @@ public class MediaCodecTest {
         public int mBitRate;
     }
 
+    @ApiTest(apis = {"MediaCodec#CryptoInfo", "MediaCodec#CryptoInfo#Pattern"})
     @Test
     public void testCryptoInfoPattern() {
         CryptoInfo info = new CryptoInfo();
@@ -1978,6 +2017,7 @@ public class MediaCodecTest {
     /**
      * Tests MediaCodec.CryptoException
      */
+    @ApiTest(apis = "MediaCodec#CryptoException")
     @Test
     public void testCryptoException() {
         int errorCode = CryptoException.ERROR_KEY_EXPIRED;
@@ -1996,6 +2036,8 @@ public class MediaCodecTest {
      *
      * As of Q, any codec of type "audio/raw" must support PCM encoding float.
      */
+    @ApiTest(apis = {"android.media.AudioFormat#ENCODING_PCM_16BIT",
+            "android.media.AudioFormat#ENCODING_PCM_FLOAT"})
     @MediumTest
     @Test
     public void testPCMEncoding() throws Exception {
@@ -2121,6 +2163,7 @@ public class MediaCodecTest {
         return actualEncoding;
     }
 
+    @ApiTest(apis = "android.media.AudioFormat#KEY_FLAC_COMPRESSION_LEVEL")
     @SmallTest
     @Test
     public void testFlacIdentity() throws Exception {
@@ -2174,6 +2217,7 @@ public class MediaCodecTest {
         }
     }
 
+    @ApiTest(apis = "MediaCodec#release")
     @Test
     public void testAsyncRelease() throws Exception {
         OutputSurface outputSurface = new OutputSurface(1, 1);
@@ -2261,6 +2305,7 @@ public class MediaCodecTest {
         }
     }
 
+    @ApiTest(apis = "MediaCodec#setAudioPresentation")
     @Test
     public void testSetAudioPresentation() throws Exception {
         MediaFormat format = MediaFormat.createAudioFormat(
@@ -2276,6 +2321,7 @@ public class MediaCodecTest {
                 (new AudioPresentation.Builder(42 /* presentationId */)).build());
     }
 
+    @ApiTest(apis = "android.media.MediaFormat#KEY_PREPEND_HEADER_TO_SYNC_FRAMES")
     @Test
     public void testPrependHeadersToSyncFrames() throws IOException {
         MediaCodecList mcl = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
@@ -2350,6 +2396,7 @@ public class MediaCodecTest {
      * codec is flushed after the first buffer is queued, so this test walks
      * through the scenario.
      */
+    @ApiTest(apis = "MediaCodec#flush")
     @Test
     public void testFlushAfterFirstBuffer() throws Exception {
         if (MediaUtils.check(mIsAtLeastR, "test needs Android 11")) {
@@ -2447,6 +2494,10 @@ public class MediaCodecTest {
         }
     }
 
+    @ApiTest(apis = {"MediaCodec#getSupportedVendorParameters",
+            "MediaCodec#getParameterDescriptor",
+            "MediaCodec#subscribeToVendorParameters",
+            "MediaCodec#unsubscribeFromVendorParameters"})
     @Test
     public void testVendorParameters() {
         if (!MediaUtils.check(mIsAtLeastS, "test needs Android 12")) {
