@@ -60,6 +60,7 @@ import android.telephony.mockmodem.MockModemConfigInterface;
 import android.telephony.mockmodem.MockModemManager;
 import android.util.Log;
 
+import androidx.annotation.RequiresApi;
 import androidx.test.InstrumentationRegistry;
 
 import com.android.compatibility.common.util.ShellIdentityUtils;
@@ -719,6 +720,7 @@ public class TelephonyManagerTestOnMockModem {
     /**
      * Verify the NotRestricted status of the device with READ_PHONE_STATE permission granted.
      */
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     @Test
     public void getCarrierRestrictionStatus_ReadPhoneState_NotRestricted() throws Exception {
         LinkedBlockingQueue<Integer> carrierRestrictionStatusResult = new LinkedBlockingQueue<>(1);
@@ -745,6 +747,7 @@ public class TelephonyManagerTestOnMockModem {
     /**
      * Verify the Restricted status of the device with READ_PHONE_STATE permission granted.
      */
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     @Test
     public void getCarrierRestrictionStatus_ReadPhoneState_Restricted() throws Exception {
         LinkedBlockingQueue<Integer> carrierRestrictionStatusResult = new LinkedBlockingQueue<>(1);
@@ -772,6 +775,7 @@ public class TelephonyManagerTestOnMockModem {
      * Verify the Restricted To Caller status of the device with READ_PHONE_STATE permission
      * granted.
      */
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     @Test
     public void getCarrierRestrictionStatus_ReadPhoneState_RestrictedToCaller_MNO() throws Exception {
         LinkedBlockingQueue<Integer> carrierRestrictionStatusResult = new LinkedBlockingQueue<>(1);
@@ -800,6 +804,7 @@ public class TelephonyManagerTestOnMockModem {
      * Verify the Restricted status of the device with READ_PHONE_STATE permission granted.
      * MVNO operator reference without GID
      */
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     @Test
     public void getCarrierRestrictionStatus_ReadPhoneState_RestrictedToCaller_MNO1() throws Exception {
         LinkedBlockingQueue<Integer> carrierRestrictionStatusResult = new LinkedBlockingQueue<>(1);
@@ -828,6 +833,7 @@ public class TelephonyManagerTestOnMockModem {
      * Verify the Restricted To Caller status of the device with READ_PHONE_STATE permission
      * granted.
      */
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     @Test
     public void getCarrierRestrictionStatus_ReadPhoneState_RestrictedToCaller_MVNO() throws Exception {
         LinkedBlockingQueue<Integer> carrierRestrictionStatusResult = new LinkedBlockingQueue<>(1);
@@ -855,6 +861,7 @@ public class TelephonyManagerTestOnMockModem {
     /**
      * Verify the Unknown status of the device with READ_PHONE_STATE permission granted.
      */
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     @Test
     public void getCarrierRestrictionStatus_ReadPhoneState_Unknown() throws Exception {
         LinkedBlockingQueue<Integer> carrierRestrictionStatusResult = new LinkedBlockingQueue<>(1);
