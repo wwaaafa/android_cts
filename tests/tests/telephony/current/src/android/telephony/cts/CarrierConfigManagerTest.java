@@ -345,6 +345,21 @@ public class CarrierConfigManagerTest {
     }
 
     @Test
+    public void testGetConfig_keyWithoutDefaultValue() {
+        String keyWithDefaultValue = CarrierConfigManager.KEY_CARRIER_SUPPORTS_TETHERING_BOOL;
+        String keyWithoutDefaultValue = "random_key_for_testing";
+
+        PersistableBundle configSubset = mConfigManager.getConfig(keyWithoutDefaultValue);
+        assertThat(configSubset.isEmpty()).isFalse();
+        assertThat(configSubset.keySet()).doesNotContain(keyWithoutDefaultValue);
+
+        configSubset = mConfigManager.getConfig(keyWithDefaultValue, keyWithoutDefaultValue);
+        assertThat(configSubset.isEmpty()).isFalse();
+        assertThat(configSubset.keySet()).contains(keyWithDefaultValue);
+        assertThat(configSubset.keySet()).doesNotContain(keyWithoutDefaultValue);
+    }
+
+    @Test
     @AsbSecurityTest(cveBugId = 73136824)
     public void testRevokePermission() {
         PersistableBundle config;
