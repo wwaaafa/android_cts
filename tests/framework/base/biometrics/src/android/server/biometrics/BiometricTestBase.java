@@ -529,7 +529,6 @@ abstract class BiometricTestBase extends ActivityManagerTestBase implements Test
         //the enrollent
         //TODO(b/217275524)
         Thread.sleep(200);
-
         session.finishEnroll(userId);
         mInstrumentation.waitForIdleSync();
         Utils.waitForIdleService(this::getSensorStates);
