@@ -50,7 +50,6 @@ import com.android.compatibility.common.util.SystemUtil;
 
 import org.junit.Before;
 import org.junit.Rule;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -83,7 +82,6 @@ public final class CarServiceHelperServiceUpdatableTest extends CarApiTestBase {
     @IgnoreInvalidApi(reason = "Class not in classpath as it's indirectly tested using dumpsys")
     @ApiRequirements(minCarVersion = ApiRequirements.CarVersion.TIRAMISU_0,
             minPlatformVersion = ApiRequirements.PlatformVersion.TIRAMISU_0)
-    @Ignore("b/234674080")
     public void testCarServiceHelperServiceDump() throws Exception {
         assumeSystemServerDumpSupported();
 

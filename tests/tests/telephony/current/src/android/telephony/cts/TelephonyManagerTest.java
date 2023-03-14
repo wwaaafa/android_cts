@@ -3622,6 +3622,7 @@ public class TelephonyManagerTest {
 
             ModemActivityInfo diff = activityInfo1.getDelta(activityInfo2);
             assertNotNull(diff);
+            assertTrue("two activityInfo are identical", !activityInfo1.equals(activityInfo2));
             assertTrue("diff is" + diff, diff.isValid() || diff.isEmpty());
         } finally {
             InstrumentationRegistry.getInstrumentation().getUiAutomation()

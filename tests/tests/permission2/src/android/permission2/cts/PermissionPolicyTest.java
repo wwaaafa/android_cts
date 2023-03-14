@@ -20,8 +20,6 @@ import static android.content.pm.PermissionInfo.FLAG_INSTALLED;
 import static android.content.pm.PermissionInfo.PROTECTION_MASK_BASE;
 import static android.os.Build.VERSION.SECURITY_PATCH;
 
-import static com.android.compatibility.common.util.SystemUtil.runShellCommand;
-
 import static com.google.common.truth.Truth.assertWithMessage;
 
 import android.Manifest;
@@ -31,7 +29,6 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.PermissionGroupInfo;
 import android.content.pm.PermissionInfo;
-import android.os.Build;
 import android.os.Process;
 import android.os.SystemProperties;
 import android.platform.test.annotations.AppModeFull;
@@ -76,9 +73,6 @@ public class PermissionPolicyTest {
 
     private static final String SET_UNRESTRICTED_GESTURE_EXCLUSION
             = "android.permission.SET_UNRESTRICTED_GESTURE_EXCLUSION";
-
-    private static final String BIND_OEM_CAR_SERVICE =
-            "android.car.permission.BIND_OEM_CAR_SERVICE";
 
     private static final String ACCESS_SHORTCUTS_PERMISSION = "android.permission.ACCESS_SHORTCUTS";
     private static final String BIND_QUICK_SETTINGS_TILE =
@@ -226,11 +220,7 @@ public class PermissionPolicyTest {
             final int expectedProtectionFlags =
                     expectedPermission.protectionLevel & ~PROTECTION_MASK_BASE;
             final int declaredProtectionFlags = declaredPermission.getProtectionFlags();
-            if (expectedProtectionFlags != declaredProtectionFlags
-                    && !shouldAllowProtectionFlagsChange(
-                            expectedPermissionName,
-                            expectedProtectionFlags,
-                            declaredProtectionFlags)) {
+            if (expectedProtectionFlags != declaredProtectionFlags) {
                 offendingList.add(
                         String.format(
                                 "Permission %s invalid enforced protection %x, expected %x",
@@ -526,26 +516,9 @@ public class PermissionPolicyTest {
                 return parseDate(SECURITY_PATCH).before(MANAGE_COMPANION_DEVICES_PATCH_DATE);
             case SET_UNRESTRICTED_GESTURE_EXCLUSION:
                 return true;
-            case BIND_OEM_CAR_SERVICE:
-                return shoudldSkipBindOemCarService();
             default:
                 return false;
         }
-    }
-
-    /**
-     * check should be skipped only for T and T-QPR1
-     */
-    private boolean shoudldSkipBindOemCarService() {
-        if (Build.VERSION.SDK_INT > 33) {
-            return false;
-        }
-        String output = runShellCommand("dumpsys car_service --version");
-        if (output.contains("Car API minor: 0") || output.contains("Car API minor: 1")) {
-            return true;
-        }
-
-        return false;
     }
 
     private static boolean shouldAllowProtectionFlagsChange(
