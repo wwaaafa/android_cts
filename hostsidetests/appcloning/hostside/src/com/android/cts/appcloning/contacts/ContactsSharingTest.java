@@ -281,4 +281,16 @@ public class ContactsSharingTest extends AppCloningBaseHostTest {
                     OWNER_USER_ID));
         }
     }
+
+    @Test
+    public void testCloneAccountsContactsSync_syncsAreDisabled() throws Exception {
+        installPackage(LAUNCHABLE_CLONE_PROFILE_APP, "--user " + Integer.valueOf(sCloneUserId));
+        Map<String, String> args = new HashMap<>();
+
+        // Check that contact syncs for cloned accounts are disabled
+        runDeviceTestAsUser(CLONE_LAUNCHABLE_APP_CONTACTS_SHARING_TEST,
+                CLONE_LAUNCHABLE_APP_CONTACTS_SHARING_TEST + "." + CONTACTS_SHARING_TEST_CLASS,
+                "testContactSyncsForCloneAccounts_syncsAreDisabled",
+                Integer.parseInt(sCloneUserId), args);
+    }
 }
