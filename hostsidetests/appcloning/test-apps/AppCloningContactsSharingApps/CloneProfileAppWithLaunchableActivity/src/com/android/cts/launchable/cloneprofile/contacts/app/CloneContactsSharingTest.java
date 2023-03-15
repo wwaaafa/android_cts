@@ -18,6 +18,8 @@ package com.android.cts.launchable.cloneprofile.contacts.app;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
 import android.content.ContentResolver;
@@ -55,11 +57,13 @@ public class CloneContactsSharingTest {
 
     private Context mContext;
     private ContentResolver mContentResolver;
+    private AccountManager mAccountManager;
 
     @Before
     public void setUp() throws Exception {
         mContext = InstrumentationRegistry.getContext();
         mContentResolver = mContext.getContentResolver();
+        mAccountManager = AccountManager.get(mContext);
     }
 
     /**
@@ -206,6 +210,11 @@ public class CloneContactsSharingTest {
         }
     }
 
+    private void assertContactsNotSyncable(Account testAccount) {
+        int isSyncable = ContentResolver.getIsSyncable(testAccount, ContactsContract.AUTHORITY);
+        assertThat(isSyncable).isEqualTo(0);
+    }
+
     @Test
     public void testCloneContactsProviderInsert_rawContacts_doesNotInsertActually() {
         Cursor resultsBeforeInsert = getAllRawContactsForTestAccount(TEST_ACCOUNT_TYPE,
@@ -348,4 +357,23 @@ public class CloneContactsSharingTest {
         assertThat(resultsAfterDelete.getCount()).isEqualTo(resultsBeforeDelete.getCount());
     }
 
+    @Test
+    public void testContactSyncsForCloneAccounts_syncsAreDisabled() {
+        // Add test account with mock authenticator through account manager
+        Account testAccount =
+                new Account(TEST_ACCOUNT_NAME, TestAccountAuthenticator.TEST_ACCOUNT_TYPE);
+        boolean result = mAccountManager.addAccountExplicitly(testAccount, /* password */ null,
+                /* userData */ null);
+        assertThat(result).isTrue();
+
+        // Assert that contact syncs for clone profile accounts are disabled
+        assertContactsNotSyncable(testAccount);
+
+        // Assert that contact syncs are not allowed even after it is set as syncable through
+        // content resolver APIs
+        ContentResolver.setIsSyncable(testAccount, ContactsContract.AUTHORITY, /* syncable */ 1);
+        assertContactsNotSyncable(testAccount);
+
+        mAccountManager.removeAccountExplicitly(testAccount);
+    }
 }

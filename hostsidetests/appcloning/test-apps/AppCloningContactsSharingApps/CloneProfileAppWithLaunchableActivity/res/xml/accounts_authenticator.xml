@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (C) 2022 The Android Open Source Project
+  ~ Copyright (C) 2023 The Android Open Source Project
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
   ~ limitations under the License.
   -->
 
-<resources xmlns:android="http://schemas.android.com/apk/res/android"
-           xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_name">Clone Profile CTS App With Launcher Activity</string>
-    <string name="accounts_authenticator_label">Contacts test accounts authenticator</string>
-</resources>
+<account-authenticator xmlns:android="http://schemas.android.com/apk/res/android"
+                       android:accountType="test.com"
+                       android:label="@string/accounts_authenticator_label"
+/>
