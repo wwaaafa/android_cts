@@ -26,6 +26,8 @@ import static com.android.bedstead.metricsrecorder.truth.MetricQueryBuilderSubje
 import static com.android.bedstead.nene.appops.AppOpsMode.ALLOWED;
 import static com.android.bedstead.nene.appops.AppOpsMode.DEFAULT;
 import static com.android.bedstead.nene.appops.CommonAppOps.OPSTR_SYSTEM_EXEMPT_FROM_SUSPENSION;
+import static com.android.bedstead.nene.flags.CommonFlags.DevicePolicyManager.PERMISSION_BASED_ACCESS_EXPERIMENT_FLAG;
+import static com.android.bedstead.nene.flags.CommonFlags.NAMESPACE_DEVICE_POLICY_MANAGER;
 import static com.android.bedstead.nene.permissions.CommonPermissions.MANAGE_DEVICE_POLICY_APP_EXEMPTIONS;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -43,6 +45,7 @@ import android.util.ArrayMap;
 import com.android.bedstead.harrier.BedsteadJUnit4;
 import com.android.bedstead.harrier.DeviceState;
 import com.android.bedstead.harrier.annotations.EnsureDoesNotHavePermission;
+import com.android.bedstead.harrier.annotations.EnsureFeatureFlagEnabled;
 import com.android.bedstead.harrier.annotations.EnsureHasPermission;
 import com.android.bedstead.harrier.annotations.IntTestParameter;
 import com.android.bedstead.harrier.annotations.Postsubmit;
@@ -52,6 +55,8 @@ import com.android.bedstead.harrier.annotations.enterprise.PolicyAppliesTest;
 import com.android.bedstead.harrier.annotations.enterprise.PolicyDoesNotApplyTest;
 import com.android.bedstead.harrier.policies.ApplicationExemptions;
 import com.android.bedstead.metricsrecorder.EnterpriseMetricsRecorder;
+import com.android.bedstead.harrier.annotations.enterprise.EnsureHasDeviceOwner;
+import com.android.bedstead.harrier.annotations.enterprise.EnsureHasDevicePolicyManagerRoleHolder;
 import com.android.bedstead.nene.TestApis;
 import com.android.bedstead.nene.utils.Poll;
 import com.android.bedstead.testapp.TestApp;
@@ -344,6 +349,25 @@ public class ApplicationExemptionsTest {
             Poll.forValue("Start foreground activity from background",
                     () -> TestApis.activities().foregroundActivity())
                     .toBeEqualTo(testActivity.component()).errorOnFail().await();
+        }
+    }
+
+    @Test
+    @EnsureHasDevicePolicyManagerRoleHolder
+    @EnsureHasDeviceOwner(isPrimary = true)
+    @EnsureFeatureFlagEnabled(
+            namespace = NAMESPACE_DEVICE_POLICY_MANAGER,
+            key = PERMISSION_BASED_ACCESS_EXPERIMENT_FLAG)
+    @Postsubmit(reason = "new test")
+    public void setApplicationExemptions_noExemption_testAppCanBeSuspended()
+            throws NameNotFoundException {
+
+        try (TestAppInstance testApp = sTestApp.install()) {
+            sDeviceState.dpc().devicePolicyManager().setPackagesSuspended(null,
+                    new String[] {sTestApp.packageName()}, true);
+
+            assertThat(sDeviceState.dpc().devicePolicyManager().isPackageSuspended(null,
+                    sTestApp.packageName())).isEqualTo(true);
         }
     }
 }
