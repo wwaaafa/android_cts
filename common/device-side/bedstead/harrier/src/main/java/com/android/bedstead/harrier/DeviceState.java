@@ -74,6 +74,7 @@ import com.android.bedstead.harrier.annotations.EnsurePackageNotInstalled;
 import com.android.bedstead.harrier.annotations.EnsurePasswordNotSet;
 import com.android.bedstead.harrier.annotations.EnsurePasswordSet;
 import com.android.bedstead.harrier.annotations.EnsureScreenIsOn;
+import com.android.bedstead.harrier.annotations.EnsureSecureSettingSet;
 import com.android.bedstead.harrier.annotations.EnsureTestAppHasAppOp;
 import com.android.bedstead.harrier.annotations.EnsureTestAppHasPermission;
 import com.android.bedstead.harrier.annotations.EnsureTestAppInstalled;
@@ -968,6 +969,15 @@ public final class DeviceState extends HarrierRule {
                 continue;
             }
 
+            if (annotation instanceof EnsureSecureSettingSet) {
+                EnsureSecureSettingSet ensureSecureSettingSetAnnotation =
+                        (EnsureSecureSettingSet) annotation;
+                ensureSecureSettingSet(
+                        ensureSecureSettingSetAnnotation.key(),
+                        ensureSecureSettingSetAnnotation.value());
+                continue;
+            }
+
             if (annotation instanceof EnsureGlobalSettingSet) {
                 EnsureGlobalSettingSet ensureGlobalSettingSetAnnotation =
                         (EnsureGlobalSettingSet) annotation;
@@ -1550,6 +1560,8 @@ public final class DeviceState extends HarrierRule {
     private TestAppProvider mTestAppProvider = new TestAppProvider();
     private Map<String, TestAppInstance> mTestApps = new HashMap<>();
     private final Map<String, String> mOriginalGlobalSettings = new HashMap<>();
+
+    private final Map<String, String> mOriginalSecureSettings = new HashMap<>();
     private boolean mAnnotationHasSwitchedUser = false;
     private final Set<AccountReference> mCreatedAccounts = new HashSet<>();
     private Map<String, AccountReference> mAccounts = new HashMap<>();
@@ -2474,6 +2486,11 @@ public final class DeviceState extends HarrierRule {
             TestApis.settings().global().putString(s.getKey(), s.getValue());
         }
         mOriginalGlobalSettings.clear();
+
+        for (Map.Entry<String, String> s : mOriginalSecureSettings.entrySet()) {
+            TestApis.settings().secure().putString(s.getKey(), s.getValue());
+        }
+        mOriginalSecureSettings.clear();
 
         TestApis.activities().clearAllActivities();
         mAnnotationExecutors.values().forEach(AnnotationExecutor::teardownShareableState);
@@ -3440,6 +3457,14 @@ public final class DeviceState extends HarrierRule {
         }
 
         TestApis.settings().global().putString(key, value);
+    }
+
+    private void ensureSecureSettingSet(String key, String value) {
+        if (!mOriginalSecureSettings.containsKey(key)) {
+            mOriginalSecureSettings.put(key, TestApis.settings().secure().getString(value));
+        }
+
+        TestApis.settings().secure().putString(key, value);
     }
 
     private void requireMultiUserSupport(FailureMode failureMode) {
