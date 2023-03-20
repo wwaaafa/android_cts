@@ -26,6 +26,7 @@ import com.android.compatibility.common.util.ApiLevelUtil;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.testtype.DeviceJUnit4ClassRunner;
 import com.android.tradefed.testtype.junit4.BaseHostJUnit4Test;
+import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.FileUtil;
 
 import org.junit.After;
@@ -321,6 +322,12 @@ public class InstallDexMetadataHostTest extends BaseHostJUnit4Test {
         }
     }
 
+    // This test is questionable because it assumes that ART can understand the format of the
+    // profiles in the DM file passed by this test.
+    //
+    // As ART is updatable, this assumption can be broken by a future change.
+    //
+    // TODO(jiakaiz): Re-evaluate the necessity of having this test in CTS.
     @Test
     public void testProfileSnapshotAfterInstall() throws Exception {
         // Determine which profile to use.
@@ -333,8 +340,8 @@ public class InstallDexMetadataHostTest extends BaseHostJUnit4Test {
 
         // Take a snapshot of the installed profile.
         String snapshotCmd = "cmd package snapshot-profile " + INSTALL_PACKAGE;
-        String result = getDevice().executeShellCommand(snapshotCmd);
-        assertTrue(result.trim().isEmpty());
+        CommandResult result = getDevice().executeShellV2Command(snapshotCmd);
+        assertEquals(result.getStdout().trim() /* message */, 0L, (long) result.getExitCode());
 
         // Extract the profile bytes from the dex metadata and from the profile snapshot.
         byte[] rawDeviceProfile = extractProfileSnapshotFromDevice();
