@@ -605,6 +605,7 @@ public class CtsSharesheetDeviceTest {
         final CountDownLatch broadcastInvoked = new CountDownLatch(1);
         final CountDownLatch appStarted = new CountDownLatch(1);
         final AtomicReference<Intent> targetLaunchIntent = new AtomicReference<>();
+        final AtomicReference<Intent> refinementInput = new AtomicReference<>();
 
         CtsSharesheetDeviceActivity.setOnIntentReceivedConsumer(intent -> {
             targetLaunchIntent.set(intent);
@@ -619,6 +620,7 @@ public class CtsSharesheetDeviceTest {
                         Intent.EXTRA_RESULT_RECEIVER, ResultReceiver.class);
 
                 Intent mainIntent = intent.getParcelableExtra(Intent.EXTRA_INTENT, Intent.class);
+                refinementInput.set(mainIntent);
                 Intent refinedIntent = new Intent(mainIntent);
                 refinedIntent.putExtra("REFINED", true);
 
@@ -671,6 +673,7 @@ public class CtsSharesheetDeviceTest {
             assertTrue(appStarted.await(1000, TimeUnit.MILLISECONDS));
             assertTrue(targetLaunchIntent.get().getBooleanExtra("FROM_CHOOSER_TARGET", false));
             assertTrue(targetLaunchIntent.get().getBooleanExtra("REFINED", false));
+            assertTrue(refinementInput.get().getBooleanExtra("FROM_CHOOSER_TARGET", false));
         }, () -> {
                 mContext.unregisterReceiver(refinementReceiver);
                 closeSharesheet();
