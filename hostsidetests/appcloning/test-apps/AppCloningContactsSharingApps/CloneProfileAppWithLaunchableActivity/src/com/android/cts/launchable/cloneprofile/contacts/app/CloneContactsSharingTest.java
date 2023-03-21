@@ -293,7 +293,7 @@ public class CloneContactsSharingTest {
         String testContactAccountName =
                 getTestArgumentValueForGivenKey("test_contact_account_name");
         String testContactCustomRingtone =
-                getTestArgumentValueForGivenKey("test_custom_ringtone");
+                getTestArgumentValueForGivenKey("test_contact_custom_ringtone");
 
         // Query to fetch all raw_contact rows matching the test account type
         String[] projection = new String[] {
@@ -355,6 +355,45 @@ public class CloneContactsSharingTest {
         assertThat(resultsAfterDelete).isNotNull();
         assertThat(resultsAfterDelete.getCount()).isNotEqualTo(0);
         assertThat(resultsAfterDelete.getCount()).isEqualTo(resultsBeforeDelete.getCount());
+    }
+
+    @Test
+    public void testCloneContactsProviderReads_rawContactsReads_redirectsToPrimary() {
+        String testContactAccountType =
+                getTestArgumentValueForGivenKey("test_contact_account_type");
+        String testContactAccountName =
+                getTestArgumentValueForGivenKey("test_contact_account_name");
+        String testContactCustomRingtone =
+                getTestArgumentValueForGivenKey("test_contact_custom_ringtone");
+
+        // Make a query to fetch all raw contacts corresponding to the test account
+        String[] projection = new String[] {
+                ContactsContract.RawContacts._ID,
+                ContactsContract.RawContacts.ACCOUNT_TYPE,
+                ContactsContract.RawContacts.ACCOUNT_NAME,
+                ContactsContract.RawContacts.CUSTOM_RINGTONE
+        };
+        Cursor rawContactsForTestAccount = getAllRawContactsForTestAccount(
+                testContactAccountType, projection);
+
+        // Assert that the resulting cursor should contain only the raw contact that was inserted
+        // and passed from the host side test.
+        assertThat(rawContactsForTestAccount).isNotNull();
+        assertThat(rawContactsForTestAccount.getCount()).isEqualTo(1);
+        rawContactsForTestAccount.moveToFirst();
+        assertThat(
+                rawContactsForTestAccount.getString(
+                        rawContactsForTestAccount.getColumnIndex(
+                                ContactsContract.RawContacts.ACCOUNT_NAME)))
+                .isEqualTo(testContactAccountName);
+        assertThat(rawContactsForTestAccount.getString(
+                rawContactsForTestAccount.getColumnIndex(
+                        ContactsContract.RawContacts.ACCOUNT_TYPE)))
+                .isEqualTo(testContactAccountType);
+        assertThat(rawContactsForTestAccount.getString(
+                rawContactsForTestAccount.getColumnIndex(
+                        ContactsContract.RawContacts.CUSTOM_RINGTONE)))
+                .isEqualTo(testContactCustomRingtone);
     }
 
     @Test

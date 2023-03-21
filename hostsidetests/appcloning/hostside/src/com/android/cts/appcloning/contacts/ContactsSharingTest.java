@@ -282,6 +282,10 @@ public class ContactsSharingTest extends AppCloningBaseHostTest {
         }
     }
 
+    /**
+     * This test creates an account through a cloned app and checks that contacts syncs are disabled
+     * for that account.
+     */
     @Test
     public void testCloneAccountsContactsSync_syncsAreDisabled() throws Exception {
         installPackage(LAUNCHABLE_CLONE_PROFILE_APP, "--user " + Integer.valueOf(sCloneUserId));
@@ -292,5 +296,64 @@ public class ContactsSharingTest extends AppCloningBaseHostTest {
                 CLONE_LAUNCHABLE_APP_CONTACTS_SHARING_TEST + "." + CONTACTS_SHARING_TEST_CLASS,
                 "testContactSyncsForCloneAccounts_syncsAreDisabled",
                 Integer.parseInt(sCloneUserId), args);
+    }
+
+    /**
+     * This test adds a raw_contact through the primary contacts provider using the content insert
+     * shell command and verifies that the inserted contact is accessible from a cloned app
+     * with a launcher activity by redirecting the requests to the primary contacts provider.
+     */
+    @Test
+    public void testReadsForClonedAppWithLauncherActivity_rawContactReads_redirectsToPrimary()
+            throws Exception {
+        installPackage(LAUNCHABLE_CLONE_PROFILE_APP, "--user " + Integer.valueOf(sCloneUserId));
+        // Insert a test contact through primary CP2
+        executeShellCommand(getInsertTestContactCommand(RAW_CONTACTS_ENDPOINT,
+                getTestRawContactContentValues(), OWNER_USER_ID));
+        try {
+            Map<String, String> args = new HashMap<>();
+            args.put("test_contact_account_type", TEST_ACCOUNT_TYPE);
+            args.put("test_contact_account_name", TEST_ACCOUNT_NAME);
+            args.put("test_contact_custom_ringtone", TEST_CUSTOM_RINGTONE);
+
+            // Check that cross-profile reads are allowed for cloned app with a launch-able activity
+            runDeviceTestAsUser(CLONE_LAUNCHABLE_APP_CONTACTS_SHARING_TEST,
+                    CLONE_LAUNCHABLE_APP_CONTACTS_SHARING_TEST + "." + CONTACTS_SHARING_TEST_CLASS,
+                    "testCloneContactsProviderReads_rawContactsReads_redirectsToPrimary",
+                    Integer.parseInt(sCloneUserId), args);
+        } finally {
+            // Delete the test contact inserted earlier through primary CP2
+            executeShellCommand(getDeleteContactCommand(RAW_CONTACTS_ENDPOINT,
+                    "\"" + ACCOUNT_TYPE_COLUMN + "='" + TEST_ACCOUNT_TYPE + "'\"",
+                    OWNER_USER_ID));
+        }
+    }
+
+    /**
+     * This test adds a raw_contact through the primary contacts provider using the content insert
+     * shell command and verifies that the inserted contact is not accessible from a cloned app
+     * without a launcher activity
+     */
+    @Test
+    public void testClonedAppWithoutLauncherActivityReads_rawContactReads_emptyResponse()
+            throws Exception {
+        installPackage(NOT_LAUNCHABLE_CLONE_PROFILE_APP, "--user "
+                + Integer.valueOf(sCloneUserId));
+        // Insert a test contact through primary CP2
+        executeShellCommand(getInsertTestContactCommand(RAW_CONTACTS_ENDPOINT,
+                getTestRawContactContentValues(), OWNER_USER_ID));
+        try {
+            // Check that cross-profile results are disabled for cloned app without a launcher
+            // activity. Results should be served from clone CP2 database and hence should be empty.
+            runDeviceTestAsUser(CLONE_NOT_LAUNCHABLE_APP_TEST,
+                    CLONE_NOT_LAUNCHABLE_APP_TEST + "." + CLONE_CONTACTS_PROVIDER_DATA_TEST_CLASS,
+                    "testCloneContactsProvider_rawContactsIsEmpty", Integer.parseInt(sCloneUserId),
+                    new HashMap<>());
+        } finally {
+            // Delete the test contact inserted earlier through primary CP2
+            executeShellCommand(getDeleteContactCommand(RAW_CONTACTS_ENDPOINT,
+                    "\"" + ACCOUNT_TYPE_COLUMN + "='" + TEST_ACCOUNT_TYPE + "'\"",
+                    OWNER_USER_ID));
+        }
     }
 }
