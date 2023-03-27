@@ -24,6 +24,7 @@
         <option name="cleanup-apks" value="true"/>
         <option name="install-arg" value="-t" />
         <option name="test-file-name" value="CtsWindowManagerDeviceTestCases.apk"/>
+        <option name="test-file-name" value="CtsPropertyCompatAllowOrientationOverrideApp.apk" />
         <option name="test-file-name" value="CtsDragAndDropSourceApp.apk"/>
         <option name="test-file-name" value="CtsDragAndDropTargetApp.apk"/>
         <option name="test-file-name" value="CtsDeviceAlertWindowTestApp.apk"/>

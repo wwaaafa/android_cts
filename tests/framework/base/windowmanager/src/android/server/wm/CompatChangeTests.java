@@ -21,9 +21,16 @@ import static android.content.pm.ActivityInfo.OVERRIDE_ENABLE_COMPAT_FAKE_FOCUS;
 import static android.content.pm.ActivityInfo.OVERRIDE_MIN_ASPECT_RATIO_LARGE_VALUE;
 import static android.content.pm.ActivityInfo.OVERRIDE_MIN_ASPECT_RATIO_MEDIUM_VALUE;
 import static android.content.pm.ActivityInfo.OVERRIDE_SANDBOX_VIEW_BOUNDS_APIS;
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_NOSENSOR;
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
 import static android.content.res.Configuration.ORIENTATION_LANDSCAPE;
 import static android.provider.DeviceConfig.NAMESPACE_CONSTRAIN_DISPLAY_APIS;
 import static android.server.wm.ShellCommandHelper.executeShellCommand;
+import static android.server.wm.alloworientationoverride.Components.ALLOW_ORIENTATION_OVERRIDE_LANDSCAPE_ACTIVITY;
+import static android.server.wm.alloworientationoverride.Components.ALLOW_ORIENTATION_OVERRIDE_RESPONSIVE_ACTIVITY;
 import static android.server.wm.allowsandboxingviewboundsapis.Components.ACTION_TEST_VIEW_SANDBOX_ALLOWED_PASSED;
 import static android.server.wm.allowsandboxingviewboundsapis.Components.ACTION_TEST_VIEW_SANDBOX_NOT_ALLOWED_PASSED;
 import static android.server.wm.allowsandboxingviewboundsapis.Components.TEST_VIEW_SANDBOX_ALLOWED_ACTIVITY;
@@ -117,6 +124,8 @@ public final class CompatChangeTests extends MultiDisplayTestBase {
             component(ResizeableLeftActivity.class);
     private static final ComponentName RESIZEABLE_RIGHT_ACTIVITY =
             component(ResizeableRightActivity.class);
+    private static final ComponentName RESPONSIVE_ACTIVITY =
+            component(ResponsiveActivity.class);
 
     // Fixed orientation min aspect ratio
     private static final float FIXED_ORIENTATION_MIN_ASPECT_RATIO = 1.03f;
@@ -146,59 +155,80 @@ public final class CompatChangeTests extends MultiDisplayTestBase {
         createManagedConstrainDisplayApisFlagsSession();
     }
 
-    /**
-     * Registers broadcast receiver which receives result actions from Activities under test.
-     */
-    private static class BroadcastReceiverCloseable implements AutoCloseable {
-        private final Context mContext;
-        private final Map<String, ConditionVariable> mBroadcastsReceived;
-        private final BroadcastReceiver mAppCommunicator = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                getBroadcastReceivedVariable(intent.getAction()).open();
-            }
-        };
+    @Test
+    public void testOverrideUndefinedOrientationToPortrait_propertyIsFalse_overrideNotApplied()
+             throws Exception {
+        try (var compatChange = new CompatChangeCloseable(
+                ActivityInfo.OVERRIDE_UNDEFINED_ORIENTATION_TO_PORTRAIT,
+                ALLOW_ORIENTATION_OVERRIDE_RESPONSIVE_ACTIVITY.getPackageName())) {
+            launchActivity(ALLOW_ORIENTATION_OVERRIDE_RESPONSIVE_ACTIVITY);
 
-        BroadcastReceiverCloseable(final Context context, final String action) {
-            this.mContext = context;
-            // Keep the received broadcast items in the map.
-            mBroadcastsReceived = Collections.synchronizedMap(new HashMap<>());
-            // Register for broadcast actions.
-            IntentFilter filter = new IntentFilter();
-            filter.addAction(action);
-            mContext.registerReceiver(mAppCommunicator, filter, Context.RECEIVER_EXPORTED);
-        }
+            WindowManagerState.Activity activity =
+                    mWmState.getActivity(ALLOW_ORIENTATION_OVERRIDE_RESPONSIVE_ACTIVITY);
 
-        ConditionVariable getBroadcastReceivedVariable(String action) {
-            return mBroadcastsReceived.computeIfAbsent(action, key -> new ConditionVariable());
-        }
-
-        @Override
-        public void close() throws Exception {
-            mContext.unregisterReceiver(mAppCommunicator);
+            assertEquals(SCREEN_ORIENTATION_UNSPECIFIED, activity.getOverrideOrientation());
         }
     }
 
-    /**
-     * AutoClosable class used for try-with-resources compat change tests, which require a separate
-     * application task to be started.
-     */
-    private static class CompatChangeCloseable implements AutoCloseable {
-        private final long mChangeId;
-        private final String mPackageName;
+    @Test
+    @EnableCompatChanges({ActivityInfo.OVERRIDE_UNDEFINED_ORIENTATION_TO_PORTRAIT})
+    public void testOverrideUndefinedOrientationToPortrait() {
+        launchActivity(RESPONSIVE_ACTIVITY);
 
-        CompatChangeCloseable(final long changeId, String packageName) {
-            this.mChangeId = changeId;
-            this.mPackageName = packageName;
+        WindowManagerState.Activity activity =
+                mWmState.getActivity(RESPONSIVE_ACTIVITY);
 
-            // Enable change
-            executeShellCommand("am compat enable " + changeId + " " + packageName);
+        assertEquals(SCREEN_ORIENTATION_PORTRAIT, activity.getOverrideOrientation());
+    }
+
+    @Test
+    public void testOverrideUndefinedOrientationToNoSensor_propertyIsFalse_overrideNotApplied()
+            throws Exception  {
+        try (var compatChange = new CompatChangeCloseable(
+                ActivityInfo.OVERRIDE_UNDEFINED_ORIENTATION_TO_NOSENSOR,
+                ALLOW_ORIENTATION_OVERRIDE_RESPONSIVE_ACTIVITY.getPackageName())) {
+            launchActivity(ALLOW_ORIENTATION_OVERRIDE_RESPONSIVE_ACTIVITY);
+
+            WindowManagerState.Activity activity =
+                    mWmState.getActivity(ALLOW_ORIENTATION_OVERRIDE_RESPONSIVE_ACTIVITY);
+
+            assertEquals(SCREEN_ORIENTATION_UNSPECIFIED, activity.getOverrideOrientation());
         }
+    }
 
-        @Override
-        public void close() throws Exception {
-            executeShellCommand("am compat disable " + mChangeId + " " + mPackageName);
+    @Test
+    @EnableCompatChanges({ActivityInfo.OVERRIDE_UNDEFINED_ORIENTATION_TO_NOSENSOR})
+    public void testOverrideUndefinedOrientationToNosensor() {
+        launchActivity(RESPONSIVE_ACTIVITY);
+
+        WindowManagerState.Activity activity = mWmState.getActivity(RESPONSIVE_ACTIVITY);
+
+        assertEquals(SCREEN_ORIENTATION_NOSENSOR, activity.getOverrideOrientation());
+    }
+
+    @Test
+    public void testOverrideLandscapeOrientationToReverseLandscape_propertyIsFalse_overrideNotApplied()
+            throws Exception {
+        try (var compatChange = new CompatChangeCloseable(
+                ActivityInfo.OVERRIDE_LANDSCAPE_ORIENTATION_TO_REVERSE_LANDSCAPE,
+                ALLOW_ORIENTATION_OVERRIDE_LANDSCAPE_ACTIVITY.getPackageName())) {
+            launchActivity(ALLOW_ORIENTATION_OVERRIDE_LANDSCAPE_ACTIVITY);
+
+            WindowManagerState.Activity activity =
+                    mWmState.getActivity(ALLOW_ORIENTATION_OVERRIDE_LANDSCAPE_ACTIVITY);
+
+            assertEquals(SCREEN_ORIENTATION_LANDSCAPE, activity.getOverrideOrientation());
         }
+    }
+
+    @Test
+    @EnableCompatChanges({ActivityInfo.OVERRIDE_LANDSCAPE_ORIENTATION_TO_REVERSE_LANDSCAPE})
+    public void testOverrideLandscapeOrientationToReverseLandscape() {
+        launchActivity(NON_RESIZEABLE_LANDSCAPE_ACTIVITY);
+
+        WindowManagerState.Activity activity = mWmState.getActivity(NON_RESIZEABLE_LANDSCAPE_ACTIVITY);
+
+        assertEquals(SCREEN_ORIENTATION_REVERSE_LANDSCAPE, activity.getOverrideOrientation());
     }
 
     @Test
@@ -1043,6 +1073,9 @@ public final class CompatChangeTests extends MultiDisplayTestBase {
     public static class ResizeablePortraitActivity extends FocusableActivity {
     }
 
+    public static class ResponsiveActivity extends FocusableActivity {
+    }
+
     public static class NonResizeablePortraitActivity extends FocusableActivity {
     }
 
@@ -1065,5 +1098,60 @@ public final class CompatChangeTests extends MultiDisplayTestBase {
     }
 
     public static class ResizeableRightActivity extends FocusableActivity {
+    }
+
+    /**
+     * Registers broadcast receiver which receives result actions from Activities under test.
+     */
+    private static class BroadcastReceiverCloseable implements AutoCloseable {
+        private final Context mContext;
+        private final Map<String, ConditionVariable> mBroadcastsReceived;
+        private final BroadcastReceiver mAppCommunicator = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                getBroadcastReceivedVariable(intent.getAction()).open();
+            }
+        };
+
+        BroadcastReceiverCloseable(final Context context, final String action) {
+            this.mContext = context;
+            // Keep the received broadcast items in the map.
+            mBroadcastsReceived = Collections.synchronizedMap(new HashMap<>());
+            // Register for broadcast actions.
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(action);
+            mContext.registerReceiver(mAppCommunicator, filter, Context.RECEIVER_EXPORTED);
+        }
+
+        ConditionVariable getBroadcastReceivedVariable(String action) {
+            return mBroadcastsReceived.computeIfAbsent(action, key -> new ConditionVariable());
+        }
+
+        @Override
+        public void close() throws Exception {
+            mContext.unregisterReceiver(mAppCommunicator);
+        }
+    }
+
+    /**
+     * AutoClosable class used for try-with-resources compat change tests, which require a separate
+     * application task to be started.
+     */
+    private static class CompatChangeCloseable implements AutoCloseable {
+        private final long mChangeId;
+        private final String mPackageName;
+
+        CompatChangeCloseable(final long changeId, String packageName) {
+            this.mChangeId = changeId;
+            this.mPackageName = packageName;
+
+            // Enable change
+            executeShellCommand("am compat enable " + changeId + " " + packageName);
+        }
+
+        @Override
+        public void close() throws Exception {
+            executeShellCommand("am compat disable " + mChangeId + " " + mPackageName);
+        }
     }
 }
