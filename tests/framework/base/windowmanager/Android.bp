@@ -80,6 +80,7 @@ android_test {
 
     sdk_version: "test_current",
     data: [
+        ":CtsPropertyCompatAllowOrientationOverrideApp",
         ":CtsDragAndDropSourceApp",
         ":CtsDragAndDropTargetApp",
         ":CtsDeviceAlertWindowTestApp",

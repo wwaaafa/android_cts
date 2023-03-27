@@ -497,6 +497,9 @@
                   android:screenOrientation="portrait"
                   android:exported="true"/>
 
+        <activity android:name="android.server.wm.CompatChangeTests$ResponsiveActivity"
+                  android:exported="true"/>
+
         <activity android:name="android.server.wm.CompatChangeTests$NonResizeablePortraitActivity"
                   android:resizeableActivity="false"
                   android:screenOrientation="portrait"
