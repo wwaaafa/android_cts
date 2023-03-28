@@ -27,8 +27,10 @@ import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
 import static android.content.res.Configuration.ORIENTATION_LANDSCAPE;
+import static android.content.res.Configuration.ORIENTATION_PORTRAIT;
 import static android.provider.DeviceConfig.NAMESPACE_CONSTRAIN_DISPLAY_APIS;
 import static android.server.wm.ShellCommandHelper.executeShellCommand;
+import static android.server.wm.allowdisplayorientationoverride.Components.ALLOW_DISPLAY_ORIENTATION_OVERRIDE_ACTIVITY;
 import static android.server.wm.alloworientationoverride.Components.ALLOW_ORIENTATION_OVERRIDE_LANDSCAPE_ACTIVITY;
 import static android.server.wm.alloworientationoverride.Components.ALLOW_ORIENTATION_OVERRIDE_RESPONSIVE_ACTIVITY;
 import static android.server.wm.allowsandboxingviewboundsapis.Components.ACTION_TEST_VIEW_SANDBOX_ALLOWED_PASSED;
@@ -43,6 +45,7 @@ import static android.server.wm.optoutsandboxingviewboundsapis.Components.ACTION
 import static android.server.wm.optoutsandboxingviewboundsapis.Components.TEST_VIEW_SANDBOX_OPT_OUT_ACTIVITY;
 import static android.server.wm.optoutsandboxingviewboundsapis.Components.TEST_VIEW_SANDBOX_OPT_OUT_TIMEOUT_MS;
 import static android.view.Display.DEFAULT_DISPLAY;
+import static android.view.Surface.ROTATION_0;
 import static android.view.Surface.ROTATION_90;
 
 import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
@@ -229,6 +232,47 @@ public final class CompatChangeTests extends MultiDisplayTestBase {
         WindowManagerState.Activity activity = mWmState.getActivity(NON_RESIZEABLE_LANDSCAPE_ACTIVITY);
 
         assertEquals(SCREEN_ORIENTATION_REVERSE_LANDSCAPE, activity.getOverrideOrientation());
+    }
+
+    @Test
+    @EnableCompatChanges({ActivityInfo.OVERRIDE_USE_DISPLAY_LANDSCAPE_NATURAL_ORIENTATION})
+    public void testOverrideUseDisplayLandscapeNaturalOrientation()
+            throws Exception {
+        // Run this test only when natural orientation is landscape
+        Size displaySize = mDisplayMetricsSession.getInitialDisplayMetrics().getSize();
+        assumeTrue(displaySize.getHeight() < displaySize.getWidth());
+
+        // Rotating away from natural orientation (ROTATION_0)
+        final RotationSession rotationSession = createManagedRotationSession();
+        rotationSession.set(ROTATION_90);
+        mWmState.waitForDisplayOrientation(ORIENTATION_PORTRAIT);
+
+        launchActivity(RESPONSIVE_ACTIVITY);
+
+        // Verifying that orientation is overridden
+        assertEquals(mWmState.getRotation(), ROTATION_0);
+    }
+
+    @Test
+    public void testOverrideUseDisplayLandscapeNaturalOrientation_propertyIsFalse_overrideNotApplied()
+            throws Exception {
+        // Run this test only when natural orientation is landscape
+        Size displaySize = mDisplayMetricsSession.getInitialDisplayMetrics().getSize();
+        assumeTrue(displaySize.getHeight() < displaySize.getWidth());
+
+        // Rotating away from natural orientation (ROTATION_0)
+        final RotationSession rotationSession = createManagedRotationSession();
+        rotationSession.set(ROTATION_90);
+        mWmState.waitForDisplayOrientation(ORIENTATION_PORTRAIT);
+
+        try (var compatChange = new CompatChangeCloseable(
+                ActivityInfo.OVERRIDE_USE_DISPLAY_LANDSCAPE_NATURAL_ORIENTATION,
+                ALLOW_DISPLAY_ORIENTATION_OVERRIDE_ACTIVITY.getPackageName())) {
+            launchActivity(ALLOW_DISPLAY_ORIENTATION_OVERRIDE_ACTIVITY);
+
+            // Verifying that orientation not overridden
+            assertEquals(mWmState.getRotation(), ROTATION_90);
+        }
     }
 
     @Test
