@@ -342,9 +342,6 @@ public class StrictJavaPackagesTest extends BaseHostJUnit4Test {
     // TODO: b/223837004
     private static final ImmutableSet<String> BLUETOOTH_APK_IN_APEX_BURNDOWN_LIST =
         ImmutableSet.of(
-                // Already duplicate in BCP.
-                "Landroid/hidl/base/V1_0/DebugInfo;",
-                "Landroid/hidl/base/V1_0/IBase;",
                 // /apex/com.android.btservices/javalib/framework-bluetooth.jar
                 "Lcom/android/bluetooth/x/android/sysprop/AdbProperties;",
                 "Lcom/android/bluetooth/x/android/sysprop/ApkVerityProperties;",
