@@ -92,8 +92,20 @@ public class SatelliteManagerTest {
 
             boolean provisioned = mOriginalIsSatelliteProvisioned;
             if (!mOriginalIsSatelliteProvisioned) {
+                SatelliteProvisionStateCallbackTest satelliteProvisionStateCallback =
+                        new SatelliteProvisionStateCallbackTest();
+                long registerError = mSatelliteManager.registerForSatelliteProvisionStateChanged(
+                        getContext().getMainExecutor(), satelliteProvisionStateCallback);
+                assertEquals(SatelliteManager.SATELLITE_ERROR_NONE, registerError);
+
                 provisioned = provisionSatellite();
-                if (provisioned) mIsProvisionable = true;
+                if (provisioned) {
+                    mIsProvisionable = true;
+                    assertTrue(satelliteProvisionStateCallback.waitUntilResult());
+                    assertTrue(satelliteProvisionStateCallback.isProvisioned);
+                }
+                mSatelliteManager.unregisterForSatelliteProvisionStateChanged(
+                        satelliteProvisionStateCallback);
             }
 
             mOriginalIsSatelliteEnabled = isSatelliteEnabled();
