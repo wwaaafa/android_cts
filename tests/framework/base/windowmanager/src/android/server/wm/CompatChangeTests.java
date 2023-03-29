@@ -41,6 +41,8 @@ import static android.server.wm.enablefakefocusoptin.Components.ENABLE_FAKE_FOCU
 import static android.server.wm.enablefakefocusoptin.Components.ENABLE_FAKE_FOCUS_OPT_IN_RIGHT_ACTIVITY;
 import static android.server.wm.enablefakefocusoptout.Components.ENABLE_FAKE_FOCUS_OPT_OUT_LEFT_ACTIVITY;
 import static android.server.wm.enablefakefocusoptout.Components.ENABLE_FAKE_FOCUS_OPT_OUT_RIGHT_ACTIVITY;
+import static android.server.wm.ignorerequestedorientationoverrideoptin.Components.OPT_IN_CHANGE_ORIENTATION_WHILE_RELAUNCHING_ACTIVITY;
+import static android.server.wm.ignorerequestedorientationoverrideoptout.Components.OPT_OUT_CHANGE_ORIENTATION_WHILE_RELAUNCHING_ACTIVITY;
 import static android.server.wm.optoutsandboxingviewboundsapis.Components.ACTION_TEST_VIEW_SANDBOX_OPT_OUT_PASSED;
 import static android.server.wm.optoutsandboxingviewboundsapis.Components.TEST_VIEW_SANDBOX_OPT_OUT_ACTIVITY;
 import static android.server.wm.optoutsandboxingviewboundsapis.Components.TEST_VIEW_SANDBOX_OPT_OUT_TIMEOUT_MS;
@@ -70,6 +72,7 @@ import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Rect;
+import android.os.Bundle;
 import android.os.ConditionVariable;
 import android.platform.test.annotations.FlakyTest;
 import android.platform.test.annotations.Presubmit;
@@ -129,6 +132,8 @@ public final class CompatChangeTests extends MultiDisplayTestBase {
             component(ResizeableRightActivity.class);
     private static final ComponentName RESPONSIVE_ACTIVITY =
             component(ResponsiveActivity.class);
+    private static final ComponentName NO_PROPERTY_CHANGE_ORIENTATION_WHILE_RELAUNCHING_ACTIVITY =
+            component(NoPropertyChangeOrientationWhileRelaunchingActivity.class);
 
     // Fixed orientation min aspect ratio
     private static final float FIXED_ORIENTATION_MIN_ASPECT_RATIO = 1.03f;
@@ -327,6 +332,44 @@ public final class CompatChangeTests extends MultiDisplayTestBase {
                 mWmState.getActivity(RESIZEABLE_LEFT_ACTIVITY);
 
         assertTrue(activity.getShouldSendCompatFakeFocus());
+    }
+
+    @Test
+    public void testOverrideIgnoreRequestedOrientation_propertyIsFalse_overrideNotApplied()
+            throws Exception  {
+        try (var compatChange = new CompatChangeCloseable(
+                ActivityInfo.OVERRIDE_ENABLE_COMPAT_IGNORE_REQUESTED_ORIENTATION,
+                OPT_OUT_CHANGE_ORIENTATION_WHILE_RELAUNCHING_ACTIVITY.getPackageName())) {
+            launchActivity(OPT_OUT_CHANGE_ORIENTATION_WHILE_RELAUNCHING_ACTIVITY);
+
+            WindowManagerState.Activity activity =
+                    mWmState.getActivity(OPT_OUT_CHANGE_ORIENTATION_WHILE_RELAUNCHING_ACTIVITY);
+
+            assertEquals(SCREEN_ORIENTATION_LANDSCAPE, activity.getOverrideOrientation());
+        }
+    }
+
+    @Test
+    public void testOverrideIgnoreRequestedOrientation_isDisabled_propertyIsTrue_overrideApplied()
+            throws Exception  {
+        launchActivity(OPT_IN_CHANGE_ORIENTATION_WHILE_RELAUNCHING_ACTIVITY);
+
+        WindowManagerState.Activity activity =
+                mWmState.getActivity(OPT_IN_CHANGE_ORIENTATION_WHILE_RELAUNCHING_ACTIVITY);
+
+        assertEquals(SCREEN_ORIENTATION_PORTRAIT, activity.getOverrideOrientation());
+    }
+
+    @Test
+    @EnableCompatChanges({ActivityInfo.OVERRIDE_ENABLE_COMPAT_IGNORE_REQUESTED_ORIENTATION})
+    public void testOverrideIgnoreRequestedOrientation()
+            throws Exception {
+        launchActivity(NO_PROPERTY_CHANGE_ORIENTATION_WHILE_RELAUNCHING_ACTIVITY);
+
+        WindowManagerState.Activity activity =
+                mWmState.getActivity(NO_PROPERTY_CHANGE_ORIENTATION_WHILE_RELAUNCHING_ACTIVITY);
+
+        assertEquals(SCREEN_ORIENTATION_PORTRAIT, activity.getOverrideOrientation());
     }
 
     /**
@@ -1142,6 +1185,29 @@ public final class CompatChangeTests extends MultiDisplayTestBase {
     }
 
     public static class ResizeableRightActivity extends FocusableActivity {
+    }
+
+    public static class NoPropertyChangeOrientationWhileRelaunchingActivity extends Activity {
+
+        private static boolean sHasChangeOrientationInOnResume;
+
+        @Override
+        protected void onCreate(Bundle savedInstanceState) {
+            super.onStart();
+            // When OVERRIDE_ENABLE_COMPAT_IGNORE_REQUESTED_ORIENTATION is enabled this request
+            // should be ignored if sHasChangeOrientationInOnResume is true.
+            setRequestedOrientation(SCREEN_ORIENTATION_LANDSCAPE);
+        }
+
+        @Override
+        protected void onResume() {
+            super.onResume();
+            if (!sHasChangeOrientationInOnResume) {
+                setRequestedOrientation(SCREEN_ORIENTATION_PORTRAIT);
+                sHasChangeOrientationInOnResume = true;
+            }
+        }
+
     }
 
     /**
