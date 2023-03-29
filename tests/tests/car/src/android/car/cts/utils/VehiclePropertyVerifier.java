@@ -365,9 +365,11 @@ public class VehiclePropertyVerifier<T> {
     private void verifyWritePermissions() {
         CarPropertyConfig<T> carPropertyConfig = getCarPropertyConfig();
         for (ImmutableSet<String> writePermissions: mWritePermissions) {
-            if (carPropertyConfig.getAccess()
-                    == CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE) {
+            if (carPropertyConfig.getAccess() != CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_WRITE) {
                 verifyWritePermissionsCannotRead(writePermissions, mReadPermissions);
+            }
+            if (carPropertyConfig.getAccess() == CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ) {
+                return;
             }
             if (writePermissions.size() > 1) {
                 verifyIndividualWritePermissionsCannotWrite(writePermissions);
