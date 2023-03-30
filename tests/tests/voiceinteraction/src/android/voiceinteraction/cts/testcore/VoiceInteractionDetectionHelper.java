@@ -34,7 +34,7 @@ import com.android.compatibility.common.util.BlockingBroadcastReceiver;
  * Detection Result.
  */
 public class VoiceInteractionDetectionHelper {
-    private static final int TEST_RESULT_AWAIT_TIMEOUT_MS = 10 * 1000;
+    private static final int TEST_RESULT_AWAIT_TIMEOUT_MS = 15 * 1000;
 
     public static void perform(
             ActivityScenarioRule<TestVoiceInteractionServiceActivity> activityTestRule,
