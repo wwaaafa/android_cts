@@ -1,6 +1,6 @@
 package com.android.compatibility.common.util;
 /*
- * Copyright (C) 2019 The Android Open Source Project
+ * Copyright (C) 2022 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,39 +19,30 @@ package com.android.compatibility.common.util;
 import static org.junit.Assert.assertNotNull;
 
 import android.graphics.Rect;
-import android.support.test.uiautomator.By;
-import android.support.test.uiautomator.BySelector;
-import android.support.test.uiautomator.StaleObjectException;
-import android.support.test.uiautomator.UiDevice;
-import android.support.test.uiautomator.UiObject2;
-import android.support.test.uiautomator.UiObjectNotFoundException;
-import android.support.test.uiautomator.UiScrollable;
-import android.support.test.uiautomator.UiSelector;
-import android.support.test.uiautomator.Until;
-import android.util.TypedValue;
 import android.util.Log;
+import android.util.TypedValue;
 
-import androidx.test.InstrumentationRegistry;
 import androidx.test.core.app.ApplicationProvider;
+import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.uiautomator.By;
+import androidx.test.uiautomator.BySelector;
+import androidx.test.uiautomator.StaleObjectException;
+import androidx.test.uiautomator.UiDevice;
+import androidx.test.uiautomator.UiObject2;
+import androidx.test.uiautomator.UiObjectNotFoundException;
+import androidx.test.uiautomator.UiScrollable;
+import androidx.test.uiautomator.UiSelector;
+import androidx.test.uiautomator.Until;
 
 import java.util.regex.Pattern;
 
-/**
- * @deprecated , Use {@link UiAutomatorUtils2}, which uses latest androidx automator classes.
- */
-public class UiAutomatorUtils {
-    private UiAutomatorUtils() {}
+public class UiAutomatorUtils2 {
+    private UiAutomatorUtils2() {}
 
     private static final String LOG_TAG = "UiAutomatorUtils";
 
     /** Default swipe deadzone percentage. See {@link UiScrollable}. */
-    private static final double DEFAULT_SWIPE_DEADZONE_PCT_TV       = 0.1f;
-    private static final double DEFAULT_SWIPE_DEADZONE_PCT_ALL      = 0.25f;
-    /**
-     * On Wear, some cts tests like CtsPermission3TestCases that run on
-     * low performance device. Keep 0.05 to have better matching.
-     */
-    private static final double DEFAULT_SWIPE_DEADZONE_PCT_WEAR     = 0.05f;
+    private static final double DEFAULT_SWIPE_DEADZONE_PCT = 0.1;
 
     /** Minimum view height accepted (before needing to scroll more). */
     private static final float MIN_VIEW_HEIGHT_DP = 8;
@@ -87,16 +78,6 @@ public class UiAutomatorUtils {
                 ApplicationProvider.getApplicationContext().getResources().getDisplayMetrics()));
     }
 
-    private static double getSwipeDeadZonePct() {
-        if (FeatureUtil.isTV()) {
-            return DEFAULT_SWIPE_DEADZONE_PCT_TV;
-        } else if (FeatureUtil.isWatch()) {
-            return DEFAULT_SWIPE_DEADZONE_PCT_WEAR;
-        } else {
-            return DEFAULT_SWIPE_DEADZONE_PCT_ALL;
-        }
-    }
-
     public static UiObject2 waitFindObjectOrNull(BySelector selector, long timeoutMs)
             throws UiObjectNotFoundException {
         UiObject2 view = null;
@@ -120,7 +101,8 @@ public class UiAutomatorUtils {
             }
 
             if (view == null || view.getVisibleBounds().height() < minViewHeightPx) {
-                final double deadZone = getSwipeDeadZonePct();
+                final double deadZone = !(FeatureUtil.isWatch() || FeatureUtil.isTV())
+                        ? 0.25 : DEFAULT_SWIPE_DEADZONE_PCT;
                 UiScrollable scrollable = new UiScrollable(new UiSelector().scrollable(true));
                 scrollable.setSwipeDeadZonePercentage(deadZone);
                 if (scrollable.exists()) {
