@@ -30,12 +30,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
-import android.Manifest;
 import android.annotation.Nullable;
 import android.app.AppOpsManager;
 import android.app.UiAutomation;
@@ -55,8 +53,6 @@ import android.os.Looper;
 import android.os.ParcelUuid;
 import android.os.PersistableBundle;
 import android.os.Process;
-import android.os.UserHandle;
-import android.provider.DeviceConfig;
 import android.telephony.CarrierConfigManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
@@ -1426,7 +1422,7 @@ public class SubscriptionManagerTest {
                 synchronized (lock) {
                     if (condition.getAsBoolean()) lock.notifyAll();
                 }
-                Looper.loop();
+                if (!condition.getAsBoolean()) Looper.loop();
             } finally {
                 mSm.removeOnSubscriptionsChangedListener(listener);
             }
