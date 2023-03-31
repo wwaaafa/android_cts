@@ -120,7 +120,7 @@ java_genrule {
         ":AccountManagementApp",
         ":RemoteAccountAuthenticatorApp",
         ":MLCTestApp",
-        ":MultipleActivitiesTestApp"
+        ":MultipleActivitiesTestApp",
     ],
     out: ["TestApp_Apps.res.zip"],
     tools: [
