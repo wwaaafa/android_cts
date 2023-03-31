@@ -950,6 +950,7 @@ public class JobThrottlingTest {
         assumeFalse("not testable in leanback device", mLeanbackOnly);
         assumeFalse("not testable, since ethernet is connected", hasEthernetConnection());
 
+        assumeTrue(BatteryUtils.hasBattery());
         assumeTrue(mNetworkingHelper.hasWifiFeature());
         mNetworkingHelper.ensureSavedWifiNetwork();
 
