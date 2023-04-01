@@ -1388,6 +1388,15 @@ public class KeyAttestationTest {
             assertTrue(unlockedDeviceMessage, rootOfTrust.isDeviceLocked());
             checkEntropy(rootOfTrust.getVerifiedBootKey());
             assertEquals(KM_VERIFIED_BOOT_VERIFIED, rootOfTrust.getVerifiedBootState());
+            if (SystemProperties.getInt("ro.product.first_api_level", 0)
+                    < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                // Verified boot hash was not previously checked in CTS, so set an api level check
+                // to avoid running into waiver issues.
+                return;
+            }
+            assertNotNull(rootOfTrust.getVerifiedBootHash());
+            assertEquals(32, rootOfTrust.getVerifiedBootHash().length);
+            checkEntropy(rootOfTrust.getVerifiedBootHash());
         }
     }
 
