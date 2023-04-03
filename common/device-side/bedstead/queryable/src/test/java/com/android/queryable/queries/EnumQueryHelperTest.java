@@ -22,14 +22,21 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.testng.Assert.assertThrows;
 
+import com.android.bedstead.harrier.BedsteadJUnit4;
+import com.android.bedstead.harrier.DeviceState;
 import com.android.queryable.Queryable;
 
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-@RunWith(JUnit4.class)
+@RunWith(BedsteadJUnit4.class)
 public final class EnumQueryHelperTest {
+
+    @ClassRule @Rule
+    public static final DeviceState sDeviceState = new DeviceState();
 
     private enum TestEnum {
         VALUE1, VALUE2

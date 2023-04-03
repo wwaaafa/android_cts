@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2021 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +14,38 @@
  * limitations under the License.
  */
 
-package com.android.bedstead.harrier.annotations.parameterized;
+package com.android.bedstead.harrier.annotations.enterprise;
 
-import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.EARLY;
+import static com.android.bedstead.harrier.annotations.EnsureHasWorkProfile.ENSURE_HAS_WORK_PROFILE_WEIGHT;
 
 import com.android.bedstead.harrier.annotations.AnnotationRunPrecedence;
-import com.android.bedstead.harrier.annotations.RequireRunOnWorkProfile;
-import com.android.bedstead.harrier.annotations.enterprise.EnsureHasNoDelegate;
-import com.android.bedstead.harrier.annotations.meta.ParameterizedAnnotation;
+import com.android.queryable.annotations.Query;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** Parameterize a test so that it runs on an organization-owned managed profile. */
-@Target({ElementType.METHOD, ElementType.TYPE})
+/**
+ * Register additional query parameters which should be applied to test apps for this test.
+ *
+ * <p>This is used in conjunction with e.g. @PolicyApplies test to restrict the DPCs used.
+ */
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-@ParameterizedAnnotation(shadows = IncludeRunOnProfileOwnerProfileWithNoDeviceOwner.class)
-@RequireRunOnWorkProfile(isOrganizationOwned = true, dpcKey = "dpc")
-@EnsureHasNoDelegate
-public @interface IncludeRunOnOrganizationOwnedProfileOwner {
+public @interface AdditionalQueryParameters {
+
+    /**
+     * The test app to apply these query parameters to.
+     *
+     * <p>There should be a constant defined in the annotation you are trying to influence for the
+     * test apps they use.
+     */
+    String forTestApp();
+
+    /** The additional query to apply. */
+    Query query();
+
     /**
      * Weight sets the order that annotations will be resolved.
      *
@@ -45,5 +56,5 @@ public @interface IncludeRunOnOrganizationOwnedProfileOwner {
      *
      * <p>Weight can be set to a {@link AnnotationRunPrecedence} constant, or to any {@link int}.
      */
-    int weight() default EARLY;
+    int weight() default ENSURE_HAS_WORK_PROFILE_WEIGHT - 1;
 }
