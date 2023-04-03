@@ -111,4 +111,22 @@ public final class PersistableBundleQueryHelperTest {
                 .where().key(KEY).stringValue().isEqualTo(STRING_VALUE)
                 .matches(mPersistableBundle)).isTrue();
     }
+
+    @Test
+    public void isEmptyQuery_isEmpty_returnsTrue() {
+        PersistableBundleQueryHelper<Queryable> persistableBundleQueryHelper =
+                new PersistableBundleQueryHelper<>(mQuery);
+
+        assertThat(persistableBundleQueryHelper.isEmptyQuery()).isTrue();
+    }
+
+    @Test
+    public void isEmptyQuery_hasDoesNotExistQuery_returnsFalse() {
+        PersistableBundleQueryHelper<Queryable> persistableBundleQueryHelper =
+                new PersistableBundleQueryHelper<>(mQuery);
+
+        persistableBundleQueryHelper.key("A").stringValue().isNotNull();
+
+        assertThat(persistableBundleQueryHelper.isEmptyQuery()).isFalse();
+    }
 }

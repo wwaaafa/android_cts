@@ -19,6 +19,7 @@ package com.android.bedstead.harrier.annotations;
 import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.MIDDLE;
 
 import com.android.bedstead.harrier.UserType;
+import com.android.queryable.annotations.Query;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Repeatable;
@@ -44,8 +45,8 @@ public @interface EnsureTestAppInstalled {
     /** A key which uniquely identifies the test app for the test. */
     String key() default DEFAULT_TEST_APP_KEY;
 
-    /** The package name of the testapp. Defaults to any test app. */
-    String packageName() default "";
+    /** Query specifying the testapp. Defaults to any test app. */
+    Query query() default @Query();
 
     /** The user the testApp should be installed on. */
     UserType onUser() default UserType.INSTRUMENTED_USER;

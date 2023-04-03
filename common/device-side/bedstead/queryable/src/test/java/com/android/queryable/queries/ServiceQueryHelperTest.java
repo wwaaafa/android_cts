@@ -132,4 +132,32 @@ public final class ServiceQueryHelperTest {
                 .where().serviceClass().isSameClassAs(CLASS_1)
                 .matches(CLASS_1_SERVICE_INFO)).isTrue();
     }
+
+    @Test
+    public void isEmptyQuery_isEmpty_returnsTrue() {
+        ServiceQueryHelper<Queryable> serviceQueryHelper =
+                new ServiceQueryHelper<>(mQuery);
+
+        assertThat(serviceQueryHelper.isEmptyQuery()).isTrue();
+    }
+
+    @Test
+    public void isEmptyQuery_hasServiceClassQuery_returnsFalse() {
+        ServiceQueryHelper<Queryable> serviceQueryHelper =
+                new ServiceQueryHelper<>(mQuery);
+
+        serviceQueryHelper.serviceClass().className().isEqualTo("");
+
+        assertThat(serviceQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasIntentFiltersQuery_returnsFalse() {
+        ServiceQueryHelper<Queryable> serviceQueryHelper =
+                new ServiceQueryHelper<>(mQuery);
+
+        serviceQueryHelper.intentFilters().isEmpty();
+
+        assertThat(serviceQueryHelper.isEmptyQuery()).isFalse();
+    }
 }

@@ -86,4 +86,22 @@ public final class BroadcastReceiverQueryHelperTest {
                 .matches(BROADCAST_RECEIVER_1_INFO)
         ).isTrue();
     }
+
+    @Test
+    public void isEmptyQuery_isEmpty_returnsTrue() {
+        BroadcastReceiverQueryHelper<Queryable> broadcastReceiverQueryHelper =
+                new BroadcastReceiverQueryHelper<>(mQuery);
+
+        assertThat(broadcastReceiverQueryHelper.isEmptyQuery()).isTrue();
+    }
+
+    @Test
+    public void isEmptyQuery_hasReceiverClass_returnsFalse() {
+        BroadcastReceiverQueryHelper<Queryable> broadcastReceiverQueryHelper =
+                new BroadcastReceiverQueryHelper<>(mQuery);
+
+        broadcastReceiverQueryHelper.receiverClass().className().isNotNull();
+
+        assertThat(broadcastReceiverQueryHelper.isEmptyQuery()).isFalse();
+    }
 }

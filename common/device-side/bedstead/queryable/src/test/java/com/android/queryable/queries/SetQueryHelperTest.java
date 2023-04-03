@@ -18,6 +18,7 @@ package com.android.queryable.queries;
 
 import static com.android.bedstead.nene.utils.ParcelTest.assertParcelsCorrectly;
 import static com.android.queryable.queries.BundleQuery.bundle;
+import static com.android.queryable.queries.IntegerQuery.integer;
 import static com.android.queryable.queries.SetQuery.set;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -222,5 +223,53 @@ public final class SetQueryHelperTest {
         assertThat(set(Integer.class)
                 .where().contains(1)
                 .matches(Set.of(1))).isTrue();
+    }
+
+    @Test
+    public void isEmptyQuery_isEmpty_returnsTrue() {
+        SetQueryHelper<Queryable, Integer> setQueryHelper =
+                new SetQueryHelper<>(mQuery);
+
+        assertThat(setQueryHelper.isEmptyQuery()).isTrue();
+    }
+
+    @Test
+    public void isEmptyQuery_hasContainsByQueryQuery_returnsFalse() {
+        SetQueryHelper<Queryable, Integer> setQueryHelper =
+                new SetQueryHelper<>(mQuery);
+
+        setQueryHelper.contains(integer().where().isEqualTo(1));
+
+        assertThat(setQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasDoesNotContainByQueryQuery_returnsFalse() {
+        SetQueryHelper<Queryable, Integer> setQueryHelper =
+                new SetQueryHelper<>(mQuery);
+
+        setQueryHelper.doesNotContain(integer().where().isEqualTo(1));
+
+        assertThat(setQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasContainsByTypeQuery_returnsFalse() {
+        SetQueryHelper<Queryable, Integer> setQueryHelper =
+                new SetQueryHelper<>(mQuery);
+
+        setQueryHelper.contains(1);
+
+        assertThat(setQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasDoesNotContainByType_returnsFalse() {
+        SetQueryHelper<Queryable, Integer> setQueryHelper =
+                new SetQueryHelper<>(mQuery);
+
+        setQueryHelper.doesNotContain(1);
+
+        assertThat(setQueryHelper.isEmptyQuery()).isFalse();
     }
 }

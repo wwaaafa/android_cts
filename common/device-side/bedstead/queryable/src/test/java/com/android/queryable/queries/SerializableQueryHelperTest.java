@@ -80,4 +80,22 @@ public final class SerializableQueryHelperTest {
                 .where().isEqualTo(mSerializable)
                 .matches(mSerializable)).isTrue();
     }
+
+    @Test
+    public void isEmptyQuery_isEmpty_returnsTrue() {
+        SerializableQueryHelper<Queryable> serializableQueryHelper =
+                new SerializableQueryHelper<>(mQuery);
+
+        assertThat(serializableQueryHelper.isEmptyQuery()).isTrue();
+    }
+
+    @Test
+    public void isEmptyQuery_hasEqualsQuery_returnsFalse() {
+        SerializableQueryHelper<Queryable> serializableQueryHelper =
+                new SerializableQueryHelper<>(mQuery);
+
+        serializableQueryHelper.isEqualTo(new Serializable() {});
+
+        assertThat(serializableQueryHelper.isEmptyQuery()).isFalse();
+    }
 }
