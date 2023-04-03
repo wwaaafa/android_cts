@@ -111,4 +111,22 @@ public final class BundleQueryHelperTest {
                 bundle().where().key(KEY).stringValue().isEqualTo(STRING_VALUE)
                         .matches(mBundle)).isTrue();
     }
+
+    @Test
+    public void isEmptyQuery_isEmpty_returnsTrue() {
+        BundleQueryHelper<Queryable> bundleQueryHelper =
+                new BundleQueryHelper<>(mQuery);
+
+        assertThat(bundleQueryHelper.isEmptyQuery()).isTrue();
+    }
+
+    @Test
+    public void isEmptyQuery_hasKeyQuery_returnsFalse() {
+        BundleQueryHelper<Queryable> bundleQueryHelper =
+                new BundleQueryHelper<>(mQuery);
+
+        bundleQueryHelper.key("a").stringValue().isNotNull();
+
+        assertThat(bundleQueryHelper.isEmptyQuery()).isFalse();
+    }
 }

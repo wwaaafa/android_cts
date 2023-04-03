@@ -123,4 +123,32 @@ public final class ClassQueryHelperTest {
                 ClassQuery.Class().where().simpleName().isEqualTo(CLASS_1_SIMPLE_NAME)
                         .matches(CLASS_1_CLASS_INFO)).isTrue();
     }
+
+    @Test
+    public void isEmptyQuery_isEmpty_returnsTrue() {
+        ClassQueryHelper<Queryable> classQueryHelper =
+                new ClassQueryHelper<>(mQuery);
+
+        assertThat(classQueryHelper.isEmptyQuery()).isTrue();
+    }
+
+    @Test
+    public void isEmptyQuery_hasClassNameQuery_returnsFalse() {
+        ClassQueryHelper<Queryable> classQueryHelper =
+                new ClassQueryHelper<>(mQuery);
+
+        classQueryHelper.className().isNotNull();
+
+        assertThat(classQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasSimpleNameQuery_returnsFalse() {
+        ClassQueryHelper<Queryable> classQueryHelper =
+                new ClassQueryHelper<>(mQuery);
+
+        classQueryHelper.simpleName().isNotNull();
+
+        assertThat(classQueryHelper.isEmptyQuery()).isFalse();
+    }
 }

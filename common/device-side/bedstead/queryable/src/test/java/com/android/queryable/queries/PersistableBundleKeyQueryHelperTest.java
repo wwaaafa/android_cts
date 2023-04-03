@@ -148,4 +148,52 @@ public final class PersistableBundleKeyQueryHelperTest {
         assertParcelsCorrectly(PersistableBundleKeyQueryHelper.class,
                 persistableBundleKeyQueryHelper);
     }
+
+    @Test
+    public void isEmptyQuery_isEmpty_returnsTrue() {
+        PersistableBundleKeyQueryHelper<Queryable> persistableBundleKeyQueryHelper =
+                new PersistableBundleKeyQueryHelper<>(mQuery);
+
+        assertThat(persistableBundleKeyQueryHelper.isEmptyQuery()).isTrue();
+    }
+
+    @Test
+    public void isEmptyQuery_hasExistsQuery_returnsFalse() {
+        PersistableBundleKeyQueryHelper<Queryable> persistableBundleKeyQueryHelper =
+                new PersistableBundleKeyQueryHelper<>(mQuery);
+
+        persistableBundleKeyQueryHelper.exists();
+
+        assertThat(persistableBundleKeyQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasDoesNotExistQuery_returnsFalse() {
+        PersistableBundleKeyQueryHelper<Queryable> persistableBundleKeyQueryHelper =
+                new PersistableBundleKeyQueryHelper<>(mQuery);
+
+        persistableBundleKeyQueryHelper.doesNotExist();
+
+        assertThat(persistableBundleKeyQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasStringQuery_returnsFalse() {
+        PersistableBundleKeyQueryHelper<Queryable> persistableBundleKeyQueryHelper =
+                new PersistableBundleKeyQueryHelper<>(mQuery);
+
+        persistableBundleKeyQueryHelper.stringValue().isNotNull();
+
+        assertThat(persistableBundleKeyQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasPersistableBundleQuery_returnsFalse() {
+        PersistableBundleKeyQueryHelper<Queryable> persistableBundleKeyQueryHelper =
+                new PersistableBundleKeyQueryHelper<>(mQuery);
+
+        persistableBundleKeyQueryHelper.persistableBundleValue().key("A").stringValue().isNotNull();
+
+        assertThat(persistableBundleKeyQueryHelper.isEmptyQuery()).isFalse();
+    }
 }

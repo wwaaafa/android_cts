@@ -114,4 +114,32 @@ public final class IntentQueryHelperTest {
                 .where().extras().key(STRING_VALUE).exists()
                 .matches(intent)).isTrue();
     }
+
+    @Test
+    public void isEmptyQuery_isEmpty_returnsTrue() {
+        IntentQueryHelper<Queryable> intentQueryHelper =
+                new IntentQueryHelper<>(mQuery);
+
+        assertThat(intentQueryHelper.isEmptyQuery()).isTrue();
+    }
+
+    @Test
+    public void isEmptyQuery_hasActionQuery_returnsFalse() {
+        IntentQueryHelper<Queryable> intentQueryHelper =
+                new IntentQueryHelper<>(mQuery);
+
+        intentQueryHelper.action().isNotNull();
+
+        assertThat(intentQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasExtrasQuery_returnsFalse() {
+        IntentQueryHelper<Queryable> intentQueryHelper =
+                new IntentQueryHelper<>(mQuery);
+
+        intentQueryHelper.extras().key("a").exists();
+
+        assertThat(intentQueryHelper.isEmptyQuery()).isFalse();
+    }
 }

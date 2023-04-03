@@ -31,6 +31,7 @@ import static com.android.bedstead.nene.flags.CommonFlags.DevicePolicyManager.PE
 import static com.android.bedstead.nene.flags.CommonFlags.NAMESPACE_DEVICE_POLICY_MANAGER;
 import static com.android.bedstead.nene.userrestrictions.CommonUserRestrictions.DISALLOW_ADD_MANAGED_PROFILE;
 import static com.android.bedstead.nene.userrestrictions.CommonUserRestrictions.DISALLOW_ADD_USER;
+import static com.android.bedstead.nene.userrestrictions.CommonUserRestrictions.DISALLOW_BLUETOOTH;
 import static com.android.bedstead.nene.users.UserType.MANAGED_PROFILE_TYPE_NAME;
 import static com.android.bedstead.nene.users.UserType.SECONDARY_USER_TYPE_NAME;
 import static com.android.bedstead.nene.utils.Versions.meetsSdkVersionRequirements;
@@ -147,7 +148,6 @@ import com.android.bedstead.nene.permissions.PermissionContextImpl;
 import com.android.bedstead.nene.types.OptionalBoolean;
 import com.android.bedstead.nene.users.UserBuilder;
 import com.android.bedstead.nene.users.UserReference;
-import com.android.bedstead.nene.utils.Poll;
 import com.android.bedstead.nene.utils.ShellCommand;
 import com.android.bedstead.nene.utils.Tags;
 import com.android.bedstead.nene.utils.Versions;
@@ -170,6 +170,7 @@ import com.google.common.base.Objects;
 
 import junit.framework.AssertionFailedError;
 
+import org.junit.Assume;
 import org.junit.AssumptionViolatedException;
 import org.junit.runner.Description;
 import org.junit.runners.model.FrameworkMethod;
@@ -583,7 +584,7 @@ public final class DeviceState extends HarrierRule {
                         (EnsureTestAppInstalled) annotation;
                 ensureTestAppInstalled(
                         ensureTestAppInstalledAnnotation.key(),
-                        ensureTestAppInstalledAnnotation.packageName(),
+                        ensureTestAppInstalledAnnotation.query(),
                         ensureTestAppInstalledAnnotation.onUser(),
                         ensureTestAppInstalledAnnotation.isPrimary()
                 );
@@ -1205,11 +1206,20 @@ public final class DeviceState extends HarrierRule {
         }
     }
 
+    private static final TestAppQueryBuilder DEFAULT_DPC_QUERY = new TestAppProvider().query()
+            .wherePackageName().isEqualTo(RemoteDpc.REMOTE_DPC_APP_PACKAGE_NAME_OR_PREFIX);
+
     private static TestAppQueryBuilder getDpcQueryFromAnnotation(Annotation annotation) {
         try {
             Method queryMethod = annotation.annotationType().getMethod("dpc");
             Query query = (Query) queryMethod.invoke(annotation);
-            return new TestAppProvider().query(query);
+            TestAppQueryBuilder queryBuilder = new TestAppProvider().query(query);
+
+            if (queryBuilder.isEmptyQuery()) {
+                return DEFAULT_DPC_QUERY;
+            }
+
+            return queryBuilder;
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
             Log.i(LOG_TAG, "Unable to get dpc query value for "
                     + annotation.annotationType().getName(), e);
@@ -2024,19 +2034,14 @@ public final class DeviceState extends HarrierRule {
     }
 
     private void ensureHasNoAdditionalUser() {
-        if (!isHeadlessSystemUserMode()) {
-            if (TestApis.users()
-                    .instrumented()
-                    .type()
-                    .equals(TestApis.users().supportedType(SECONDARY_USER_TYPE_NAME))) {
-                throw new AssumptionViolatedException(
-                        "Tests with @EnsureHasNoAdditionalUser cannot run on a secondary user on"
-                                + " a non headless system user device.");
-            }
-        }
-
         UserReference additionalUser = additionalUserOrNull();
         while (additionalUser != null) {
+            if (TestApis.users().instrumented().equals(additionalUser)) {
+                throw new AssumptionViolatedException("Tests with @EnsureHasNoAdditionalUser cannot"
+                        + "run on an additional user");
+            }
+            ensureSwitchedToUser(OptionalBoolean.FALSE, additionalUser);
+
             additionalUser.remove();
 
             additionalUser = additionalUserOrNull();
@@ -2672,15 +2677,8 @@ public final class DeviceState extends HarrierRule {
     }
 
     private void ensureTestAppInstalled(
-            String key, String packageName, UserType onUser, boolean isPrimary) {
-        TestApp testApp;
-        if (packageName.isEmpty()) {
-            testApp = mTestAppProvider.any();
-        } else {
-            testApp = mTestAppProvider.query()
-                    .wherePackageName().isEqualTo(packageName)
-                    .get();
-        }
+            String key, Query query, UserType onUser, boolean isPrimary) {
+        TestApp testApp = mTestAppProvider.query(query).get();
 
         TestAppInstance testAppInstance = ensureTestAppInstalled(
                 testApp, resolveUserTypeToUser(onUser));
@@ -3349,6 +3347,10 @@ public final class DeviceState extends HarrierRule {
                 continue;
             }
 
+            if (!otherUser.canBeSwitchedTo()) {
+                continue;
+            }
+
             switchToUser(otherUser);
             return;
         }
@@ -3467,6 +3469,12 @@ public final class DeviceState extends HarrierRule {
     }
 
     private void ensureBluetoothEnabled() {
+        // TODO(b/220306133): bluetooth from background
+        Assume.assumeTrue("Can only configure bluetooth from foreground",
+                TestApis.users().instrumented().isForeground());
+
+        ensureDoesNotHaveUserRestriction(DISALLOW_BLUETOOTH, UserType.ANY);
+
         if (mOriginalBluetoothEnabled == null) {
             mOriginalBluetoothEnabled = TestApis.bluetooth().isEnabled();
         }
@@ -3474,6 +3482,9 @@ public final class DeviceState extends HarrierRule {
     }
 
     private void ensureBluetoothDisabled() {
+        Assume.assumeTrue("Can only configure bluetooth from foreground",
+                TestApis.users().instrumented().isForeground());
+
         if (mOriginalBluetoothEnabled == null) {
             mOriginalBluetoothEnabled = TestApis.bluetooth().isEnabled();
         }
@@ -3885,6 +3896,13 @@ public final class DeviceState extends HarrierRule {
     }
 
     private void ensureDoesNotHaveUserRestriction(String restriction, UserType onUser) {
+        if (onUser == UserType.ANY) {
+            for (UserReference userReference : TestApis.users().all()) {
+                ensureDoesNotHaveUserRestriction(restriction, userReference);
+            }
+            return;
+        }
+
         ensureDoesNotHaveUserRestriction(restriction, resolveUserTypeToUser(onUser));
     }
 

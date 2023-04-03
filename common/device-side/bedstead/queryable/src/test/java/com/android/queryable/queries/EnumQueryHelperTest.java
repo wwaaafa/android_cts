@@ -176,4 +176,52 @@ public final class EnumQueryHelperTest {
 
         assertParcelsCorrectly(EnumQueryHelper.class, enumQueryHelper);
     }
+
+    @Test
+    public void isEmptyQuery_isEmpty_returnsTrue() {
+        EnumQueryHelper<Queryable, TestEnum> enumQueryHelper =
+                new EnumQueryHelper<>(mQuery);
+
+        assertThat(enumQueryHelper.isEmptyQuery()).isTrue();
+    }
+
+    @Test
+    public void isEmptyQuery_hasIsEqualToQuery_returnsFalse() {
+        EnumQueryHelper<Queryable, TestEnum> enumQueryHelper =
+                new EnumQueryHelper<>(mQuery);
+
+        enumQueryHelper.isEqualTo(TestEnum.VALUE1);
+
+        assertThat(enumQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasIsNotEqualToQuery_returnsFalse() {
+        EnumQueryHelper<Queryable, TestEnum> enumQueryHelper =
+                new EnumQueryHelper<>(mQuery);
+
+        enumQueryHelper.isNotEqualTo(TestEnum.VALUE1);
+
+        assertThat(enumQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasIsOneOfQuery_returnsFalse() {
+        EnumQueryHelper<Queryable, TestEnum> enumQueryHelper =
+                new EnumQueryHelper<>(mQuery);
+
+        enumQueryHelper.isOneOf(TestEnum.VALUE1);
+
+        assertThat(enumQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasIsNotOneOfQuery_returnsFalse() {
+        EnumQueryHelper<Queryable, TestEnum> enumQueryHelper =
+                new EnumQueryHelper<>(mQuery);
+
+        enumQueryHelper.isNotOneOf(TestEnum.VALUE1);
+
+        assertThat(enumQueryHelper.isEmptyQuery()).isFalse();
+    }
 }
