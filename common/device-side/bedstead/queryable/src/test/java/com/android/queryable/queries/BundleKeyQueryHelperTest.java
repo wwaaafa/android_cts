@@ -22,8 +22,12 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.os.Bundle;
 
+import com.android.bedstead.harrier.BedsteadJUnit4;
+import com.android.bedstead.harrier.DeviceState;
 import com.android.queryable.Queryable;
 
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -32,8 +36,11 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-@RunWith(JUnit4.class)
+@RunWith(BedsteadJUnit4.class)
 public final class BundleKeyQueryHelperTest {
+
+    @ClassRule @Rule
+    public static final DeviceState sDeviceState = new DeviceState();
 
     private static final String KEY = "Key";
     private static final String KEY2 = "Key2";

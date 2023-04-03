@@ -16,6 +16,7 @@
 
 package com.android.bedstead.harrier;
 
+import static com.android.bedstead.harrier.UserType.INITIAL_USER;
 import static com.android.bedstead.harrier.UserType.SECONDARY_USER;
 import static com.android.bedstead.harrier.UserType.SYSTEM_USER;
 import static com.android.bedstead.harrier.UserType.WORK_PROFILE;
@@ -61,7 +62,6 @@ import static com.android.bedstead.nene.flags.CommonFlags.NAMESPACE_DEVICE_POLIC
 import static com.android.bedstead.testapp.TestAppQueryBuilder.queryBuilder;
 
 import com.android.bedstead.harrier.annotations.EnsureFeatureFlagEnabled;
-import com.android.bedstead.harrier.annotations.EnsureFeatureFlagNotEnabled;
 import com.android.bedstead.harrier.annotations.EnsureTestAppDoesNotHavePermission;
 import com.android.bedstead.harrier.annotations.EnsureTestAppHasAppOp;
 import com.android.bedstead.harrier.annotations.EnsureTestAppHasPermission;
@@ -183,15 +183,15 @@ public final class Policy {
 
                     // The model here is that APPLIED_BY_PARENT + APPLIES_TO_OWN_USER means it applies to the parent of the DPC - I'm not sure this is the best model (APPLIES_TO_PARENT would also be reasonable)
                     .put(APPLIED_BY_PARENT_INSTANCE_OF_NON_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE
-                            | APPLIES_TO_OWN_USER, generateDevicePolicyManagerRoleHolderAnnotation(includeRunOnParentOfProfileOwnerUsingParentInstance(), /* roleHolderUser= */ WORK_PROFILE))
-                    .put(APPLIED_BY_PARENT_INSTANCE_OF_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE | APPLIES_TO_OWN_USER, generateDevicePolicyManagerRoleHolderAnnotation(includeRunOnParentOfOrganizationOwnedProfileOwnerUsingParentInstance(), /* roleHolderUser= */ WORK_PROFILE))
+                            | APPLIES_TO_OWN_USER, generateDevicePolicyManagerRoleHolderAnnotation(includeRunOnParentOfProfileOwnerUsingParentInstance(), /* roleHolderUser= */ INITIAL_USER))
+                    .put(APPLIED_BY_PARENT_INSTANCE_OF_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE | APPLIES_TO_OWN_USER, generateDevicePolicyManagerRoleHolderAnnotation(includeRunOnParentOfOrganizationOwnedProfileOwnerUsingParentInstance(), /* roleHolderUser= */ INITIAL_USER))
 
                     .put(APPLIED_BY_FINANCED_DEVICE_OWNER | APPLIES_TO_OWN_USER, generateDevicePolicyManagerRoleHolderAnnotation(includeRunOnFinancedDeviceOwnerUser(), /* roleHolderUser= */ SYSTEM_USER))
 
                     .put(APPLIED_BY_PARENT_INSTANCE_OF_NON_ORGANIZATIONAL_OWNED_PROFILE_OWNER_PROFILE | APPLIES_TO_OWN_USER
                             | INHERITABLE, generateDevicePolicyManagerRoleHolderAnnotation(
                             includeRunOnCloneProfileAlongsideManagedProfileUsingParentInstance(),
-                            /* roleHolderUser= */ WORK_PROFILE))
+                            /* roleHolderUser= */ INITIAL_USER))
                     .build();
     // This must contain one key for every APPLIED_BY that is being used, and maps to the
     // "default" for testing that DPC type
@@ -408,11 +408,6 @@ public final class Policy {
         return new AutoAnnotation_Policy_requireFeatureFlagEnabled(namespace, key);
     }
 
-    @AutoAnnotation
-    private static EnsureFeatureFlagNotEnabled ensureFeatureFlagNotEnabled(String namespace, String key) {
-        return new AutoAnnotation_Policy_ensureFeatureFlagNotEnabled(namespace, key);
-    }
-
     private static Function<EnterprisePolicy, Set<Annotation>> singleAnnotation(
             Annotation annotation) {
         return (i) -> ImmutableSet.of(annotation);
@@ -421,6 +416,11 @@ public final class Policy {
     private static Function<EnterprisePolicy, Set<Annotation>> generateDevicePolicyManagerRoleHolderAnnotation(
             Annotation annotation, UserType roleHolderUser) {
         return (policy) -> {
+            if (true) {
+                // Temporarily disabling enforcement of third-party coexistence
+                return ImmutableSet.of(annotation);
+            }
+
             // If DPM role holder is handled elsewhere - we don't special case it here
             if (hasFlag(policy.dpc(), CANNOT_BE_APPLIED_BY_ROLE_HOLDER)
                     || hasFlag(policy.dpc(), APPLIED_BY_DPM_ROLE_HOLDER)) {

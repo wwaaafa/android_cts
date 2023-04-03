@@ -23,15 +23,22 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.app.admin.DelegatedAdminReceiver;
 
+import com.android.bedstead.harrier.BedsteadJUnit4;
+import com.android.bedstead.harrier.DeviceState;
 import com.android.queryable.Queryable;
 import com.android.queryable.info.DelegatedAdminReceiverInfo;
 
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-@RunWith(JUnit4.class)
+@RunWith(BedsteadJUnit4.class)
 public final class DelegatedAdminReceiverQueryHelperTest {
+
+    @ClassRule @Rule
+    public static final DeviceState sDeviceState = new DeviceState();
     private final Queryable mQuery = null;
 
     private static final Class<? extends DelegatedAdminReceiver> CLASS_1 =
