@@ -76,13 +76,13 @@ public class ThirdPartyInCallServiceAppOpsPermissionTest extends BaseTelecomTest
 
     @Override
     public void tearDown() throws Exception {
+        super.tearDown();
         if (mShouldTestTelecom) {
             mICtsThirdPartyInCallServiceControl.resetCalls();
             if (mExpectedTearDownBindingStatus) {
                 assertBindStatus(/* true: bind, false: unbind */false, /* expected result */true);
             }
         }
-        super.tearDown();
     }
 
     public void testWithoutAppOpsPermission() throws Exception {
