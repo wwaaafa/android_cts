@@ -29,6 +29,7 @@ import static com.android.bedstead.nene.appops.CommonAppOps.OPSTR_SYSTEM_EXEMPT_
 import static com.android.bedstead.nene.flags.CommonFlags.DevicePolicyManager.PERMISSION_BASED_ACCESS_EXPERIMENT_FLAG;
 import static com.android.bedstead.nene.flags.CommonFlags.NAMESPACE_DEVICE_POLICY_MANAGER;
 import static com.android.bedstead.nene.permissions.CommonPermissions.MANAGE_DEVICE_POLICY_APP_EXEMPTIONS;
+import static com.android.queryable.queries.ActivityQuery.activity;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -50,15 +51,14 @@ import com.android.bedstead.harrier.annotations.EnsureHasPermission;
 import com.android.bedstead.harrier.annotations.IntTestParameter;
 import com.android.bedstead.harrier.annotations.Postsubmit;
 import com.android.bedstead.harrier.annotations.RequireFeature;
+import com.android.bedstead.harrier.annotations.RequireFeatureFlagEnabled;
 import com.android.bedstead.harrier.annotations.enterprise.CannotSetPolicyTest;
+import com.android.bedstead.harrier.annotations.enterprise.EnsureHasDeviceOwner;
+import com.android.bedstead.harrier.annotations.enterprise.EnsureHasDevicePolicyManagerRoleHolder;
 import com.android.bedstead.harrier.annotations.enterprise.PolicyAppliesTest;
 import com.android.bedstead.harrier.annotations.enterprise.PolicyDoesNotApplyTest;
 import com.android.bedstead.harrier.policies.ApplicationExemptions;
-import com.android.bedstead.harrier.annotations.enterprise.EnsureHasDeviceOwner;
-import com.android.bedstead.harrier.annotations.enterprise.EnsureHasDevicePolicyManagerRoleHolder;
 import com.android.bedstead.metricsrecorder.EnterpriseMetricsRecorder;
-import com.android.bedstead.harrier.annotations.enterprise.EnsureHasDeviceOwner;
-import com.android.bedstead.harrier.annotations.enterprise.EnsureHasDevicePolicyManagerRoleHolder;
 import com.android.bedstead.nene.TestApis;
 import com.android.bedstead.nene.utils.Poll;
 import com.android.bedstead.testapp.TestApp;
@@ -87,7 +87,9 @@ public class ApplicationExemptionsTest {
     private static final Context sContext = TestApis.context().instrumentedContext();
     private static final DevicePolicyManager sLocalDevicePolicyManager =
             sContext.getSystemService(DevicePolicyManager.class);
-    private static final TestApp sTestApp = sDeviceState.testApps().any();
+    private static final TestApp sTestApp =
+            sDeviceState.testApps().query().whereActivities().contains(
+                    activity().where().exported().isTrue()).get();
 
     private static final String INVALID_PACKAGE_NAME = "com.google.android.notapackage";
     private static final Set<Integer> INVALID_EXEMPTIONS = new HashSet<>(List.of(-1));
@@ -372,6 +374,7 @@ public class ApplicationExemptionsTest {
             namespace = NAMESPACE_DEVICE_POLICY_MANAGER,
             key = PERMISSION_BASED_ACCESS_EXPERIMENT_FLAG)
     @Postsubmit(reason = "new test")
+    @ApiTest(apis = {"android.app.admin.DevicePolicyManager#setApplicationExemption"})
     public void setApplicationExemptions_noExemption_testAppCanBeSuspended()
             throws NameNotFoundException {
 
@@ -384,6 +387,13 @@ public class ApplicationExemptionsTest {
         }
     }
 
+    @Test
+    @EnsureHasDevicePolicyManagerRoleHolder
+    @EnsureHasDeviceOwner(isPrimary = true)
+    @RequireFeatureFlagEnabled(
+            namespace = NAMESPACE_DEVICE_POLICY_MANAGER,
+            key = PERMISSION_BASED_ACCESS_EXPERIMENT_FLAG)
+    @Postsubmit(reason = "new test")
     @ApiTest(apis = {"android.app.admin.DevicePolicyManager#setApplicationExemption"})
     public void setApplicationExemptions_suspensionRestrictionExemption_appCannotBeSuspended()
             throws NameNotFoundException {
