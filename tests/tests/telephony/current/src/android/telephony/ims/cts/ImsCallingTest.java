@@ -276,7 +276,7 @@ public class ImsCallingTest extends ImsCallingBase {
 
     @Test
     public void testIncomingCallReturnListener() throws Exception {
-        if (!ImsUtils.shouldTestImsService()) {
+        if (!ImsUtils.shouldTestImsCall()) {
             return;
         }
         bindImsService();
@@ -308,7 +308,7 @@ public class ImsCallingTest extends ImsCallingBase {
 
     @Test
     public void testIncomingCallReject() throws Exception {
-        if (!ImsUtils.shouldTestImsService()) {
+        if (!ImsUtils.shouldTestImsCall()) {
             return;
         }
         bindImsService();
@@ -508,7 +508,7 @@ public class ImsCallingTest extends ImsCallingBase {
 
     @Test
     public void testOutGoingCallReceivedHoldResume() throws Exception {
-        if (!ImsUtils.shouldTestImsService()) {
+        if (!ImsUtils.shouldTestImsCall()) {
             return;
         }
 
@@ -699,7 +699,7 @@ public class ImsCallingTest extends ImsCallingBase {
 
     @Test
     public void testOutGoingIncomingMultiCallHoldFailedTerminateByRemote() throws Exception {
-        if (!ImsUtils.shouldTestImsService()) {
+        if (!ImsUtils.shouldTestImsCall()) {
             return;
         }
 
@@ -918,7 +918,7 @@ public class ImsCallingTest extends ImsCallingBase {
 
     @Test
     public void testConferenceCallFailureByRemoteTerminated() throws Exception {
-        if (!ImsUtils.shouldTestImsService()) {
+        if (!ImsUtils.shouldTestImsCall()) {
             return;
         }
 
@@ -954,7 +954,7 @@ public class ImsCallingTest extends ImsCallingBase {
 
     @Test
     public void testCallJoinExistingConferenceCall() throws Exception {
-        if (!ImsUtils.shouldTestImsService()) {
+        if (!ImsUtils.shouldTestImsCall()) {
             return;
         }
 
@@ -989,7 +989,7 @@ public class ImsCallingTest extends ImsCallingBase {
 
     @Test
     public void testCallJoinExistingConferenceCallAfterCallSwap() throws Exception {
-        if (!ImsUtils.shouldTestImsService()) {
+        if (!ImsUtils.shouldTestImsCall()) {
             return;
         }
 
@@ -1039,7 +1039,7 @@ public class ImsCallingTest extends ImsCallingBase {
 
     @Test
     public void testCallJoinExistingConferenceCallAfterCallSwapFail() throws Exception {
-        if (!ImsUtils.shouldTestImsService()) {
+        if (!ImsUtils.shouldTestImsCall()) {
             return;
         }
 
@@ -1092,7 +1092,7 @@ public class ImsCallingTest extends ImsCallingBase {
 
     @Test
     public void testSetCallAudioHandler() throws Exception {
-        if (!ImsUtils.shouldTestImsService()) {
+        if (!ImsUtils.shouldTestImsCall()) {
             return;
         }
 
@@ -1170,7 +1170,7 @@ public class ImsCallingTest extends ImsCallingBase {
 
     @Test
     public void testNotifyCallStateChanged() throws Exception {
-        if (!ImsUtils.shouldTestImsService()) {
+        if (!ImsUtils.shouldTestImsCall()) {
             return;
         }
 
@@ -1254,7 +1254,7 @@ public class ImsCallingTest extends ImsCallingBase {
 
     @Test
     public void testNotifyMediaCallStatusChanged() throws Exception {
-        if (!ImsUtils.shouldTestImsService()) {
+        if (!ImsUtils.shouldTestImsCall()) {
             return;
         }
 
