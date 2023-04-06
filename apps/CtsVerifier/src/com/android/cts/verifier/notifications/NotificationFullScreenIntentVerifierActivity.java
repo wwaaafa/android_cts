@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,24 @@
 
 package com.android.cts.verifier.notifications;
 
+
 import static android.app.Notification.VISIBILITY_PRIVATE;
 import static android.app.Notification.VISIBILITY_PUBLIC;
 import static android.app.Notification.VISIBILITY_SECRET;
-import static android.app.NotificationManager.IMPORTANCE_DEFAULT;
+import static android.app.NotificationManager.IMPORTANCE_HIGH;
 import static android.app.NotificationManager.VISIBILITY_NO_OVERRIDE;
 import static android.provider.Settings.EXTRA_APP_PACKAGE;
 import static android.provider.Settings.EXTRA_CHANNEL_ID;
 
-import android.annotation.SuppressLint;
 import android.app.KeyguardManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
+import android.app.PendingIntent;
+import android.app.RemoteInput;
 import android.content.Intent;
-import android.os.Bundle;
+import android.content.pm.PackageManager;
+import android.graphics.drawable.Icon;
+import android.net.Uri;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
@@ -38,33 +42,28 @@ import android.view.ViewGroup;
 import androidx.annotation.StringRes;
 
 import com.android.cts.verifier.R;
-import com.android.cts.verifier.features.FeatureUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 /**
- * A verifier test which validates the lockscreen behaviors of notifications under various settings
+ * A verifier test which validates behaviour of notifications with Full Screen Intent
+ * under various settings
  */
-public class NotificationPrivacyVerifierActivity extends InteractiveVerifierActivity
+public class NotificationFullScreenIntentVerifierActivity extends InteractiveVerifierActivity
         implements Runnable {
-    static final String TAG = "NotifPrivacyVerifier";
+    static final String TAG = "NotifFsiVerifier";
     private static final String NOTIFICATION_CHANNEL_ID = TAG;
 
     @Override
-    protected void onCreate(Bundle savedState) {
-        super.onCreate(savedState);
-    }
-
-    @Override
     protected int getTitleResource() {
-        return R.string.notif_privacy_test;
+        return R.string.fsi_test;
     }
 
     @Override
     protected int getInstructionsResource() {
-        return R.string.notif_privacy_info;
+        return R.string.fsi_test_info;
     }
 
     private int getChannelVisibility() {
@@ -100,53 +99,44 @@ public class NotificationPrivacyVerifierActivity extends InteractiveVerifierActi
                 Settings.Secure.LOCK_SCREEN_ALLOW_PRIVATE_NOTIFICATIONS, 0) != 0;
     }
 
-
-    // Test Setup
-
     @Override
     protected List<InteractiveTestCase> createTestItems() {
+        boolean isAutomotive = getPackageManager().hasSystemFeature(
+                PackageManager.FEATURE_AUTOMOTIVE);
         List<InteractiveTestCase> tests = new ArrayList<>();
-
-        // FIRST: enable lock screen
+        if (isAutomotive) {
+            return tests;
+        }
+        // FIRST: set redaction settings
         tests.add(new SetScreenLockEnabledStep());
+        tests.add(new SetGlobalVisibilityPublicStep());
+        tests.add(new SetChannelLockscreenVisibilityPublicStep());
 
-        // for watches, no notifications should appear on the secure lock screen
-        if (!FeatureUtil.isWatch(this)) {
-            // THEN: set redaction settings
-            tests.add(new SetGlobalVisibilityPublicStep());
-            tests.add(new SetChannelLockscreenVisibilityPrivateStep());
-            // NOW TESTING: redacted by channel
-            tests.add(new NotificationWhenLockedShowsRedactedTest());
-            tests.add(new NotificationWhenOccludedShowsRedactedTest());
+        // Grant permission for Full Screen Intent
+        tests.add(new GrantFsiPermissionStep());
 
-            tests.add(new SetChannelLockscreenVisibilityPublicStep());
-            // NOW TESTING: not redacted at all
-            tests.add(new SecureActionOnLockScreenTest());
-            tests.add(new NotificationWhenLockedShowsPrivateTest());
-            tests.add(new NotificationWhenOccludedShowsPrivateTest());
+        // NOW TESTING: Screen unlocked FSI HUN with permission, should show sticky HUN for 60s
+        tests.add(new ScreenUnlockedFsiHunTest());
 
-            tests.add(new SetGlobalVisibilityPrivateStep());
-            // NOW TESTING: redacted globally
-            tests.add(new NotificationWhenLockedShowsRedactedTest());
-            tests.add(new NotificationWhenOccludedShowsRedactedTest());
+        // NOW TESTING: lockscreen FSI HUN with FSI permission, should launch FSI
+        tests.add(new LockScreenFsiWithPermissionTestStep());
 
-            tests.add(new SetGlobalVisibilitySecretStep());
-        }
 
-        // NOW TESTING: notifications do not appear
-        tests.add(new NotificationWhenLockedIsHiddenTest());
-        if (!FeatureUtil.isWatch(this)) {
-            tests.add(new NotificationWhenOccludedIsHiddenTest());
-        }
+        // Deny permission for Full Screen Intent
+        tests.add(new DenyFsiPermissionStep());
 
-        // FINALLY: restore device state
-        tests.add(new SetScreenLockDisabledStep());
+        // NOW TESTING: Screen unlocked FSI without permission, should show sticky HUN for 60s
+        tests.add(new ScreenUnlockedFsiHunTest());
+
+        // NOW TESTING: lockscreen FSI HUN without FSI permission,
+        // HUN shows up first in list, expanded with pill buttons
+        tests.add(new LockScreenFsiWithoutPermissionTestStep());
         return tests;
     }
 
     private void createChannels() {
         NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL_ID,
-                NOTIFICATION_CHANNEL_ID, IMPORTANCE_DEFAULT);
+                NOTIFICATION_CHANNEL_ID, IMPORTANCE_HIGH);
         mNm.createNotificationChannel(channel);
     }
 
@@ -154,27 +144,105 @@ public class NotificationPrivacyVerifierActivity extends InteractiveVerifierActi
         mNm.deleteNotificationChannel(NOTIFICATION_CHANNEL_ID);
     }
 
-    @SuppressLint("NewApi")
-    private void sendNotification() {
+
+    /**
+     * Post a heads up notification with full screen intent, and reply action
+     */
+    private void sendFullScreenIntentHeadsUpNotification() {
         String tag = UUID.randomUUID().toString();
         long when = System.currentTimeMillis();
-        Log.d(TAG, "Sending: tag=" + tag + " when=" + when);
+        Log.d(TAG, "Sending: tag=" + tag + " when=" + when + " fsi=true");
 
-        mPackageString = "com.android.cts.verifier";
+        Icon icon = Icon.createWithResource(getApplicationContext(), R.drawable.ic_android);
 
-        Notification publicVersion = new Notification.Builder(mContext, NOTIFICATION_CHANNEL_ID)
-                .setContentTitle(getString(R.string.np_public_version_text))
+        // Build the reply action
+        PendingIntent inputIntent = PendingIntent.getActivity(getApplicationContext(), 0,
+                new Intent().setPackage(getApplicationContext().getPackageName()),
+                PendingIntent.FLAG_MUTABLE);
+        RemoteInput remoteInput = new RemoteInput.Builder("reply_key").setLabel("reply").build();
+        Notification.Action replyAction = new Notification.Action.Builder(icon, "Reply",
+                inputIntent).addRemoteInput(remoteInput)
+                .build();
+
+        // Build the notification
+        Notification fsiNotif = new Notification.Builder(mContext, NOTIFICATION_CHANNEL_ID)
+                .setContentTitle(getString(R.string.fsi_notif_title))
+                .setContentText(getString(R.string.fsi_notif_content))
                 .setSmallIcon(R.drawable.ic_stat_alice)
                 .setWhen(when)
+                .setFullScreenIntent(
+                        PendingIntent.getActivity(
+                                mContext,
+                                /* requestCode = */0,
+                                /* intent = */ ShowWhenLockedActivity.makeActivityIntent(
+                                        getApplicationContext(),
+                                        /* description = */ getString(R.string.fsi_mock_call_desc),
+                                        /* clearActivity = */ false),
+                                PendingIntent.FLAG_MUTABLE),
+                        /* highPriority = */ true)
+                .setActions(replyAction)
                 .build();
-        Notification privateVersion = new Notification.Builder(mContext, NOTIFICATION_CHANNEL_ID)
-                .setContentTitle(getString(R.string.np_private_version_text))
-                .setSmallIcon(R.drawable.ic_stat_alice)
-                .setWhen(when)
-                .setPublicVersion(publicVersion)
-                .build();
-        mNm.notify(tag, NOTIFICATION_ID, privateVersion);
+        mNm.notify(tag, NOTIFICATION_ID, fsiNotif);
     }
+
+    private abstract class SetGlobalVisibilityBaseStep extends InteractiveTestCase {
+        @StringRes
+        private final int mInstructionRes;
+        private final int mExpectVisibility;
+        private View mView;
+
+        private SetGlobalVisibilityBaseStep(int instructionRes, int expectVisibility) {
+            mInstructionRes = instructionRes;
+            mExpectVisibility = expectVisibility;
+        }
+
+        @Override
+        protected View inflate(ViewGroup parent) {
+            mView = createUserItem(parent, R.string.np_start_notif_settings, mInstructionRes);
+            setButtonsEnabled(mView, false);
+            return mView;
+        }
+
+        @Override
+        protected void setUp() {
+            status = READY;
+            setButtonsEnabled(mView, true);
+            next();
+        }
+
+        @Override
+        boolean autoStart() {
+            return true;
+        }
+
+        @Override
+        protected void test() {
+            KeyguardManager km = getSystemService(KeyguardManager.class);
+            if (!km.isDeviceSecure()) {
+                // if lockscreen itself not set, this setting won't be available.
+                status = FAIL;
+            } else if (getGlobalVisibility() == mExpectVisibility) {
+                status = PASS;
+            } else {
+                status = WAIT_FOR_USER;
+            }
+
+            next();
+        }
+
+        @Override
+        protected Intent getIntent() {
+            return new Intent(Settings.ACTION_NOTIFICATION_SETTINGS)
+                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        }
+    }
+
+    private class SetGlobalVisibilityPublicStep extends SetGlobalVisibilityBaseStep {
+        private SetGlobalVisibilityPublicStep() {
+            super(R.string.set_global_visibility_public, VISIBILITY_PUBLIC);
+        }
+    }
+
 
     /**
      * Asks the user to set the lockscreen visibility of the channel to the given value
@@ -233,13 +301,6 @@ public class NotificationPrivacyVerifierActivity extends InteractiveVerifierActi
             return new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
                     .putExtra(EXTRA_APP_PACKAGE, mContext.getPackageName())
                     .putExtra(EXTRA_CHANNEL_ID, NOTIFICATION_CHANNEL_ID);
-        }
-    }
-
-    private class SetChannelLockscreenVisibilityPrivateStep extends
-            SetChannelLockscreenVisibilityBaseStep {
-        SetChannelLockscreenVisibilityPrivateStep() {
-            super(R.string.nls_visibility, VISIBILITY_PRIVATE);
         }
     }
 
@@ -305,26 +366,20 @@ public class NotificationPrivacyVerifierActivity extends InteractiveVerifierActi
         }
     }
 
-    private class SetScreenLockDisabledStep extends SetScreenLockBaseStep {
-        private SetScreenLockDisabledStep() {
-            super(R.string.remove_screen_lock, false /* secure */);
-        }
-    }
-
-    private abstract class SetGlobalVisibilityBaseStep extends InteractiveTestCase {
+    private abstract class SetFsiPermissionBaseStep extends InteractiveTestCase {
         @StringRes
         private final int mInstructionRes;
-        private final int mExpectVisibility;
+        private final boolean mExpectPermission;
         private View mView;
 
-        private SetGlobalVisibilityBaseStep(int instructionRes, int expectVisibility) {
+        private SetFsiPermissionBaseStep(int instructionRes, boolean expectPermission) {
             mInstructionRes = instructionRes;
-            mExpectVisibility = expectVisibility;
+            mExpectPermission = expectPermission;
         }
 
         @Override
         protected View inflate(ViewGroup parent) {
-            mView = createUserItem(parent, R.string.np_start_notif_settings, mInstructionRes);
+            mView = createUserItem(parent, R.string.np_start_security_settings, mInstructionRes);
             setButtonsEnabled(mView, false);
             return mView;
         }
@@ -343,88 +398,39 @@ public class NotificationPrivacyVerifierActivity extends InteractiveVerifierActi
 
         @Override
         protected void test() {
-            KeyguardManager km = getSystemService(KeyguardManager.class);
-            if (!km.isDeviceSecure()) {
-                // if lockscreen itself not set, this setting won't be available.
-                status = FAIL;
-            } else if (getGlobalVisibility() == mExpectVisibility) {
+            if (mNm.canUseFullScreenIntent() == mExpectPermission) {
                 status = PASS;
             } else {
                 status = WAIT_FOR_USER;
             }
-
             next();
         }
 
         @Override
         protected Intent getIntent() {
-            return new Intent(Settings.ACTION_NOTIFICATION_SETTINGS)
-                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            return new Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT)
+                    .setData(Uri.parse("package:" + mContext.getPackageName()));
         }
     }
 
-    private class SetGlobalVisibilityPublicStep extends SetGlobalVisibilityBaseStep {
-        private SetGlobalVisibilityPublicStep() {
-            super(R.string.set_global_visibility_public, VISIBILITY_PUBLIC);
+    private class GrantFsiPermissionStep extends SetFsiPermissionBaseStep {
+        private GrantFsiPermissionStep() {
+            super(R.string.fsi_grant_permission, true);
         }
     }
 
-    private class SetGlobalVisibilityPrivateStep extends SetGlobalVisibilityBaseStep {
-        private SetGlobalVisibilityPrivateStep() {
-            super(R.string.set_global_visibility_private, VISIBILITY_PRIVATE);
+    private class DenyFsiPermissionStep extends SetFsiPermissionBaseStep {
+        private DenyFsiPermissionStep() {
+            super(R.string.fsi_deny_permission, false);
         }
     }
 
-    private class SetGlobalVisibilitySecretStep extends SetGlobalVisibilityBaseStep {
-        private SetGlobalVisibilitySecretStep() {
-            super(R.string.set_global_visibility_secret, VISIBILITY_SECRET);
-        }
-    }
-
-    private class SecureActionOnLockScreenTest extends InteractiveTestCase {
-        private View mView;
-
-        @Override
-        protected void setUp() {
-            createChannels();
-            ActionTriggeredReceiver.sendNotification(mContext, true);
-            setButtonsEnabled(mView, true);
-            status = READY;
-            next();
-        }
-
-        @Override
-        protected void tearDown() {
-            mNm.cancelAll();
-            deleteChannels();
-            delay();
-        }
-
-        @Override
-        protected View inflate(ViewGroup parent) {
-            mView = createPassFailItem(parent, R.string.secure_action_lockscreen);
-            setButtonsEnabled(mView, false);
-            return mView;
-        }
-
-        @Override
-        boolean autoStart() {
-            return true;
-        }
-
-        @Override
-        protected void test() {
-            status = WAIT_FOR_USER;
-            next();
-        }
-    }
-
-    private abstract class NotificationPrivacyBaseTest extends InteractiveTestCase {
+    private abstract class FullScreenIntentNotificationBaseTest extends InteractiveTestCase {
         private View mView;
         @StringRes
         private final int mInstructionRes;
 
-        NotificationPrivacyBaseTest(@StringRes int instructionRes) {
+        FullScreenIntentNotificationBaseTest(@StringRes int instructionRes) {
             mInstructionRes = instructionRes;
         }
 
@@ -461,41 +467,46 @@ public class NotificationPrivacyVerifierActivity extends InteractiveVerifierActi
             status = WAIT_FOR_USER;
             next();
         }
+
+        protected abstract void sendNotification();
     }
 
-    private class NotificationWhenLockedShowsRedactedTest extends NotificationPrivacyBaseTest {
-        NotificationWhenLockedShowsRedactedTest() {
-            super(R.string.np_when_locked_see_redacted);
+    private class ScreenUnlockedFsiHunTest extends FullScreenIntentNotificationBaseTest {
+
+        ScreenUnlockedFsiHunTest() {
+            super(R.string.fsi_sticky_hun);
+        }
+
+        @Override
+        protected void sendNotification() {
+            sendFullScreenIntentHeadsUpNotification();
         }
     }
 
-    private class NotificationWhenLockedShowsPrivateTest extends NotificationPrivacyBaseTest {
-        NotificationWhenLockedShowsPrivateTest() {
-            super(R.string.np_when_locked_see_private);
-        }
-    }
-
-    private class NotificationWhenLockedIsHiddenTest extends NotificationPrivacyBaseTest {
-        NotificationWhenLockedIsHiddenTest() {
-            super(R.string.np_when_locked_hidden);
-        }
-    }
-
-    private abstract class NotificationWhenOccludedBaseTest extends InteractiveTestCase {
-        private View mView;
+    private abstract class LockscreenFsiTestBaseStep extends InteractiveTestCase {
         @StringRes
         private final int mInstructionRes;
+        private View mView;
 
-        NotificationWhenOccludedBaseTest(@StringRes int instructionRes) {
+        private LockscreenFsiTestBaseStep(int instructionRes) {
             mInstructionRes = instructionRes;
+        }
+
+        @Override
+        protected View inflate(ViewGroup parent) {
+            mView = createUserAndPassFailItem(
+                    /* parent = */ parent,
+                    /* actionId = */ R.string.attention_ready,
+                    /* messageFormatArgs = */ mInstructionRes);
+            setButtonsEnabled(mView, false);
+            return mView;
         }
 
         @Override
         protected void setUp() {
             createChannels();
-            sendNotification();
             setButtonsEnabled(mView, true);
-            status = READY;
+            status = WAIT_FOR_USER;
             next();
         }
 
@@ -507,49 +518,39 @@ public class NotificationPrivacyVerifierActivity extends InteractiveVerifierActi
         }
 
         @Override
-        protected View inflate(ViewGroup parent) {
-            mView = createUserAndPassFailItem(
-                    parent, R.string.np_start_occluding, R.string.np_occluding_instructions);
-            setButtonsEnabled(mView, false);
-            return mView;
-        }
-
-        @Override
         boolean autoStart() {
             return true;
         }
 
         @Override
-        protected void test() {
-            status = WAIT_FOR_USER;
-            next();
+        int autoStartStatus() {
+            return WAIT_FOR_USER;
         }
 
         @Override
-        protected Intent getIntent() {
-            return ShowWhenLockedActivity.makeActivityIntent(
-                    getApplicationContext(), getString(mInstructionRes),
-                    /* clearActivity = */ true);
+        protected void test() {
+            if (status == READY) {
+                mView.postDelayed(
+                        NotificationFullScreenIntentVerifierActivity
+                                .this::sendFullScreenIntentHeadsUpNotification,
+                        3000);
+                status = WAIT_FOR_USER;
+            }
+            next();
+        }
+
+    }
+
+    private class LockScreenFsiWithoutPermissionTestStep extends LockscreenFsiTestBaseStep {
+        private LockScreenFsiWithoutPermissionTestStep() {
+            super(R.string.lockscreen_without_permission_fsi_instruction);
         }
     }
 
-    private class NotificationWhenOccludedShowsRedactedTest extends
-            NotificationWhenOccludedBaseTest {
-        NotificationWhenOccludedShowsRedactedTest() {
-            super(R.string.np_occluding_see_redacted);
+    private class LockScreenFsiWithPermissionTestStep extends LockscreenFsiTestBaseStep {
+        private LockScreenFsiWithPermissionTestStep() {
+            super(R.string.lockscreen_with_permission_fsi_instruction);
         }
     }
 
-    private class NotificationWhenOccludedShowsPrivateTest extends
-            NotificationWhenOccludedBaseTest {
-        NotificationWhenOccludedShowsPrivateTest() {
-            super(R.string.np_occluding_see_private);
-        }
-    }
-
-    private class NotificationWhenOccludedIsHiddenTest extends NotificationWhenOccludedBaseTest {
-        NotificationWhenOccludedIsHiddenTest() {
-            super(R.string.np_occluding_hidden);
-        }
-    }
 }
