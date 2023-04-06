@@ -17,6 +17,7 @@
 package com.android.bedstead.harrier;
 
 import static android.Manifest.permission.INTERACT_ACROSS_USERS_FULL;
+import static android.Manifest.permission.MANAGE_DEVICE_POLICY_TIME;
 import static android.content.pm.PackageManager.FEATURE_MANAGED_USERS;
 import static android.os.Build.VERSION.SDK_INT;
 
@@ -126,6 +127,9 @@ import com.android.bedstead.harrier.annotations.enterprise.EnsureHasNoDelegate;
 import com.android.bedstead.harrier.annotations.enterprise.EnsureHasNoDeviceOwner;
 import com.android.bedstead.harrier.annotations.enterprise.EnsureHasNoProfileOwner;
 import com.android.bedstead.harrier.annotations.enterprise.EnsureHasProfileOwner;
+import com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy;
+import com.android.bedstead.harrier.annotations.enterprise.MostImportantCoexistenceTest;
+import com.android.bedstead.harrier.annotations.enterprise.MostRestrictiveCoexistenceTest;
 import com.android.bedstead.harrier.annotations.enterprise.RequireHasPolicyExemptApps;
 import com.android.bedstead.harrier.annotations.meta.EnsureHasNoProfileAnnotation;
 import com.android.bedstead.harrier.annotations.meta.EnsureHasNoUserAnnotation;
@@ -151,6 +155,7 @@ import com.android.bedstead.nene.permissions.PermissionContextImpl;
 import com.android.bedstead.nene.types.OptionalBoolean;
 import com.android.bedstead.nene.users.UserBuilder;
 import com.android.bedstead.nene.users.UserReference;
+import com.android.bedstead.nene.utils.Poll;
 import com.android.bedstead.nene.utils.ShellCommand;
 import com.android.bedstead.nene.utils.Tags;
 import com.android.bedstead.nene.utils.Versions;
@@ -1207,6 +1212,54 @@ public final class DeviceState extends HarrierRule {
                 checkFailOrSkip("Device does not have quick settings",
                         TileService.isQuickSettingsSupported(),
                         requireQuickSettingsSupport.failureMode());
+                continue;
+            }
+
+            if (annotation instanceof MostImportantCoexistenceTest) {
+                mTestApps.put(MostImportantCoexistenceTest.MORE_IMPORTANT, dpmRoleHolder());
+
+                MostImportantCoexistenceTest mostImportantCoexistenceTestAnnotation =
+                        (MostImportantCoexistenceTest) annotation;
+                EnterprisePolicy[] policies =
+                        mostImportantCoexistenceTestAnnotation.policy()
+                                .getAnnotationsByType(EnterprisePolicy.class);
+
+                if (policies[0].permissions().length != 1) {
+                    throw new IllegalStateException(
+                            "Cannot use MostImportantCoexistenceTest for policies which have"
+                                    + " 0 or 2+ permissions");
+                }
+
+                String[] permission = new String[]{policies[0].permissions()[0].appliedWith()};
+
+                ensureTestAppHasPermission(MostImportantCoexistenceTest.MORE_IMPORTANT, permission,
+                        0, Integer.MAX_VALUE, FailureMode.SKIP);
+                ensureTestAppHasPermission(MostImportantCoexistenceTest.LESS_IMPORTANT, permission,
+                        0, Integer.MAX_VALUE, FailureMode.SKIP);
+
+                continue;
+            }
+
+            if (annotation instanceof MostRestrictiveCoexistenceTest) {
+                MostRestrictiveCoexistenceTest mostRestrictiveCoexistenceTestAnnotation =
+                        (MostRestrictiveCoexistenceTest) annotation;
+                EnterprisePolicy[] policies =
+                        mostRestrictiveCoexistenceTestAnnotation.policy()
+                                .getAnnotationsByType(EnterprisePolicy.class);
+
+                if (policies[0].permissions().length != 1) {
+                    throw new IllegalStateException(
+                            "Cannot use MostRestrictiveCoexistenceTest for policies which have "
+                                    + "0 or 2+ permissions");
+                }
+
+                String[] permission = new String[]{policies[0].permissions()[0].appliedWith()};
+
+                ensureTestAppHasPermission(MostRestrictiveCoexistenceTest.DPC_1, permission,
+                        0, Integer.MAX_VALUE, FailureMode.SKIP);
+                ensureTestAppHasPermission(MostRestrictiveCoexistenceTest.DPC_2, permission,
+                        0, Integer.MAX_VALUE, FailureMode.SKIP);
+
                 continue;
             }
         }
