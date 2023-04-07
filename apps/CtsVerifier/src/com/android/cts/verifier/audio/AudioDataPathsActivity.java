@@ -273,6 +273,7 @@ public class AudioDataPathsActivity
 
             //TODO - Also add test specs for MMAP vs Legacy
             TestSpec testSpec;
+
             //
             // Built-in Speaker/Mic
             //
@@ -501,7 +502,7 @@ public class AudioDataPathsActivity
                 // Recorder
                 mDuplexAudioManager.setRecorderRouteDevice(inDevInfo);
                 mDuplexAudioManager.setInputPreset(testSpec.mInputPreset);
-                mDuplexAudioManager.setRecorderSampleRate(testSpec.mOutSampleRate);
+                mDuplexAudioManager.setRecorderSampleRate(testSpec.mInSampleRate);
                 mDuplexAudioManager.setNumRecorderChannels(testSpec.mInChannelCount);
                 mDuplexAudioManager.setupStreams(mAudioApi, mAudioApi);
 
