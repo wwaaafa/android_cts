@@ -54,6 +54,7 @@ import android.voiceinteraction.cts.testcore.VoiceInteractionServiceOverrideEnro
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.android.compatibility.common.util.ApiTest;
+import com.android.compatibility.common.util.BatteryUtils;
 import com.android.compatibility.common.util.RequiredFeatureRule;
 
 import org.junit.After;
@@ -321,5 +322,43 @@ public class AlwaysOnHotwordDetectorTest {
         getService().initOnRecognitionResumedLatch();
         mInstrumentation.triggerOnResourcesAvailable();
         getService().waitOnRecognitionResumedCalled();
+    }
+
+    @Test
+    public void testStartRecognitionNoFlagInBatterySaver_recognitionPausedAndResumed()
+            throws Exception {
+        BatteryUtils.assumeBatterySaverFeature();
+
+        createAndEnrollAlwaysOnHotwordDetector();
+        // Grab permissions for more than a single call since we get callbacks
+        adoptSoundTriggerPermissions();
+        try {
+            mAlwaysOnHotwordDetector.startRecognition(0, new byte[]{1, 2, 3, 4, 5});
+            try {
+                // wait for soundTrigger injection is ready
+                mSoundTriggerInjectedLatch.await(WAIT_TIMEOUT_IN_MS, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException ex) {
+                throw new AssertionError("SoundTrigger Injection timeout");
+            }
+
+            // We received model load, recog start
+            assertThat(mModelSession).isNotNull();
+            assertThat(mRecognitionSession).isNotNull();
+
+            BatteryUtils.runDumpsysBatteryUnplug();
+
+            // enable battery saver, onRecognitionPaused called
+            getService().initOnRecognitionPausedLatch();
+            BatteryUtils.enableBatterySaver(/* isEnabled= */ true);
+            getService().waitOnRecognitionPausedCalled();
+
+            // disable battery saver, onRecognitionResumed called
+            getService().initOnRecognitionResumedLatch();
+            BatteryUtils.enableBatterySaver(/* isEnabled= */ false);
+            getService().waitOnRecognitionResumedCalled();
+        } finally {
+            BatteryUtils.runDumpsysBatteryReset();
+            BatteryUtils.resetBatterySaver();
+        }
     }
 }
