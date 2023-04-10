@@ -33,6 +33,7 @@ import android.app.RemoteInput;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Icon;
+import android.hardware.display.AmbientDisplayConfiguration;
 import android.net.Uri;
 import android.provider.Settings;
 import android.util.Log;
@@ -55,6 +56,8 @@ public class NotificationFullScreenIntentVerifierActivity extends InteractiveVer
         implements Runnable {
     static final String TAG = "NotifFsiVerifier";
     private static final String NOTIFICATION_CHANNEL_ID = TAG;
+
+    private AmbientDisplayConfiguration mAmbientDisplayConfiguration = null;
 
     @Override
     protected int getTitleResource() {
@@ -99,6 +102,13 @@ public class NotificationFullScreenIntentVerifierActivity extends InteractiveVer
                 Settings.Secure.LOCK_SCREEN_ALLOW_PRIVATE_NOTIFICATIONS, 0) != 0;
     }
 
+    private boolean isAlwaysOnAvailable() {
+        if (mAmbientDisplayConfiguration == null) {
+            mAmbientDisplayConfiguration = new AmbientDisplayConfiguration(mContext);
+        }
+        return mAmbientDisplayConfiguration.alwaysOnAvailable();
+    }
+
     @Override
     protected List<InteractiveTestCase> createTestItems() {
         boolean isAutomotive = getPackageManager().hasSystemFeature(
@@ -121,6 +131,12 @@ public class NotificationFullScreenIntentVerifierActivity extends InteractiveVer
         // NOW TESTING: lockscreen FSI HUN with FSI permission, should launch FSI
         tests.add(new LockScreenFsiWithPermissionTestStep());
 
+        // NOW TESTING: FSI HUN with FSI permission with screen is off, should launch FSI
+        if (isAlwaysOnAvailable()) {
+            tests.add(new DisableAodStep());
+        }
+        tests.add(new ScreenOffFsiWithPermissionTestStep());
+
 
         // Deny permission for Full Screen Intent
         tests.add(new DenyFsiPermissionStep());
@@ -131,6 +147,14 @@ public class NotificationFullScreenIntentVerifierActivity extends InteractiveVer
         // NOW TESTING: lockscreen FSI HUN without FSI permission,
         // HUN shows up first in list, expanded with pill buttons
         tests.add(new LockScreenFsiWithoutPermissionTestStep());
+
+        // Now testing: FSI HUN without FSI permission when screen is off,
+        // HUN pulses with pill buttons
+        if (isAlwaysOnAvailable()) {
+            tests.add(new DisableAodStep());
+        }
+        tests.add(new ScreenOffFsiWithoutPermissionTestStep());
+
         return tests;
     }
 
@@ -366,6 +390,69 @@ public class NotificationFullScreenIntentVerifierActivity extends InteractiveVer
         }
     }
 
+    private abstract class SetAodBaseStep extends InteractiveTestCase {
+        @StringRes
+        private final int mInstructionRes;
+        private final boolean mExpectAodStatus;
+
+        private final AmbientDisplayConfiguration mAmbientDisplayConfiguration;
+
+        private View mView;
+
+        private SetAodBaseStep(int instructionRes, boolean expectAodStatus) {
+            mInstructionRes = instructionRes;
+            mExpectAodStatus = expectAodStatus;
+            mAmbientDisplayConfiguration = new AmbientDisplayConfiguration(mContext);
+        }
+
+        @Override
+        protected View inflate(ViewGroup parent) {
+            mView = createUserItem(parent, R.string.np_start_lockscreen_settings, mInstructionRes);
+            setButtonsEnabled(mView, false);
+            return mView;
+        }
+
+        @Override
+        protected void setUp() {
+            status = READY;
+            setButtonsEnabled(mView, true);
+            next();
+        }
+
+        @Override
+        boolean autoStart() {
+            return true;
+        }
+
+        @Override
+        protected void test() {
+            if (mAmbientDisplayConfiguration.alwaysOnEnabled(getUserId()) == mExpectAodStatus) {
+                status = PASS;
+            } else {
+                status = WAIT_FOR_USER;
+            }
+            next();
+        }
+
+        @Override
+        protected Intent getIntent() {
+            return new Intent(Settings.ACTION_LOCKSCREEN_SETTINGS)
+                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        }
+    }
+
+    private class EnableAodStep extends SetAodBaseStep {
+        private EnableAodStep() {
+            super(R.string.fsi_turn_on_aod, true /* secure */);
+        }
+    }
+
+    private class DisableAodStep extends SetAodBaseStep {
+        private DisableAodStep() {
+            super(R.string.fsi_turn_off_aod, false /* secure */);
+        }
+    }
+
     private abstract class SetFsiPermissionBaseStep extends InteractiveTestCase {
         @StringRes
         private final int mInstructionRes;
@@ -543,13 +630,25 @@ public class NotificationFullScreenIntentVerifierActivity extends InteractiveVer
 
     private class LockScreenFsiWithoutPermissionTestStep extends LockscreenFsiTestBaseStep {
         private LockScreenFsiWithoutPermissionTestStep() {
-            super(R.string.lockscreen_without_permission_fsi_instruction);
+            super(R.string.fsi_lockscreen_without_permission_instruction);
         }
     }
 
     private class LockScreenFsiWithPermissionTestStep extends LockscreenFsiTestBaseStep {
         private LockScreenFsiWithPermissionTestStep() {
-            super(R.string.lockscreen_with_permission_fsi_instruction);
+            super(R.string.fsi_lockscreen_with_permission_instruction);
+        }
+    }
+
+    private class ScreenOffFsiWithPermissionTestStep extends LockscreenFsiTestBaseStep {
+        private ScreenOffFsiWithPermissionTestStep() {
+            super(R.string.fsi_screen_off_with_permission_instruction);
+        }
+    }
+
+    private class ScreenOffFsiWithoutPermissionTestStep extends LockscreenFsiTestBaseStep {
+        private ScreenOffFsiWithoutPermissionTestStep() {
+            super(R.string.fsi_screen_off_without_permission_instruction);
         }
     }
 
