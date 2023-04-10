@@ -5984,6 +5984,9 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                         CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
                         Integer.class, mCarPropertyManager)
                 .setAllPossibleEnumValues(LANE_CENTERING_ASSIST_COMMANDS)
+                .setDependentOnProperty(VehiclePropertyIds.LANE_CENTERING_ASSIST_ENABLED,
+                        ImmutableSet.of(Car.PERMISSION_READ_ADAS_SETTINGS,
+                                Car.PERMISSION_CONTROL_ADAS_SETTINGS))
                 .addWritePermission(Car.PERMISSION_CONTROL_ADAS_STATES)
                 .build()
                 .verify();
