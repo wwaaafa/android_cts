@@ -5821,6 +5821,10 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                         CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
                         Integer.class, mCarPropertyManager)
                 .setAllPossibleEnumValues(combinedCarPropertyValues)
+                .setDependentOnProperty(VehiclePropertyIds.FORWARD_COLLISION_WARNING_ENABLED,
+                        ImmutableSet.of(Car.PERMISSION_READ_ADAS_SETTINGS,
+                                Car.PERMISSION_CONTROL_ADAS_SETTINGS))
+                .verifyErrorStates()
                 .addReadPermission(Car.PERMISSION_READ_ADAS_STATES)
                 .build()
                 .verify();
