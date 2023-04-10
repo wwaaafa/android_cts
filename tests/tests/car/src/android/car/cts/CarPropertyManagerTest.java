@@ -1429,6 +1429,9 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                                         .isLessThan(configArray.get(i + 1));
                             }
                         })
+                .setDependentOnProperty(VehiclePropertyIds.CRUISE_CONTROL_ENABLED,
+                        ImmutableSet.of(Car.PERMISSION_READ_ADAS_SETTINGS,
+                                Car.PERMISSION_CONTROL_ADAS_SETTINGS))
                 .addReadPermission(Car.PERMISSION_READ_ADAS_STATES)
                 .addWritePermission(Car.PERMISSION_CONTROL_ADAS_STATES)
                 .build();
