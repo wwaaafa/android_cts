@@ -79,6 +79,14 @@
              android:label="ResourceManagerTestActivity2"
              android:process=":mediaCodecTestProcess2">
         </activity>
+        <activity android:name="android.media.misc.cts.ResourceManagerCodecActivity"
+             android:label="ResourceManagerCodecActivity"
+             android:process=":mediaCodecTestProcess3">
+        </activity>
+        <activity android:name="android.media.misc.cts.ResourceManagerRecorderActivity"
+             android:label="ResourceManagerRecorderActivity"
+             android:process=":mediaCodecTestProcess4">
+        </activity>
         <activity android:name="android.media.misc.cts.MockActivity"/>
         <activity android:name="android.media.misc.cts.MediaRouter2TestActivity"/>
         <service android:name="android.media.misc.cts.StubMediaBrowserService"
