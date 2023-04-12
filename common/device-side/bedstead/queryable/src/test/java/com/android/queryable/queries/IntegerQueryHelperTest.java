@@ -184,4 +184,62 @@ public final class IntegerQueryHelperTest {
                         .where().isEqualTo(1)
                         .matches(1)).isTrue();
     }
+
+    @Test
+    public void isEmptyQuery_isEmpty_returnsTrue() {
+        IntegerQueryHelper<Queryable> integerQueryHelper =
+                new IntegerQueryHelper<>(mQuery);
+
+        assertThat(integerQueryHelper.isEmptyQuery()).isTrue();
+    }
+
+    @Test
+    public void isEmptyQuery_hasIsEqualToQuery_returnsFalse() {
+        IntegerQueryHelper<Queryable> integerQueryHelper =
+                new IntegerQueryHelper<>(mQuery);
+
+        integerQueryHelper.isEqualTo(0);
+
+        assertThat(integerQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasIsGreaterThanQuery_returnsFalse() {
+        IntegerQueryHelper<Queryable> integerQueryHelper =
+                new IntegerQueryHelper<>(mQuery);
+
+        integerQueryHelper.isGreaterThan(0);
+
+        assertThat(integerQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasIsGreaterThanOrEqualToQuery_returnsFalse() {
+        IntegerQueryHelper<Queryable> integerQueryHelper =
+                new IntegerQueryHelper<>(mQuery);
+
+        integerQueryHelper.isGreaterThanOrEqualTo(0);
+
+        assertThat(integerQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasIsLessThanQuery_returnsFalse() {
+        IntegerQueryHelper<Queryable> integerQueryHelper =
+                new IntegerQueryHelper<>(mQuery);
+
+        integerQueryHelper.isLessThan(0);
+
+        assertThat(integerQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasIsLessThanOrEqualToQuery_returnsFalse() {
+        IntegerQueryHelper<Queryable> integerQueryHelper =
+                new IntegerQueryHelper<>(mQuery);
+
+        integerQueryHelper.isLessThanOrEqualTo(0);
+
+        assertThat(integerQueryHelper.isEmptyQuery()).isFalse();
+    }
 }

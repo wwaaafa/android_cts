@@ -116,4 +116,20 @@ public final class BooleanQueryHelperTest {
     public void booleanQueryBase_queries() {
         assertThat(Boolean().where().isEqualTo(true).matches(true)).isTrue();
     }
+
+    @Test
+    public void isEmptyQuery_isEmpty_returnsTrue() {
+        BooleanQueryHelper<Queryable> booleanQueryHelper = new BooleanQueryHelper<>(mQuery);
+
+        assertThat(booleanQueryHelper.isEmptyQuery()).isTrue();
+    }
+
+    @Test
+    public void isEmptyQuery_hasTarget_returnsFalse() {
+        BooleanQueryHelper<Queryable> booleanQueryHelper = new BooleanQueryHelper<>(mQuery);
+
+        booleanQueryHelper.isFalse();
+
+        assertThat(booleanQueryHelper.isEmptyQuery()).isFalse();
+    }
 }

@@ -63,6 +63,8 @@ public @interface EnsureHasDelegate {
         PRIMARY
     }
 
+    // TODO(276740719): Add support for querying for the delegate
+
     /**
      * The admin that should delegate this scope.
      *
