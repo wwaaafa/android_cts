@@ -153,11 +153,15 @@ public final class SetQueryHelper<E extends Queryable, F> implements SetQuery<E,
     @Override
     public boolean isEmptyQuery() {
         for (Query q : mContainsByQuery) {
-            if (!Queryable.isEmptyQuery(q));
+            if (!Queryable.isEmptyQuery(q)) {
+                return false;
+            }
         }
 
         for (Query q : mDoesNotContainByQuery) {
-            if (!Queryable.isEmptyQuery(q));
+            if (!Queryable.isEmptyQuery(q)) {
+                return false;
+            }
         }
 
         return Queryable.isEmptyQuery(mSizeQuery)

@@ -75,6 +75,15 @@ public @interface EnsureHasDeviceOwner {
 
     int DO_PO_WEIGHT = MIDDLE;
 
+    String DEFAULT_KEY = "deviceOwner";
+
+    /**
+     * The key used to identify this DPC.
+     *
+     * <p>This can be used with {@link AdditionalQueryParameters} to modify the requirements for
+     * the DPC. */
+    String key() default DEFAULT_KEY;
+
     /** Behaviour if the device owner cannot be set. */
     FailureMode failureMode() default FailureMode.FAIL;
 

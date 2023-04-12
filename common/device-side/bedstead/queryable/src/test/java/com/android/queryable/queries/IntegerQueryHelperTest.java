@@ -21,14 +21,21 @@ import static com.android.queryable.queries.IntegerQuery.integer;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.android.bedstead.harrier.BedsteadJUnit4;
+import com.android.bedstead.harrier.DeviceState;
 import com.android.queryable.Queryable;
 
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-@RunWith(JUnit4.class)
+@RunWith(BedsteadJUnit4.class)
 public final class IntegerQueryHelperTest {
+
+    @ClassRule @Rule
+    public static final DeviceState sDeviceState = new DeviceState();
 
     private final Queryable mQuery = null;
     private static final int INTEGER_VALUE = 100;
