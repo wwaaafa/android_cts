@@ -20,7 +20,6 @@ import static com.android.cts.verifier.TestListActivity.sCurrentDisplayMode;
 import static com.android.cts.verifier.TestListAdapter.setTestNameSuffix;
 
 import android.mediapc.cts.common.PerformanceClassEvaluator;
-
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -75,6 +74,9 @@ public class AudioTap2ToneActivity
 
         /* TODO: gracefully fail/notify if the library can't be loaded */
     }
+
+    private boolean mHasMic;
+    private boolean mHasSpeaker;
 
     private boolean mIsRecording;
 
@@ -159,6 +161,9 @@ public class AudioTap2ToneActivity
 
         super.onCreate(savedInstanceState);
 
+        mHasMic = AudioSystemFlags.claimsInput(this);
+        mHasSpeaker = AudioSystemFlags.claimsOutput(this);
+
         // Setup UI
         String yesString = getResources().getString(R.string.audio_general_yes);
         String noString = getResources().getString(R.string.audio_general_no);
@@ -168,6 +173,10 @@ public class AudioTap2ToneActivity
         boolean claimsProAudio = AudioSystemFlags.claimsProAudio(this);
         boolean claimsLowLatencyAudio = AudioSystemFlags.claimsLowLatencyAudio(this);
 
+        ((TextView) findViewById(R.id.audio_t2t_mic))
+                .setText(mHasMic ? yesString : noString);
+        ((TextView) findViewById(R.id.audio_t2t_speaker))
+                .setText(mHasSpeaker ? yesString : noString);
         ((TextView) findViewById(R.id.audio_t2t_pro_audio))
                 .setText(claimsProAudio ? yesString : noString);
         ((TextView) findViewById(R.id.audio_t2t_low_latency))
@@ -247,8 +256,6 @@ public class AudioTap2ToneActivity
         setPassFailButtonClickListeners();
         setInfoResources(R.string.audio_tap2tone, R.string.audio_tap2tone_info, -1);
 
-        enableAudioButtons();
-
         // Setup analysis
         int numBufferSamples = (int) (ANALYSIS_TIME_MAX * ANALYSIS_SAMPLE_RATE);
         mInputBuffer = new CircularBufferFloat(numBufferSamples);
@@ -283,7 +290,7 @@ public class AudioTap2ToneActivity
             mIsRecording = false;
             mResultsView.setText(getString(R.string.audio_tap2tone_bad_streams));
         }
-        enableAudioButtons();
+        enableAudioButtons(!mIsRecording, mIsRecording);
     }
 
     private void stopAudio() {
@@ -291,7 +298,7 @@ public class AudioTap2ToneActivity
             mDuplexAudioManager.stop();
             // is there a teardown method here?
             mIsRecording = false;
-            enableAudioButtons();
+            enableAudioButtons(!mIsRecording, mIsRecording);
         }
     }
 
@@ -314,33 +321,41 @@ public class AudioTap2ToneActivity
         mStatsView.setText("");
     }
 
-    private void enableAudioButtons() {
-        mStartBtn.setEnabled(!mIsRecording);
-        mStopBtn.setEnabled(mIsRecording);
+    private void enableAudioButtons(boolean enableStart, boolean enableStop) {
+        mStartBtn.setEnabled(enableStart);
+        mStopBtn.setEnabled(enableStop);
     }
 
     private void calculateTestPass() {
-        boolean testCompleted = mTestPhase >= NUM_TEST_PHASES;
-        if (!testCompleted) {
-            mSpecView.setText(getResources().getString(R.string.audio_general_testnotcompleted));
-            getPassButton().setEnabled(false);
-            return;
-        }
-
-        double averageLatency = mLatencyAve[mActiveTestAPI];
-        boolean pass = isReportLogOkToPass()
-                && averageLatency != 0 && averageLatency <= mMaxRequiredLatency;
-
-        if (pass) {
-            mSpecView.setText("Average: " + averageLatency + " ms <= "
-                    + mMaxRequiredLatency + " ms -- PASS");
-        } else if (!isReportLogOkToPass()) {
-            mSpecView.setText(getResources().getString(R.string.audio_general_reportlogtest));
+        if (!mHasMic || !mHasSpeaker) {
+            mSpecView.setText("");
+            mResultsView.setText(getResources().getString(R.string.audio_tap2tone_noio));
+            enableAudioButtons(false, false);
+            getPassButton().setEnabled(true);
         } else {
-            mSpecView.setText("Average: " + averageLatency + " ms > "
-                    + mMaxRequiredLatency + " ms -- FAIL");
+            boolean testCompleted = mTestPhase >= NUM_TEST_PHASES;
+            if (!testCompleted) {
+                mSpecView.setText(getResources().getString(
+                        R.string.audio_general_testnotcompleted));
+                getPassButton().setEnabled(false);
+                return;
+            }
+
+            double averageLatency = mLatencyAve[mActiveTestAPI];
+            boolean pass = isReportLogOkToPass()
+                    && averageLatency != 0 && averageLatency <= mMaxRequiredLatency;
+
+            if (pass) {
+                mSpecView.setText("Average: " + averageLatency + " ms <= "
+                        + mMaxRequiredLatency + " ms -- PASS");
+            } else if (!isReportLogOkToPass()) {
+                mSpecView.setText(getResources().getString(R.string.audio_general_reportlogtest));
+            } else {
+                mSpecView.setText("Average: " + averageLatency + " ms > "
+                        + mMaxRequiredLatency + " ms -- FAIL");
+            }
+            getPassButton().setEnabled(pass);
         }
-        getPassButton().setEnabled(pass);
     }
 
     private void recordTestStatus() {
@@ -502,14 +517,17 @@ public class AudioTap2ToneActivity
             stopAudio();
             clearResults();
             mPlayerType = BuilderBase.TYPE_JAVA;
+            calculateTestPass();
             mActiveTestAPI = TEST_API_JAVA;
         } else if (id == R.id.audioNativeApiBtn) {
             stopAudio();
             clearResults();
             mPlayerType = BuilderBase.TYPE_OBOE | BuilderBase.SUB_TYPE_OBOE_AAUDIO;
+            calculateTestPass();
             mActiveTestAPI = TEST_API_NATIVE;
         } else if (id == R.id.tap2tone_clearResults) {
-                clearResults();
+            clearResults();
+            calculateTestPass();
         }
     }
 
@@ -558,8 +576,6 @@ public class AudioTap2ToneActivity
 
     @Override
     public void recordTestResults() {
-        Log.i(TAG, "recordTestResults()");
-
         reportTestResultForApi(TEST_API_NATIVE);
         reportTestResultForApi(TEST_API_JAVA);
 
