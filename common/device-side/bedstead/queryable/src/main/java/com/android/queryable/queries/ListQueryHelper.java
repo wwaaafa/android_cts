@@ -133,6 +133,21 @@ public final class ListQueryHelper<E extends Queryable, F>
     }
 
     @Override
+    public boolean isEmptyQuery() {
+        for (Query q : mContainsByQuery) {
+            if (!Queryable.isEmptyQuery(q));
+        }
+
+        for (Query q : mDoesNotContainByQuery) {
+            if (!Queryable.isEmptyQuery(q));
+        }
+
+        return Queryable.isEmptyQuery(mSizeQuery)
+                && mContainsByType.isEmpty()
+                && mDoesNotContainByType.isEmpty();
+    }
+
+    @Override
     public boolean matches(List<F> value) {
         if (!mSizeQuery.matches(value.size())) {
             return false;

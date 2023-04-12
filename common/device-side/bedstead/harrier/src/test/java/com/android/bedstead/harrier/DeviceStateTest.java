@@ -33,7 +33,6 @@ import static com.android.bedstead.harrier.annotations.RequireCnGmsBuild.CHINA_G
 import static com.android.bedstead.harrier.annotations.enterprise.EnsureHasDelegate.AdminType.DEVICE_OWNER;
 import static com.android.bedstead.harrier.annotations.enterprise.EnsureHasDelegate.AdminType.PRIMARY;
 import static com.android.bedstead.nene.appops.AppOpsMode.ALLOWED;
-import static com.android.bedstead.nene.flags.CommonFlags.DevicePolicyManager.DISABLE_RESOURCES_UPDATABILITY_FLAG;
 import static com.android.bedstead.nene.flags.CommonFlags.DevicePolicyManager.ENABLE_DEVICE_POLICY_ENGINE_FLAG;
 import static com.android.bedstead.nene.flags.CommonFlags.NAMESPACE_DEVICE_POLICY_MANAGER;
 import static com.android.bedstead.nene.permissions.CommonPermissions.READ_CONTACTS;
@@ -168,12 +167,15 @@ import com.android.bedstead.testapp.TestApp;
 import com.android.bedstead.testapp.TestAppInstance;
 import com.android.queryable.annotations.IntegerQuery;
 import com.android.queryable.annotations.Query;
+import com.android.queryable.annotations.StringQuery;
 
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.Set;
 
 @RunWith(BedsteadJUnit4.class)
 public class DeviceStateTest {
@@ -499,6 +501,8 @@ public class DeviceStateTest {
         DeviceOwner deviceOwner = TestApis.devicePolicy().getDeviceOwner();
         assertThat(deviceOwner.pkg().packageName())
                 .isEqualTo(RemoteDpc.REMOTE_DPC_APP_PACKAGE_NAME_OR_PREFIX);
+        assertThat(deviceOwner.pkg().targetSdkVersion()).isIn(
+                Set.of(Build.VERSION.SDK_INT, Build.VERSION_CODES.CUR_DEVELOPMENT));
     }
 
     @Test
@@ -535,6 +539,8 @@ public class DeviceStateTest {
         ProfileOwner profileOwner = TestApis.devicePolicy().getProfileOwner();
         assertThat(profileOwner.pkg().packageName())
                 .isEqualTo(RemoteDpc.REMOTE_DPC_APP_PACKAGE_NAME_OR_PREFIX);
+        assertThat(profileOwner.pkg().targetSdkVersion()).isIn(
+                Set.of(Build.VERSION.SDK_INT, Build.VERSION_CODES.CUR_DEVELOPMENT));
     }
 
     @Test
@@ -1196,21 +1202,24 @@ public class DeviceStateTest {
                 .wherePackageName().isEqualTo(TEST_APP_USED_IN_FIELD_NAME).get());
     }
 
-    @EnsureTestAppInstalled(packageName = TEST_APP_PACKAGE_NAME)
+    @EnsureTestAppInstalled(query = @Query(
+            packageName = @StringQuery(isEqualTo = TEST_APP_PACKAGE_NAME)))
     @Test
     public void ensureTestAppInstalledAnnotation_testAppIsInstalled() {
         assertThat(TestApis.packages().find(TEST_APP_PACKAGE_NAME).installedOnUser()).isTrue();
     }
 
     @EnsureHasSecondaryUser
-    @EnsureTestAppInstalled(packageName = TEST_APP_PACKAGE_NAME, onUser = SECONDARY_USER)
+    @EnsureTestAppInstalled(query = @Query(
+            packageName = @StringQuery(isEqualTo = TEST_APP_PACKAGE_NAME)), onUser = SECONDARY_USER)
     @Test
     public void ensureTestAppInstalledAnnotation_testAppIsInstalledOnCorrectUser() {
         assertThat(TestApis.packages().find(TEST_APP_PACKAGE_NAME)
                 .installedOnUser(sDeviceState.secondaryUser())).isTrue();
     }
 
-    @EnsureTestAppInstalled(packageName = TEST_APP_PACKAGE_NAME)
+    @EnsureTestAppInstalled(query = @Query(
+            packageName = @StringQuery(isEqualTo = TEST_APP_PACKAGE_NAME)))
     @Test
     public void testApp_returnsTestApp() {
         assertThat(sDeviceState.testApp().packageName()).isEqualTo(TEST_APP_PACKAGE_NAME);
@@ -1223,8 +1232,10 @@ public class DeviceStateTest {
         }
     }
 
-    @EnsureTestAppInstalled(key = "testApp1", packageName = TEST_APP_PACKAGE_NAME)
-    @EnsureTestAppInstalled(key = "testApp2", packageName = TEST_APP_PACKAGE_NAME2)
+    @EnsureTestAppInstalled(key = "testApp1", query = @Query(
+            packageName = @StringQuery(isEqualTo = TEST_APP_PACKAGE_NAME)))
+    @EnsureTestAppInstalled(key = "testApp2", query = @Query(
+            packageName = @StringQuery(isEqualTo = TEST_APP_PACKAGE_NAME2)))
     @Test
     public void testApp_withKey_returnsCorrectTestApp() {
         assertThat(sDeviceState.testApp("testApp1").packageName())
@@ -1233,13 +1244,15 @@ public class DeviceStateTest {
                 .isEqualTo(TEST_APP_PACKAGE_NAME2);
     }
 
-    @EnsureTestAppInstalled(packageName = TEST_APP_PACKAGE_NAME, isPrimary = true)
+    @EnsureTestAppInstalled(query = @Query(
+            packageName = @StringQuery(isEqualTo = TEST_APP_PACKAGE_NAME)), isPrimary = true)
     @Test
     public void dpc_primaryTestApp_returnsTestApp() {
         assertThat(sDeviceState.dpc().packageName()).isEqualTo(TEST_APP_PACKAGE_NAME);
     }
 
-    @EnsureTestAppInstalled(packageName = TEST_APP_PACKAGE_NAME)
+    @EnsureTestAppInstalled(query = @Query(
+            packageName = @StringQuery(isEqualTo = TEST_APP_PACKAGE_NAME)))
     @EnsureTestAppHasPermission(READ_CONTACTS)
     @Test
     public void ensureTestAppHasPermissionAnnotation_testAppHasPermission() {
@@ -1247,7 +1260,8 @@ public class DeviceStateTest {
                 .isEqualTo(PERMISSION_GRANTED);
     }
 
-    @EnsureTestAppInstalled(packageName = TEST_APP_PACKAGE_NAME)
+    @EnsureTestAppInstalled(query = @Query(
+            packageName = @StringQuery(isEqualTo = TEST_APP_PACKAGE_NAME)))
     @EnsureTestAppDoesNotHavePermission(READ_CONTACTS)
     @Test
     public void ensureTestAppDoesNotHavePermissionAnnotation_testAppDoesNotHavePermission() {
@@ -1255,7 +1269,8 @@ public class DeviceStateTest {
                 .isNotEqualTo(PERMISSION_GRANTED);
     }
 
-    @EnsureTestAppInstalled(packageName = TEST_APP_PACKAGE_NAME)
+    @EnsureTestAppInstalled(query = @Query(
+            packageName = @StringQuery(isEqualTo = TEST_APP_PACKAGE_NAME)))
     @EnsureTestAppHasAppOp(OPSTR_START_FOREGROUND)
     @Test
     public void ensureTestAppHasAppOpAnnotation_testAppHasAppOp() {
@@ -1486,14 +1501,16 @@ public class DeviceStateTest {
     @EnsureHasUserRestriction(value = USER_RESTRICTION, onUser = ADDITIONAL_USER)
     @Test
     public void ensureHasUserRestrictionAnnotation_differentUser_userRestrictionIsSet() {
-        assertThat(TestApis.devicePolicy().userRestrictions().isSet(USER_RESTRICTION)).isTrue();
+        assertThat(TestApis.devicePolicy().userRestrictions(sDeviceState.additionalUser())
+                .isSet(USER_RESTRICTION)).isTrue();
     }
 
     @EnsureHasAdditionalUser
     @EnsureDoesNotHaveUserRestriction(value = USER_RESTRICTION, onUser = ADDITIONAL_USER)
     @Test
     public void ensureDoesNotHaveUserRestrictionAnnotation_differentUser_userRestrictionIsNotSet() {
-        assertThat(TestApis.devicePolicy().userRestrictions().isSet(USER_RESTRICTION)).isFalse();
+        assertThat(TestApis.devicePolicy().userRestrictions(sDeviceState.additionalUser())
+                .isSet(USER_RESTRICTION)).isFalse();
     }
 
     @EnsureWifiEnabled
@@ -1513,5 +1530,11 @@ public class DeviceStateTest {
     public void requireSystemServiceAvailable_systemServiceIsAvailable() {
         assertThat(TestApis.context().instrumentedContext()
                 .getSystemService(ContentCaptureManager.class)).isNotNull();
+    }
+
+    @IncludeRunOnDeviceOwnerUser()
+    @Test
+    public void a() {
+
     }
 }

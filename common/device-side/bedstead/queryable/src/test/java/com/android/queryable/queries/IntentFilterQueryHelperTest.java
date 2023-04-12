@@ -121,4 +121,32 @@ public final class IntentFilterQueryHelperTest {
         assertThat(intentFilter().where().categories().contains("category1")
                 .matches(CATEGORIES_INTENT_FILTER)).isTrue();
     }
+
+    @Test
+    public void isEmptyQuery_isEmpty_returnsTrue() {
+        IntentFilterQueryHelper<Queryable> intentFilterQueryHelper =
+                new IntentFilterQueryHelper<>(mQuery);
+
+        assertThat(intentFilterQueryHelper.isEmptyQuery()).isTrue();
+    }
+
+    @Test
+    public void isEmptyQuery_hasActionsQuery_returnsFalse() {
+        IntentFilterQueryHelper<Queryable> intentFilterQueryHelper =
+                new IntentFilterQueryHelper<>(mQuery);
+
+        intentFilterQueryHelper.actions().isEmpty();
+
+        assertThat(intentFilterQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasCategoriesQuery_returnsFalse() {
+        IntentFilterQueryHelper<Queryable> intentFilterQueryHelper =
+                new IntentFilterQueryHelper<>(mQuery);
+
+        intentFilterQueryHelper.categories().isEmpty();
+
+        assertThat(intentFilterQueryHelper.isEmptyQuery()).isFalse();
+    }
 }

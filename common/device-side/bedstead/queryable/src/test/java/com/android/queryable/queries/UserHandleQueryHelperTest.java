@@ -102,4 +102,32 @@ public final class UserHandleQueryHelperTest {
                         .where().id().isEqualTo(USER_HANDLE_ID)
                         .matches(USER_HANDLE)).isTrue();
     }
+
+    @Test
+    public void isEmptyQuery_isEmpty_returnsTrue() {
+        UserHandleQueryHelper<Queryable> userHandleQueryHelper =
+                new UserHandleQueryHelper<>(mQuery);
+
+        assertThat(userHandleQueryHelper.isEmptyQuery()).isTrue();
+    }
+
+    @Test
+    public void isEmptyQuery_hasEqualToQuery_returnsFalse() {
+        UserHandleQueryHelper<Queryable> userHandleQueryHelper =
+                new UserHandleQueryHelper<>(mQuery);
+
+        userHandleQueryHelper.isEqualTo(USER_HANDLE);
+
+        assertThat(userHandleQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasIdQuery_returnsFalse() {
+        UserHandleQueryHelper<Queryable> userHandleQueryHelper =
+                new UserHandleQueryHelper<>(mQuery);
+
+        userHandleQueryHelper.id().isEqualTo(0);
+
+        assertThat(userHandleQueryHelper.isEmptyQuery()).isFalse();
+    }
 }
