@@ -16,13 +16,9 @@
 
 package com.android.bedstead.harrier.annotations.enterprise;
 
-import static com.android.bedstead.harrier.UserType.INSTRUMENTED_USER;
-import static com.android.bedstead.harrier.annotations.enterprise.EnsureHasDeviceOwner.DO_PO_WEIGHT;
+import static com.android.bedstead.harrier.annotations.enterprise.EnsureHasDevicePolicyManagerRoleHolder.ENSURE_HAS_DEVICE_POLICY_MANAGER_ROLE_HOLDER_WEIGHT;
 
-import com.android.bedstead.harrier.UserType;
 import com.android.bedstead.harrier.annotations.AnnotationRunPrecedence;
-import com.android.bedstead.harrier.annotations.EnsureHasNoWorkProfile;
-import com.android.bedstead.harrier.annotations.EnsureTestAppHasPermission;
 import com.android.bedstead.harrier.annotations.EnsureTestAppInstalled;
 
 import java.lang.annotation.ElementType;
@@ -31,23 +27,22 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Mark that a test is testing a most restrictive coexistence policy.
+ * Mark that a test is testing a most important coexistence policy.
  *
- * <p>Tests can use {@code sDeviceState.testApp(DPC_1} and {@code sDeviceState.testApp(DPC_2} to
- * get the different test apps to set the policy.
+ * <p>Tests can use {@code sDeviceState.testApp(MORE_IMPORTANT} and
+ * {@code sDeviceState.testApp(LESS_IMPORTANT} to get the different test apps to set the policy.
  *
  * <p>You can use {@code DeviceState} to ensure that the device enters the correct state for the
  * method.
  */
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@EnsureTestAppInstalled(key = MostRestrictiveCoexistenceTest.DPC_1)
-@EnsureTestAppInstalled(key = MostRestrictiveCoexistenceTest.DPC_2)
-// TODO: Figure out what this does
+@EnsureHasDevicePolicyManagerRoleHolder // This will be the MORE_IMPORTANT, setup by DeviceState
+@EnsureTestAppInstalled(key = MostImportantCoexistenceTest.LESS_IMPORTANT)
 public @interface MostImportantCoexistenceTest {
 
-    String DPC_1 = "dpc1";
-    String DPC_2 = "dpc2";
+    String MORE_IMPORTANT = "more_important";
+    String LESS_IMPORTANT = "less_important";
 
     /**
      * The policy being tested.
@@ -66,5 +61,5 @@ public @interface MostImportantCoexistenceTest {
      *
      * <p>Weight can be set to a {@link AnnotationRunPrecedence} constant, or to any {@link int}.
      */
-    int weight() default DO_PO_WEIGHT;
+    int weight() default ENSURE_HAS_DEVICE_POLICY_MANAGER_ROLE_HOLDER_WEIGHT + 1;
 }

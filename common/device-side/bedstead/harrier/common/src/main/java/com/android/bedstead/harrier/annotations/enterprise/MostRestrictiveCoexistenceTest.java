@@ -17,6 +17,7 @@
 package com.android.bedstead.harrier.annotations.enterprise;
 
 import static com.android.bedstead.harrier.UserType.INSTRUMENTED_USER;
+import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.LATE;
 import static com.android.bedstead.harrier.annotations.enterprise.EnsureHasDeviceOwner.DO_PO_WEIGHT;
 
 import com.android.bedstead.harrier.UserType;
@@ -66,5 +67,5 @@ public @interface MostRestrictiveCoexistenceTest {
      *
      * <p>Weight can be set to a {@link AnnotationRunPrecedence} constant, or to any {@link int}.
      */
-    int weight() default DO_PO_WEIGHT;
+    int weight() default LATE;
 }
