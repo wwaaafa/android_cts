@@ -21,6 +21,7 @@ import static android.Manifest.permission.BIND_VISUAL_QUERY_DETECTION_SERVICE;
 import static android.Manifest.permission.CAPTURE_AUDIO_HOTWORD;
 import static android.Manifest.permission.MANAGE_HOTWORD_DETECTION;
 import static android.Manifest.permission.RECORD_AUDIO;
+import static android.voiceinteraction.cts.testcore.Helper.WAIT_LONG_TIMEOUT_IN_MS;
 import static android.voiceinteraction.cts.testcore.Helper.WAIT_TIMEOUT_IN_MS;
 
 import static com.android.compatibility.common.util.SystemUtil.runWithShellPermissionIdentity;
@@ -244,6 +245,7 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
             @Override
             public void onHotwordDetectionServiceRestarted() {
                 Log.i(TAG, "onHotwordDetectionServiceRestarted");
+                setIsDetectorCallbackRunningOnMainThread(isRunningOnMainThread());
                 if (mOnHotwordDetectionServiceRestartedLatch != null) {
                     mOnHotwordDetectionServiceRestartedLatch.countDown();
                 }
@@ -403,6 +405,10 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
             @Override
             public void onHotwordDetectionServiceRestarted() {
                 Log.i(TAG, "onHotwordDetectionServiceRestarted");
+                setIsDetectorCallbackRunningOnMainThread(isRunningOnMainThread());
+                if (mOnHotwordDetectionServiceRestartedLatch != null) {
+                    mOnHotwordDetectionServiceRestartedLatch.countDown();
+                }
             }
         };
 
@@ -493,6 +499,10 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
             @Override
             public void onHotwordDetectionServiceRestarted() {
                 Log.i(TAG, "onHotwordDetectionServiceRestarted");
+                setIsDetectorCallbackRunningOnMainThread(isRunningOnMainThread());
+                if (mOnHotwordDetectionServiceRestartedLatch != null) {
+                    mOnHotwordDetectionServiceRestartedLatch.countDown();
+                }
             }
         };
 
@@ -581,6 +591,10 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
             @Override
             public void onHotwordDetectionServiceRestarted() {
                 Log.i(TAG, "onHotwordDetectionServiceRestarted");
+                setIsDetectorCallbackRunningOnMainThread(isRunningOnMainThread());
+                if (mOnHotwordDetectionServiceRestartedLatch != null) {
+                    mOnHotwordDetectionServiceRestartedLatch.countDown();
+                }
             }
         };
 
@@ -755,7 +769,7 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
         Log.d(TAG, "waitOnHotwordDetectionServiceRestartedCalled(), latch="
                 + mOnHotwordDetectionServiceRestartedLatch);
         if (mOnHotwordDetectionServiceRestartedLatch == null
-                || !mOnHotwordDetectionServiceRestartedLatch.await(WAIT_TIMEOUT_IN_MS,
+                || !mOnHotwordDetectionServiceRestartedLatch.await(WAIT_LONG_TIMEOUT_IN_MS,
                 TimeUnit.MILLISECONDS)) {
             mOnHotwordDetectionServiceRestartedLatch = null;
             throw new AssertionError(
