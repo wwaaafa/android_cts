@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2021 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,14 @@ package com.android.bedstead.harrier.policies;
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_DEVICE_OWNER;
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIED_BY_ORGANIZATION_OWNED_PROFILE_OWNER_PROFILE;
 import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.APPLIES_GLOBALLY;
-import static com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy.CANNOT_BE_APPLIED_BY_ROLE_HOLDER;
 
 import com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy;
 
 /**
- * Policy for system update.
- *
- * <p>This is used by {@code DevicePolicyManager#setSystemUpdatePolicy}.
- */ // | APPLIED_BY_DPM_ROLE_HOLDER
-@EnterprisePolicy(dpc = APPLIED_BY_DEVICE_OWNER | APPLIED_BY_ORGANIZATION_OWNED_PROFILE_OWNER_PROFILE | APPLIES_GLOBALLY | CANNOT_BE_APPLIED_BY_ROLE_HOLDER)//,
-//        permissions = @EnterprisePolicy.Permission(appliedWith = MANAGE_DEVICE_POLICY_SYSTEM_UPDATES, appliesTo = APPLIES_GLOBALLY))
-public final class SystemUpdate {
+ * Policy related to setting {@code DISALLOW_CONFIG_BLUETOOTH} globally
+ */
+@EnterprisePolicy(dpc = {
+        APPLIED_BY_DEVICE_OWNER | APPLIED_BY_ORGANIZATION_OWNED_PROFILE_OWNER_PROFILE
+                | APPLIES_GLOBALLY})
+public final class DisallowConfigBluetoothGlobally {
 }
