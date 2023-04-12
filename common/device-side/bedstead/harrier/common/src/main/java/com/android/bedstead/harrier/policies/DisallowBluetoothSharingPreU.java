@@ -31,5 +31,5 @@ import com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy;
         APPLIED_BY_PROFILE_OWNER | APPLIES_TO_OWN_USER | CANNOT_BE_APPLIED_BY_ROLE_HOLDER,
         APPLIED_BY_DEVICE_OWNER | APPLIES_GLOBALLY | CANNOT_BE_APPLIED_BY_ROLE_HOLDER
 })
-public final class DisallowBluetoothSharing {
+public final class DisallowBluetoothSharingPreU {
 }

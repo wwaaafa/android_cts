@@ -181,4 +181,62 @@ public final class LongQueryHelperTest {
                 .where().isEqualTo(1L)
                 .matches(1L)).isTrue();
     }
+
+    @Test
+    public void isEmptyQuery_isEmpty_returnsTrue() {
+        LongQueryHelper<Queryable> longQueryHelper =
+                new LongQueryHelper<>(mQuery);
+
+        assertThat(longQueryHelper.isEmptyQuery()).isTrue();
+    }
+
+    @Test
+    public void isEmptyQuery_hasEqualToQuery_returnsFalse() {
+        LongQueryHelper<Queryable> longQueryHelper =
+                new LongQueryHelper<>(mQuery);
+
+        longQueryHelper.isEqualTo(0);
+
+        assertThat(longQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasGreaterThanQuery_returnsFalse() {
+        LongQueryHelper<Queryable> longQueryHelper =
+                new LongQueryHelper<>(mQuery);
+
+        longQueryHelper.isGreaterThan(0);
+
+        assertThat(longQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasGreaterThanOrEqualToQuery_returnsFalse() {
+        LongQueryHelper<Queryable> longQueryHelper =
+                new LongQueryHelper<>(mQuery);
+
+        longQueryHelper.isGreaterThanOrEqualTo(0);
+
+        assertThat(longQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasLessThanQuery_returnsFalse() {
+        LongQueryHelper<Queryable> longQueryHelper =
+                new LongQueryHelper<>(mQuery);
+
+        longQueryHelper.isLessThan(0);
+
+        assertThat(longQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasLessThanOrEqualToQuery_returnsFalse() {
+        LongQueryHelper<Queryable> longQueryHelper =
+                new LongQueryHelper<>(mQuery);
+
+        longQueryHelper.isLessThanOrEqualTo(0);
+
+        assertThat(longQueryHelper.isEmptyQuery()).isFalse();
+    }
 }

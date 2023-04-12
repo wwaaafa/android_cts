@@ -16,45 +16,45 @@
 
 package com.android.bedstead.harrier.annotations.enterprise;
 
-import static com.android.bedstead.harrier.annotations.AnnotationRunPrecedence.PRECEDENCE_NOT_IMPORTANT;
+import static com.android.bedstead.harrier.UserType.INSTRUMENTED_USER;
+import static com.android.bedstead.harrier.annotations.enterprise.EnsureHasDeviceOwner.DO_PO_WEIGHT;
 
+import com.android.bedstead.harrier.UserType;
 import com.android.bedstead.harrier.annotations.AnnotationRunPrecedence;
-import com.android.bedstead.harrier.annotations.meta.RequiresBedsteadJUnit4;
+import com.android.bedstead.harrier.annotations.EnsureHasNoWorkProfile;
+import com.android.bedstead.harrier.annotations.EnsureTestAppHasPermission;
+import com.android.bedstead.harrier.annotations.EnsureTestAppInstalled;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
 /**
- * Mark a test as testing the states where a policy is allowed to be applied.
+ * Mark that a test is testing a most restrictive coexistence policy.
  *
- * <p>This will generate parameterized runs for all matching states. Tests will only be run on
- * the same user as the DPC. If you wish to test that a policy applies across all relevant states,
- * use {@link PolicyAppliesTest}.
+ * <p>Tests can use {@code sDeviceState.testApp(DPC_1} and {@code sDeviceState.testApp(DPC_2} to
+ * get the different test apps to set the policy.
+ *
+ * <p>You can use {@code DeviceState} to ensure that the device enters the correct state for the
+ * method.
  */
-@Target(ElementType.METHOD)
+@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@RequiresBedsteadJUnit4
-public @interface CanSetPolicyTest {
+@EnsureTestAppInstalled(key = MostRestrictiveCoexistenceTest.DPC_1)
+@EnsureTestAppInstalled(key = MostRestrictiveCoexistenceTest.DPC_2)
+// TODO: We need to expose the permission in the annotation and apply it in devicestate...
+public @interface MostRestrictiveCoexistenceTest {
+
+    String DPC_1 = "dpc1";
+    String DPC_2 = "dpc2";
+
     /**
      * The policy being tested.
      *
-     * <p>If multiple policies are specified, then they will be merged so that all valid states for
-     * all specified policies are considered as valid.
-     *
-     * <p>This is used to calculate which states are required to be tested.
+     * <p>This is only valid if the policy can be applied by a permission.
      */
-    Class<?>[] policy();
-
-    /**
-     * If true, this test will only be run in a single state.
-     *
-     * <p>This is useful for tests of invalid inputs, where running in multiple states is unlikely
-     * to add meaningful coverage.
-     *
-     * By default, all states where the policy can be set will be included.
-     */
-    boolean singleTestOnly() default false;
+    Class<?> policy();
 
     /**
      * Weight sets the order that annotations will be resolved.
@@ -66,5 +66,5 @@ public @interface CanSetPolicyTest {
      *
      * <p>Weight can be set to a {@link AnnotationRunPrecedence} constant, or to any {@link int}.
      */
-    int weight() default PRECEDENCE_NOT_IMPORTANT;
+    int weight() default DO_PO_WEIGHT;
 }

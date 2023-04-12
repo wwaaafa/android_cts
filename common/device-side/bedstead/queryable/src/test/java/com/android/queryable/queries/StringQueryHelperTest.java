@@ -150,4 +150,42 @@ public final class StringQueryHelperTest {
                         .where().isEqualTo(STRING_VALUE)
                         .matches(STRING_VALUE)).isTrue();
     }
+
+    @Test
+    public void isEmptyQuery_isEmpty_returnsTrue() {
+        StringQueryHelper<Queryable> stringQueryHelper =
+                new StringQueryHelper<>(mQuery);
+
+        assertThat(stringQueryHelper.isEmptyQuery()).isTrue();
+    }
+
+    @Test
+    public void isEmptyQuery_hasEqualToQuery_returnsFalse() {
+        StringQueryHelper<Queryable> stringQueryHelper =
+                new StringQueryHelper<>(mQuery);
+
+        stringQueryHelper.isEqualTo(null);
+
+        assertThat(stringQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasNotEqualToQuery_returnsFalse() {
+        StringQueryHelper<Queryable> stringQueryHelper =
+                new StringQueryHelper<>(mQuery);
+
+        stringQueryHelper.isNotEqualTo(null);
+
+        assertThat(stringQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasStartsWithQuery_returnsFalse() {
+        StringQueryHelper<Queryable> stringQueryHelper =
+                new StringQueryHelper<>(mQuery);
+
+        stringQueryHelper.startsWith("Abc");
+
+        assertThat(stringQueryHelper.isEmptyQuery()).isFalse();
+    }
 }

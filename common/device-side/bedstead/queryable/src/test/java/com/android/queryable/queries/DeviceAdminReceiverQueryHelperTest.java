@@ -91,4 +91,23 @@ public final class DeviceAdminReceiverQueryHelperTest {
                 .matches(DELEGATED_ADMIN_RECEIVER_1_INFO)
         ).isTrue();
     }
+
+    @Test
+    public void isEmptyQuery_isEmpty_returnsTrue() {
+        DeviceAdminReceiverQueryHelper<Queryable> deviceAdminReceiverQueryHelper =
+                new DeviceAdminReceiverQueryHelper<>(mQuery);
+
+        assertThat(deviceAdminReceiverQueryHelper.isEmptyQuery()).isTrue();
+    }
+
+    @Test
+    public void isEmptyQuery_hasBroadcastReceiverQuery_returnsFalse() {
+        DeviceAdminReceiverQueryHelper<Queryable> deviceAdminReceiverQueryHelper =
+                new DeviceAdminReceiverQueryHelper<>(mQuery);
+
+        deviceAdminReceiverQueryHelper
+                .broadcastReceiver().receiverClass().className().isNotNull();
+
+        assertThat(deviceAdminReceiverQueryHelper.isEmptyQuery()).isFalse();
+    }
 }

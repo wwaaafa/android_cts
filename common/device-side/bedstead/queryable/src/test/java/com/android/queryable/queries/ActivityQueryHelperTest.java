@@ -152,4 +152,29 @@ public final class ActivityQueryHelperTest {
     public void activityQueryBase_queries() {
         assertThat(activity().where().exported().isTrue().matches(EXPORTED_ACTIVITY_INFO)).isTrue();
     }
+
+    @Test
+    public void isEmptyQuery_isEmpty_returnsTrue() {
+        ActivityQueryHelper<Queryable> activityQueryHelper = new ActivityQueryHelper<>(mQuery);
+
+        assertThat(activityQueryHelper.isEmptyQuery()).isTrue();
+    }
+
+    @Test
+    public void isEmptyQuery_hasActivityClass_returnsFalse() {
+        ActivityQueryHelper<Queryable> activityQueryHelper = new ActivityQueryHelper<>(mQuery);
+
+        activityQueryHelper.activityClass().className().isNotNull();
+
+        assertThat(activityQueryHelper.isEmptyQuery()).isFalse();
+    }
+
+    @Test
+    public void isEmptyQuery_hasIntentFilters_returnsFalse() {
+        ActivityQueryHelper<Queryable> activityQueryHelper = new ActivityQueryHelper<>(mQuery);
+
+        activityQueryHelper.intentFilters().isNotEmpty();
+
+        assertThat(activityQueryHelper.isEmptyQuery()).isFalse();
+    }
 }

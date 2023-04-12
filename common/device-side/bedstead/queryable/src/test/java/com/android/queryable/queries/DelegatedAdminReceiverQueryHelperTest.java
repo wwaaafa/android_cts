@@ -91,4 +91,23 @@ public final class DelegatedAdminReceiverQueryHelperTest {
                 .matches(DELEGATED_ADMIN_RECEIVER_1_INFO)
         ).isTrue();
     }
+
+    @Test
+    public void isEmptyQuery_isEmpty_returnsTrue() {
+        DelegatedAdminReceiverQueryHelper<Queryable> delegatedAdminReceiverQueryHelper =
+                new DelegatedAdminReceiverQueryHelper<>(mQuery);
+
+        assertThat(delegatedAdminReceiverQueryHelper.isEmptyQuery()).isTrue();
+    }
+
+    @Test
+    public void isEmptyQuery_hasBroadcastReceiverQuery_returnsFalse() {
+        DelegatedAdminReceiverQueryHelper<Queryable> delegatedAdminReceiverQueryHelper =
+                new DelegatedAdminReceiverQueryHelper<>(mQuery);
+
+        delegatedAdminReceiverQueryHelper
+                .broadcastReceiver().receiverClass().className().isNotNull();
+
+        assertThat(delegatedAdminReceiverQueryHelper.isEmptyQuery()).isFalse();
+    }
 }
