@@ -46,6 +46,8 @@ import com.android.bedstead.harrier.annotations.UserTest;
 import com.android.bedstead.harrier.annotations.enterprise.CanSetPolicyTest;
 import com.android.bedstead.harrier.annotations.enterprise.CannotSetPolicyTest;
 import com.android.bedstead.harrier.annotations.enterprise.EnterprisePolicy;
+import com.android.bedstead.harrier.annotations.enterprise.MostImportantCoexistenceTest;
+import com.android.bedstead.harrier.annotations.enterprise.MostRestrictiveCoexistenceTest;
 import com.android.bedstead.harrier.annotations.enterprise.PolicyAppliesTest;
 import com.android.bedstead.harrier.annotations.enterprise.PolicyDoesNotApplyTest;
 import com.android.bedstead.harrier.annotations.meta.ParameterizedAnnotation;
@@ -455,6 +457,8 @@ public final class BedsteadJUnit4 extends BlockJUnit4ClassRunner {
         methods.addAll(testClass.getAnnotatedMethods(UserTest.class));
         methods.addAll(testClass.getAnnotatedMethods(CrossUserTest.class));
         methods.addAll(testClass.getAnnotatedMethods(PermissionTest.class));
+        methods.addAll(testClass.getAnnotatedMethods(MostRestrictiveCoexistenceTest.class));
+        methods.addAll(testClass.getAnnotatedMethods(MostImportantCoexistenceTest.class));
 
         return new ArrayList<>(methods);
     }
