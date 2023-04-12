@@ -22,14 +22,21 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.net.Uri;
 
+import com.android.bedstead.harrier.BedsteadJUnit4;
+import com.android.bedstead.harrier.DeviceState;
 import com.android.queryable.Queryable;
 
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-@RunWith(JUnit4.class)
+@RunWith(BedsteadJUnit4.class)
 public final class UriQueryHelperTest {
+
+    @ClassRule @Rule
+    public static final DeviceState sDeviceState = new DeviceState();
 
     private final Queryable mQuery = null;
     private static final String URI_STRING_VALUE = "http://uri";

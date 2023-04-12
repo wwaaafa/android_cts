@@ -75,6 +75,22 @@ public final class TestAppQueryBuilder implements Queryable {
     }
 
     /**
+     * Apply the query parameters inside the {@link Query} to this {@link TestAppQueryBuilder}.
+     */
+    public TestAppQueryBuilder applyAnnotation(Query query) {
+        if (query == null) {
+            return this;
+        }
+
+        TestAppQueryBuilder queryBuilder = this;
+        queryBuilder = queryBuilder.whereTargetSdkVersion().matchesAnnotation(query.targetSdkVersion());
+        queryBuilder = queryBuilder.whereMinSdkVersion().matchesAnnotation(query.minSdkVersion());
+        queryBuilder = queryBuilder.whereMaxSdkVersion().matchesAnnotation(query.maxSdkVersion());
+        queryBuilder = queryBuilder.wherePackageName().matchesAnnotation(query.packageName());
+        return queryBuilder;
+    }
+
+    /**
      * Query for a {@link TestApp} which declares the given label.
      */
     public StringQuery<TestAppQueryBuilder> whereLabel() {

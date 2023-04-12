@@ -131,6 +131,7 @@ import com.android.bedstead.harrier.annotations.RequireVisibleBackgroundUsers;
 import com.android.bedstead.harrier.annotations.RequireVisibleBackgroundUsersOnDefaultDisplay;
 import com.android.bedstead.harrier.annotations.RunWithFeatureFlagEnabledAndDisabled;
 import com.android.bedstead.harrier.annotations.TestTag;
+import com.android.bedstead.harrier.annotations.enterprise.AdditionalQueryParameters;
 import com.android.bedstead.harrier.annotations.enterprise.EnsureHasDelegate;
 import com.android.bedstead.harrier.annotations.enterprise.EnsureHasDeviceOwner;
 import com.android.bedstead.harrier.annotations.enterprise.EnsureHasNoDeviceOwner;
@@ -1532,9 +1533,53 @@ public class DeviceStateTest {
                 .getSystemService(ContentCaptureManager.class)).isNotNull();
     }
 
-    @IncludeRunOnDeviceOwnerUser()
+    @EnsureHasDeviceOwner(key = EnsureHasDeviceOwner.DEFAULT_KEY, isPrimary = true)
+    @AdditionalQueryParameters(
+            forTestApp = EnsureHasDeviceOwner.DEFAULT_KEY,
+            query = @Query(targetSdkVersion = @IntegerQuery(isEqualTo = 28))
+    )
     @Test
-    public void a() {
+    public void additionalQueryParameters_ensureHasDeviceOwner_isRespected() {
+        assertThat(sDeviceState.dpc().testApp().targetSdkVersion()).isEqualTo(28);
+    }
 
+    @EnsureHasProfileOwner(key = EnsureHasProfileOwner.DEFAULT_KEY, isPrimary = true)
+    @AdditionalQueryParameters(
+            forTestApp = EnsureHasProfileOwner.DEFAULT_KEY,
+            query = @Query(targetSdkVersion = @IntegerQuery(isEqualTo = 28))
+    )
+    @Test
+    public void additionalQueryParameters_ensureHasProfileOwner_isRespected() {
+        assertThat(sDeviceState.dpc().testApp().targetSdkVersion()).isEqualTo(28);
+    }
+
+    @EnsureHasWorkProfile(dpcKey = EnsureHasWorkProfile.DEFAULT_KEY, dpcIsPrimary = true)
+    @AdditionalQueryParameters(
+            forTestApp = EnsureHasWorkProfile.DEFAULT_KEY,
+            query = @Query(targetSdkVersion = @IntegerQuery(isEqualTo = 28))
+    )
+    @Test
+    public void additionalQueryParameters_ensureHasWorkProfile_isRespected() {
+        assertThat(sDeviceState.dpc().testApp().targetSdkVersion()).isEqualTo(28);
+    }
+
+    @RequireRunOnWorkProfile(dpcKey = RequireRunOnWorkProfile.DEFAULT_KEY, dpcIsPrimary = true)
+    @AdditionalQueryParameters(
+            forTestApp = RequireRunOnWorkProfile.DEFAULT_KEY,
+            query = @Query(targetSdkVersion = @IntegerQuery(isEqualTo = 28))
+    )
+    @Test
+    public void additionalQueryParameters_requireRunOnWorkProfile_isRespected() {
+        assertThat(sDeviceState.dpc().testApp().targetSdkVersion()).isEqualTo(28);
+    }
+
+    @EnsureTestAppInstalled(key = EnsureTestAppInstalled.DEFAULT_KEY, isPrimary = true)
+    @AdditionalQueryParameters(
+            forTestApp = EnsureTestAppInstalled.DEFAULT_KEY,
+            query = @Query(targetSdkVersion = @IntegerQuery(isEqualTo = 28))
+    )
+    @Test
+    public void additionalQueryParameters_ensureTestAppInstalled_isRespected() {
+        assertThat(sDeviceState.dpc().testApp().targetSdkVersion()).isEqualTo(28);
     }
 }

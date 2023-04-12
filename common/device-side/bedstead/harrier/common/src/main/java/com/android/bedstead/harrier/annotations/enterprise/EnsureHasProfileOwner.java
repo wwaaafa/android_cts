@@ -47,6 +47,15 @@ public @interface EnsureHasProfileOwner {
     /** Which user type the profile owner should be installed on. */
     UserType onUser() default INSTRUMENTED_USER;
 
+    String DEFAULT_KEY = "profileOwner";
+
+    /**
+     * The key used to identify this DPC.
+     *
+     * <p>This can be used with {@link AdditionalQueryParameters} to modify the requirements for
+     * the DPC. */
+    String key() default DEFAULT_KEY;
+
     /**
      * Requirements for the DPC
      *
