@@ -161,7 +161,7 @@ public class ExternalCallTest extends BaseTelecomTestWithMockServices {
      * test to check external call and pull external call with call and connection states check
      */
     public void testExternalCallAndPullCall() throws Exception {
-        if (!mShouldTestTelecom) {
+        if (!mShouldTestTelecom  || !TestUtils.hasTelephonyFeature(mContext)) {
             return;
         }
 
