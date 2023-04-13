@@ -853,6 +853,9 @@ public class UwbManagerTest {
                 .setMultiNodeMode(FiraParams.MULTI_NODE_MODE_UNICAST)
                 .setDeviceAddress(UwbAddress.fromBytes(new byte[] {0x5, 6}))
                 .setDestAddressList(List.of(UwbAddress.fromBytes(new byte[] {0x5, 6})))
+                .setSlotDurationRstu(2400)
+                .setSlotsPerRangingRound(25)
+                .setRangingIntervalMs(200)
                 .build();
         try {
             // Needs UWB_PRIVILEGED & UWB_RANGING permission which is held by shell.
