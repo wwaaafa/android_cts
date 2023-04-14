@@ -855,7 +855,7 @@ public class HorizontalScrollViewTest {
 
         mActivityRule.runOnUiThread(() -> {
             // Scroll all the way to the right
-            mScrollViewStretch.scrollTo(210, 0);
+            mScrollViewStretch.scrollTo(420, 0);
         });
 
         NoReleaseEdgeEffect edgeEffect = new NoReleaseEdgeEffect(mActivity);
@@ -877,7 +877,7 @@ public class HorizontalScrollViewTest {
 
         mActivityRule.runOnUiThread(() -> {
             // Scroll all the way to the bottom
-            mScrollViewStretch.scrollTo(210, 0);
+            mScrollViewStretch.scrollTo(420, 0);
         });
 
         NoReleaseEdgeEffect edgeEffect = new NoReleaseEdgeEffect(mActivity);
@@ -941,7 +941,7 @@ public class HorizontalScrollViewTest {
 
         mActivityRule.runOnUiThread(() -> {
             // Scroll all the way to the bottom
-            mScrollViewStretch.scrollTo(210, 0);
+            mScrollViewStretch.scrollTo(420, 0);
         });
 
         ScrollViewTest.CaptureOnAbsorbEdgeEffect
@@ -991,7 +991,7 @@ public class HorizontalScrollViewTest {
 
         mActivityRule.runOnUiThread(() -> {
             // Scroll all the way to the Right
-            mScrollViewStretch.scrollTo(210, 0);
+            mScrollViewStretch.scrollTo(420, 0);
         });
 
         ScrollViewTest.CaptureOnReleaseEdgeEffect
@@ -1013,7 +1013,7 @@ public class HorizontalScrollViewTest {
 
         mActivityRule.runOnUiThread(() -> {
             // Scroll all the way to the Right
-            mScrollViewStretch.scrollTo(210, 0);
+            mScrollViewStretch.scrollTo(420, 0);
         });
 
         ScrollViewTest.CaptureOnReleaseEdgeEffect
@@ -1063,7 +1063,8 @@ public class HorizontalScrollViewTest {
         showOnlyStretch();
         mActivityRule.runOnUiThread(() -> {
             // Scroll all the way to the bottom
-            mScrollViewStretch.scrollTo(210, 0);
+            mScrollViewStretch.scrollTo(420, 0);
+            assertEquals(420, mScrollViewStretch.getScrollX());
         });
 
         NoReleaseEdgeEffect edgeEffect = new NoReleaseEdgeEffect(mActivity);
@@ -1082,15 +1083,15 @@ public class HorizontalScrollViewTest {
 
         mActivityRule.runOnUiThread(() -> {
             edgeEffect.setOnReleaseCalled(false);
-            assertEquals(210, mScrollViewStretch.getScrollX());
+            assertEquals(420, mScrollViewStretch.getScrollX());
             mScrollViewStretch.fling(-10000);
             assertFalse(edgeEffect.getOnReleaseCalled());
             assertNotEquals(0f, edgeEffect.getDistance());
-            assertEquals(210, mScrollViewStretch.getScrollX());
+            assertEquals(420, mScrollViewStretch.getScrollX());
         });
 
         PollingCheck.waitFor(1000L, () -> edgeEffect.getDistance() == 0);
-        PollingCheck.waitFor(1000L, () -> mScrollViewStretch.getScrollX() != 210);
+        PollingCheck.waitFor(1000L, () -> mScrollViewStretch.getScrollX() != 420);
     }
 
     private MotionEvent createScrollEvent(float scrollAmount, int source) {
