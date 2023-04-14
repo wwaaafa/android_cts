@@ -172,9 +172,9 @@ public class AnrTests extends ActivityManagerTestBase {
 
     private void clickCloseAppOnAnrDialog() {
         // Find anr dialog and kill app
-        // Waiting up to 25 seconds, because the ANR dump process may take a while to complete
+        // Waiting up to 30 seconds, because the ANR dump process may take a while to complete
         // so there will be a long delay before the ANR dialog actually shows up
-        int waitTime = 25000;
+        int waitTime = 30000;
         UiDevice uiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
         UiObject2 closeAppButton = uiDevice.wait(Until.findObject(By.res("android:id/aerr_close")),
                 waitTime);
