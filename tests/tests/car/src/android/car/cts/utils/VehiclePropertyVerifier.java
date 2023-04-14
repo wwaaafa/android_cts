@@ -1008,17 +1008,13 @@ public class VehiclePropertyVerifier<T> {
                             mPropertyName
                                     + " must be "
                                     + accessToString(CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ)
-                                    + ", "
-                                    + accessToString(
-                                            CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_WRITE)
-                                    + ", or "
+                                    + " or "
                                     + accessToString(
                                             CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE))
                     .that(access)
                     .isIn(
                             ImmutableSet.of(
                                     CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ,
-                                    CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_WRITE,
                                     CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE));
         } else {
             assertWithMessage(mPropertyName + " must be " + accessToString(mAccess))
