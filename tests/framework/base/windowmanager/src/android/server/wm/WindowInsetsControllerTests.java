@@ -694,6 +694,8 @@ public class WindowInsetsControllerTests extends WindowManagerTestBase {
 
     @Test
     public void testDispatchApplyWindowInsetsCount_systemBars() throws InterruptedException {
+        assumeFalse(isCar() && remoteInsetsControllerControlsSystemBars());
+
         final TestActivity activity = startActivityInWindowingModeFullScreen(TestActivity.class);
         final View rootView = activity.getWindow().getDecorView();
         getInstrumentation().waitForIdleSync();
