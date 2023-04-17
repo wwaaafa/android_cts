@@ -85,6 +85,27 @@ class TextViewFontScalingTest {
 
     @Test
     @Throws(Throwable::class)
+    fun testNonLinearFontScaling_testSetLineHeightSpFirstAndSetTextSizeSpAfter() {
+        setSystemFontScale(2f)
+        scenarioRule.scenario.onActivity { activity ->
+            assertThat(activity.resources.configuration.fontScale).isWithin(0.02f).of(2f)
+
+            val textView = TextView(activity)
+            val textSizeSp = 20f
+            val lineHeightSp = 40f
+
+            textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSizeSp)
+            textView.setLineHeight(TypedValue.COMPLEX_UNIT_SP, lineHeightSp)
+
+            val newTextSizeSp = 10f
+            textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, newTextSizeSp)
+
+            verifyLineHeightIsIntendedProportions(lineHeightSp, newTextSizeSp, activity, textView)
+        }
+    }
+
+    @Test
+    @Throws(Throwable::class)
     fun testNonLinearFontScaling_overwriteXml_testSetLineHeightSpAndSetTextSizeSp() {
         setSystemFontScale(2f)
         scenarioRule.scenario.onActivity { activity ->
@@ -113,6 +134,23 @@ class TextViewFontScalingTest {
             val lineHeightSp = 40f
 
             verifyLineHeightIsIntendedProportions(lineHeightSp, textSizeSp, activity, textView)
+        }
+    }
+
+    @Test
+    @Throws(Throwable::class)
+    fun testNonLinearFontScaling_overwriteXml_testLineHeightAttrSpAndSetTextSizeSpAfter() {
+        setSystemFontScale(2f)
+        scenarioRule.scenario.onActivity { activity ->
+            assertThat(activity.resources.configuration.fontScale).isWithin(0.02f).of(2f)
+
+            val textView = findTextView(activity, R.id.textview_lineheight2x)
+            val newTextSizeSp = 10f
+            val lineHeightSp = 40f
+
+            textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, newTextSizeSp)
+
+            verifyLineHeightIsIntendedProportions(lineHeightSp, newTextSizeSp, activity, textView)
         }
     }
 
