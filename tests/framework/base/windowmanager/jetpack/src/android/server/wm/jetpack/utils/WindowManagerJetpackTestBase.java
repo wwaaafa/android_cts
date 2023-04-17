@@ -16,6 +16,7 @@
 
 package android.server.wm.jetpack.utils;
 
+import static android.app.WindowConfiguration.WINDOWING_MODE_FULLSCREEN;
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 import static android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP;
 import static android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
@@ -33,6 +34,7 @@ import static org.junit.Assert.assertTrue;
 
 import android.app.Activity;
 import android.app.ActivityOptions;
+import android.app.ActivityTaskManager;
 import android.app.Application;
 import android.app.Instrumentation;
 import android.content.ComponentName;
@@ -41,6 +43,7 @@ import android.content.Intent;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.server.wm.NestedShellPermission;
 import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
@@ -51,6 +54,7 @@ import androidx.window.sidecar.SidecarDeviceState;
 import org.junit.After;
 import org.junit.Before;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -77,6 +81,11 @@ public class WindowManagerJetpackTestBase {
         assertNotNull(mApplication);
         // Register activity lifecycle callbacks to know which activities are resumed
         registerActivityLifecycleCallbacks();
+        // Clear the previous launch bounds / windowing mode, otherwise persisted launch bounds may
+        // prepend startFullScreenActivityNewTask from launching Activities in full-screen.
+        NestedShellPermission.run(() ->
+                mContext.getSystemService(ActivityTaskManager.class).clearLaunchParamsForPackages(
+                        Collections.singletonList("android.server.wm.jetpack")));
     }
 
     @After
@@ -91,18 +100,39 @@ public class WindowManagerJetpackTestBase {
 
     public Activity startActivityNewTask(@NonNull Class activityClass,
             @Nullable String activityId) {
-        return startActivityNewTask(mContext, mInstrumentation, activityClass, activityId);
+        return startActivityNewTask(
+                mContext, mInstrumentation, activityClass, activityId);
+    }
+
+    public <T extends Activity> T startFullScreenActivityNewTask(@NonNull Class<T> activityClass) {
+        return activityClass.cast(startActivityNewTask(
+                mContext, mInstrumentation, activityClass, null /* activityId */, true));
     }
 
     public static Activity startActivityNewTask(@NonNull Context context,
             @NonNull Instrumentation instrumentation, @NonNull Class activityClass,
             @Nullable String activityId) {
+        return startActivityNewTask(
+                context, instrumentation, activityClass, activityId, false);
+    }
+
+    public static Activity startActivityNewTask(@NonNull Context context,
+            @NonNull Instrumentation instrumentation, @NonNull Class activityClass,
+            @Nullable String activityId, boolean fullscreen) {
         final Intent intent = new Intent(context, activityClass);
         intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
         if (activityId != null) {
             intent.putExtra(ACTIVITY_ID_LABEL, activityId);
         }
-        return instrumentation.startActivitySync(intent);
+        final ActivityOptions options;
+        if (fullscreen) {
+            options = ActivityOptions.makeBasic();
+            options.setLaunchWindowingMode(WINDOWING_MODE_FULLSCREEN);
+        } else {
+            options = null;
+        }
+        return instrumentation.startActivitySync(
+                intent, options != null ? options.toBundle() : null);
     }
 
     /**
