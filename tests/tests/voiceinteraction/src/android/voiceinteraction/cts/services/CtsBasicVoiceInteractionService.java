@@ -82,6 +82,8 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
     private String mUnknownFailure = null;
 
     private int mSoftwareOnDetectedCount = 0;
+    private int mDspOnDetectedCount = 0;
+    private int mDspOnRejectedCount = 0;
 
     public CtsBasicVoiceInteractionService() {
         HandlerThread handlerThread = new HandlerThread("CtsBasicVoiceInteractionService");
@@ -108,6 +110,8 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
         mSoundTriggerFailure = null;
         mUnknownFailure = null;
         mSoftwareOnDetectedCount = 0;
+        mDspOnDetectedCount = 0;
+        mDspOnRejectedCount = 0;
     }
 
     /**
@@ -115,6 +119,20 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
      */
     public int getSoftwareOnDetectedCount() {
         return mSoftwareOnDetectedCount;
+    }
+
+    /**
+     * Returns the onDetected() callback count for the dsp detector.
+     */
+    public int getDspOnDetectedCount() {
+        return mDspOnDetectedCount;
+    }
+
+    /**
+     * Returns the onRejected() callback count for the dsp detector.
+     */
+    public int getDspOnRejectedCount() {
+        return mDspOnRejectedCount;
     }
 
     public void createAlwaysOnHotwordDetectorNoHotwordDetectionService(boolean useExecutor,
@@ -222,6 +240,7 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
             public void onDetected(AlwaysOnHotwordDetector.EventPayload eventPayload) {
                 Log.i(TAG, "onDetected");
                 mDetectedResult = eventPayload;
+                mDspOnDetectedCount++;
                 setIsDetectorCallbackRunningOnMainThread(isRunningOnMainThread());
                 if (mOnDetectRejectLatch != null) {
                     mOnDetectRejectLatch.countDown();
@@ -232,6 +251,7 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
             public void onRejected(@NonNull HotwordRejectedResult result) {
                 Log.i(TAG, "onRejected");
                 mRejectedResult = result;
+                mDspOnRejectedCount++;
                 setIsDetectorCallbackRunningOnMainThread(isRunningOnMainThread());
                 if (mOnDetectRejectLatch != null) {
                     mOnDetectRejectLatch.countDown();
@@ -355,6 +375,7 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
             public void onDetected(AlwaysOnHotwordDetector.EventPayload eventPayload) {
                 Log.i(TAG, "onDetected");
                 mDetectedResult = eventPayload;
+                mDspOnDetectedCount++;
                 setIsDetectorCallbackRunningOnMainThread(isRunningOnMainThread());
                 if (mOnDetectRejectLatch != null) {
                     mOnDetectRejectLatch.countDown();
@@ -365,6 +386,7 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
             public void onRejected(@NonNull HotwordRejectedResult result) {
                 Log.i(TAG, "onRejected");
                 mRejectedResult = result;
+                mDspOnRejectedCount++;
                 setIsDetectorCallbackRunningOnMainThread(isRunningOnMainThread());
                 if (mOnDetectRejectLatch != null) {
                     mOnDetectRejectLatch.countDown();
@@ -798,6 +820,9 @@ public class CtsBasicVoiceInteractionService extends BaseVoiceInteractionService
     public void resetHotwordServiceOnDetectedAndOnRejectedResult() {
         mDetectedResult = null;
         mRejectedResult = null;
+        mDspOnDetectedCount = 0;
+        mDspOnRejectedCount = 0;
+        mSoftwareOnDetectedCount = 0;
     }
 
     /**
