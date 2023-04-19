@@ -31,6 +31,8 @@ import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.testtype.DeviceJUnit4ClassRunner;
 import com.android.tradefed.testtype.junit4.BaseHostJUnit4Test;
+import com.android.tradefed.util.CommandResult;
+import com.android.tradefed.util.CommandStatus;
 
 import org.junit.After;
 import org.junit.Before;
@@ -85,6 +87,7 @@ public class ResumeOnRebootHostTest extends BaseHostJUnit4Test {
 
         mSupportsMultiUser = getDevice().getMaxNumberOfUsersSupported() > 1;
 
+        setScreenStayOnValue(true);
         removeTestPackages();
         deviceDisableDeviceConfigSync();
         deviceSetupServerBasedParameter();
@@ -94,6 +97,7 @@ public class ResumeOnRebootHostTest extends BaseHostJUnit4Test {
     public void tearDown() throws Exception {
         removeTestPackages();
         deviceRestoreDeviceConfigSync();
+        setScreenStayOnValue(false);
     }
 
     @Test
@@ -587,6 +591,19 @@ public class ResumeOnRebootHostTest extends BaseHostJUnit4Test {
         public InstallMultiple() {
             super(getDevice(), getBuild(), getAbi());
         }
+    }
+
+    private void setScreenStayOnValue(boolean value) throws DeviceNotAvailableException {
+        CommandResult result = getDevice().executeShellV2Command("svc power stayon " + value);
+        if (result.getStatus() != CommandStatus.SUCCESS) {
+            CLog.w("Could not set screen stay-on value. " + generateErrorStringFromCommandResult(
+                    result));
+        }
+    }
+
+    private static String generateErrorStringFromCommandResult(CommandResult result) {
+        return "Status code: " + result.getStatus() + ", Exit code: " + result.getExitCode()
+                + ", Error: " + result.getStderr();
     }
 
     private String executeShellCommandWithLogging(String command)
