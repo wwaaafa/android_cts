@@ -668,6 +668,31 @@ public class HotwordDetectionServiceBasicTest {
     }
 
     @Test
+    public void testHotwordDetectionService_software_externalSourceSecurityException_onFailure()
+            throws Throwable {
+        // Create SoftwareHotwordDetector with onFailure callback
+        HotwordDetector softwareHotwordDetector = createSoftwareHotwordDetector(/* useOnFailure= */
+                true);
+
+        try {
+            mService.initOnFailureLatch();
+
+            runWithShellPermissionIdentity(() -> {
+                softwareHotwordDetector.startRecognition(Helper.createFakeAudioStream(),
+                        Helper.createFakeAudioFormat(), Helper.createFakePersistableBundleData());
+            });
+
+            mService.waitOnFailureCalled();
+
+            verifyHotwordDetectionServiceFailure(mService.getHotwordDetectionServiceFailure(),
+                    HotwordDetectionServiceFailure.ERROR_CODE_ON_DETECTED_SECURITY_EXCEPTION);
+        } finally {
+            // Destroy detector
+            softwareHotwordDetector.destroy();
+        }
+    }
+
+    @Test
     @RequiresDevice
     public void testHotwordDetectionService_onDetectFromMicSecurityException_onFailure()
             throws Throwable {
