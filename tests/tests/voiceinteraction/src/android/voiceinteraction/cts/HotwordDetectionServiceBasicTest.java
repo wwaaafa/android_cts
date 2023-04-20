@@ -1030,6 +1030,68 @@ public class HotwordDetectionServiceBasicTest {
     }
 
     @Test
+    public void testHotwordDetectionService_dspDetector_onDetectFromExternalSource_rejected()
+            throws Throwable {
+        // Create AlwaysOnHotwordDetector
+        AlwaysOnHotwordDetector alwaysOnHotwordDetector =
+                createAlwaysOnHotwordDetector(/* useOnFailure= */ false);
+        try {
+            adoptShellPermissionIdentityForHotword();
+
+            PersistableBundle options = Helper.createFakePersistableBundleData();
+            options.putBoolean(Utils.KEY_DETECTION_REJECTED, true);
+
+            mService.initDetectRejectLatch();
+            alwaysOnHotwordDetector.startRecognition(Helper.createFakeAudioStream(),
+                    Helper.createFakeAudioFormat(), options);
+
+            // Wait onRejected() called and verify the result
+            mService.waitOnDetectOrRejectCalled();
+            HotwordRejectedResult rejectedResult =
+                    mService.getHotwordServiceOnRejectedResult();
+
+            assertThat(rejectedResult).isEqualTo(Helper.REJECTED_RESULT);
+        } finally {
+            // Destroy detector
+            alwaysOnHotwordDetector.destroy();
+            // Drop identity adopted.
+            InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                    .dropShellPermissionIdentity();
+        }
+    }
+
+    @Test
+    public void testHotwordDetectionService_softwareDetector_onDetectFromExternalSource_rejected()
+            throws Throwable {
+        // Create SoftwareHotwordDetector
+        HotwordDetector softwareHotwordDetector = createSoftwareHotwordDetector(/* useOnFailure= */
+                false);
+        try {
+            adoptShellPermissionIdentityForHotword();
+
+            PersistableBundle options = Helper.createFakePersistableBundleData();
+            options.putBoolean(Utils.KEY_DETECTION_REJECTED, true);
+
+            mService.initDetectRejectLatch();
+            softwareHotwordDetector.startRecognition(Helper.createFakeAudioStream(),
+                    Helper.createFakeAudioFormat(), options);
+
+            // Wait onRejected() called and verify the result
+            mService.waitOnDetectOrRejectCalled();
+            HotwordRejectedResult rejectedResult =
+                    mService.getHotwordServiceOnRejectedResult();
+
+            assertThat(rejectedResult).isEqualTo(Helper.REJECTED_RESULT);
+        } finally {
+            // Destroy detector
+            softwareHotwordDetector.destroy();
+            // Drop identity adopted.
+            InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                    .dropShellPermissionIdentity();
+        }
+    }
+
+    @Test
     @RequiresDevice
     @CddTest(requirement = "9.8/H-1-2,H-1-8,H-1-14")
     public void testHotwordDetectionService_onDetectFromMic_success() throws Throwable {
