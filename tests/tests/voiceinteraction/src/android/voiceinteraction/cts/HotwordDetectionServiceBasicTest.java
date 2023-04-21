@@ -17,6 +17,7 @@
 package android.voiceinteraction.cts;
 
 import static android.content.pm.PackageManager.FEATURE_MICROPHONE;
+import static android.view.WindowInsets.Type.statusBars;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -55,6 +56,7 @@ import com.android.compatibility.common.util.RequiredFeatureRule;
 import com.android.compatibility.common.util.SystemUtil;
 
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -88,6 +90,12 @@ public final class HotwordDetectionServiceBasicTest
     private static boolean wasIndicatorEnabled = false;
     private static String sDefaultScreenOffTimeoutValue;
     private static boolean sIsAutomotive;
+    private TestVoiceInteractionServiceActivity mActivity;
+
+    @Before
+    public void setup() {
+        mActivityTestRule.getScenario().onActivity(activity -> mActivity = activity);
+    }
 
     @BeforeClass
     public static void enableIndicators() {
@@ -237,7 +245,11 @@ public final class HotwordDetectionServiceBasicTest
                 performAndGetDetectionResult(
                         Utils.HOTWORD_DETECTION_SERVICE_EXTERNAL_SOURCE_ONDETECT_TEST),
                 MainHotwordDetectionService.DETECTED_RESULT);
-        verifyMicrophoneChip(true);
+
+        // Only check for the microphone indicator if the status bar is visible.
+        if (mActivity.getWindow().getDecorView().getRootWindowInsets().isVisible(statusBars())) {
+            verifyMicrophoneChip(true);
+        }
     }
 
     @Test
