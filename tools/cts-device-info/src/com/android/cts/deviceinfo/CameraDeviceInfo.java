@@ -23,9 +23,10 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.params.BlackLevelPattern;
 import android.hardware.camera2.params.ColorSpaceTransform;
-import android.hardware.camera2.params.StreamConfigurationMap;
+import android.hardware.camera2.params.DynamicRangeProfiles;
 import android.hardware.camera2.params.MultiResolutionStreamConfigurationMap;
 import android.hardware.camera2.params.MultiResolutionStreamInfo;
+import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.CamcorderProfile;
 import android.os.Build;
 import android.util.Log;
@@ -289,6 +290,18 @@ public final class CameraDeviceInfo extends DeviceInfo {
             mStore.endGroup();
         }
 
+        private void storeDynamicRangeProfiles(
+                DynamicRangeProfiles profiles, String protoName) throws Exception {
+            if (protoName == null) {
+                mStore.startGroup();
+            } else {
+                mStore.startGroup(protoName);
+            }
+            mStore.addArrayResult("dynamic_range_profiles",
+                    profiles.getSupportedProfiles().stream().mapToLong(Long::longValue).toArray());
+            mStore.endGroup();
+        }
+
         private void storeBlackLevelPattern(
                 BlackLevelPattern pat, String protoName) throws Exception {
             if (protoName == null) {
@@ -428,6 +441,8 @@ public final class CameraDeviceInfo extends DeviceInfo {
             } else if (keyType == MultiResolutionStreamConfigurationMap.class) {
                 storeMultiResStreamConfigurationMap(
                         (MultiResolutionStreamConfigurationMap) keyValue, protoName);
+            } else if (keyType == DynamicRangeProfiles.class) {
+                storeDynamicRangeProfiles((DynamicRangeProfiles) keyValue, protoName);
             } else {
                 Log.w(TAG, "Storing unsupported key type: " + keyType +
                         " for keyName: " + keyName);
