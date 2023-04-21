@@ -46,6 +46,7 @@ import android.graphics.Rect;
 import android.hardware.display.DisplayManager;
 import android.platform.test.annotations.Presubmit;
 import android.server.wm.IgnoreOrientationRequestSession;
+import android.server.wm.SetRequestedOrientationRule;
 import android.server.wm.jetpack.utils.TestActivity;
 import android.server.wm.jetpack.utils.TestConfigChangeHandlingActivity;
 import android.server.wm.jetpack.utils.TestValueCountJavaConsumer;
@@ -72,6 +73,7 @@ import com.google.common.collect.BoundType;
 import com.google.common.collect.Range;
 
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -100,6 +102,12 @@ public class ExtensionWindowLayoutComponentTest extends WindowManagerJetpackTest
     @Rule
     public final WindowExtensionTestRule mWindowExtensionTestRule =
             new WindowExtensionTestRule(WindowLayoutComponent.class);
+
+    // To disable special handling which prevents setRequestedOrientation from changing the screen
+    // rotation for large screen devices.
+    @ClassRule
+    public static final SetRequestedOrientationRule sSetRequestedOrientationRule =
+            new SetRequestedOrientationRule();
 
     @Before
     @Override
