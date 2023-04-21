@@ -21,6 +21,7 @@ import static com.android.compatibility.common.util.SystemUtil.runWithShellPermi
 
 import static com.google.common.truth.Truth.assertWithMessage;
 
+import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
 import android.Manifest;
@@ -45,7 +46,6 @@ import com.android.compatibility.common.util.SettingsStateChangerRule;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -172,7 +172,6 @@ public final class RecognitionServiceMicIndicatorTest {
         testVoiceRecognitionServiceBlameCallingApp(/* trustVoiceService */ false);
     }
 
-    @Ignore("b/266789512")
     @Test
     public void testTrustedRecognitionServiceCanBlameCallingApp() throws Throwable {
         // We treat trusted if the current voice recognizer is also a preinstalled app. This is a
@@ -180,6 +179,8 @@ public final class RecognitionServiceMicIndicatorTest {
         boolean hasPreInstalledRecognizer = hasPreInstalledRecognizer(
                 getComponentPackageNameFromString(mOriginalVoiceRecognizer));
         assumeTrue("No preinstalled recognizer.", hasPreInstalledRecognizer);
+        // TODO(b/279146568): remove the next line after test is fixed for auto
+        assumeFalse(isCar());
 
         // verify that the trusted app can blame the calling app mic access
         testVoiceRecognitionServiceBlameCallingApp(/* trustVoiceService */ true);
