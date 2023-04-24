@@ -18,10 +18,10 @@ package android.server.wm;
 
 import static android.server.wm.CtsWindowInfoUtils.tapOnWindow;
 import static android.server.wm.CtsWindowInfoUtils.tapOnWindowCenter;
-import static android.server.wm.CtsWindowInfoUtils.waitForWindowVisible;
 import static android.server.wm.CtsWindowInfoUtils.waitForWindowFocus;
 import static android.server.wm.CtsWindowInfoUtils.waitForWindowInfo;
 import static android.server.wm.CtsWindowInfoUtils.waitForWindowInfos;
+import static android.server.wm.CtsWindowInfoUtils.waitForWindowVisible;
 import static android.server.wm.MockImeHelper.createManagedMockImeSession;
 import static android.view.SurfaceControlViewHost.SurfacePackage;
 import static android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
@@ -1278,6 +1278,9 @@ public class SurfaceControlViewHostTests extends ActivityManagerTestBase impleme
             Rect parentBounds = null;
             Rect popupBounds = null;
             for (WindowInfo windowInfo : windowInfos) {
+                if (!windowInfo.isVisible) {
+                    continue;
+                }
                 if (windowInfo.windowToken == parentWindowToken) {
                     parentBounds = windowInfo.bounds;
                 } else if (windowInfo.windowToken == popupWindowToken) {
