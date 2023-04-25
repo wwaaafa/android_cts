@@ -44,7 +44,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -57,8 +56,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 /**
  * Various integration tests for dex to oat compilation, with or without profiles.
@@ -155,7 +152,8 @@ public class AdbRootDependentCompilationTest extends BaseHostJUnit4Test {
         // Copy the profile to the reference location so that the bg-dexopt
         // can actually do work if it's configured to speed-profile.
         for (ProfileLocation profileLocation : EnumSet.of(ProfileLocation.REF)) {
-            writeSystemManagedProfile("/primary.prof.txt", profileLocation, APPLICATION_PACKAGE);
+            writeSystemManagedProfile(
+                    "/CtsCompilationApp.prof", profileLocation, APPLICATION_PACKAGE);
         }
 
         // Usually "speed-profile"
@@ -230,8 +228,8 @@ public class AdbRootDependentCompilationTest extends BaseHostJUnit4Test {
     public void testCompile_usedByOtherApps() throws Exception {
         mAppUsedByOtherAppApkFile = copyResourceToFile(
                 "/AppUsedByOtherApp.apk", File.createTempFile("AppUsedByOtherApp", ".apk"));
-        mAppUsedByOtherAppDmFile = constructDmFile(
-                "/app_used_by_other_app_1.prof.txt", mAppUsedByOtherAppApkFile);
+        mAppUsedByOtherAppDmFile = copyResourceToFile("/AppUsedByOtherApp_1.dm",
+                new File(mAppUsedByOtherAppApkFile.getAbsolutePath().replaceAll("\\.apk$", ".dm")));
         // We cannot use `mDevice.installPackage` here because it doesn't support DM file.
         String result = mDevice.executeAdbCommand("install-multiple", "--abi", getAbi().getName(),
                 mAppUsedByOtherAppApkFile.getAbsolutePath(),
@@ -254,8 +252,8 @@ public class AdbRootDependentCompilationTest extends BaseHostJUnit4Test {
 
         // Simulate that the app profile has changed.
         resetProfileState(APP_USED_BY_OTHER_APP_PACKAGE);
-        writeSystemManagedProfile("/app_used_by_other_app_2.prof.txt", ProfileLocation.REF,
-                APP_USED_BY_OTHER_APP_PACKAGE);
+        writeSystemManagedProfile(
+                "/AppUsedByOtherApp_2.prof", ProfileLocation.REF, APP_USED_BY_OTHER_APP_PACKAGE);
 
         executeCompile(APP_USED_BY_OTHER_APP_PACKAGE, "-m", "speed-profile", "-f");
         // Right now, the app hasn't been used by any other app yet. It should be compiled with the
@@ -301,7 +299,8 @@ public class AdbRootDependentCompilationTest extends BaseHostJUnit4Test {
                 .isGreaterThan(0);
 
         for (ProfileLocation profileLocation : profileLocations) {
-            writeSystemManagedProfile("/primary.prof.txt", profileLocation, APPLICATION_PACKAGE);
+            writeSystemManagedProfile(
+                    "/CtsCompilationApp.prof", profileLocation, APPLICATION_PACKAGE);
         }
         executeCompile(APPLICATION_PACKAGE, "-m", "speed-profile");
 
@@ -355,77 +354,15 @@ public class AdbRootDependentCompilationTest extends BaseHostJUnit4Test {
         // In format group:user so we can directly pass it to chown.
         String owner = assertCommandOutputsLines(1, "stat", "-c", "%U:%g", targetDir)[0];
 
-        String dexLocation = assertCommandOutputsLines(1, "pm", "path", packageName)[0];
-        dexLocation = dexLocation.replace("package:", "");
-        assertTrue("Failed to find APK " + dexLocation, mDevice.doesFileExist(dexLocation));
-
-        writeProfile(profileResourceName, dexLocation, targetPath);
-
-        // Verify that the file was written successfully.
-        assertTrue("Failed to create profile file", mDevice.doesFileExist(targetPath));
-        String result = assertCommandOutputsLines(1, "stat", "-c", "%s", targetPath)[0];
-        assertWithMessage("profile " + targetPath + " is " + Integer.parseInt(result) + " bytes")
-                .that(Integer.parseInt(result)).isGreaterThan(0);
+        File tempFile =
+                copyResourceToFile(profileResourceName, File.createTempFile("profile", ".prof"));
+        tempFile.deleteOnExit();
+        mDevice.pushFile(tempFile, targetPath);
 
         // System managed profiles are by default private, unless created from an external profile
         // such as a cloud profile.
         assertCommandSucceeds("chmod", "640", targetPath);
         assertCommandSucceeds("chown", owner, targetPath);
-    }
-
-    private File constructDmFile(String profileResourceName, File apkFile) throws Exception {
-        File binaryProfileFile = File.createTempFile("primary", ".prof");
-        String binaryProfileFileOnDevice = TEMP_DIR + "/primary.prof";
-        // When constructing a DM file, we don't have the real dex location because the app is not
-        // yet installed. We can use an arbitrary location. This is okay because installd will
-        // rewrite the dex location in the profile when the app is being installed.
-        String dexLocation = TEMP_DIR + "/app.apk";
-
-        try {
-            assertTrue(mDevice.pushFile(apkFile, dexLocation));
-            writeProfile(profileResourceName, dexLocation, binaryProfileFileOnDevice);
-            assertTrue(mDevice.pullFile(binaryProfileFileOnDevice, binaryProfileFile));
-
-            // Construct the DM file from the binary profile file. The stem of the APK file and the
-            // DM file must match.
-            File dmFile = new File(apkFile.getAbsolutePath().replaceAll("\\.apk$", ".dm"));
-            try (ZipOutputStream outputStream =
-                            new ZipOutputStream(new FileOutputStream(dmFile));
-                    InputStream inputStream = new FileInputStream(binaryProfileFile)) {
-                outputStream.putNextEntry(new ZipEntry("primary.prof"));
-                ByteStreams.copy(inputStream, outputStream);
-                outputStream.closeEntry();
-            }
-            return dmFile;
-        } finally {
-            mDevice.executeShellV2Command("rm " + binaryProfileFileOnDevice);
-            mDevice.executeShellV2Command("rm " + dexLocation);
-            FileUtil.deleteFile(binaryProfileFile);
-        }
-    }
-
-    /**
-     * Writes the given profile in binary format on the device.
-     */
-    private void writeProfile(String profileResourceName, String dexLocation, String pathOnDevice)
-            throws Exception {
-        File textProfileFile = File.createTempFile("primary", ".prof.txt");
-        String textProfileFileOnDevice = TEMP_DIR + "/primary.prof.txt";
-
-        try {
-            copyResourceToFile(profileResourceName, textProfileFile);
-            assertTrue(mDevice.pushFile(textProfileFile, textProfileFileOnDevice));
-
-            assertCommandSucceeds(
-                    "profman",
-                    "--create-profile-from=" + textProfileFileOnDevice,
-                    "--apk=" + dexLocation,
-                    "--dex-location=" + dexLocation,
-                    "--reference-profile-file=" + pathOnDevice);
-        } finally {
-            mDevice.executeShellV2Command("rm " + textProfileFileOnDevice);
-            FileUtil.deleteFile(textProfileFile);
-        }
     }
 
     /**
