@@ -1931,20 +1931,30 @@ public class VehiclePropertyVerifier<T> {
         private final int mGetPropertyResultsCount;
         private final Object mLock = new Object();
         @GuardedBy("mLock")
-        private List<GetPropertyResult<?>> mGetPropertyResults;
+        private final List<GetPropertyResult<?>> mGetPropertyResults = new ArrayList<>();
+        @GuardedBy("mLock")
+        private final List<PropertyAsyncError> mPropertyAsyncErrors = new ArrayList<>();
 
-        public List<GetPropertyResult<?>> waitForGetPropertyResults() {
+        public void waitForResults() {
             try {
                 assertWithMessage("Received " + (mGetPropertyResultsCount
                         - mCountDownLatch.getCount()) + " onSuccess(s), expected "
                         + mGetPropertyResultsCount + " onSuccess(s)").that(mCountDownLatch.await(
-                                5, TimeUnit.SECONDS)).isTrue();
+                        5, TimeUnit.SECONDS)).isTrue();
             } catch (InterruptedException e) {
-                assertWithMessage("Waiting for onSuccess threw an exception: " + e
-                        ).fail();
+                assertWithMessage("Waiting for onSuccess threw an exception: " + e).fail();
             }
+        }
+        public List<GetPropertyResult<?>> getGetPropertyResults() {
+            synchronized (mLock) {
+                return mGetPropertyResults;
+            }
+        }
 
-            return mGetPropertyResults;
+        public List<PropertyAsyncError> getPropertyAsyncErrors() {
+            synchronized (mLock) {
+                return mPropertyAsyncErrors;
+            }
         }
 
         @Override
@@ -1956,16 +1966,15 @@ public class VehiclePropertyVerifier<T> {
         }
 
         @Override
-        public void onFailure(PropertyAsyncError getPropertyError) {
-            assertWithMessage("PropertyAsyncError with requestId "
-                    + getPropertyError.getRequestId() + " returned with async error code: "
-                    + getPropertyError.getErrorCode() + " and vendor error code: "
-                    + getPropertyError.getVendorErrorCode()).fail();
+        public void onFailure(PropertyAsyncError propertyAsyncError) {
+            synchronized (mLock) {
+                mPropertyAsyncErrors.add(propertyAsyncError);
+                mCountDownLatch.countDown();
+            }
         }
 
         CarPropertyCallback(int getPropertyResultsCount) {
             mCountDownLatch = new CountDownLatch(getPropertyResultsCount);
-            mGetPropertyResults = new ArrayList<>();
             mGetPropertyResultsCount = getPropertyResultsCount;
         }
     }
@@ -1991,16 +2000,15 @@ public class VehiclePropertyVerifier<T> {
                 requestIdToAreaIdMap.size());
         mCarPropertyManager.getPropertiesAsync(getPropertyRequests, /* cancellationSignal: */ null,
                 /* callbackExecutor: */ null, carPropertyCallback);
-        List<GetPropertyResult<?>> getPropertyResults =
-                carPropertyCallback.waitForGetPropertyResults();
+        carPropertyCallback.waitForResults();
 
-        for (GetPropertyResult<?> getPropertyResult : getPropertyResults) {
+        for (GetPropertyResult<?> getPropertyResult : carPropertyCallback.getGetPropertyResults()) {
             int requestId = getPropertyResult.getRequestId();
             int propertyId = getPropertyResult.getPropertyId();
             if (requestIdToAreaIdMap.indexOfKey(requestId) < 0) {
-                assertWithMessage("getPropertiesAsync received unknown requestId "
-                        + requestId + " with property ID "
-                        + VehiclePropertyIds.toString(propertyId)).fail();
+                assertWithMessage(
+                        "getPropertiesAsync received GetPropertyResult with unknown requestId: "
+                                + getPropertyResult).fail();
             }
             Integer expectedAreaId = requestIdToAreaIdMap.get(requestId);
             verifyCarPropertyValue(propertyId, getPropertyResult.getAreaId(),
@@ -2011,6 +2019,17 @@ public class VehiclePropertyVerifier<T> {
                 verifyHvacTemperatureValueSuggestionResponse(
                         (Float[]) getPropertyResult.getValue());
             }
+        }
+
+        for (PropertyAsyncError propertyAsyncError : carPropertyCallback.getPropertyAsyncErrors()) {
+            int requestId = propertyAsyncError.getRequestId();
+            if (requestIdToAreaIdMap.indexOfKey(requestId) < 0) {
+                assertWithMessage(
+                        "getPropertiesAsync received PropertyAsyncError with unknown requestId: "
+                                + propertyAsyncError).fail();
+            }
+            assertWithMessage("Received PropertyAsyncError when testing getPropertiesAsync: "
+                    + propertyAsyncError).fail();
         }
     }
 
