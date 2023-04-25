@@ -17,16 +17,14 @@
 package android.compilation.cts;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth.assertWithMessage;
 
 import android.compilation.cts.annotation.CtsTestCase;
 
-import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.testtype.DeviceJUnit4ClassRunner;
 import com.android.tradefed.testtype.junit4.BaseHostJUnit4Test;
 import com.android.tradefed.testtype.junit4.DeviceTestRunOptions;
-import com.android.tradefed.util.CommandResult;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -38,6 +36,13 @@ import org.junit.runner.RunWith;
 public class CompilationTest extends BaseHostJUnit4Test {
     private static final String APPLICATION_PACKAGE = "android.compilation.cts.statuscheckerapp";
 
+    private Utils mUtils;
+
+    @Before
+    public void setUp() throws Exception {
+        mUtils = new Utils(getTestInformation());
+    }
+
     @Test
     public void testCompile() throws Exception {
         var options =
@@ -47,7 +52,7 @@ public class CompilationTest extends BaseHostJUnit4Test {
                         .setTestMethodName("checkStatus")
                         .setDisableHiddenApiCheck(true);
 
-        assertCommandSucceeds("pm compile -m speed -f " + APPLICATION_PACKAGE);
+        mUtils.assertCommandSucceeds("pm compile -m speed -f " + APPLICATION_PACKAGE);
         options.addInstrumentationArg("compiler-filter", "speed")
                 .addInstrumentationArg("compilation-reason", "cmdline")
                 .addInstrumentationArg("is-verified", "true")
@@ -55,7 +60,7 @@ public class CompilationTest extends BaseHostJUnit4Test {
                 .addInstrumentationArg("is-fully-compiled", "true");
         assertThat(runDeviceTests(options)).isTrue();
 
-        assertCommandSucceeds("pm compile -m verify -f " + APPLICATION_PACKAGE);
+        mUtils.assertCommandSucceeds("pm compile -m verify -f " + APPLICATION_PACKAGE);
         options.addInstrumentationArg("compiler-filter", "verify")
                 .addInstrumentationArg("compilation-reason", "cmdline")
                 .addInstrumentationArg("is-verified", "true")
@@ -63,17 +68,12 @@ public class CompilationTest extends BaseHostJUnit4Test {
                 .addInstrumentationArg("is-fully-compiled", "false");
         assertThat(runDeviceTests(options)).isTrue();
 
-        assertCommandSucceeds("pm delete-dexopt " + APPLICATION_PACKAGE);
+        mUtils.assertCommandSucceeds("pm delete-dexopt " + APPLICATION_PACKAGE);
         options.addInstrumentationArg("compiler-filter", "run-from-apk")
                 .addInstrumentationArg("compilation-reason", "unknown")
                 .addInstrumentationArg("is-verified", "false")
                 .addInstrumentationArg("is-optimized", "false")
                 .addInstrumentationArg("is-fully-compiled", "false");
         assertThat(runDeviceTests(options)).isTrue();
-    }
-
-    private void assertCommandSucceeds(String command) throws DeviceNotAvailableException {
-        CommandResult result = getDevice().executeShellV2Command(command);
-        assertWithMessage(result.toString()).that(result.getExitCode()).isEqualTo(0);
     }
 }
