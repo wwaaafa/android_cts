@@ -81,7 +81,10 @@ public class ResumeOnRebootHostTest extends BaseHostJUnit4Test {
     private boolean mSupportsMultiUser;
     private String mOriginalVerifyAdbInstallerSetting = null;
 
-    @Rule
+    @Rule(order = 0)
+    public BootCountTrackerRule mBootCountTrackingRule = new BootCountTrackerRule(this, 0);
+
+    @Rule(order = 1)
     public NormalizeScreenStateRule mNoDozeRule = new NormalizeScreenStateRule(this);
 
     @Before
@@ -467,6 +470,7 @@ public class ResumeOnRebootHostTest extends BaseHostJUnit4Test {
 
     private void deviceRebootAndApply(String clientName) throws Exception {
         verifyLskfCaptured(clientName);
+        mBootCountTrackingRule.increaseExpectedBootCountDifference(1);
 
         String res = executeShellCommandWithLogging(
                 "cmd recovery reboot-and-apply " + clientName + " cts-test");
