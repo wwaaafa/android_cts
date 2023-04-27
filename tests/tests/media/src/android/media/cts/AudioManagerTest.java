@@ -123,6 +123,7 @@ public class AudioManagerTest extends InstrumentationTestCase {
     private NotificationManager mNm;
     private boolean mHasVibrator;
     private boolean mUseFixedVolume;
+    private boolean mUseExternalVolumeController;
     private boolean mIsTelevision;
     private boolean mIsSingleVolume;
     private boolean mSkipRingerTests;
@@ -162,6 +163,11 @@ public class AudioManagerTest extends InstrumentationTestCase {
         mHasVibrator = (vibrator != null) && vibrator.hasVibrator();
         mUseFixedVolume = mContext.getResources().getBoolean(
                 Resources.getSystem().getIdentifier("config_useFixedVolume", "bool", "android"));
+        // Currently, only Automotive relying on Core Audio for volume management will rely on
+        // volume group aliases. These products use their own external volume controller.
+        mUseExternalVolumeController = mContext.getResources().getBoolean(
+                Resources.getSystem().getIdentifier(
+                        "config_handleVolumeAliasesUsingVolumeGroups", "bool", "android"));
         PackageManager packageManager = mContext.getPackageManager();
         mIsTelevision = packageManager != null
                 && (packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
@@ -700,11 +706,15 @@ public class AudioManagerTest extends InstrumentationTestCase {
                 STREAM_RING};
 
         mAudioManager.adjustVolume(ADJUST_RAISE, 0);
-        // adjusting volume is asynchronous, wait before other volume checks
-        Thread.sleep(ASYNC_TIMING_TOLERANCE_MS);
-        mAudioManager.adjustSuggestedStreamVolume(
-                ADJUST_LOWER, USE_DEFAULT_STREAM_TYPE, 0);
-        Thread.sleep(ASYNC_TIMING_TOLERANCE_MS);
+        // Skip this test if using external Volume Controller as adjustement will be dispatched
+        // to external volume controller without the stream type.
+        if (!mUseExternalVolumeController) {
+            // adjusting volume is asynchronous, wait before other volume checks
+            Thread.sleep(ASYNC_TIMING_TOLERANCE_MS);
+            mAudioManager.adjustSuggestedStreamVolume(
+                    ADJUST_LOWER, USE_DEFAULT_STREAM_TYPE, 0);
+            Thread.sleep(ASYNC_TIMING_TOLERANCE_MS);
+        }
         int maxMusicVolume = mAudioManager.getStreamMaxVolume(STREAM_MUSIC);
 
         for (int stream : streams) {
@@ -752,10 +762,14 @@ public class AudioManagerTest extends InstrumentationTestCase {
             mAudioManager.adjustStreamVolume(stream, ADJUST_RAISE, 0);
             assertEquals(maxVolume, mAudioManager.getStreamVolume(stream));
 
-            volumeDelta = getVolumeDelta(mAudioManager.getStreamVolume(stream));
-            mAudioManager.adjustSuggestedStreamVolume(ADJUST_LOWER, stream, 0);
-            assertStreamVolumeEquals(stream, maxVolume - volumeDelta,
-                    "Vol ADJUST_LOWER suggested stream:" + stream + " maxVol:" + maxVolume);
+            // Skip this test if using external Volume Controller as adjustement will be dispatched
+            // to external volume controller without the stream type.
+            if (!mUseExternalVolumeController) {
+                volumeDelta = getVolumeDelta(mAudioManager.getStreamVolume(stream));
+                mAudioManager.adjustSuggestedStreamVolume(ADJUST_LOWER, stream, 0);
+                assertStreamVolumeEquals(stream, maxVolume - volumeDelta,
+                        "Vol ADJUST_LOWER suggested stream:" + stream + " maxVol:" + maxVolume);
+            }
 
             // volume lower
             mAudioManager.setStreamVolume(stream, maxVolume, 0);
@@ -920,6 +934,10 @@ public class AudioManagerTest extends InstrumentationTestCase {
                 mContext.getPackageName(), getInstrumentation(), false);
         // Verify streams cannot be unmuted without policy access.
         for (int stream : streams) {
+            int minVolume = mAudioManager.getStreamMinVolume(stream);
+            if (minVolume != 0) {
+                continue;
+            }
             try {
                 mAudioManager.adjustStreamVolume(stream, AudioManager.ADJUST_UNMUTE, 0);
                 assertEquals("Apps without Notification policy access can't change ringer mode",
