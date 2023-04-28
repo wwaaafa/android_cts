@@ -16,15 +16,26 @@
 
 package android.bluetooth.cts;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Parcel;
 import android.os.ParcelUuid;
-import android.test.AndroidTestCase;
-import android.test.suitebuilder.annotation.SmallTest;
+
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.filters.SmallTest;
+import androidx.test.platform.app.InstrumentationRegistry;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * Unit test cases for Bluetooth LE scan filters.
@@ -32,7 +43,8 @@ import android.test.suitebuilder.annotation.SmallTest;
  * To run this test, use adb shell am instrument -e class 'android.bluetooth.ScanFilterTest' -w
  * 'com.android.bluetooth.tests/android.bluetooth.BluetoothTestRunner'
  */
-public class ScanFilterTest extends AndroidTestCase {
+@RunWith(AndroidJUnit4.class)
+public class ScanFilterTest {
 
     private static final String LOCAL_NAME = "Ped";
     private static final String DEVICE_MAC = "01:02:03:04:05:AB";
@@ -41,11 +53,14 @@ public class ScanFilterTest extends AndroidTestCase {
     private static final String UUID3 = "0000110c-0000-1000-8000-00805f9b34fb";
     private static final int AD_TYPE_RESOLVABLE_SET_IDENTIFIER = 0x2e;
 
+    private Context mContext;
     private ScanResult mScanResult;
     private ScanFilter.Builder mFilterBuilder;
 
-    @Override
-    protected void setUp() {
+    @Before
+    public void setUp() {
+        mContext = InstrumentationRegistry.getInstrumentation().getContext();
+
         byte[] scanRecord = new byte[] {
                 0x02, 0x01, 0x1a, // advertising flags
                 0x05, 0x02, 0x0b, 0x11, 0x0a, 0x11, // 16 bit service uuids
@@ -74,6 +89,7 @@ public class ScanFilterTest extends AndroidTestCase {
     }
 
     @SmallTest
+    @Test
     public void testsetNameFilter() {
         if (mFilterBuilder == null) return;
 
@@ -86,6 +102,7 @@ public class ScanFilterTest extends AndroidTestCase {
     }
 
     @SmallTest
+    @Test
     public void testDeviceAddressFilter() {
         if (mFilterBuilder == null) return;
 
@@ -98,6 +115,7 @@ public class ScanFilterTest extends AndroidTestCase {
     }
 
     @SmallTest
+    @Test
     public void testsetServiceUuidFilter() {
         if (mFilterBuilder == null) return;
 
@@ -121,6 +139,7 @@ public class ScanFilterTest extends AndroidTestCase {
     }
 
     @SmallTest
+    @Test
     public void testsetServiceSolicitationUuidFilter() {
         if (mFilterBuilder == null) return;
 
@@ -143,6 +162,7 @@ public class ScanFilterTest extends AndroidTestCase {
     }
 
     @SmallTest
+    @Test
     public void testsetServiceDataFilter() {
         if (mFilterBuilder == null) return;
 
@@ -176,6 +196,7 @@ public class ScanFilterTest extends AndroidTestCase {
     }
 
     @SmallTest
+    @Test
     public void testManufacturerSpecificData() {
         if (mFilterBuilder == null) return;
 
@@ -213,6 +234,7 @@ public class ScanFilterTest extends AndroidTestCase {
     }
 
     @SmallTest
+    @Test
     public void testSetAdvertisingDataTypeWithData() {
         if (mFilterBuilder == null) return;
         byte[] adData = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
@@ -233,6 +255,7 @@ public class ScanFilterTest extends AndroidTestCase {
     }
 
     @SmallTest
+    @Test
     public void testReadWriteParcel() {
         if (mFilterBuilder == null) return;
 
@@ -288,6 +311,7 @@ public class ScanFilterTest extends AndroidTestCase {
     }
 
     @SmallTest
+    @Test
     public void testDescribeContents() {
         final int expected = 0;
         assertEquals(expected, new ScanFilter.Builder().build().describeContents());
