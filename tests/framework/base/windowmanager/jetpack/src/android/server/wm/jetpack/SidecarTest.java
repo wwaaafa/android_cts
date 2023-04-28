@@ -47,11 +47,12 @@ import android.content.pm.ActivityInfo;
 import android.graphics.Rect;
 import android.os.IBinder;
 import android.platform.test.annotations.Presubmit;
-import android.server.wm.jetpack.utils.WindowManagerJetpackTestBase;
 import android.server.wm.jetpack.utils.SidecarCallbackCounter;
 import android.server.wm.jetpack.utils.TestActivity;
 import android.server.wm.jetpack.utils.TestConfigChangeHandlingActivity;
 import android.server.wm.jetpack.utils.TestGetWindowLayoutInfoActivity;
+import android.server.wm.jetpack.utils.WindowManagerJetpackTestBase;
+import android.server.wm.SetRequestedOrientationRule;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.FlakyTest;
@@ -66,6 +67,7 @@ import com.google.common.collect.BoundType;
 import com.google.common.collect.Range;
 
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -87,12 +89,18 @@ public class SidecarTest extends WindowManagerJetpackTestBase {
     private SidecarInterface mSidecarInterface;
     private IBinder mWindowToken;
 
+    // To disable special handling which prevents setRequestedOrientation from changing the screen
+    // rotation for large screen devices.
+    @ClassRule
+    public static final SetRequestedOrientationRule sSetRequestedOrientationRule =
+            new SetRequestedOrientationRule();
+
     @Before
     @Override
     public void setUp() {
         super.setUp();
         assumeSidecarSupportedDevice(mContext);
-        mActivity = (TestActivity) startActivityNewTask(TestActivity.class);
+        mActivity = startFullScreenActivityNewTask(TestActivity.class);
         mSidecarInterface = getSidecarInterface(mActivity);
         assertThat(mSidecarInterface).isNotNull();
         mWindowToken = getActivityWindowToken(mActivity);
