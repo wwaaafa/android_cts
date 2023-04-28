@@ -18,23 +18,34 @@ package android.bluetooth.cts;
 
 import static android.bluetooth.cts.TestUtils.assertArrayEquals;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import android.bluetooth.OobData;
+import android.content.Context;
 import android.content.pm.PackageManager;
-import android.test.AndroidTestCase;
 
-import java.util.Arrays;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
 
-public class OobDataTest extends AndroidTestCase {
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(AndroidJUnit4.class)
+public class OobDataTest {
+
+    private Context mContext;
     private boolean mHasBluetooth;
 
-    @Override
+    @Before
     public void setUp() throws Exception {
-        super.setUp();
-        mHasBluetooth = getContext().getPackageManager().hasSystemFeature(
+        mContext = InstrumentationRegistry.getInstrumentation().getContext();
+        mHasBluetooth = mContext.getPackageManager().hasSystemFeature(
                 PackageManager.FEATURE_BLUETOOTH);
     }
 
+    @Test
     public void testClassicBuilder() {
         byte[] defaultRandomizerHash = new byte[OobData.RANDOMIZER_OCTETS];
         byte[] defaultClassOfDevice = new byte[OobData.CLASS_OF_DEVICE_OCTETS];
@@ -105,6 +116,7 @@ public class OobDataTest extends AndroidTestCase {
         assertArrayEquals(deviceName, classicData.getDeviceName());
     }
 
+    @Test
     public void testLEBuilder() {
         byte[] defaultRandomizerHash = new byte[OobData.RANDOMIZER_OCTETS];
         byte[] defaultClassOfDevice = new byte[OobData.CLASS_OF_DEVICE_OCTETS];
