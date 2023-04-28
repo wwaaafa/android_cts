@@ -2951,9 +2951,12 @@ public class WifiManagerTest extends WifiJUnit3TestBase {
     public void testSoftApConfigurationGetPersistentRandomizedMacAddress() throws Exception {
         SoftApConfiguration currentConfig = ShellIdentityUtils.invokeWithShellPermissions(
                 mWifiManager::getSoftApConfiguration);
+        final String ssid = currentConfig.getSsid().length() <= 28
+                ? currentConfig.getSsid() + "test"
+                : "AndroidTest";
         ShellIdentityUtils.invokeWithShellPermissions(
                 () -> mWifiManager.setSoftApConfiguration(new SoftApConfiguration.Builder()
-                .setSsid(currentConfig.getSsid() + "test").build()));
+                .setSsid(ssid).build()));
         SoftApConfiguration changedSsidConfig = ShellIdentityUtils.invokeWithShellPermissions(
                 mWifiManager::getSoftApConfiguration);
         assertNotEquals(currentConfig.getPersistentRandomizedMacAddress(),
@@ -4225,10 +4228,10 @@ public class WifiManagerTest extends WifiJUnit3TestBase {
         TestExecutor executor = new TestExecutor();
         UiAutomation uiAutomation = InstrumentationRegistry.getInstrumentation().getUiAutomation();
         try {
-            uiAutomation.adoptShellPermissionIdentity();
-            turnOffWifiAndTetheredHotspotIfEnabled();
             // Run with scanning disable to make sure there is no active mode.
             runWithScanning(() -> {
+                uiAutomation.adoptShellPermissionIdentity();
+                turnOffWifiAndTetheredHotspotIfEnabled();
                 mWifiManager.registerActiveCountryCodeChangedCallback(
                         executor, testCountryCodeChangedCallback);
 
@@ -6116,11 +6119,8 @@ public class WifiManagerTest extends WifiJUnit3TestBase {
 
             // Disable and re-enable Wifi to avoid reconnect to the secondary candidate
             mWifiManager.setWifiEnabled(false);
-            PollingCheck.check("Wifi not disabled", TEST_WAIT_DURATION_MS,
-                    () -> !mWifiManager.isWifiEnabled());
             mWifiManager.setWifiEnabled(true);
-            PollingCheck.check("Wifi not enabled", TEST_WAIT_DURATION_MS,
-                    () -> mWifiManager.isWifiEnabled());
+            waitForDisconnection();
             // Now trigger scan and ensure that the device does not connect to any networks.
             mWifiManager.startScan();
             ensureNotConnected();

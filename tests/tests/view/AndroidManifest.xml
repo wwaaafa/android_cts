@@ -215,7 +215,7 @@
              android:label="PixelCopyViewProducerDialogActivity"
              android:screenOrientation="portrait"
              android:rotationAnimation="jumpcut"
-             android:theme="@style/PixelCopyViewProducerDialogActivityTheme"
+             android:theme="@android:style/Theme.Material.Dialog.NoActionBar"
              android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"/>
 
         <activity android:name="android.view.cts.FocusFinderCtsActivity"
@@ -318,16 +318,6 @@
         <activity android:name="android.view.cts.ContentPaneCtsActivity"
              android:screenOrientation="locked"
              android:label="ContentPaneCtsActivity"
-             android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.FRAMEWORK_INSTRUMENTATION_TEST"/>
-            </intent-filter>
-        </activity>
-
-        <activity android:name="android.view.cts.LongPressBackActivity"
-             android:screenOrientation="locked"
-             android:label="LongPressBackActivity"
              android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

@@ -405,6 +405,19 @@ public class TvInteractiveAppServiceTest {
         public void onSignalStrengthUpdated(String inputId, int strength) {
             super.onSignalStrengthUpdated(inputId, strength);
         }
+
+        public void onCueingMessageAvailability(String inputId, boolean available) {
+            super.onCueingMessageAvailability(inputId, available);
+        }
+
+        public void onTimeShiftMode(String inputId, int mode) {
+            super.onTimeShiftMode(inputId, mode);
+        }
+
+        public void onAvailableSpeeds(String inputId, float[] speeds) {
+            super.onAvailableSpeeds(inputId, speeds);
+        }
+
         public void onTuned(String inputId, Uri uri) {
             super.onTuned(inputId, uri);
         }
@@ -579,6 +592,9 @@ public class TvInteractiveAppServiceTest {
                 mTvView.reset();
             }
         });
+        if (mTvRecordingClient != null) {
+            mTvRecordingClient.release();
+        }
         mInstrumentation.waitForIdleSync();
         mActivity = null;
         mActivityScenario.close();
@@ -591,7 +607,43 @@ public class TvInteractiveAppServiceTest {
         PollingCheck.waitFor(TIME_OUT_MS, () -> mSession.mRecordingTunedCount > 0);
         assertThat(mSession.mTunedUri).isEqualTo(CHANNEL_0);
         assertThat(mSession.mRecordingId).isEqualTo("recording_id1");
-        // TODO: more recording callback tests
+    }
+
+    @Test
+    public void testRecordingConnectionFailed() throws Throwable {
+        assertNotNull(mSession);
+        mSession.resetValues();
+        mTvRecordingClient = new TvRecordingClient(
+                mActivity, "tag", mRecordingCallback, new Handler(Looper.getMainLooper()));
+        mTvRecordingClient.setTvInteractiveAppView(mTvIAppView, "recording_id2");
+        String invalidInputId = "___invalid_input_id___";
+        mTvRecordingClient.tune(invalidInputId, CHANNEL_0);
+
+        PollingCheck.waitFor(TIME_OUT_MS, () -> mSession.mRecordingConnectionFailedCount > 0);
+        assertThat(mSession.mRecordingConnectionFailedCount).isEqualTo(1);
+        assertThat(mSession.mInputId).isEqualTo(invalidInputId);
+        assertThat(mSession.mRecordingId).isEqualTo("recording_id2");
+    }
+
+    @Test
+    public void testRecordingDisconnected() throws Throwable {
+        linkTvRecordingClient();
+        mTvRecordingClient.getSessionCallback().onSessionReleased(null);
+        PollingCheck.waitFor(TIME_OUT_MS, () -> mSession.mRecordingDisconnected > 0);
+        assertThat(mSession.mRecordingDisconnected).isEqualTo(1);
+        assertThat(mSession.mInputId).isEqualTo(mTvInputInfo.getId());
+        assertThat(mSession.mRecordingId).isEqualTo("recording_id1");
+    }
+
+    @Test
+    public void testRecordingError() throws Throwable {
+        linkTvRecordingClient();
+        mRecordingSession.notifyError(TvInputManager.RECORDING_ERROR_UNKNOWN);
+        PollingCheck.waitFor(TIME_OUT_MS, () -> mSession.mRecordingErrorCount > 0);
+
+        assertThat(mSession.mRecordingErrorCount).isEqualTo(1);
+        assertThat(mSession.mRecordingId).isEqualTo("recording_id1");
+        assertThat(mSession.mRecordingError).isEqualTo(TvInputManager.RECORDING_ERROR_UNKNOWN);
     }
 
     @Test

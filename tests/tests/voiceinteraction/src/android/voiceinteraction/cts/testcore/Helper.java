@@ -24,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import android.app.compat.CompatChanges;
+import android.content.Context;
 import android.hardware.soundtrigger.SoundTrigger;
 import android.hardware.soundtrigger.SoundTrigger.KeyphraseRecognitionExtra;
 import android.media.AudioFormat;
@@ -53,7 +54,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Helper for common functionalities.
@@ -65,6 +72,7 @@ public final class Helper {
     // The timeout to wait for async result
     public static final long WAIT_TIMEOUT_IN_MS = 10_000;
     public static final long WAIT_LONG_TIMEOUT_IN_MS = 15_000;
+    public static final long WAIT_EXPECTED_NO_CALL_TIMEOUT_IN_MS = 3_000;
 
     // The test package
     public static final String CTS_SERVICE_PACKAGE = "android.voiceinteraction.cts";
@@ -88,6 +96,17 @@ public final class Helper {
     public static final int DEFAULT_PHRASE_ID = 5;
     public static byte[] FAKE_HOTWORD_AUDIO_DATA =
             new byte[]{'h', 'o', 't', 'w', 'o', 'r', 'd', '!'};
+
+    // The permission is used to test keyphrase triggered.
+    // This is not exposed as an API so we define it here.
+    // TODO(b/273567812)
+    public static final String MANAGE_VOICE_KEYPHRASES =
+            "android.permission.MANAGE_VOICE_KEYPHRASES";
+
+    // The locale is used to test keyphrase triggered
+    public static final Locale KEYPHRASE_LOCALE = Locale.forLanguageTag("en-US");
+    // The text is used to test keyphrase triggered
+    public static final String KEYPHRASE_TEXT = "Hello Android";
 
     // The key or extra used for HotwordDetectionService
     public static final String KEY_TEST_SCENARIO = "testScenario";
@@ -184,6 +203,26 @@ public final class Helper {
             Log.w(TAG, "Failed to create a pipe : " + e);
         }
         throw new IllegalStateException();
+    }
+
+    /**
+     * Returns the list of KeyphraseRecognitionExtra that is used for testing.
+     */
+    public static List<KeyphraseRecognitionExtra> createKeyphraseRecognitionExtraList() {
+        return Arrays.asList(new SoundTrigger.KeyphraseRecognitionExtra(DEFAULT_PHRASE_ID,
+                SoundTrigger.RECOGNITION_MODE_VOICE_TRIGGER, /* coarseConfidenceLevel= */ 10));
+    }
+
+    /**
+     * Returns the array of {@link SoundTrigger.Keyphrase} that is used for testing.
+     */
+    public static SoundTrigger.Keyphrase[] createKeyprhaseArray(Context context) {
+        return new SoundTrigger.Keyphrase[] {new SoundTrigger.Keyphrase(DEFAULT_PHRASE_ID,
+                SoundTrigger.RECOGNITION_MODE_VOICE_TRIGGER,
+                KEYPHRASE_LOCALE,
+                KEYPHRASE_TEXT,
+                new int[] {context.getUserId()}
+        )};
     }
 
     /**
@@ -357,5 +396,25 @@ public final class Helper {
                 MULTIPLE_ACTIVE_HOTWORD_DETECTORS);
         Log.d(TAG, "enableMultipleHotwordDetectors = " + enableMultipleHotwordDetectors);
         return enableMultipleHotwordDetectors;
+    }
+
+    /**
+     * TODO: remove this helper when FutureSubject is available from
+     * {@link com.google.common.truth.Truth}
+     */
+    public static <V> V waitForFutureDoneAndAssertSuccessful(Future<V> future) {
+        try {
+            return future.get(WAIT_TIMEOUT_IN_MS, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            throw new AssertionError("future failed to complete", e);
+        }
+    }
+
+    /**
+     * TODO: remove this helper when FutureSubject is available from
+     * {@link com.google.common.truth.Truth}
+     */
+    public static void waitForVoidFutureAndAssertSuccessful(Future<Void> future) {
+        assertThat(waitForFutureDoneAndAssertSuccessful(future)).isNull();
     }
 }

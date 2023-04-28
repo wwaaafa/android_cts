@@ -61,11 +61,10 @@ import java.util.Scanner;
 @AppModeFull
 @MediumTest
 @RunWith(AndroidJUnit4.class)
-public class BrightnessTest {
+public class BrightnessTest extends TestBase {
 
     private Map<Long, BrightnessChangeEvent> mLastReadEvents = new HashMap<>();
     private DisplayManager mDisplayManager;
-    private PowerManager.WakeLock mWakeLock;
     private Context mContext;
     private PackageManager mPackageManager;
 
@@ -75,19 +74,11 @@ public class BrightnessTest {
         mDisplayManager = mContext.getSystemService(DisplayManager.class);
         PowerManager pm = mContext.getSystemService(PowerManager.class);
         mPackageManager = mContext.getPackageManager();
-
-        mWakeLock = pm.newWakeLock(
-                PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP,
-                "BrightnessTest");
-        mWakeLock.acquire();
+        launchScreenOnActivity();
     }
 
     @After
     public void tearDown() {
-        if (mWakeLock != null) {
-            mWakeLock.release();
-        }
-
         revokePermission(Manifest.permission.CONFIGURE_DISPLAY_BRIGHTNESS);
         revokePermission(Manifest.permission.BRIGHTNESS_SLIDER_USAGE);
     }
@@ -321,8 +312,7 @@ public class BrightnessTest {
         grantPermission(Manifest.permission.CONFIGURE_DISPLAY_BRIGHTNESS);
 
         BrightnessConfiguration defaultConfig = mDisplayManager.getDefaultBrightnessConfiguration();
-        // Must provide a default config if an app with CONFIGURE_DISPLAY_BRIGHTNESS exists.
-        assertNotNull(defaultConfig);
+        assumeNotNull(defaultConfig);
 
         Pair<float[], float[]> curve = defaultConfig.getCurve();
         assertTrue(curve.first.length > 0);

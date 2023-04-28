@@ -29,11 +29,11 @@ import androidx.test.uiautomator.Configurator
 import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
+import com.android.compatibility.common.util.SystemUtil
 import com.android.compatibility.common.util.UiAutomatorUtils2.waitFindObjectOrNull
+import java.util.regex.Pattern
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -64,17 +64,9 @@ class ReviewAccessibilityServicesTest {
             UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES
     }
 
-    @Before
-    fun setup() {
-        InstrumentedAccessibilityService.disableAllServices()
-    }
-
     @After
     fun cleanUp() {
-        uiDevice.pressBack()
-        uiDevice.pressBack()
-        uiDevice.pressBack()
-        InstrumentedAccessibilityService.disableAllServices()
+        uiDevice.pressHome()
     }
 
     @Test
@@ -95,22 +87,22 @@ class ReviewAccessibilityServicesTest {
     }
 
     @Test
-    @Ignore
     fun testClickingSettingsGoesToIndividualSettingsWhenOneServiceEnabled() {
         accessibilityServiceRule.enableService()
         startAccessibilityActivity()
         clickSettings()
+        waitForSettingsButtonToDisappear()
         findTestService(true)
         findTestService2(false)
     }
 
     @Test
-    @Ignore
     fun testClickingSettingsGoesToGeneralSettingsWhenMultipleServicesEnabled() {
         accessibilityServiceRule.enableService()
         accessibilityServiceRule2.enableService()
         startAccessibilityActivity()
         clickSettings()
+        waitForSettingsButtonToDisappear()
         findTestService(true)
         findTestService2(true)
     }
@@ -122,7 +114,7 @@ class ReviewAccessibilityServicesTest {
         startAccessibilityActivity()
         uiDevice.waitForIdle()
         findTestService2(true)!!.click()
-        uiDevice.waitForIdle()
+        waitForSettingsButtonToDisappear()
         findTestService2(true)
         findTestService(false)
     }
@@ -135,7 +127,7 @@ class ReviewAccessibilityServicesTest {
         try {
             context.startActivity(
                 Intent(Intent.ACTION_REVIEW_ACCESSIBILITY_SERVICES)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
         } catch (e: Exception) {
             throw RuntimeException("Caught exception", e)
         } finally {
@@ -155,11 +147,19 @@ class ReviewAccessibilityServicesTest {
         findObjectByText(true, "Settings")?.click()
     }
 
-    private fun findObjectByTextWithoutRetry(shouldBePresent: Boolean, text: String): UiObject2? {
+    private fun waitForSettingsButtonToDisappear() {
+        SystemUtil.eventually {
+            findObjectByText(false, "Settings")
+        }
+    }
+
+    private fun findObjectByTextWithoutRetry(shouldBePresent: Boolean, text: String, ): UiObject2? {
+        val containsWithoutCaseSelector =
+            By.text(Pattern.compile(".*$text.*", Pattern.CASE_INSENSITIVE))
         val view = if (shouldBePresent) {
-            waitFindObjectOrNull(By.textContains(text))
+            waitFindObjectOrNull(containsWithoutCaseSelector)
         } else {
-            waitFindObjectOrNull(By.textContains(text), EXPECTED_TIMEOUT_MS)
+            waitFindObjectOrNull(containsWithoutCaseSelector, EXPECTED_TIMEOUT_MS)
         }
 
         assertEquals("Expected to find view with text $text: $shouldBePresent",

@@ -157,6 +157,10 @@ public final class UserReference implements AutoCloseable {
             profileOwner.remove();
         }
 
+        if (TestApis.users().instrumented().equals(this)) {
+            throw new NeneException("Cannot remove instrumented user");
+        }
+
         try {
             // Expected success string is "Success: removed user"
             ShellCommand.builder("pm remove-user")
@@ -214,6 +218,7 @@ public final class UserReference implements AutoCloseable {
     //TODO(scottjonathan): Deal with users who won't unlock
     private UserReference startUser(int displayId) {
         boolean visibleOnDisplay = displayId != Display.INVALID_DISPLAY;
+
         try {
             // Expected success string is "Success: user started"
             Builder builder = ShellCommand.builder("am start-user")
@@ -244,7 +249,12 @@ public final class UserReference implements AutoCloseable {
                         .await();
             }
         } catch (AdbException | PollValueFailedException e) {
-            throw new NeneException("Could not start user " + this, e);
+            if (!userInfo().isEnabled()) {
+                throw new NeneException("Could not start user " + this + ". User is not enabled.");
+            }
+
+            throw new NeneException("Could not start user " + this + ". Relevant logcat: "
+                    + TestApis.logcat().dump(l -> l.contains("ActivityManager")), e);
         }
 
         return this;
@@ -345,7 +355,7 @@ public final class UserReference implements AutoCloseable {
 
                 if (!TestApis.users().current().equals(this)) {
                     throw new NeneException("Error switching user to " + this
-                            + " (state not changed). Relevant logcat: " + TestApis.logcat().dump(
+                            + " (current user is " + TestApis.users().current() + "). Relevant logcat: " + TestApis.logcat().dump(
                             (line) -> line.contains("ActivityManager")));
                 }
             } else {
@@ -696,6 +706,7 @@ public final class UserReference implements AutoCloseable {
      * Clear the lock credential for the user.
      */
     private void clearLockCredential(String lockCredential, String lockType) {
+        if (lockCredential == null || lockCredential.length() == 0) return;
         if (!lockType.equals(mLockType) && mLockType != null) {
             String lockTypeSentenceCase = Character.toUpperCase(lockType.charAt(0))
                     + lockType.substring(1);
@@ -871,6 +882,18 @@ public final class UserReference implements AutoCloseable {
      */
     public boolean canBeSwitchedTo() {
         return getSwitchToUserError() == null;
+    }
+
+    /**
+     * {@code true} if this user can show activities.
+     */
+    @Experimental
+    public boolean canShowActivities() {
+        if (!isForeground() && (!isProfile() || !parent().isForeground())) {
+            return false;
+        }
+
+        return true;
     }
 
     private String getSwitchToUserError() {

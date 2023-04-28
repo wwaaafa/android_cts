@@ -16,18 +16,38 @@
 
 package android.bluetooth.cts;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.AdvertisingSetParameters;
 import android.os.Parcel;
-import android.test.AndroidTestCase;
 import android.test.suitebuilder.annotation.SmallTest;
+
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
+
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * Test for {@link AdvertiseSettings}.
  */
-public class AdvertiseSettingsTest extends AndroidTestCase {
+@RunWith(AndroidJUnit4.class)
+public class AdvertiseSettingsTest {
+
+    @Before
+    public void setUp() {
+        Assume.assumeTrue(TestUtils.isBleSupported(
+                InstrumentationRegistry.getInstrumentation().getTargetContext()));
+    }
 
     @SmallTest
+    @Test
     public void testDefaultSettings() {
         AdvertiseSettings settings = new AdvertiseSettings.Builder().build();
         assertEquals(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER, settings.getMode());
@@ -37,12 +57,14 @@ public class AdvertiseSettingsTest extends AndroidTestCase {
     }
 
     @SmallTest
+    @Test
     public void testDescribeContents() {
         AdvertiseSettings settings = new AdvertiseSettings.Builder().build();
         assertEquals(0, settings.describeContents());
     }
 
     @SmallTest
+    @Test
     public void testReadWriteParcel() {
         final int timeoutMillis = 60 * 1000;
         Parcel parcel = Parcel.obtain();
@@ -67,6 +89,7 @@ public class AdvertiseSettingsTest extends AndroidTestCase {
     }
 
     @SmallTest
+    @Test
     public void testIllegalTimeout() {
         AdvertiseSettings.Builder builder = new AdvertiseSettings.Builder();
         builder.setTimeout(0).build();

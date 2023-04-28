@@ -37,6 +37,7 @@ import android.os.HardwarePropertiesManager;
 import android.os.UserManager;
 import android.security.KeyChain;
 import android.telecom.TelecomManager;
+import android.telephony.SmsManager;
 import android.util.Log;
 
 import com.android.bedstead.testapp.processor.annotations.FrameworkClass;
@@ -66,7 +67,9 @@ import com.android.eventlib.premade.EventLibService;
                 @FrameworkClass(frameworkClass = TelecomManager.class, constructor =
                         "context.getSystemService(android.telecom.TelecomManager.class)"),
                 @FrameworkClass(frameworkClass = RestrictionsManager.class, constructor =
-                        "context.getSystemService(android.content.RestrictionsManager.class)")
+                        "context.getSystemService(android.content.RestrictionsManager.class)"),
+                @FrameworkClass(frameworkClass = SmsManager.class, constructor =
+                        "context.getSystemService(android.telephony.SmsManager.class)")
         }
 )
 public final class TestAppAppComponentFactory extends AppComponentFactory {
@@ -145,6 +148,16 @@ public final class TestAppAppComponentFactory extends AppComponentFactory {
                         classLoader,
                         TestAppAccountAuthenticatorService.class.getName(),
                         intent);
+            } else if (className.endsWith("ContentSuggestionsService")) {
+                Log.d(LOG_TAG, "Service class (" + className
+                        + ") not found, routing to BaseTestAppContentSuggestionsService");
+                BaseTestAppContentSuggestionsService service =
+                        (BaseTestAppContentSuggestionsService) super.instantiateService(
+                        classLoader,
+                        BaseTestAppContentSuggestionsService.class.getName(),
+                        intent);
+                service.setOverrideServiceClassName(className);
+                return service;
             }
 
             if (className.endsWith("CredentialProviderService")) {

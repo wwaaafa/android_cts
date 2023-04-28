@@ -20,22 +20,34 @@ import static android.bluetooth.cts.TestUtils.assertArrayEquals;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import android.bluetooth.OobData;
+import android.content.Context;
 import android.content.pm.PackageManager;
-import android.test.AndroidTestCase;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
 
-public class OobDataTest extends AndroidTestCase {
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
-    private boolean mHasBluetooth;
+@RunWith(AndroidJUnit4.class)
+public class OobDataTest {
 
-    @Override
+    private Context mContext;
+
+    @Before
     public void setUp() throws Exception {
-        super.setUp();
-        mHasBluetooth = getContext().getPackageManager().hasSystemFeature(
-                PackageManager.FEATURE_BLUETOOTH);
+        mContext = InstrumentationRegistry.getInstrumentation().getContext();
+        Assume.assumeTrue(
+                mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH));
     }
 
+    @Test
     public void testClassicBuilder() {
         byte[] defaultRandomizerHash = new byte[OobData.RANDOMIZER_OCTETS];
         byte[] defaultClassOfDevice = new byte[OobData.CLASS_OF_DEVICE_OCTETS];
@@ -106,7 +118,10 @@ public class OobDataTest extends AndroidTestCase {
         assertArrayEquals(deviceName, classicData.getDeviceName());
     }
 
+    @Test
     public void testLEBuilder() {
+        Assume.assumeTrue(TestUtils.isBleSupported(mContext));
+
         byte[] defaultRandomizerHash = new byte[OobData.RANDOMIZER_OCTETS];
         byte[] defaultClassOfDevice = new byte[OobData.CLASS_OF_DEVICE_OCTETS];
         byte[] defaultClassicLength = new byte[OobData.OOB_LENGTH_OCTETS];
@@ -179,7 +194,10 @@ public class OobDataTest extends AndroidTestCase {
         assertEquals(OobData.LE_FLAG_BREDR_NOT_SUPPORTED, leData.getLeFlags());
     }
 
+    @Test
     public void testToString() {
+        Assume.assumeTrue(TestUtils.isBleSupported(mContext));
+
         byte[] confirmationHash = new byte[]{0x52, 0x70, 0x49, 0x41, 0x1A, (byte) 0xB3, 0x3F, 0x5C,
                 (byte) 0xE0, (byte) 0x99, 0x37, 0x29, 0x21, 0x52, 0x65, 0x49};
         byte[] address = new byte[]{0x12, 0x34, 0x56, 0x78, (byte) 0x8A, (byte) 0xBC, 0x0};

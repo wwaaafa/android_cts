@@ -16,15 +16,24 @@
 
 package android.bluetooth.cts;
 
-import android.bluetooth.le.TransportDiscoveryData;
+import static org.junit.Assert.assertEquals;
+
 import android.bluetooth.le.TransportBlock;
+import android.bluetooth.le.TransportDiscoveryData;
 import android.os.Parcel;
-import android.os.ParcelUuid;
-import android.test.AndroidTestCase;
 import android.test.suitebuilder.annotation.SmallTest;
+
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
+
+import org.junit.Assume;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
+
 
 /**
  * Unit test cases for {@link TransportDiscoveryData}.
@@ -32,9 +41,17 @@ import java.util.List;
  * To run the test, use adb shell am instrument -e class 'android.bluetooth.le.TransportDiscoveryDataTest' -w
  * 'com.android.bluetooth.tests/android.bluetooth.BluetoothTestRunner'
  */
-public class TransportDiscoveryDataTest extends AndroidTestCase {
+@RunWith(AndroidJUnit4.class)
+public class TransportDiscoveryDataTest {
+
+    @Before
+    public void setUp() {
+        Assume.assumeTrue(TestUtils.isBleSupported(
+                InstrumentationRegistry.getInstrumentation().getContext()));
+    }
 
     @SmallTest
+    @Test
     public void testInitList() {
         Parcel parcel = Parcel.obtain();
         List<TransportBlock> transportBlocks = new ArrayList();
@@ -48,8 +65,8 @@ public class TransportDiscoveryDataTest extends AndroidTestCase {
         assertEquals(data, dataFromParcel);
     }
 
-
     @SmallTest
+    @Test
     public void testInitByteArray() {
         Parcel parcel = Parcel.obtain();
         TransportDiscoveryData data = new TransportDiscoveryData(new byte[] {
@@ -62,6 +79,7 @@ public class TransportDiscoveryDataTest extends AndroidTestCase {
     }
 
     @SmallTest
+    @Test
     public void testGetValues() {
         Parcel parcel = Parcel.obtain();
         TransportDiscoveryData data = new TransportDiscoveryData(new byte[] {
@@ -79,6 +97,7 @@ public class TransportDiscoveryDataTest extends AndroidTestCase {
     }
 
     @SmallTest
+    @Test
     public void testTotalBytes() {
         Parcel parcel = Parcel.obtain();
         TransportDiscoveryData data = new TransportDiscoveryData(new byte[] {
@@ -93,6 +112,7 @@ public class TransportDiscoveryDataTest extends AndroidTestCase {
     }
 
     @SmallTest
+    @Test
     public void testToByteArray() {
         Parcel parcel = Parcel.obtain();
         TransportDiscoveryData data = new TransportDiscoveryData(new byte[] {

@@ -53,17 +53,18 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bedstead.harrier.BedsteadJUnit4
 import com.android.bedstead.harrier.DeviceState
 import com.android.bedstead.harrier.annotations.EnsureHasPermission
+import com.android.bedstead.harrier.annotations.EnsureSecureSettingSet
 import com.android.bedstead.harrier.annotations.RequireDoesNotHaveFeature
 import com.android.bedstead.harrier.annotations.RequireNotWatch
 import com.android.bedstead.harrier.annotations.RequireRunOnAdditionalUser
 import com.android.bedstead.harrier.annotations.RequireRunOnWorkProfile
 import com.android.bedstead.harrier.annotations.RequireSdkVersion
 import com.android.bedstead.nene.permissions.CommonPermissions.INTERACT_ACROSS_USERS
+import com.android.compatibility.common.util.ApiTest
 import com.android.compatibility.common.util.DeviceConfigStateChangerRule
 import com.android.compatibility.common.util.SystemUtil.runShellCommand
 import com.android.compatibility.common.util.SystemUtil.runWithShellPermissionIdentity
 import com.android.compatibility.common.util.SystemUtil.waitForBroadcasts
-import com.android.compatibility.common.util.ApiTest
 import com.android.compatibility.common.util.UiAutomatorUtils
 import com.google.common.truth.Truth.assertThat
 import java.io.File
@@ -87,6 +88,7 @@ import org.junit.runner.RunWith
 @RequireDoesNotHaveFeature(FEATURE_LEANBACK)
 @RequireNotWatch(reason = "Data sharing update page is unavailable on watch")
 @RunWith(BedsteadJUnit4::class)
+@EnsureSecureSettingSet(key = "user_setup_complete", value = "1")
 class AppDataSharingUpdatesTest {
 
     @get:Rule
@@ -255,10 +257,11 @@ class AppDataSharingUpdatesTest {
         /** Installs an app with the provided [appMetadata] */
         private fun installPackageViaSession(
             apkName: String,
-            appMetadata: PersistableBundle? = null
+            appMetadata: PersistableBundle? = null,
+            packageSource: Int? = null
         ) {
+            val session = createPackageInstallerSession(packageSource)
             runWithShellPermissionIdentity {
-                val session = createPackageInstallerSession()
                 writePackageInstallerSession(session, apkName)
                 if (appMetadata != null) {
                     setAppMetadata(session, appMetadata)
@@ -273,9 +276,15 @@ class AppDataSharingUpdatesTest {
             }
         }
 
-        private fun createPackageInstallerSession(): PackageInstaller.Session {
-            val sessionId =
-                packageInstaller.createSession(SessionParams(SessionParams.MODE_FULL_INSTALL))
+        private fun createPackageInstallerSession(
+            packageSource: Int? = null
+        ): PackageInstaller.Session {
+            val sessionParam = SessionParams(SessionParams.MODE_FULL_INSTALL)
+            if (packageSource != null) {
+                sessionParam.setPackageSource(packageSource)
+            }
+
+            val sessionId = packageInstaller.createSession(sessionParam)
             return packageInstaller.openSession(sessionId)
         }
 

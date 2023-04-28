@@ -1008,12 +1008,17 @@
     <!-- @SystemApi @hide Allows an application to communicate over satellite.
          Only granted if the application is a system app.-->
     <permission android:name="android.permission.SATELLITE_COMMUNICATION"
-                android:protectionLevel="internal|role" />
+                android:protectionLevel="role|signature|privileged" />
 
     <!-- @SystemApi @hide Allows an application to bind with satellite service.
          Only granted if the application is a system app.-->
     <permission android:name="android.permission.BIND_SATELLITE_SERVICE"
                 android:protectionLevel="signature|privileged|vendorPrivileged" />
+
+    <!-- @hide Allows an application to bind with satellite gateway service.
+         Only granted if the application is a system app.-->
+    <permission android:name="android.permission.BIND_SATELLITE_GATEWAY_SERVICE"
+                android:protectionLevel="signature" />
 
     <!-- ====================================================================== -->
     <!-- Permissions for accessing external storage                             -->
@@ -5290,6 +5295,15 @@
     <permission android:name="android.permission.INSTALL_DPC_PACKAGES"
                 android:protectionLevel="signature|role" />
 
+    <!-- @SystemApi Allows an application to read resolved paths to the APKs (Base and any splits)
+         of a session based install.
+         <p>Not for use by third-party applications.
+         @hide
+    -->
+    <permission android:name="android.permission.READ_INSTALLED_SESSION_PATHS"
+        android:protectionLevel="signature|installer" />
+    <uses-permission android:name="android.permission.READ_INSTALLED_SESSION_PATHS" />
+
     <!-- Allows an application to use System Data Loaders.
          <p>Not for use by third-party applications.
          @hide
@@ -7368,7 +7382,7 @@
     <permission android:name="android.permission.TURN_SCREEN_ON"
                 android:label="@string/permlab_turnScreenOn"
                 android:description="@string/permdesc_turnScreenOn"
-                android:protectionLevel="normal|appop" />
+                android:protectionLevel="signature|privileged|appop" />
 
     <!-- Allows applications to use the user-initiated jobs API. For more details
          see {@link android.app.job.JobInfo.Builder#setUserInitiated}.
@@ -7467,6 +7481,13 @@
          @hide -->
     <permission android:name="android.permission.LOG_FOREGROUND_RESOURCE_USE"
                 android:protectionLevel="signature|module" />
+
+    <!-- @hide Allows the settings app to access GPU service APIs".
+        <p>Not for use by third-party applications.
+        <p>Protection level: signature
+    -->
+    <permission android:name="android.permission.ACCESS_GPU_SERVICE"
+                android:protectionLevel="signature" />
 
     <!-- @hide Allows an application to get type of any provider uri.
          <p>Not for use by third-party applications.

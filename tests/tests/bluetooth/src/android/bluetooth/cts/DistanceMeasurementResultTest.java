@@ -37,6 +37,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import com.android.compatibility.common.util.ApiLevelUtil;
 
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,44 +45,28 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class DistanceMeasurementResultTest {
     private Context mContext;
-    private boolean mHasBluetooth;
     private BluetoothAdapter mAdapter;
-    private boolean mIsDistanceMeasurementSupported;
 
     @Before
     public void setUp() {
         mContext = InstrumentationRegistry.getInstrumentation().getContext();
-        if (!ApiLevelUtil.isAtLeast(Build.VERSION_CODES.TIRAMISU)) {
-            return;
-        }
-        mHasBluetooth = TestUtils.hasBluetooth();
-        if (!mHasBluetooth) {
-            return;
-        }
+        Assume.assumeTrue(ApiLevelUtil.isAtLeast(Build.VERSION_CODES.TIRAMISU));
+        Assume.assumeTrue(TestUtils.isBleSupported(mContext));
+
         mAdapter = TestUtils.getBluetoothAdapterOrDie();
         assertTrue(BTAdapterUtils.enableAdapter(mAdapter, mContext));
         TestUtils.adoptPermissionAsShellUid(BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED);
-        mIsDistanceMeasurementSupported =
-                mAdapter.isDistanceMeasurementSupported() == FEATURE_SUPPORTED;
+        Assume.assumeTrue(mAdapter.isDistanceMeasurementSupported() == FEATURE_SUPPORTED);
     }
 
     @After
     public void tearDown() {
-        if (!mHasBluetooth) {
-            return;
-        }
-        if (mAdapter != null) {
-            assertTrue(BTAdapterUtils.disableAdapter(mAdapter, mContext));
-        }
         TestUtils.dropPermissionAsShellUid();
         mAdapter = null;
     }
 
     @Test
     public void testCreateFromParcel() {
-        if (shouldSkipTest()) {
-            return;
-        }
         final Parcel parcel = Parcel.obtain();
         try {
             DistanceMeasurementResult result = new DistanceMeasurementResult
@@ -100,9 +85,6 @@ public class DistanceMeasurementResultTest {
 
     @Test
     public void testSetGetResultMeters() {
-        if (shouldSkipTest()) {
-            return;
-        }
         DistanceMeasurementResult result = new DistanceMeasurementResult.Builder(121.0, 120.0)
                 .build();
         assertEquals(121.0, result.getResultMeters(), 0.0);
@@ -110,9 +92,6 @@ public class DistanceMeasurementResultTest {
 
     @Test
     public void testSetGetErrorMeters() {
-        if (shouldSkipTest()) {
-            return;
-        }
         DistanceMeasurementResult result = new DistanceMeasurementResult.Builder(121.0, 120.0)
                 .build();
         assertEquals(120.0, result.getErrorMeters(), 0.0);
@@ -120,9 +99,6 @@ public class DistanceMeasurementResultTest {
 
     @Test
     public void testSetGetAzimuthAngle() {
-        if (shouldSkipTest()) {
-            return;
-        }
         DistanceMeasurementResult result = new DistanceMeasurementResult.Builder(121.0, 120.0)
                 .setAzimuthAngle(60).build();
         assertEquals(60.0, result.getAzimuthAngle(), 0.0);
@@ -130,9 +106,6 @@ public class DistanceMeasurementResultTest {
 
     @Test
     public void testSetGetErrorAzimuthAngle() {
-        if (shouldSkipTest()) {
-            return;
-        }
         DistanceMeasurementResult result = new DistanceMeasurementResult.Builder(121.0, 120.0)
                 .setErrorAzimuthAngle(60).build();
         assertEquals(60.0, result.getErrorAzimuthAngle(), 0.0);
@@ -140,9 +113,6 @@ public class DistanceMeasurementResultTest {
 
     @Test
     public void testSetGetAltitudeAngle() {
-        if (shouldSkipTest()) {
-            return;
-        }
         DistanceMeasurementResult result = new DistanceMeasurementResult.Builder(121.0, 120.0)
                 .setAltitudeAngle(60).build();
         assertEquals(60.0, result.getAltitudeAngle(), 0.0);
@@ -150,9 +120,6 @@ public class DistanceMeasurementResultTest {
 
     @Test
     public void testSetGetErrorAltitudeAngle() {
-        if (shouldSkipTest()) {
-            return;
-        }
         DistanceMeasurementResult result = new DistanceMeasurementResult.Builder(121.0, 120.0)
                 .setErrorAltitudeAngle(60).build();
         assertEquals(60.0, result.getErrorAltitudeAngle(), 0.0);
@@ -160,9 +127,6 @@ public class DistanceMeasurementResultTest {
 
     @Test
     public void testIllegalArgument() {
-        if (shouldSkipTest()) {
-            return;
-        }
         assertThrows(IllegalArgumentException.class,
                 () -> new DistanceMeasurementResult.Builder(-1.0, 0.0));
         assertThrows(IllegalArgumentException.class,
@@ -189,9 +153,5 @@ public class DistanceMeasurementResultTest {
         assertEquals(p.getErrorAzimuthAngle(), other.getErrorAzimuthAngle(), 0.0);
         assertEquals(p.getAltitudeAngle(), other.getAltitudeAngle(), 0.0);
         assertEquals(p.getErrorAltitudeAngle(), other.getErrorAltitudeAngle(), 0.0);
-    }
-
-    private boolean shouldSkipTest() {
-        return !mHasBluetooth || !mIsDistanceMeasurementSupported;
     }
 }
