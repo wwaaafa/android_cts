@@ -57,12 +57,14 @@ import android.autofillservice.cts.testcore.InstrumentedAutoFillService.FillRequ
 import android.content.Intent;
 import android.platform.test.annotations.FlakyTest;
 import android.service.autofill.FillEventHistory;
+import android.util.Log;
 import android.view.View;
 
 import androidx.test.uiautomator.UiObject2;
 
 import com.android.compatibility.common.util.CddTest;
 
+import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -73,6 +75,13 @@ import java.util.List;
  * This is the test cases for the fill dialog UI.
  */
 public class LoginActivityTest extends AutoFillServiceTestCase.ManualActivityLaunch {
+
+    @After
+    public void disablePcc() {
+        Log.d("LoginActivityTest", "@After: disablePcc()");
+        sReplier.setIdMode(IdMode.RESOURCE_ID);
+        disablePccDetectionFeature(sContext);
+    }
 
     @Test
     public void testPccRequest() throws Exception {

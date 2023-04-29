@@ -60,7 +60,7 @@ import java.util.concurrent.CountDownLatch;
  *     atest CtsWindowManagerDeviceTestCases:AnrTests
  */
 @Presubmit
-@FlakyTest(bugId = 143047723)
+@FlakyTest(bugId = 280027157)
 @android.server.wm.annotation.Group3
 public class AnrTests extends ActivityManagerTestBase {
     private static final String TAG = "AnrTests";

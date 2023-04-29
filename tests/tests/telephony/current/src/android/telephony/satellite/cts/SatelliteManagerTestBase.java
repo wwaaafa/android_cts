@@ -81,6 +81,22 @@ public class SatelliteManagerTestBase {
         return true;
     }
 
+    protected static boolean shouldTestSatelliteWithMockService() {
+        if (!getContext().getPackageManager().hasSystemFeature(
+                PackageManager.FEATURE_TELEPHONY)) {
+            logd("Skipping tests because FEATURE_TELEPHONY is not available");
+            return false;
+        }
+        try {
+            getContext().getSystemService(TelephonyManager.class)
+                    .getHalVersion(TelephonyManager.HAL_SERVICE_RADIO);
+        } catch (IllegalStateException e) {
+            logd("Skipping tests because Telephony service is null, exception=" + e);
+            return false;
+        }
+        return true;
+    }
+
     protected static Context getContext() {
         return InstrumentationRegistry.getContext();
     }
@@ -570,7 +586,63 @@ public class SatelliteManagerTestBase {
         }
     }
 
+    protected static boolean isSatelliteDemoModeEnabled() {
+        final AtomicReference<Boolean> enabled = new AtomicReference<>();
+        final AtomicReference<Integer> errorCode = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
+        OutcomeReceiver<Boolean, SatelliteManager.SatelliteException> receiver =
+                new OutcomeReceiver<>() {
+                    @Override
+                    public void onResult(Boolean result) {
+                        enabled.set(result);
+                        latch.countDown();
+                    }
+
+                    @Override
+                    public void onError(SatelliteManager.SatelliteException exception) {
+                        errorCode.set(exception.getErrorCode());
+                        latch.countDown();
+                    }
+                };
+
+        sSatelliteManager.requestIsDemoModeEnabled(
+                getContext().getMainExecutor(), receiver);
+        try {
+            assertTrue(latch.await(TIMEOUT, TimeUnit.MILLISECONDS));
+        } catch (InterruptedException ex) {
+            loge("isSatelliteDemoModeEnabled ex=" + ex);
+            return false;
+        }
+
+        Integer error = errorCode.get();
+        Boolean isEnabled = enabled.get();
+        if (error == null) {
+            assertNotNull(isEnabled);
+            return isEnabled;
+        } else {
+            assertNull(isEnabled);
+            logd("isSatelliteEnabled error=" + error);
+            return false;
+        }
+    }
+
     protected static void requestSatelliteEnabled(boolean enabled) {
+        LinkedBlockingQueue<Integer> error = new LinkedBlockingQueue<>(1);
+        sSatelliteManager.requestSatelliteEnabled(
+                enabled, false, getContext().getMainExecutor(), error::offer);
+        Integer errorCode;
+        try {
+            errorCode = error.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException ex) {
+            fail("requestSatelliteEnabled failed with ex=" + ex);
+            return;
+        }
+        assertNotNull(errorCode);
+        assertEquals(SatelliteManager.SATELLITE_ERROR_NONE, (long) errorCode);
+    }
+
+
+    protected static void requestSatelliteEnabledForDemoMode(boolean enabled) {
         LinkedBlockingQueue<Integer> error = new LinkedBlockingQueue<>(1);
         sSatelliteManager.requestSatelliteEnabled(
                 enabled, true, getContext().getMainExecutor(), error::offer);
@@ -583,6 +655,22 @@ public class SatelliteManagerTestBase {
         }
         assertNotNull(errorCode);
         assertEquals(SatelliteManager.SATELLITE_ERROR_NONE, (long) errorCode);
+    }
+
+    protected static void requestSatelliteEnabled(boolean enabled, boolean demoEnabled,
+            int expectedError) {
+        LinkedBlockingQueue<Integer> error = new LinkedBlockingQueue<>(1);
+        sSatelliteManager.requestSatelliteEnabled(
+                enabled, demoEnabled, getContext().getMainExecutor(), error::offer);
+        Integer errorCode;
+        try {
+            errorCode = error.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException ex) {
+            fail("requestSatelliteEnabled failed with ex=" + ex);
+            return;
+        }
+        assertNotNull(errorCode);
+        assertEquals(expectedError, (long) errorCode);
     }
 
     protected static boolean isSatelliteSupported() {
