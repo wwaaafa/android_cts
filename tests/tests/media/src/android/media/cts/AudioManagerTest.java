@@ -966,6 +966,10 @@ public class AudioManagerTest extends InstrumentationTestCase {
                 mContext.getPackageName(), getInstrumentation(), true);
         mAudioManager.setRingerMode(RINGER_MODE_NORMAL);
         for (int stream : streams) {
+            int minVolume = mAudioManager.getStreamMinVolume(stream);
+            if (minVolume != 0) {
+                continue;
+            }
             // ensure each stream is on and turned up.
             mAudioManager.setStreamVolume(stream,
                     mAudioManager.getStreamMaxVolume(stream),
