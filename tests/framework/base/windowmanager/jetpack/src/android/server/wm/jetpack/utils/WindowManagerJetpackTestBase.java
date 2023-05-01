@@ -39,6 +39,7 @@ import static org.junit.Assume.assumeTrue;
 
 import android.app.Activity;
 import android.app.ActivityOptions;
+import android.app.ActivityTaskManager;
 import android.app.Application;
 import android.app.Instrumentation;
 import android.app.PictureInPictureParams;
@@ -48,6 +49,7 @@ import android.content.Intent;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.server.wm.NestedShellPermission;
 import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
@@ -58,6 +60,7 @@ import androidx.window.sidecar.SidecarDeviceState;
 import org.junit.After;
 import org.junit.Before;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -84,6 +87,11 @@ public class WindowManagerJetpackTestBase {
         assertNotNull(mApplication);
         // Register activity lifecycle callbacks to know which activities are resumed
         registerActivityLifecycleCallbacks();
+        // Clear the previous launch bounds / windowing mode, otherwise persisted launch bounds may
+        // prepend startFullScreenActivityNewTask from launching Activities in full-screen.
+        NestedShellPermission.run(() ->
+                mContext.getSystemService(ActivityTaskManager.class).clearLaunchParamsForPackages(
+                        Collections.singletonList("android.server.wm.jetpack")));
     }
 
     @After
