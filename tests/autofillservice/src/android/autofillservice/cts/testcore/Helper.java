@@ -1721,6 +1721,16 @@ public final class Helper {
     }
 
     /**
+     * Enable fill dialog feature
+     */
+    public static void disableFillDialogFeature(@NonNull Context context) {
+        DeviceConfigStateManager deviceConfigStateManager =
+                new DeviceConfigStateManager(context, DeviceConfig.NAMESPACE_AUTOFILL,
+                        AutofillFeatureFlags.DEVICE_CONFIG_AUTOFILL_DIALOG_ENABLED);
+        setDeviceConfig(deviceConfigStateManager, "false");
+    }
+
+    /**
      * Enable PCC Detection Feature Hints
      */
     public static void enablePccDetectionFeature(@NonNull Context context, String...types) {
@@ -1733,6 +1743,16 @@ public final class Helper {
                 new DeviceConfigStateManager(context, DeviceConfig.NAMESPACE_AUTOFILL,
                         AutofillFeatureFlags.DEVICE_CONFIG_AUTOFILL_PCC_CLASSIFICATION_ENABLED);
         setDeviceConfig(deviceConfigStateManager2, "true");
+    }
+
+    /**
+     * Enable PCC Detection Feature Hints
+     */
+    public static void preferPccDetectionOverProvider(@NonNull Context context, boolean preferPcc) {
+        DeviceConfigStateManager deviceConfigStateManager =
+                new DeviceConfigStateManager(context, DeviceConfig.NAMESPACE_AUTOFILL,
+                        "prefer_provider_over_pcc");
+        setDeviceConfig(deviceConfigStateManager, String.valueOf(!preferPcc));
     }
 
     /**
