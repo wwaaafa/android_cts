@@ -16,11 +16,9 @@
 
 package android.mediaprovidertranscode.cts;
 
-import static android.Manifest.permission.WRITE_DEVICE_CONFIG;
 import static android.mediaprovidertranscode.cts.TranscodeTestConstants.INTENT_EXTRA_CALLING_PKG;
 import static android.mediaprovidertranscode.cts.TranscodeTestConstants.INTENT_EXTRA_PATH;
 import static android.mediaprovidertranscode.cts.TranscodeTestConstants.INTENT_QUERY_TYPE;
-import static android.provider.DeviceConfig.NAMESPACE_STORAGE_NATIVE_BOOT;
 
 import static androidx.test.InstrumentationRegistry.getContext;
 
@@ -51,7 +49,6 @@ import android.os.ParcelFileDescriptor;
 import android.os.Process;
 import android.os.SystemClock;
 import android.os.storage.StorageManager;
-import android.provider.DeviceConfig;
 import android.provider.MediaStore;
 import android.system.Os;
 import android.system.OsConstants;
@@ -167,16 +164,9 @@ public class TranscodeTestUtils {
         assertThat(numBytesWritten).isEqualTo(byteCount);
     }
 
-    public static void enableTranscodingForPackage(String packageName) {
-        getUiAutomation().adoptShellPermissionIdentity(WRITE_DEVICE_CONFIG);
-        try {
-            final String newPropertyValue = packageName + ",0";
-            DeviceConfig.setProperty(NAMESPACE_STORAGE_NATIVE_BOOT,
-                    TRANSCODE_COMPAT_MANIFEST_DEVICE_CONFIG_PROPERTY_NAME, newPropertyValue,
-                    /* makeDefault */ false);
-        } finally {
-            getUiAutomation().dropShellPermissionIdentity();
-        }
+    public static void enableTranscodingForPackage(String packageName) throws IOException {
+        executeShellCommand("device_config put storage_native_boot transcode_compat_manifest "
+                + packageName + ",0");
         SystemClock.sleep(1000);
     }
 
@@ -195,14 +185,8 @@ public class TranscodeTestUtils {
         executeShellCommand(command);
     }
 
-    public static void disableTranscodingForAllPackages() {
-        getUiAutomation().adoptShellPermissionIdentity(WRITE_DEVICE_CONFIG);
-        try {
-            DeviceConfig.deleteProperty(NAMESPACE_STORAGE_NATIVE_BOOT,
-                    TRANSCODE_COMPAT_MANIFEST_DEVICE_CONFIG_PROPERTY_NAME);
-        } finally {
-            getUiAutomation().dropShellPermissionIdentity();
-        }
+    public static void disableTranscodingForAllPackages() throws IOException {
+        executeShellCommand("device_config delete storage_native_boot transcode_compat_manifest");
         SystemClock.sleep(1000);
     }
 
