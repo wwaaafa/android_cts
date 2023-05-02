@@ -18,6 +18,8 @@ package android.scopedstorage.cts.host;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.junit.Assume.assumeTrue;
+
 import android.platform.test.annotations.AppModeFull;
 
 import com.android.compatibility.common.util.CtsDownstreamingTest;
@@ -72,6 +74,9 @@ public class ScopedStorageHostTest extends BaseHostTestCase {
 
     @Before
     public void setup() throws Exception {
+        DeviceSdkLevel deviceSdkLevel = new DeviceSdkLevel(getDevice());
+        assumeTrue(deviceSdkLevel.isDeviceAtLeastR());
+
         setupExternalStorage();
         executeShellCommand("mkdir /sdcard/Android/data/com.android.shell -m 2770");
         executeShellCommand("mkdir /sdcard/Android/data/com.android.shell/files -m 2770");
