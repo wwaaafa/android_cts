@@ -19,7 +19,11 @@ package android.bluetooth.cts;
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothCsipSetCoordinator;
@@ -28,13 +32,21 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUuid;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.ParcelUuid;
-import android.test.AndroidTestCase;
 import android.util.Log;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
+
 import com.android.compatibility.common.util.ApiLevelUtil;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.List;
 import java.util.Map;
@@ -44,11 +56,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class BluetoothCsipSetCoordinatorTest extends AndroidTestCase {
+@RunWith(AndroidJUnit4.class)
+public class BluetoothCsipSetCoordinatorTest {
     private static final String TAG = BluetoothCsipSetCoordinatorTest.class.getSimpleName();
 
     private static final int PROXY_CONNECTION_TIMEOUT_MS = 500;  // ms timeout for Proxy Connect
 
+    private Context mContext;
     private boolean mHasBluetooth;
     private BluetoothAdapter mAdapter;
 
@@ -75,18 +89,18 @@ public class BluetoothCsipSetCoordinatorTest extends AndroidTestCase {
         }
     };
 
-    @Override
+    @Before
     public void setUp() throws Exception {
-        super.setUp();
+        mContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         if (ApiLevelUtil.isAtLeast(Build.VERSION_CODES.TIRAMISU)) {
-            mHasBluetooth = getContext().getPackageManager().hasSystemFeature(
+            mHasBluetooth = mContext.getPackageManager().hasSystemFeature(
                     PackageManager.FEATURE_BLUETOOTH);
 
             if (!mHasBluetooth) return;
 
             TestUtils.adoptPermissionAsShellUid(BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED);
 
-            BluetoothManager manager = getContext().getSystemService(BluetoothManager.class);
+            BluetoothManager manager = mContext.getSystemService(BluetoothManager.class);
             mAdapter = manager.getAdapter();
             assertTrue(BTAdapterUtils.enableAdapter(mAdapter, mContext));
 
@@ -105,7 +119,7 @@ public class BluetoothCsipSetCoordinatorTest extends AndroidTestCase {
             }
 
             if (isCsipConfigEnabled) {
-                mIsCsipSetCoordinatorSupported = mAdapter.getProfileProxy(getContext(),
+                mIsCsipSetCoordinatorSupported = mAdapter.getProfileProxy(mContext,
                         new BluetoothCsipServiceListener(),
                         BluetoothProfile.CSIP_SET_COORDINATOR);
                 assertTrue("Service shall be supported ", mIsCsipSetCoordinatorSupported);
@@ -116,9 +130,8 @@ public class BluetoothCsipSetCoordinatorTest extends AndroidTestCase {
         }
     }
 
-    @Override
+    @After
     public void tearDown() throws Exception {
-        super.tearDown();
         if (mHasBluetooth) {
             if (mBluetoothCsipSetCoordinator != null) {
                 mBluetoothCsipSetCoordinator.close();
@@ -135,6 +148,7 @@ public class BluetoothCsipSetCoordinatorTest extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testCloseProfileProxy() {
         if (!(mHasBluetooth && mIsCsipSetCoordinatorSupported)) return;
 
@@ -148,6 +162,7 @@ public class BluetoothCsipSetCoordinatorTest extends AndroidTestCase {
         assertFalse(mIsProfileReady);
     }
 
+    @Test
     public void testGetConnectedDevices() {
         if (!(mHasBluetooth && mIsCsipSetCoordinatorSupported)) return;
 
@@ -161,6 +176,7 @@ public class BluetoothCsipSetCoordinatorTest extends AndroidTestCase {
         assertTrue(connectedDevices.isEmpty());
     }
 
+    @Test
     public void testGetDevicesMatchingConnectionStates() {
         if (!(mHasBluetooth && mIsCsipSetCoordinatorSupported)) return;
 
@@ -175,6 +191,7 @@ public class BluetoothCsipSetCoordinatorTest extends AndroidTestCase {
         assertTrue(connectedDevices.isEmpty());
     }
 
+    @Test
     public void testGetGroupUuidMapByDevice() {
         if (!(mHasBluetooth && mIsCsipSetCoordinatorSupported)) return;
 
@@ -197,6 +214,7 @@ public class BluetoothCsipSetCoordinatorTest extends AndroidTestCase {
         assertTrue(result.isEmpty());
     }
 
+    @Test
     public void testLockUnlockGroup() {
         if (!(mHasBluetooth && mIsCsipSetCoordinatorSupported)) return;
 
@@ -238,6 +256,7 @@ public class BluetoothCsipSetCoordinatorTest extends AndroidTestCase {
         }
     }
 
+    @Test
     public void testTestLockCallback() {
         if (!(mHasBluetooth && mIsCsipSetCoordinatorSupported)) return;
 
@@ -253,6 +272,7 @@ public class BluetoothCsipSetCoordinatorTest extends AndroidTestCase {
         assertTrue(mGroupLockCallbackCalled);
     }
 
+    @Test
     public void testGetAllGroupIds() {
         if (!(mHasBluetooth && mIsCsipSetCoordinatorSupported)) return;
 
