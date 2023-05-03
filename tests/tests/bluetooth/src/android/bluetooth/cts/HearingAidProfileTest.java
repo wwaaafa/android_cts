@@ -123,6 +123,7 @@ public class HearingAidProfileTest {
         mUiAutomation.dropShellPermissionIdentity();
     }
 
+    @Test
     public void test_closeProfileProxy() {
         if (!(mIsBleSupported && mIsHearingAidSupported)) return;
 
