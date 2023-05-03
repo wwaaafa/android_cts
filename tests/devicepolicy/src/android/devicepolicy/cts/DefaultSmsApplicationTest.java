@@ -16,10 +16,6 @@
 
 package android.devicepolicy.cts;
 
-
-import static android.provider.DeviceConfig.NAMESPACE_DEVICE_POLICY_MANAGER;
-import static android.provider.DeviceConfig.NAMESPACE_TELEPHONY;
-
 import static com.android.bedstead.nene.permissions.CommonPermissions.INTERACT_ACROSS_USERS;
 import static com.android.queryable.queries.ActivityQuery.activity;
 import static com.android.queryable.queries.IntentFilterQuery.intentFilter;
@@ -36,12 +32,13 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.provider.Settings;
 import android.provider.Telephony;
 import android.telephony.TelephonyManager;
 
 import com.android.bedstead.harrier.BedsteadJUnit4;
 import com.android.bedstead.harrier.DeviceState;
-import com.android.bedstead.harrier.annotations.EnsureFeatureFlagEnabled;
+import com.android.bedstead.harrier.annotations.EnsureGlobalSettingSet;
 import com.android.bedstead.harrier.annotations.EnsureHasPermission;
 import com.android.bedstead.harrier.annotations.Postsubmit;
 import com.android.bedstead.harrier.annotations.RequireNotHeadlessSystemUserMode;
@@ -95,11 +92,9 @@ public final class DefaultSmsApplicationTest {
     // TODO(b/198588696): Add support is @RequireSmsCapable and @RequireNotSmsCapable
     @Postsubmit(reason = "new test")
     @CanSetPolicyTest(policy = DefaultSmsApplication.class)
-    @EnsureFeatureFlagEnabled(namespace = NAMESPACE_DEVICE_POLICY_MANAGER, key =
-            "enable_work_profile_telephony")
-    @EnsureFeatureFlagEnabled(namespace = NAMESPACE_TELEPHONY, key =
-            "enable_work_profile_telephony")
     @RequireNotHeadlessSystemUserMode(reason = "b/279731298")
+    @EnsureGlobalSettingSet(key =
+            Settings.Global.ALLOW_WORK_PROFILE_TELEPHONY_FOR_NON_DPM_ROLE_HOLDERS, value = "1")
     public void setDefaultSmsApplication_works() {
         //TODO(b/273529454): replace with EnsureTelephonyEnabledInUser annotation
         if (mDpm.isOrganizationOwnedDeviceWithManagedProfile()) {
