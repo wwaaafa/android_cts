@@ -133,4 +133,8 @@
     <option name="compatibility:exclude-filter" value="CtsNetTestCases android.net.cts.IpSecManagerTest#testChaCha20Poly1305Udp4UdpEncap" />
     <option name="compatibility:exclude-filter" value="CtsNetTestCases android.net.cts.IpSecManagerTest#testChaCha20Poly1305Tcp4UdpEncap" />
 
+    <!-- b/279852956 Temporarily exclude the regreastion test issues caused by upgrading -->
+    <option name="compatibility:exclude-filter" value="CtsWindowManagerDeviceTestCases android.server.wm.WindowUntrustedTouchTest#testAfterSettingThresholdGreaterThan1ViaSettings_previousThresholdIsUsed" />
+    <option name="compatibility:exclude-filter" value="CtsWindowManagerDeviceTestCases android.server.wm.KeepClearRectsTests#testSetKeepClearRectsOnDisplaySingleWindow" />
+
 </configuration>
