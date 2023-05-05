@@ -42,14 +42,6 @@ import java.lang.annotation.Target;
 @ParameterizedAnnotation
 @RequireRunOnCloneProfile
 @EnsureHasWorkProfile(dpcIsPrimary = true, useParentInstanceOfDpc = true, dpcKey = "dpc")
-@EnsureFeatureFlagEnabled(
-        namespace = NAMESPACE_DEVICE_POLICY_MANAGER,
-        key = ENABLE_DEVICE_POLICY_ENGINE_FLAG
-)
-@EnsureFeatureFlagEnabled(
-        namespace = NAMESPACE_DEVICE_POLICY_MANAGER,
-        key = PERMISSION_BASED_ACCESS_EXPERIMENT_FLAG
-)
 @EnsureHasNoDelegate
 public @interface IncludeRunOnCloneProfileAlongsideManagedProfileUsingParentInstance {
     /**
