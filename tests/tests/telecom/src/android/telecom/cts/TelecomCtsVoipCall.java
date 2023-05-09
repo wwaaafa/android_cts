@@ -25,6 +25,7 @@ import android.telecom.CallEventCallback;
 import android.telecom.CallException;
 import android.telecom.DisconnectCause;
 import android.util.Log;
+import android.util.Pair;
 
 import androidx.annotation.NonNull;
 
@@ -96,7 +97,7 @@ public class TelecomCtsVoipCall {
         private List<CallEndpoint> mAvailableEndpoints;
         private boolean mIsMuted = false;
         public boolean mWasMuteStateChangedCalled = false;
-        public boolean mWasOnEventCalled = false;
+        public Pair<String, Bundle> mLastEventReceived = null;
 
         @Override
         public void onCallEndpointChanged(@NonNull CallEndpoint newCallEndpoint) {
@@ -129,12 +130,12 @@ public class TelecomCtsVoipCall {
         @Override
         public void onEvent(String event, Bundle extras) {
             Log.i(TAG, String.format("onEvent: callId=[%s], event=[%s]", mCallId, event));
-            mWasOnEventCalled = true;
+            mLastEventReceived = new Pair<>(event, extras);
         }
 
         public void resetAllCallbackVerifiers() {
             mWasMuteStateChangedCalled = false;
-            mWasOnEventCalled = false;
+            mLastEventReceived = null;
         }
 
         public CallEndpoint getCurrentCallEndpoint() {
