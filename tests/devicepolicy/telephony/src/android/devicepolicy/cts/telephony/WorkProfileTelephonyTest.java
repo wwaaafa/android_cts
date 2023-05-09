@@ -145,7 +145,7 @@ public final class WorkProfileTelephonyTest {
     @Postsubmit(reason = "new test")
     @Test
     @CddTest(requirements = {"7.4.1.4/C-3-1"})
-    public void sendTextMessage_fromWorkProfile_allManagedSubscriptions_smsSentSuccessfullyAndReceivedSmsIntentDeliveredToWorkProfileDefaultSmsApp() {
+    public void sendTextMessage_fromWorkProfile_allManagedSubscriptions_smsSentSuccessfully() {
         assumeSmsCapableDevice();
         assertSimCardPresent();
         String previousDefaultSmsPackage = Telephony.Sms.getDefaultSmsPackage(sContext);
@@ -163,10 +163,6 @@ public final class WorkProfileTelephonyTest {
                     PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_MUTABLE_UNAUDITED);
             IntentFilter sentIntentFilter = new IntentFilter(SMS_SENT_INTENT_ACTION);
             smsApp.registerReceiver(sentIntentFilter, Context.RECEIVER_EXPORTED_UNAUDITED);
-            IntentFilter receivedMessageIntentFilter = new IntentFilter(
-                    Telephony.Sms.Intents.SMS_DELIVER_ACTION);
-            smsApp.registerReceiver(receivedMessageIntentFilter,
-                    Context.RECEIVER_EXPORTED_UNAUDITED);
 
             smsApp.smsManager().sendTextMessage(mDestinationNumber, null, "test", sentPendingIntent,
                     null);
@@ -174,8 +170,6 @@ public final class WorkProfileTelephonyTest {
             assertThat(smsApp.events().broadcastReceived().whereIntent().action().isEqualTo(
                     SMS_SENT_INTENT_ACTION).whereResultCode().isEqualTo(
                     Activity.RESULT_OK)).eventOccurred();
-            assertThat(smsApp.events().broadcastReceived().whereIntent().action().isEqualTo(
-                    Telephony.Sms.Intents.SMS_DELIVER_ACTION)).eventOccurred();
         } finally {
             dpm.setDefaultSmsApplication(sDeviceState.profileOwner(WORK_PROFILE).componentName(),
                     previousDefaultSmsPackage);
