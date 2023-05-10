@@ -127,6 +127,7 @@ public final class Package {
                     .validate(
                             (output) -> output.contains("installed for user"))
                     .execute();
+
             return this;
         } catch (AdbException e) {
             throw new NeneException("Could not install-existing package " + this, e);
@@ -385,12 +386,12 @@ public final class Package {
      * <p>You can not deny permissions for the current package on the current user.
      */
     public Package denyPermission(UserReference user, String permission) {
+        // There is no readable output upon failure so we need to check ourselves
+        checkCanGrantOrRevokePermission(user, permission);
+
         if (!hasPermission(user, permission)) {
             return this; // Already denied
         }
-
-        // There is no readable output upon failure so we need to check ourselves
-        checkCanGrantOrRevokePermission(user, permission);
 
         if (packageName().equals(TestApis.context().instrumentedContext().getPackageName())
                 && user.equals(TestApis.users().instrumented())) {
