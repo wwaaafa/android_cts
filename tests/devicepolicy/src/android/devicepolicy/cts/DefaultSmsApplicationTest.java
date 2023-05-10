@@ -120,10 +120,17 @@ public final class DefaultSmsApplicationTest {
     // TODO(b/198588696): Add support is @RequireSmsCapable and @RequireNotSmsCapable
     @Postsubmit(reason = "new test")
     @PolicyDoesNotApplyTest(policy = DefaultSmsApplication.class)
+    @EnsureGlobalSettingSet(key =
+            Settings.Global.ALLOW_WORK_PROFILE_TELEPHONY_FOR_NON_DPM_ROLE_HOLDERS, value = "1")
     @EnsureHasPermission(INTERACT_ACROSS_USERS)
     public void setDefaultSmsApplication_unchanged() {
         assumeTrue(mTelephonyManager.isSmsCapable()
                 || (mRoleManager != null && mRoleManager.isRoleAvailable(RoleManager.ROLE_SMS)));
+        //TODO(b/273529454): replace with EnsureTelephonyEnabledInUser annotation
+        if (mDpm.isOrganizationOwnedDeviceWithManagedProfile()) {
+            mDpm.setManagedSubscriptionsPolicy(new ManagedSubscriptionsPolicy(
+                    ManagedSubscriptionsPolicy.TYPE_ALL_MANAGED_SUBSCRIPTIONS));
+        }
         String previousSmsAppInTest = getDefaultSmsPackage();
         String previousSmsAppInDpc = getDefaultSmsPackageInDpc();
         try (TestAppInstance smsApp = sSmsApp.install(sDeviceState.dpc().user())) {
@@ -133,15 +140,27 @@ public final class DefaultSmsApplicationTest {
                     .isEqualTo(previousSmsAppInTest);
         } finally {
             mDpm.setDefaultSmsApplication(mAdmin, previousSmsAppInDpc);
+            //TODO(b/273529454): replace with EnsureTelephonyEnabledInUser annotation
+            if (mDpm.isOrganizationOwnedDeviceWithManagedProfile()) {
+                mDpm.setManagedSubscriptionsPolicy(new ManagedSubscriptionsPolicy(
+                        ManagedSubscriptionsPolicy.TYPE_ALL_PERSONAL_SUBSCRIPTIONS));
+            }
         }
     }
 
     // TODO(b/198588696): Add support is @RequireSmsCapable and @RequireNotSmsCapable
     @Postsubmit(reason = "new test")
     @CanSetPolicyTest(policy = DefaultSmsApplication.class)
+    @EnsureGlobalSettingSet(key =
+            Settings.Global.ALLOW_WORK_PROFILE_TELEPHONY_FOR_NON_DPM_ROLE_HOLDERS, value = "1")
     public void setDefaultSmsApplication_smsPackageDoesNotExist_unchanged() {
         assumeTrue(mTelephonyManager.isSmsCapable()
                 || (mRoleManager != null && mRoleManager.isRoleAvailable(RoleManager.ROLE_SMS)));
+        //TODO(b/273529454): replace with EnsureTelephonyEnabledInUser annotation
+        if (mDpm.isOrganizationOwnedDeviceWithManagedProfile()) {
+            mDpm.setManagedSubscriptionsPolicy(new ManagedSubscriptionsPolicy(
+                    ManagedSubscriptionsPolicy.TYPE_ALL_MANAGED_SUBSCRIPTIONS));
+        }
         String previousSmsAppName = getDefaultSmsPackage();
 
         mDpm.setDefaultSmsApplication(mAdmin, FAKE_SMS_APP_NAME);
@@ -150,6 +169,11 @@ public final class DefaultSmsApplicationTest {
             assertThat(getDefaultSmsPackage()).isEqualTo(previousSmsAppName);
         } finally {
             mDpm.setDefaultSmsApplication(mAdmin, previousSmsAppName);
+            //TODO(b/273529454): replace with EnsureTelephonyEnabledInUser annotation
+            if (mDpm.isOrganizationOwnedDeviceWithManagedProfile()) {
+                mDpm.setManagedSubscriptionsPolicy(new ManagedSubscriptionsPolicy(
+                        ManagedSubscriptionsPolicy.TYPE_ALL_PERSONAL_SUBSCRIPTIONS));
+            }
         }
     }
 
