@@ -24,6 +24,8 @@ import android.service.notification.StatusBarNotification;
 
 import java.util.function.Supplier;
 
+import android.text.TextUtils;
+
 public class NotificationHelper {
     public static final long SHORT_WAIT_TIME = 100;
     public static final long MAX_WAIT_TIME = 2000;
@@ -46,8 +48,15 @@ public class NotificationHelper {
         // notification is a bit asynchronous so it may take a few ms to appear in
         // getActiveNotifications()
         // we will check for it for up to 1000ms before giving up
+        return findPostedNotification(id, all, null);
+    }
+
+    public StatusBarNotification findPostedNotification(int id, boolean all, String pkg) {
+        // notification is a bit asynchronous so it may take a few ms to appear in
+        // getActiveNotifications()
+        // we will check for it for up to 1000ms before giving up
         for (long totalWait = 0; totalWait < MAX_WAIT_TIME; totalWait += SHORT_WAIT_TIME) {
-            StatusBarNotification n = findNotificationNoWait(id, all);
+            StatusBarNotification n = findNotificationNoWait(id, all, pkg);
             if (n != null) {
                 return n;
             }
@@ -57,13 +66,25 @@ public class NotificationHelper {
                 // pass
             }
         }
-        return findNotificationNoWait(id, all);
+        return findNotificationNoWait(id, all, pkg);
     }
 
     public StatusBarNotification findNotificationNoWait(int id, boolean all) {
-        for (StatusBarNotification sbn : getActiveNotifications(all)) {
-            if (sbn.getId() == id) {
-                return sbn;
+        return findNotificationNoWait(id, all, null);
+    }
+
+    public StatusBarNotification findNotificationNoWait(int id, boolean all, String pkg) {
+        if (TextUtils.isEmpty(pkg)) {
+            for (StatusBarNotification sbn : getActiveNotifications(all)) {
+                if (sbn.getId() == id) {
+                    return sbn;
+                }
+            }
+        } else {
+            for (StatusBarNotification sbn : getActiveNotifications(all)) {
+                if ((sbn.getId() == id) && sbn.getPackageName().equals(pkg)) {
+                    return sbn;
+                }
             }
         }
         return null;

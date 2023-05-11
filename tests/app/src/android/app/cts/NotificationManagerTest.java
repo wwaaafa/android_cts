@@ -325,8 +325,12 @@ public class NotificationManagerTest extends AndroidTestCase {
     }
 
     private void assertNotificationCancelled(int id, boolean all) {
+        assertNotificationCancelled(id, all, null);
+    }
+
+    private void assertNotificationCancelled(int id, boolean all, String pkg) {
         for (long totalWait = 0; totalWait < MAX_WAIT_TIME; totalWait += SHORT_WAIT_TIME) {
-            StatusBarNotification sbn = findNotificationNoWait(id, all);
+            StatusBarNotification sbn = findNotificationNoWait(id, all, pkg);
             if (sbn == null) return;
             try {
                 Thread.sleep(SHORT_WAIT_TIME);
@@ -334,7 +338,7 @@ public class NotificationManagerTest extends AndroidTestCase {
                 e.printStackTrace();
             }
         }
-        assertNull(findNotificationNoWait(id, all));
+        assertNull(findNotificationNoWait(id, all, pkg));
     }
 
     private void insertSingleContact(String name, String phone, String email, boolean starred) {
@@ -421,8 +425,16 @@ public class NotificationManagerTest extends AndroidTestCase {
         return mNotificationHelper.findPostedNotification(id, all);
     }
 
+    private StatusBarNotification findPostedNotification(int id, boolean all, String pkg) {
+        return mNotificationHelper.findPostedNotification(id, all, pkg);
+    }
+
     private StatusBarNotification findNotificationNoWait(int id, boolean all) {
         return mNotificationHelper.findNotificationNoWait(id, all);
+    }
+
+    private StatusBarNotification findNotificationNoWait(int id, boolean all, String pkg) {
+        return mNotificationHelper.findNotificationNoWait(id, all, pkg);
     }
 
     private StatusBarNotification[] getActiveNotifications(boolean all) {
@@ -2873,32 +2885,32 @@ public class NotificationManagerTest extends AndroidTestCase {
             // Post #7
             performNotificationProviderAction("send-7");
 
-            assertEquals(background7Uri, getNotificationBackgroundImageUri(7));
-            assertNotificationCancelled(8, true);
+            assertEquals(background7Uri, getNotificationBackgroundImageUri(7, NOTIFICATIONPROVIDER));
+            assertNotificationCancelled(8, true, NOTIFICATIONPROVIDER);
             assertAccessible(background7Uri);
             assertInaccessible(background8Uri);
 
             // Post #8
             performNotificationProviderAction("send-8");
 
-            assertEquals(background7Uri, getNotificationBackgroundImageUri(7));
-            assertEquals(background8Uri, getNotificationBackgroundImageUri(8));
+            assertEquals(background7Uri, getNotificationBackgroundImageUri(7, NOTIFICATIONPROVIDER));
+            assertEquals(background8Uri, getNotificationBackgroundImageUri(8, NOTIFICATIONPROVIDER));
             assertAccessible(background7Uri);
             assertAccessible(background8Uri);
 
             // Cancel #7
             performNotificationProviderAction("cancel-7");
 
-            assertNotificationCancelled(7, true);
-            assertEquals(background8Uri, getNotificationBackgroundImageUri(8));
+            assertNotificationCancelled(7, true, NOTIFICATIONPROVIDER);
+            assertEquals(background8Uri, getNotificationBackgroundImageUri(8, NOTIFICATIONPROVIDER));
             assertInaccessible(background7Uri);
             assertAccessible(background8Uri);
 
             // Cancel #8
             performNotificationProviderAction("cancel-8");
 
-            assertNotificationCancelled(7, true);
-            assertNotificationCancelled(8, true);
+            assertNotificationCancelled(7, true, NOTIFICATIONPROVIDER);
+            assertNotificationCancelled(8, true, NOTIFICATIONPROVIDER);
             assertInaccessible(background7Uri);
             assertInaccessible(background8Uri);
 
@@ -2927,7 +2939,7 @@ public class NotificationManagerTest extends AndroidTestCase {
             mListener = TestNotificationListener.getInstance();
             assertNotNull(mListener);
 
-            assertEquals(background7Uri, getNotificationBackgroundImageUri(7));
+            assertEquals(background7Uri, getNotificationBackgroundImageUri(7, NOTIFICATIONPROVIDER));
             assertAccessible(background7Uri);
 
         } finally {
@@ -2951,7 +2963,7 @@ public class NotificationManagerTest extends AndroidTestCase {
             mListener = TestNotificationListener.getInstance();
             assertNotNull(mListener);
 
-            assertEquals(background7Uri, getNotificationBackgroundImageUri(7));
+            assertEquals(background7Uri, getNotificationBackgroundImageUri(7, NOTIFICATIONPROVIDER));
             assertAccessible(background7Uri);
 
             // Remove the listener to ensure permissions get revoked
@@ -3030,7 +3042,7 @@ public class NotificationManagerTest extends AndroidTestCase {
                 performNotificationProviderAction("send-7");
 
                 // Check that both the test app (this code) and the external app have URI access.
-                assertEquals(background7Uri, getNotificationBackgroundImageUri(7));
+                assertEquals(background7Uri, getNotificationBackgroundImageUri(7, NOTIFICATIONPROVIDER));
                 assertAccessible(background7Uri);
                 assertTrue(mNotificationUriAccessService.isFileUriAccessible(background7Uri));
 
@@ -3079,8 +3091,8 @@ public class NotificationManagerTest extends AndroidTestCase {
     }
 
     @NonNull
-    private Uri getNotificationBackgroundImageUri(int notificationId) {
-        StatusBarNotification sbn = findPostedNotification(notificationId, true);
+    private Uri getNotificationBackgroundImageUri(int notificationId, String pkg) {
+        StatusBarNotification sbn = findPostedNotification(notificationId, true, pkg);
         assertNotNull(sbn);
         String imageUriString = sbn.getNotification().extras
                 .getString(Notification.EXTRA_BACKGROUND_IMAGE_URI);
