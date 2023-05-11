@@ -39,6 +39,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.IBinder;
 import android.os.Looper;
 import android.os.Process;
 import android.os.RemoteException;
@@ -105,6 +106,8 @@ public class BaseTelecomTestWithMockServices extends InstrumentationTestCase {
     public static final String PERMISSION_PROCESS_OUTGOING_CALLS =
             "android.permission.PROCESS_OUTGOING_CALLS";
     public static final String PERMISSION_PACKAGE_USAGE_STATS = "android.permission.PACKAGE_USAGE_STATS";
+
+    public static final String OTT_TEST_EVENT_NAME = "test.oem.event_name";
 
     Context mContext;
     TelecomManager mTelecomManager;
@@ -1315,6 +1318,69 @@ public class BaseTelecomTestWithMockServices extends InstrumentationTestCase {
         return null;
     }
 
+    /**
+     * @return A test Parcelable with some basic values as well as a Binder that just responds with
+     * the same thing that was sent to it.
+     */
+    TestParcelable createTestParcelable() {
+        return new TestParcelable(42, "a test string",
+                new ITestInterface.Stub() {
+                    @Override
+                    public String testLoopback(String testString) {
+                        return testString;
+                    }
+                });
+    }
+
+    /**
+     * Send a relatively complex Bundle that will go through Telecom as a call or connection event.
+     * @param parcelable TestParcelable created with {@link #createTestParcelable()}
+     */
+    Bundle createTestBundle(TestParcelable parcelable) {
+        Bundle bundle = new Bundle();
+        bundle.putInt(TestParcelable.VAL_1_KEY, parcelable.mVal1);
+        bundle.putString(TestParcelable.VAL_2_KEY, parcelable.mVal2);
+        bundle.putBinder(TestParcelable.VAL_3_KEY, parcelable.mVal3);
+        parcelable.copyIntoBundle(bundle);
+        return bundle;
+    }
+
+    /**
+     * Verify the bundle created in {@link #createTestBundle} is correct.
+     * @param receivedBundle The Bundle that was received
+     * @param originalParcelable The original Parcelable created as part of
+     * {@link #createTestBundle}
+     */
+    void verifyTestBundle(Bundle receivedBundle, TestParcelable originalParcelable) {
+        assertNotNull(receivedBundle);
+        // We have to set the classloader here to the classloader of the test app or we will not
+        // be able to unparcel.
+        receivedBundle.setClassLoader(mContext.getClassLoader());
+        assertEquals(originalParcelable.mVal1, receivedBundle.getInt(TestParcelable.VAL_1_KEY));
+        assertEquals(originalParcelable.mVal2, receivedBundle.getString(TestParcelable.VAL_2_KEY));
+        IBinder testBinder = receivedBundle.getBinder(TestParcelable.VAL_3_KEY);
+        assertNotNull(testBinder);
+        assertEquals(originalParcelable.mVal3, testBinder);
+        TestParcelable resultParcelable = null;
+        try {
+            resultParcelable = TestParcelable.getFromBundle(receivedBundle);
+        } catch (Exception e) {
+            fail("could not retrieve parcelable: " + e);
+        }
+        assertNotNull(resultParcelable);
+        assertEquals(originalParcelable, resultParcelable);
+        // Test Binder references that were received work properly
+        try {
+            ITestInterface testInterface = ITestInterface.Stub.asInterface(testBinder);
+            assertEquals("testString", testInterface.testLoopback("testString"));
+            testInterface = ITestInterface.Stub.asInterface(resultParcelable.mVal3);
+            assertEquals("testString", testInterface.testLoopback("testString"));
+        } catch (RemoteException e) {
+            // this should not happen since it is accessing the local process
+            fail("could not test IBinder due to Exception: " + e);
+        }
+    }
+
     void assertNumCalls(final MockInCallService inCallService, final int numCalls) {
         waitUntilConditionIsTrueOrTimeout(new Condition() {
             @Override
@@ -1329,6 +1395,22 @@ public class BaseTelecomTestWithMockServices extends InstrumentationTestCase {
         WAIT_FOR_STATE_CHANGE_TIMEOUT_MS,
         "InCallService should contain " + numCalls + " calls."
     );
+    }
+
+    void assertNumCalls_OrICSUnbound(final MockInCallService inCallService, final int numCalls) {
+        waitUntilConditionIsTrueOrTimeout(new Condition() {
+            @Override
+            public Object expected() {
+                return true;
+            }
+
+            @Override
+            public Object actual() {
+                return inCallService == null || numCalls == inCallService.getCallCount();
+            }
+        }, WAIT_FOR_STATE_CHANGE_TIMEOUT_MS, "InCallService should contain " + numCalls
+                        + " calls or the ICS should be unbound (meaning the call is destroyed)."
+        );
     }
 
     void assertNumConferenceCalls(final MockInCallService inCallService, final int numCalls) {
