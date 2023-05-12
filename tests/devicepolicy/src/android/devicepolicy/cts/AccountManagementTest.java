@@ -46,6 +46,7 @@ import android.os.UserManager;
 
 import com.android.bedstead.harrier.BedsteadJUnit4;
 import com.android.bedstead.harrier.DeviceState;
+import com.android.bedstead.harrier.annotations.EnsureDoesNotHaveUserRestriction;
 import com.android.bedstead.harrier.annotations.EnsureHasAccount;
 import com.android.bedstead.harrier.annotations.EnsureHasAccountAuthenticator;
 import com.android.bedstead.harrier.annotations.EnsureHasPermission;
@@ -61,6 +62,8 @@ import com.android.bedstead.nene.TestApis;
 import com.android.bedstead.nene.accounts.AccountReference;
 import com.android.bedstead.nene.exceptions.NeneException;
 import com.android.compatibility.common.util.ApiTest;
+import com.android.bedstead.nene.userrestrictions.CommonUserRestrictions;
+import com.android.bedstead.remotedpc.RemotePolicyManager;
 
 import org.junit.Assume;
 import org.junit.Before;
@@ -282,6 +285,7 @@ public final class AccountManagementTest {
 
     @Postsubmit(reason = "new test")
     @CanSetPolicyTest(policy = DisallowModifyAccounts.class)
+    @EnsureDoesNotHaveUserRestriction(CommonUserRestrictions.DISALLOW_MODIFY_ACCOUNTS)
     public void removeAccount_withDisallowModifyAccountsRestriction_throwsException()
             throws Exception {
         AccountReference account = null;
@@ -324,6 +328,7 @@ public final class AccountManagementTest {
     @Postsubmit(reason = "new test")
     @CanSetPolicyTest(policy = AccountManagement.class)
     @EnsureHasAccount
+    @EnsureDoesNotHaveUserRestriction(CommonUserRestrictions.DISALLOW_MODIFY_ACCOUNTS)
     public void removeAccount_withAccountManagementDisabled_throwsException()
             throws Exception {
         try {

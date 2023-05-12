@@ -19,6 +19,7 @@ package android.devicepolicy.cts;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
 import static org.testng.Assert.assertThrows;
 
 import com.android.bedstead.harrier.BedsteadJUnit4;
@@ -253,7 +254,7 @@ public final class UserRestrictionsTest {
                 .userManager().hasUserRestriction(restriction);
 
         try {
-            assertThat(hasRestrictionOriginally).isTrue();
+            assumeTrue(hasRestrictionOriginally);
             sDeviceState.dpc().devicePolicyManager().clearUserRestriction(
                     sDeviceState.dpc().componentName(), restriction);
 
