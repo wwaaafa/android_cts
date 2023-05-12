@@ -35,9 +35,9 @@ import android.graphics.ColorSpace.Named;
 import android.graphics.ImageDecoder;
 import android.graphics.Rect;
 import android.graphics.drawable.cts.AnimatedImageDrawableTest;
+import android.media.MediaFormat;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
-import android.media.MediaFormat;
 import android.system.ErrnoException;
 import android.system.Os;
 import android.util.DisplayMetrics;
@@ -45,6 +45,7 @@ import android.util.DisplayMetrics;
 import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.RequiresDevice;
 
+import com.android.compatibility.common.util.CddTest;
 import com.android.compatibility.common.util.MediaUtils;
 
 import org.junit.Test;
@@ -142,7 +143,8 @@ public class AImageDecoderTest {
         if (cs == null) {
             return DataSpace.ADATASPACE_UNKNOWN;
         }
-        return DataSpace.fromColorSpace(cs);
+
+        return cs.getDataSpace();
     }
 
     @Test
@@ -371,6 +373,7 @@ public class AImageDecoderTest {
 
     @Test
     @RequiresDevice
+    @CddTest(requirements = {"5.1.5/C-0-7"})
     @Parameters(method = "getBitMapFormatsUnpremul")
     public void testDecode10BitAvif(int bitmapFormat, boolean unpremul) throws IOException {
         assumeTrue("AVIF is not supported on this device, skip this test.",
@@ -1011,7 +1014,7 @@ public class AImageDecoderTest {
 
             String mimeType = uri.toString().contains("webp") ? "image/webp" : "image/jpeg";
             nTestInfo(aimagedecoder, 100, 80, mimeType, false,
-                    DataSpace.fromColorSpace(bm.getColorSpace()));
+                    bm.getColorSpace().getDataSpace());
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             fail("Could not open " + uri + " to check info");
@@ -1107,7 +1110,7 @@ public class AImageDecoderTest {
         File file = createCompressedBitmap(width, height, colorSpace, format);
         assertNotNull(file);
 
-        int dataSpace = DataSpace.fromColorSpace(colorSpace);
+        int dataSpace = colorSpace.getDataSpace();
 
         try (ParcelFileDescriptor pfd = ParcelFileDescriptor.open(file,
                 ParcelFileDescriptor.MODE_READ_ONLY)) {
@@ -1136,7 +1139,7 @@ public class AImageDecoderTest {
     @Test
     @Parameters(method = "rgbColorSpaces")
     public void testSetDataSpace(ColorSpace colorSpace) {
-        int dataSpace = DataSpace.fromColorSpace(colorSpace);
+        int dataSpace = colorSpace.getDataSpace();
         if (dataSpace == DataSpace.ADATASPACE_UNKNOWN) {
             // AImageDecoder cannot decode to these ADATASPACEs
             return;

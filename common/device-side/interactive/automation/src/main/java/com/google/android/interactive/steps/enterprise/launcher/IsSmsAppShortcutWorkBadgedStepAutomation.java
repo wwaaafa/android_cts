@@ -13,10 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package android.camera.cts.api34test;
 
-import android.app.Activity;
 
-// Stub activity used to start the app
-public class Api34TestActivity extends Activity {
+package com.google.android.interactive.steps.enterprise.launcher;
+
+import androidx.test.uiautomator.By;
+
+import com.android.bedstead.nene.TestApis;
+import com.android.interactive.Automation;
+import com.android.interactive.annotations.AutomationFor;
+
+@AutomationFor("com.google.android.interactive.steps.enterprise.launcher"
+        + ".IsSmsAppShortcutWorkBadgedStep")
+public class IsSmsAppShortcutWorkBadgedStepAutomation implements Automation<Boolean> {
+    @Override
+    public Boolean automate() throws Exception {
+        return TestApis.ui().device().findObject(By.desc("Work SmsApp")) != null;
+    }
 }

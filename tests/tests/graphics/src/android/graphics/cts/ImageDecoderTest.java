@@ -61,6 +61,7 @@ import androidx.test.filters.RequiresDevice;
 
 import com.android.compatibility.common.util.ApiLevelUtil;
 import com.android.compatibility.common.util.BitmapUtils;
+import com.android.compatibility.common.util.CddTest;
 import com.android.compatibility.common.util.MediaUtils;
 
 import org.junit.Test;
@@ -285,6 +286,7 @@ public class ImageDecoderTest {
     }
 
     @Test
+    @CddTest(requirements = {"5.1.5/C-0-7"})
     @RequiresDevice
     public void testDecode10BitAvif() {
         assumeTrue("AVIF is not supported on this device, skip this test.",
@@ -335,6 +337,7 @@ public class ImageDecoderTest {
     }
 
     @Test
+    @CddTest(requirements = {"5.1.5/C-0-7"})
     @RequiresDevice
     public void testDecode10BitAvifWithLowRam() {
         assumeTrue("AVIF is not supported on this device, skip this test.",
@@ -2468,6 +2471,10 @@ public class ImageDecoderTest {
                     ColorSpace.get(ColorSpace.Named.LINEAR_SRGB)),
             new AssetRecord("grayscale-16bit-linearSrgb.png", 32, 32, true, false, true,
                     ColorSpace.get(ColorSpace.Named.LINEAR_EXTENDED_SRGB)),
+            new AssetRecord("red-hlg-profile.png", 100, 100, false, false, true,
+                    ColorSpace.get(ColorSpace.Named.BT2020_HLG)),
+            new AssetRecord("red-pq-profile.png", 100, 100, false, false, true,
+                    ColorSpace.get(ColorSpace.Named.BT2020_PQ)),
         };
     }
 
