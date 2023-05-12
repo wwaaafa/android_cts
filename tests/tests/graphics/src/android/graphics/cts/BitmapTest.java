@@ -2693,7 +2693,7 @@ public class BitmapTest {
 
                 int dataSpace = nGetDataSpace(bm);
                 assertEquals("Bitmap with " + c + " and " + bm.getColorSpace()
-                        + " has unexpected data space", colorSpace.getDataSpace(),
+                        + " has unexpected data space", DataSpace.fromColorSpace(colorSpace),
                         dataSpace);
             }
         }
