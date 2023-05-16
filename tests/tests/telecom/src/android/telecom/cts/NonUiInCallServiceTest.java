@@ -6,6 +6,9 @@ import static android.telecom.cts.TestUtils.waitOnAllHandlers;
 import android.bluetooth.BluetoothManager;
 import android.content.ComponentName;
 import android.content.ServiceConnection;
+import android.content.pm.ComponentInfo;
+import android.content.pm.ModuleInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -13,9 +16,12 @@ import android.os.DeadObjectException;
 import android.telecom.TelecomManager;
 import android.telecom.cts.api29incallservice.CtsApi29InCallService;
 import android.telecom.cts.api29incallservice.ICtsApi29InCallServiceControl;
+import android.util.Log;
 import android.util.Pair;
 
 import androidx.test.InstrumentationRegistry;
+
+import java.util.Arrays;
 
 public class NonUiInCallServiceTest extends BaseTelecomTestWithMockServices {
     private static final String LOG_TAG = NonUiInCallServiceTest.class.getSimpleName();
@@ -122,6 +128,7 @@ public class NonUiInCallServiceTest extends BaseTelecomTestWithMockServices {
                     ComponentName.createRelative(MockInCallService.class.getPackage().getName(),
                             "." + MockInCallService.class.getSimpleName()),
                     PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
+
             ICtsApi29InCallServiceControl controlInterface = setUpControl();
 
             Bundle extras = new Bundle();
