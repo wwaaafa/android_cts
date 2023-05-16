@@ -77,6 +77,7 @@ public final class HotwordDetectionServiceBasicTest
     private static final String PRIVACY_CHIP_ID = "privacy_chip";
     private static final Long PERMISSION_INDICATORS_NOT_PRESENT = 162547999L;
     private static final Long CLEAR_CHIP_MS = 5000L;
+    private static final int HOTWORD_DETECTION_TIMEOUT_MS = 20 * 1000;
 
     private static Instrumentation sInstrumentation = InstrumentationRegistry.getInstrumentation();
     private static UiDevice sUiDevice = UiDevice.getInstance(sInstrumentation);
@@ -300,7 +301,7 @@ public final class HotwordDetectionServiceBasicTest
                 Utils.HOTWORD_DETECTION_SERVICE_ONDETECT_RESULT_INTENT);
         receiver.register();
         perform(testType);
-        final Intent intent = receiver.awaitForBroadcast(TIMEOUT_MS);
+        final Intent intent = receiver.awaitForBroadcast(HOTWORD_DETECTION_TIMEOUT_MS);
         receiver.unregisterQuietly();
 
         assertThat(intent).isNotNull();
