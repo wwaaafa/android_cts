@@ -871,6 +871,7 @@ public class JobThrottlingTest {
         assumeFalse("not testable in automotive device", mAutomotiveDevice);
         assumeFalse("not testable in leanback device", mLeanbackOnly);
 
+        assumeTrue(BatteryUtils.hasBattery());
         assumeTrue(mHasWifi);
         ensureSavedWifiNetwork(mWifiManager);
 
