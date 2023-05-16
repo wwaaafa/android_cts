@@ -73,6 +73,9 @@ public class PermissionPolicyTest {
     private static final String ALLOW_SLIPPERY_TOUCHES_PERMISSION
             = "android.permission.ALLOW_SLIPPERY_TOUCHES";
 
+    private static final String LAUNCH_PERMISSION_SETTINGS =
+            "android.permission.LAUNCH_PERMISSION_SETTINGS";
+
     private static final String LOG_TAG = "PermissionProtectionTest";
 
     private static final String PLATFORM_PACKAGE_NAME = "android";
@@ -453,6 +456,8 @@ public class PermissionPolicyTest {
             case MANAGE_COMPANION_DEVICES_PERMISSION:
                 return parseDate(SECURITY_PATCH).before(MANAGE_COMPANION_DEVICES_PATCH_DATE);
             case ALLOW_SLIPPERY_TOUCHES_PERMISSION:
+                return true;
+            case LAUNCH_PERMISSION_SETTINGS:
                 return true;
             default:
                 return false;
