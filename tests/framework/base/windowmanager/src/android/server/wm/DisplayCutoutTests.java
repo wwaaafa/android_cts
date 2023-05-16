@@ -56,6 +56,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Insets;
 import android.graphics.Path;
 import android.graphics.Rect;
@@ -63,6 +64,7 @@ import android.os.Bundle;
 import android.platform.test.annotations.Presubmit;
 import android.provider.Settings;
 import android.server.wm.settings.SettingsSession;
+import android.util.Size;
 import android.view.DisplayCutout;
 import android.view.View;
 import android.view.ViewGroup;
@@ -148,18 +150,37 @@ public class DisplayCutoutTests {
     // 16 dp with app windows/contents for the apps using DEFAULT and SHORT_EDGES.
     private int mMaximumSizeForNoLetterbox;
 
+    private static MultiDisplayTestBase.DisplayMetricsSession sDisplayMetricsSession;
+
     @BeforeClass
     public static void setUpClass() {
         sImmersiveModeConfirmationSetting = new SettingsSession<>(
                 Settings.Secure.getUriFor(IMMERSIVE_MODE_CONFIRMATIONS),
                 Settings.Secure::getString, Settings.Secure::putString);
         sImmersiveModeConfirmationSetting.set("confirmed");
+
+        if (!ActivityManagerTestBase.isCloseToSquareDisplay(getInstrumentation().getContext())) {
+            return;
+        }
+        // If the display size is close to square, the activity bounds may be shrunk to match its
+        // requested orientation (see ActivityRecord#orientationRespectedWithInsets). Then its
+        // insets may not contain the cutout path, so resize the display to avoid the case.
+        sDisplayMetricsSession = new MultiDisplayTestBase.DisplayMetricsSession(DEFAULT_DISPLAY);
+        final Size displaySize = sDisplayMetricsSession.getDisplayMetrics().getSize();
+        final int orientation = displaySize.getHeight() <= displaySize.getWidth()
+                ? Configuration.ORIENTATION_PORTRAIT : Configuration.ORIENTATION_LANDSCAPE;
+        sDisplayMetricsSession.changeAspectRatio(1.77 /* 16:9 */, orientation);
+        getInstrumentation().getUiAutomation().syncInputTransactions();
     }
 
     @AfterClass
     public static void tearDownClass() {
         if (sImmersiveModeConfirmationSetting != null) {
             sImmersiveModeConfirmationSetting.close();
+        }
+        if (sDisplayMetricsSession != null) {
+            sDisplayMetricsSession.close();
+            sDisplayMetricsSession = null;
         }
     }
 
