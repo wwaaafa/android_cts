@@ -77,6 +77,9 @@ public class PermissionPolicyTest {
     private static final String RECEIVE_KEYCODE_EVENTS_PERMISSION =
             "android.permission.RECEIVE_KEYCODE_EVENTS";
 
+    private static final String LAUNCH_PERMISSION_SETTINGS =
+            "android.permission.LAUNCH_PERMISSION_SETTINGS";
+
     private static final String LOG_TAG = "PermissionProtectionTest";
 
     private static final String PLATFORM_PACKAGE_NAME = "android";
@@ -531,6 +534,8 @@ public class PermissionPolicyTest {
             case SET_UNRESTRICTED_GESTURE_EXCLUSION:
                 return true;
             case RECEIVE_KEYCODE_EVENTS_PERMISSION:
+                return true;
+            case LAUNCH_PERMISSION_SETTINGS:
                 return true;
             default:
                 return false;
