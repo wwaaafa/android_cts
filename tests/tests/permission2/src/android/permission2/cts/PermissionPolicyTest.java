@@ -55,6 +55,8 @@ public class PermissionPolicyTest extends AndroidTestCase {
     private static final Date MANAGE_COMPANION_DEVICES_PATCH_DATE = parseDate("2020-07-01");
     private static final String MANAGE_COMPANION_DEVICES_PERMISSION
             = "android.permission.MANAGE_COMPANION_DEVICES";
+    private static final String LAUNCH_PERMISSION_SETTINGS =
+        "android.permission.LAUNCH_PERMISSION_SETTINGS";
 
     private static final String LOG_TAG = "PermissionProtectionTest";
 
@@ -316,6 +318,8 @@ public class PermissionPolicyTest extends AndroidTestCase {
                 return parseDate(SECURITY_PATCH).before(HIDE_NON_SYSTEM_OVERLAY_WINDOWS_PATCH_DATE);
             case MANAGE_COMPANION_DEVICES_PERMISSION:
                 return parseDate(SECURITY_PATCH).before(MANAGE_COMPANION_DEVICES_PATCH_DATE);
+            case LAUNCH_PERMISSION_SETTINGS:
+                return true;
             default:
                 return false;
         }
