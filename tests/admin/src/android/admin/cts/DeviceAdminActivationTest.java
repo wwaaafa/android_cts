@@ -16,23 +16,27 @@
 
 package android.admin.cts;
 
-import android.app.Activity;
-import android.app.admin.DevicePolicyManager;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
+import android.admin.app.CtsDeviceAdminActivationTestActivity;
+import android.admin.app.CtsDeviceAdminActivationTestActivity.OnActivityResultListener;
 import android.admin.app.CtsDeviceAdminBrokenReceiver;
 import android.admin.app.CtsDeviceAdminBrokenReceiver2;
 import android.admin.app.CtsDeviceAdminBrokenReceiver3;
 import android.admin.app.CtsDeviceAdminBrokenReceiver4;
 import android.admin.app.CtsDeviceAdminBrokenReceiver5;
 import android.admin.app.CtsDeviceAdminDeactivatedReceiver;
-import android.admin.app.CtsDeviceAdminActivationTestActivity;
-import android.admin.app.CtsDeviceAdminActivationTestActivity.OnActivityResultListener;
+import android.app.Activity;
+import android.app.Instrumentation;
+import android.app.UiAutomation;
+import android.app.admin.DevicePolicyManager;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.SystemClock;
 import android.test.ActivityInstrumentationTestCase2;
 import android.util.Log;
+import android.view.InputDevice;
+import android.view.KeyEvent;
 
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -62,6 +66,7 @@ public class DeviceAdminActivationTest
     private static final int UI_EFFECT_TIMEOUT_MILLIS = 5000;
 
     private boolean mDeviceAdmin;
+
     @Mock private OnActivityResultListener mMockOnActivityResultListener;
 
     public DeviceAdminActivationTest() {
@@ -154,6 +159,59 @@ public class DeviceAdminActivationTest
         startAddDeviceAdminActivityForResult(CtsDeviceAdminBrokenReceiver5.class);
         assertWithTimeoutOnActivityResultInvokedWithResultCode(Activity.RESULT_CANCELED);
         assertDeviceAdminDeactivated(CtsDeviceAdminBrokenReceiver5.class);
+    }
+
+    public void testNonSystemAppCantBecomeAdmin_withKeyEvent() throws Exception {
+        if (!mDeviceAdmin) {
+            Log.w(TAG, "Skipping testNonSystemAppCantBecomeAdmin_withKeyEvent");
+            return;
+        }
+        assertDeviceAdminDeactivated(CtsDeviceAdminDeactivatedReceiver.class);
+        startAddDeviceAdminActivityForResult(CtsDeviceAdminDeactivatedReceiver.class);
+        assertWithTimeoutOnActivityResultNotInvoked();
+
+        // inject KEYCODE_TAB and then KEYCODE_ENTER on "Activate" button should fail.
+        injectUntrustedKeyEventToActivateDeviceAdmin();
+        assertWithTimeoutOnActivityResultNotInvoked();
+
+        finishActivateDeviceAdminActivity();
+        assertDeviceAdminDeactivated(CtsDeviceAdminDeactivatedReceiver.class);
+    }
+
+    /**
+     * Inject KeyEvents to tap the "Activate this device admin app" button.
+     * Sends the "tab" KeyEvent to selects the first button, then the "enter" KeyEvent presses it.
+      */
+    private void injectUntrustedKeyEventToActivateDeviceAdmin() {
+        sendUntrustedDownUpKeyEvents(KeyEvent.KEYCODE_TAB);
+        sendUntrustedDownUpKeyEvents(KeyEvent.KEYCODE_ENTER);
+    }
+
+    /**
+     * Creates a untrusted KeyEvent with KEYCODE_ENTER that appears to originate from a physical
+     * keyboard.
+     */
+    private KeyEvent createUntrustedKeyEvent(int action, int keyCode) {
+        return new KeyEvent(
+                SystemClock.uptimeMillis(),
+                SystemClock.uptimeMillis(),
+                action,
+                keyCode,
+                0,
+                0,
+                0,
+                0,
+                0 /* flags: not setting FLAG_FROM_SYSTEM */,
+                InputDevice.SOURCE_KEYBOARD
+        );
+    }
+
+    void sendUntrustedDownUpKeyEvents(int keyCode) {
+        UiAutomation uiAutomation = getInstrumentation().getUiAutomation();
+        uiAutomation.injectInputEvent(
+                createUntrustedKeyEvent(KeyEvent.ACTION_DOWN, keyCode), true /* sync */);
+        uiAutomation.injectInputEvent(
+                createUntrustedKeyEvent(KeyEvent.ACTION_UP, keyCode), true /* sync */);
     }
 
     private void startAddDeviceAdminActivityForResult(Class<?> receiverClass) {
