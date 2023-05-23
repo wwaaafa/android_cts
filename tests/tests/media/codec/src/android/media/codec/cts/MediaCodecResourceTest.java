@@ -177,12 +177,12 @@ public class MediaCodecResourceTest {
             for (MediaCodec mediaCodec : mediaCodecList) {
                 mediaCodec.release();
             }
-            InstrumentationRegistry.getInstrumentation().getUiAutomation()
-                    .dropShellPermissionIdentity();
             destroyHighPriorityProcess();
             destroyLowPriorityProcess();
             // Allow time for the codecs and other resources to be released
             Thread.sleep(500);
+            InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                    .dropShellPermissionIdentity();
         }
     }
 
@@ -263,12 +263,12 @@ public class MediaCodecResourceTest {
             for (MediaCodec mediaCodec : mediaCodecList) {
                 mediaCodec.release();
             }
-            InstrumentationRegistry.getInstrumentation().getUiAutomation()
-                .dropShellPermissionIdentity();
             destroyHighPriorityProcess();
             destroyLowPriorityProcess();
             // Allow time for the codecs and other resources to be released
             Thread.sleep(500);
+            InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                .dropShellPermissionIdentity();
         }
     }
 
