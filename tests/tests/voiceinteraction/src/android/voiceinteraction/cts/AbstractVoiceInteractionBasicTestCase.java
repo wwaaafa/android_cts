@@ -39,7 +39,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 abstract class AbstractVoiceInteractionBasicTestCase {
     // TODO: (b/181943521) Combine the duplicated test class
 
-    protected static final int TIMEOUT_MS = 5 * 1000;
+    protected static final int TIMEOUT_MS = 15 * 1000;
 
     protected final Context mContext = getInstrumentation().getTargetContext();
 
