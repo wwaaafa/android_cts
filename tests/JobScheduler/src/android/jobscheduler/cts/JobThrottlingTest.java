@@ -949,6 +949,7 @@ public class JobThrottlingTest {
         assumeTrue("app standby not enabled", mAppStandbyEnabled);
         assumeFalse("not testable in automotive device", mAutomotiveDevice);
         assumeFalse("not testable in leanback device", mLeanbackOnly);
+        assumeTrue(BatteryUtils.hasBattery());
 
         // Reduce allowed time for testing.
         mDeviceConfigStateHelper.set("qc_allowed_time_per_period_ms", "60000");
