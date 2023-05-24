@@ -286,6 +286,8 @@ public class SimpleSaveActivityTest extends CustomDescriptionWithLinkTestCase<Si
     @Test
     public void testSave_afterRotation() throws Exception {
         assumeTrue("Rotation is supported", Helper.isRotationSupported(mContext));
+        assumeTrue("Device state is not REAR_DISPLAY",
+                !Helper.isDeviceInState(mContext, Helper.DeviceStateEnum.REAR_DISPLAY));
         mUiBot.setScreenOrientation(UiBot.PORTRAIT);
         try {
             saveTest(true);
