@@ -211,6 +211,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * A Junit rule which exposes methods for efficiently changing and querying device state.
@@ -3068,7 +3069,7 @@ public final class DeviceState extends HarrierRule {
 
             for (UserReference u : TestApis.users().all().stream()
                     .sorted(Comparator.comparing(u -> u.equals(instrumented)).reversed())
-                    .toList()) {
+                    .collect(Collectors.toList())) {
                 if (u.isSystem()) {
                     continue;
                 }
