@@ -418,9 +418,11 @@ public class LoginActivityTest extends LoginActivityCommonTestCase {
     @Test
     public void autofillPccDatasetTest_setForAllHints() throws Exception {
         // Set service.
-        enableService();
         enablePccDetectionFeature(sContext, "username", "password", "new_password");
         sReplier.setIdMode(IdMode.PCC_ID);
+        enableService();
+
+        boolean isPccEnabled = isPccFieldClassificationSet(sContext);
 
         final CannedFillResponse.Builder builder = new CannedFillResponse.Builder()
                 .addDataset(new CannedDataset.Builder()
@@ -438,7 +440,7 @@ public class LoginActivityTest extends LoginActivityCommonTestCase {
         requestFocusOnUsername();
 
         final FillRequest request = sReplier.getNextFillRequest();
-        if (isPccFieldClassificationSet(sContext)) {
+        if (isPccEnabled) {
             assertThat(request.hints.size()).isEqualTo(3);
         }
 
@@ -450,9 +452,11 @@ public class LoginActivityTest extends LoginActivityCommonTestCase {
     @Test
     public void autofillPccDatasetTest() throws Exception {
         // Set service.
-        enableService();
         enablePccDetectionFeature(sContext, "username");
         sReplier.setIdMode(IdMode.PCC_ID);
+        enableService();
+
+        boolean isPccEnabled = isPccFieldClassificationSet(sContext);
 
         final CannedFillResponse.Builder builder = new CannedFillResponse.Builder()
                 .addDataset(new CannedDataset.Builder()
@@ -471,7 +475,7 @@ public class LoginActivityTest extends LoginActivityCommonTestCase {
         requestFocusOnUsername();
 
         final FillRequest request = sReplier.getNextFillRequest();
-        if (isPccFieldClassificationSet(sContext)) {
+        if (isPccEnabled) {
             assertThat(request.hints.size()).isEqualTo(1);
             assertThat(request.hints.get(0)).isEqualTo("username");
         }
