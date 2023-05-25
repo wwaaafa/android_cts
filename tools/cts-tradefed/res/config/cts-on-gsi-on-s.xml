@@ -38,4 +38,7 @@
     <!-- CtsKeystoreTestCases: b/258826404 -->
     <option name="compatibility:exclude-filter" value="CtsKeystoreTestCases android.keystore.cts.NoAttestKeyTest#testEcAttestKeyFail" />
 
+    <!-- CtsNativeMediaAAudioTestCases: b/261824947 -->
+    <option name="compatibility:exclude-filter" value="CtsNativeMediaAAudioTestCases android.nativemedia.aaudio.AAudioTests" />
+
 </configuration>
