@@ -337,6 +337,7 @@ public final class CarAudioManagerTest extends AbstractCarTestCase {
     @ApiTest(apis = {
             "android.car.media.CarAudioManager#unregisterCarVolumeCallback(CarVolumeCallback)"})
     public void unregisterCarVolumeCallback_withoutPermission_receivesCallback() {
+        assumeDynamicRoutingIsEnabled();
         mCallback = new SyncCarVolumeCallback();
         runWithCarControlAudioVolumePermission(
                 () -> mCarAudioManager.registerCarVolumeCallback(mCallback));
@@ -539,6 +540,7 @@ public final class CarAudioManagerTest extends AbstractCarTestCase {
             + "#requestMediaAudioOnPrimaryZone(OccupantZoneInfo, Executor, "
             + "MediaAudioRequestStatusCallback)"})
     public void requestMediaAudioOnPrimaryZone() throws Exception {
+        assumeDynamicRoutingIsEnabled();
         int passengerAudioZoneId = assumePassengerWithValidAudioZone();
         setupMediaAudioRequestCallback();
         OccupantZoneInfo info =
@@ -562,6 +564,7 @@ public final class CarAudioManagerTest extends AbstractCarTestCase {
             + "#requestMediaAudioOnPrimaryZone(OccupantZoneInfo,"
             + "Executor, MediaAudioRequestStatusCallback)"})
     public void requestMediaAudioOnPrimaryZone_withoutApprover() throws Exception {
+        assumeDynamicRoutingIsEnabled();
         assumeNoPrimaryZoneAudioMediaApprovers();
         int passengerAudioZoneId = assumePassengerWithValidAudioZone();
         OccupantZoneInfo info =
