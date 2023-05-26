@@ -24,7 +24,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
@@ -45,10 +44,8 @@ import android.widget.FrameLayout;
 
 import androidx.lifecycle.Lifecycle;
 import androidx.test.core.app.ActivityScenario;
-import androidx.test.filters.LargeTest;
-import androidx.test.filters.RequiresDevice;
+import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.compatibility.common.util.SystemUtil;
 
@@ -59,16 +56,12 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntConsumer;
 
-@RunWith(AndroidJUnit4.class)
-@LargeTest
-@SuppressLint("RtlHardcoded")
-@RequiresDevice
+@SmallTest
 public class AttachedSurfaceControlTest {
     private static final String TAG = "AttachedSurfaceControlTest";
     private static final String FIXED_TO_USER_ROTATION_COMMAND =
@@ -111,6 +104,11 @@ public class AttachedSurfaceControlTest {
 
     @Before
     public void setup() {
+        mOrientationSession = new IgnoreOrientationRequestSession(false /* enable */);
+        mWmState = new WindowManagerStateHelper();
+    }
+
+    private void supportRotationCheck() {
         PackageManager pm =
                 InstrumentationRegistry.getInstrumentation().getContext().getPackageManager();
         boolean supportsRotation = pm.hasSystemFeature(PackageManager.FEATURE_SCREEN_PORTRAIT)
@@ -118,8 +116,6 @@ public class AttachedSurfaceControlTest {
         final boolean isFixedToUserRotation =
                 "enabled".equals(SystemUtil.runShellCommand(FIXED_TO_USER_ROTATION_COMMAND).trim());
         Assume.assumeTrue(supportsRotation && !isFixedToUserRotation);
-        mOrientationSession = new IgnoreOrientationRequestSession(false /* enable */);
-        mWmState = new WindowManagerStateHelper();
     }
 
     @After
@@ -131,6 +127,8 @@ public class AttachedSurfaceControlTest {
 
     @Test
     public void testOnBufferTransformHintChangedListener() throws InterruptedException {
+        supportRotationCheck();
+
         final int[] transformHintResult = new int[2];
         final CountDownLatch[] firstCallback = new CountDownLatch[1];
         final CountDownLatch[] secondCallback = new CountDownLatch[1];
@@ -199,6 +197,8 @@ public class AttachedSurfaceControlTest {
 
     @Test
     public void testOnBufferTransformHintChangesFromLandToSea() throws InterruptedException {
+        supportRotationCheck();
+
         final int[] transformHintResult = new int[2];
         final CountDownLatch[] firstCallback = new CountDownLatch[1];
         final CountDownLatch[] secondCallback = new CountDownLatch[1];
