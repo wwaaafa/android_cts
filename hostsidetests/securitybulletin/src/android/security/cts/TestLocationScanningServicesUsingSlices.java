@@ -78,4 +78,18 @@ public class TestLocationScanningServicesUsingSlices extends NonRootSecurityTest
             assumeNoException(e);
         }
     }
+
+    // b/277333746
+    // Vulnerable module : com.android.settings
+    // Vulnerable apk : Settings.apk
+    @AsbSecurityTest(cveBugId = 277333746)
+    @Test
+    public void testPocCVE_2023_21248() {
+        try (AutoCloseable withWifiDisabled =
+                withSetting(mDevice, "global", "wifi_scan_always_enabled", "0")) {
+            runDeviceTests(mTestPkg, mTestClass, "testPocCVE_2023_21248");
+        } catch (Exception e) {
+            assumeNoException(e);
+        }
+    }
 }
