@@ -166,4 +166,62 @@ public class DeviceTest {
             assumeNoException(e);
         }
     }
+
+    @Test
+    public void testPocCVE_2023_21248() {
+        try {
+            final int initialWifiScanGlobalSetting =
+                    Settings.Global.getInt(
+                            mContentResolver, Settings.Global.WIFI_SCAN_ALWAYS_AVAILABLE, -1);
+            assumeTrue(initialWifiScanGlobalSetting != -1);
+
+            // Launching PocActivity to launch "wifi_always_scanning_switch" settings
+            // slice using slice-uri
+            mContext.startActivity(
+                    new Intent(mContext, PocActivity.class)
+                            .setData(Uri.parse(mBaseUri + "wifi_always_scanning_switch"))
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+
+            // Wait for the slice that contains option to toggle "Wifi scanning"
+            String wifiScanningText =
+                    mSettingsResources.getString(
+                            mSettingsResources.getIdentifier(
+                                    "location_scanning_wifi_always_scanning_title",
+                                    "string",
+                                    mSettingsPackage));
+            boolean wifiScanningFound =
+                    mDevice.wait(
+                            Until.hasObject(By.text(wifiScanningText).res(mScanningTextResId)),
+                            waitMS);
+            assumeTrue(
+                    "Timed out waiting on the text \'" + wifiScanningText + "\' to appear",
+                    wifiScanningFound);
+
+            // Try to toggle "Wifi scanning" button, it is supposed to be disabled by the
+            // Device Admin in presence of fix
+            UiObject2 wifiScanningToggle = mDevice.findObject(By.res(mScanningWidgetResId));
+            wifiScanningToggle.click();
+
+            // Value of isChecked is whether "Wifi scanning" button should be checked or
+            // unchecked after click()
+            assumeTrue(
+                    "Timed out waiting on the button \'" + wifiScanningToggle + "\' to toggle",
+                    wifiScanningToggle.wait(
+                                    Until.checked(
+                                            initialWifiScanGlobalSetting == 0 /* isChecked */),
+                                    waitMS)
+                            || !wifiScanningToggle.isEnabled());
+
+            final int finalWifiScanGlobalSetting =
+                    Settings.Global.getInt(
+                            mContentResolver, Settings.Global.WIFI_SCAN_ALWAYS_AVAILABLE, -1);
+            assumeTrue(finalWifiScanGlobalSetting != -1);
+
+            assertFalse(
+                    "Device is vulnerable to b/277333746 !!",
+                    finalWifiScanGlobalSetting != initialWifiScanGlobalSetting);
+        } catch (Exception e) {
+            assumeNoException(e);
+        }
+    }
 }
