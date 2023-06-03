@@ -34,6 +34,7 @@ import android.annotation.NonNull;
 import android.app.appsearch.AppSearchBatchResult;
 import android.app.appsearch.AppSearchResult;
 import android.app.appsearch.AppSearchSchema;
+import android.app.appsearch.AppSearchSchema.DocumentPropertyConfig;
 import android.app.appsearch.AppSearchSchema.LongPropertyConfig;
 import android.app.appsearch.AppSearchSchema.PropertyConfig;
 import android.app.appsearch.AppSearchSchema.StringPropertyConfig;
@@ -93,10 +94,10 @@ public abstract class AppSearchSessionCtsTestBase {
     private AppSearchSessionShim mDb2;
 
     protected abstract ListenableFuture<AppSearchSessionShim> createSearchSessionAsync(
-            @NonNull String dbName);
+            @NonNull String dbName) throws Exception;
 
     protected abstract ListenableFuture<AppSearchSessionShim> createSearchSessionAsync(
-            @NonNull String dbName, @NonNull ExecutorService executor);
+            @NonNull String dbName, @NonNull ExecutorService executor) throws Exception;
 
     @Before
     public void setUp() throws Exception {
@@ -244,6 +245,145 @@ public abstract class AppSearchSessionCtsTestBase {
         getSchemaResponse = mDb2.getSchemaAsync().get();
         assertThat(getSchemaResponse.getSchemas()).containsExactly(schema);
         assertThat(getSchemaResponse.getVersion()).isEqualTo(246);
+    }
+
+    @Test
+    public void testSetSchemaWithValidCycle_allowCircularReferences() throws Exception {
+        assumeTrue(mDb1.getFeatures().isFeatureSupported(Features.SET_SCHEMA_CIRCULAR_REFERENCES));
+
+        // Create schema with valid cycle: Person -> Organization -> Person...
+        AppSearchSchema personSchema =
+                new AppSearchSchema.Builder("Person")
+                        .addProperty(
+                                new StringPropertyConfig.Builder("name")
+                                        .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
+                                        .setIndexingType(
+                                                StringPropertyConfig.INDEXING_TYPE_PREFIXES)
+                                        .setTokenizerType(StringPropertyConfig.TOKENIZER_TYPE_PLAIN)
+                                        .build())
+                        .addProperty(
+                                new DocumentPropertyConfig.Builder("worksFor", "Organization")
+                                        .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
+                                        .setShouldIndexNestedProperties(true)
+                                        .build())
+                        .build();
+        AppSearchSchema organizationSchema =
+                new AppSearchSchema.Builder("Organization")
+                        .addProperty(
+                                new StringPropertyConfig.Builder("name")
+                                        .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
+                                        .setIndexingType(
+                                                StringPropertyConfig.INDEXING_TYPE_EXACT_TERMS)
+                                        .setTokenizerType(StringPropertyConfig.TOKENIZER_TYPE_PLAIN)
+                                        .build())
+                        .addProperty(
+                                new DocumentPropertyConfig.Builder("funder", "Person")
+                                        .setCardinality(PropertyConfig.CARDINALITY_REPEATED)
+                                        .setShouldIndexNestedProperties(false)
+                                        .build())
+                        .build();
+        mDb1.setSchemaAsync(
+                        new SetSchemaRequest.Builder()
+                                .addSchemas(personSchema, organizationSchema)
+                                .build())
+                .get();
+
+        // Test that documents following the circular schema are indexable, and that its sections
+        // are searchable
+        GenericDocument person =
+                new GenericDocument.Builder<>("namespace", "person1", "Person")
+                        .setPropertyString("name", "John")
+                        .setPropertyDocument("worksFor")
+                        .build();
+        GenericDocument org =
+                new GenericDocument.Builder<>("namespace", "org1", "Organization")
+                        .setPropertyString("name", "Org")
+                        .setPropertyDocument("funder", person)
+                        .build();
+        GenericDocument person2 =
+                new GenericDocument.Builder<>("namespace", "person2", "Person")
+                        .setPropertyString("name", "Jane")
+                        .setPropertyDocument("worksFor", org)
+                        .build();
+
+        AppSearchBatchResult<String, Void> putResult =
+                checkIsBatchResultSuccess(
+                        mDb1.putAsync(
+                                new PutDocumentsRequest.Builder()
+                                        .addGenericDocuments(person, org, person2)
+                                        .build()));
+        assertThat(putResult.getSuccesses())
+                .containsExactly("person1", null, "org1", null, "person2", null);
+        assertThat(putResult.getFailures()).isEmpty();
+
+        GetByDocumentIdRequest getByDocumentIdRequest =
+                new GetByDocumentIdRequest.Builder("namespace")
+                        .addIds("person1", "person2", "org1")
+                        .build();
+        List<GenericDocument> outDocuments = doGet(mDb1, getByDocumentIdRequest);
+        assertThat(outDocuments).hasSize(3);
+        assertThat(outDocuments).containsExactly(person, person2, org);
+
+        // Both org1 and person2 should be returned for query "Org"
+        // For org1 this matches the 'name' property and for person2 this matches the
+        // 'worksFor.name' property.
+        SearchResultsShim searchResults =
+                mDb1.search(
+                        "Org",
+                        new SearchSpec.Builder()
+                                .setTermMatch(SearchSpec.TERM_MATCH_EXACT_ONLY)
+                                .build());
+        outDocuments = convertSearchResultsToDocuments(searchResults);
+        assertThat(outDocuments).hasSize(2);
+        assertThat(outDocuments).containsExactly(person2, org);
+    }
+
+    @Test
+    public void testSetSchemaWithValidCycle_circularReferencesNotSupported() {
+        assumeFalse(mDb1.getFeatures().isFeatureSupported(Features.SET_SCHEMA_CIRCULAR_REFERENCES));
+
+        // Create schema with valid cycle: Person -> Organization -> Person...
+        AppSearchSchema personSchema =
+                new AppSearchSchema.Builder("Person")
+                        .addProperty(
+                                new StringPropertyConfig.Builder("name")
+                                        .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
+                                        .setIndexingType(
+                                                StringPropertyConfig.INDEXING_TYPE_PREFIXES)
+                                        .setTokenizerType(StringPropertyConfig.TOKENIZER_TYPE_PLAIN)
+                                        .build())
+                        .addProperty(
+                                new DocumentPropertyConfig.Builder("worksFor", "Organization")
+                                        .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
+                                        .setShouldIndexNestedProperties(true)
+                                        .build())
+                        .build();
+        AppSearchSchema organizationSchema =
+                new AppSearchSchema.Builder("Organization")
+                        .addProperty(
+                                new StringPropertyConfig.Builder("name")
+                                        .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
+                                        .setIndexingType(
+                                                StringPropertyConfig.INDEXING_TYPE_EXACT_TERMS)
+                                        .setTokenizerType(StringPropertyConfig.TOKENIZER_TYPE_PLAIN)
+                                        .build())
+                        .addProperty(
+                                new DocumentPropertyConfig.Builder("funder", "Person")
+                                        .setCardinality(PropertyConfig.CARDINALITY_REPEATED)
+                                        .setShouldIndexNestedProperties(false)
+                                        .build())
+                        .build();
+
+        SetSchemaRequest setSchemaRequest =
+                new SetSchemaRequest.Builder().addSchemas(personSchema, organizationSchema).build();
+        ExecutionException executionException =
+                assertThrows(
+                        ExecutionException.class,
+                        () -> mDb1.setSchemaAsync(setSchemaRequest).get());
+        assertThat(executionException).hasCauseThat().isInstanceOf(AppSearchException.class);
+        AppSearchException exception = (AppSearchException) executionException.getCause();
+        assertThat(exception.getResultCode()).isEqualTo(RESULT_INVALID_ARGUMENT);
+        assertThat(exception).hasMessageThat().containsMatch("Invalid cycle|Infinite loop");
     }
 
     @Test
@@ -4803,6 +4943,72 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
+    public void testQuery_PropertyDefinedWithEnablingFeatureSucceeds() throws Exception {
+        assumeTrue(mDb1.getFeatures().isFeatureSupported(Features.LIST_FILTER_QUERY_LANGUAGE));
+        AppSearchSchema schema1 =
+                new AppSearchSchema.Builder("Schema1")
+                        .addProperty(
+                                new StringPropertyConfig.Builder("prop1")
+                                        .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
+                                        .setIndexingType(
+                                                StringPropertyConfig.INDEXING_TYPE_PREFIXES)
+                                        .setTokenizerType(StringPropertyConfig.TOKENIZER_TYPE_PLAIN)
+                                        .build())
+                        .build();
+        AppSearchSchema schema2 =
+                new AppSearchSchema.Builder("Schema2")
+                        .addProperty(
+                                new StringPropertyConfig.Builder("prop2")
+                                        .setCardinality(PropertyConfig.CARDINALITY_OPTIONAL)
+                                        .setIndexingType(
+                                                StringPropertyConfig.INDEXING_TYPE_PREFIXES)
+                                        .setTokenizerType(StringPropertyConfig.TOKENIZER_TYPE_PLAIN)
+                                        .build())
+                        .build();
+        mDb1.setSchemaAsync(
+                        new SetSchemaRequest.Builder()
+                                .setForceOverride(true)
+                                .addSchemas(schema1, schema2)
+                                .build())
+                .get();
+
+        GenericDocument doc1 =
+                new GenericDocument.Builder<>("namespace1", "id1", "Schema1")
+                        .setPropertyString("prop1", "Hello, world!")
+                        .build();
+        GenericDocument doc2 =
+                new GenericDocument.Builder<>("namespace1", "id2", "Schema2")
+                        .setPropertyString("prop2", "Hello, world!")
+                        .build();
+        mDb1.putAsync(new PutDocumentsRequest.Builder().addGenericDocuments(doc1, doc2).build())
+                .get();
+
+        SearchSpec searchSpec =
+                new SearchSpec.Builder()
+                        .setListFilterQueryLanguageEnabled(true)
+                        .setTermMatch(SearchSpec.TERM_MATCH_EXACT_ONLY)
+                        .build();
+        // Support for function calls `search`, `createList` was added in list filters
+        SearchResultsShim searchResults = mDb1.search("propertyDefined(\"prop1\")", searchSpec);
+        List<SearchResult> page = searchResults.getNextPageAsync().get();
+        assertThat(page).hasSize(1);
+        assertThat(page.get(0).getGenericDocument().getId()).isEqualTo("id1");
+
+        // Support for prefix operator * was added in list filters.
+        searchResults = mDb1.search("propertyDefined(\"prop2\")", searchSpec);
+        page = searchResults.getNextPageAsync().get();
+        assertThat(page).hasSize(1);
+        assertThat(page.get(0).getGenericDocument().getId()).isEqualTo("id2");
+
+        // Combining negations with compound statements and property restricts was added in list
+        // filters.
+        searchResults = mDb1.search("NOT propertyDefined(\"prop1\")", searchSpec);
+        page = searchResults.getNextPageAsync().get();
+        assertThat(page).hasSize(1);
+        assertThat(page.get(0).getGenericDocument().getId()).isEqualTo("id2");
+    }
+
+    @Test
     public void testQuery_listFilterQueryWithoutEnablingFeatureFails() throws Exception {
         assumeTrue(mDb1.getFeatures().isFeatureSupported(Features.LIST_FILTER_QUERY_LANGUAGE));
         AppSearchSchema schema =
@@ -4856,6 +5062,16 @@ public abstract class AppSearchSessionCtsTestBase {
         executionException =
                 assertThrows(
                         ExecutionException.class, () -> searchResults3.getNextPageAsync().get());
+        assertThat(executionException).hasCauseThat().isInstanceOf(AppSearchException.class);
+        exception = (AppSearchException) executionException.getCause();
+        assertThat(exception.getResultCode()).isEqualTo(RESULT_INVALID_ARGUMENT);
+        assertThat(exception).hasMessageThat().contains("Attempted use of unenabled feature");
+        assertThat(exception).hasMessageThat().contains(Features.LIST_FILTER_QUERY_LANGUAGE);
+
+        SearchResultsShim searchResults4 = mDb1.search("propertyDefined(\"prop\")", searchSpec);
+        executionException =
+                assertThrows(
+                        ExecutionException.class, () -> searchResults4.getNextPageAsync().get());
         assertThat(executionException).hasCauseThat().isInstanceOf(AppSearchException.class);
         exception = (AppSearchException) executionException.getCause();
         assertThat(exception.getResultCode()).isEqualTo(RESULT_INVALID_ARGUMENT);
