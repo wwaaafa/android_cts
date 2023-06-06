@@ -58,6 +58,7 @@ import android.app.AlertDialog;
 import android.app.Instrumentation;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.platform.test.annotations.Presubmit;
@@ -237,6 +238,11 @@ public class WindowInsetsControllerTests extends WindowManagerTestBase {
         final Instrumentation instrumentation = getInstrumentation();
         assumeThat(MockImeSession.getUnavailabilityReason(instrumentation.getContext()),
                 nullValue());
+        final Resources resources = instrumentation.getContext().getResources();
+        final boolean isHideNavBarForKeyboardEnabled = resources.getBoolean(
+                resources.getIdentifier("config_hideNavBarForKeyboard", "bool", "android"));
+        assumeFalse("Device is configured to not show navigation bar for keyboard",
+                isHideNavBarForKeyboardEnabled);
         final MockImeSession imeSession = MockImeHelper.createManagedMockImeSession(this);
         final ImeEventStream stream = imeSession.openEventStream();
         final TestActivity activity = startActivityInWindowingModeFullScreen(TestActivity.class);
