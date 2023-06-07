@@ -53,6 +53,7 @@ import android.graphics.Bitmap;
 import android.icu.util.Calendar;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.UserManager;
 import android.provider.DeviceConfig;
 import android.provider.Settings;
 import android.service.autofill.FieldClassification;
@@ -928,6 +929,20 @@ public final class Helper {
     public static boolean isAutomotive(Context context) {
         final PackageManager packageManager = context.getPackageManager();
         return packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE);
+    }
+
+    public static boolean isMainUser(Context context) {
+        boolean mainUser = false;
+        try {
+            final UserManager userManager = context.getSystemService(UserManager.class);
+            mainUser = userManager.isMainUser();
+        } catch (SecurityException ex) {
+            // Nothing
+            mainUser = false;
+        }
+
+        return mainUser;
+
     }
 
     /**
