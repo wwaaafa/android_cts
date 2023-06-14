@@ -37,6 +37,7 @@ import static android.server.wm.backgroundactivity.appa.Components.ForegroundAct
 import static android.server.wm.backgroundactivity.appa.Components.ForegroundActivity.START_ACTIVITY_FROM_FG_ACTIVITY_NEW_TASK_EXTRA;
 import static android.server.wm.backgroundactivity.appa.Components.SendPendingIntentReceiver.IS_BROADCAST_EXTRA;
 import static android.server.wm.backgroundactivity.appa.Components.StartBackgroundActivityReceiver.START_ACTIVITY_DELAY_MS_EXTRA;
+import static android.server.wm.backgroundactivity.appa.Components.VirtualDisplayReceiver.USE_PUBLIC_PRESENTATION;
 import static android.server.wm.backgroundactivity.appb.Components.APP_B_FOREGROUND_ACTIVITY;
 import static android.server.wm.backgroundactivity.common.CommonComponents.EVENT_NOTIFIER_EXTRA;
 import static android.view.WindowManager.LayoutParams.TYPE_PRIVATE_PRESENTATION;
@@ -154,6 +155,24 @@ public class BackgroundActivityLaunchTest extends ActivityManagerTestBase {
         mContext.sendBroadcast(new Intent().setComponent(APP_A_VIRTUAL_DISPLAY_RECEIVER));
         assertTrue(mWmState.waitFor((wmState) ->
                 wmState.getWindowByPackageName(APP_A_PACKAGE_NAME, TYPE_PRIVATE_PRESENTATION)
+                        != null, "Private presentation was never created"));
+
+        // Start AppA background activity and blocked
+        Intent intent = new Intent();
+        intent.setComponent(APP_A_START_ACTIVITY_RECEIVER);
+        mContext.sendBroadcast(intent);
+        boolean result = waitForActivityFocused(APP_A_BACKGROUND_ACTIVITY);
+        assertFalse("Should not able to launch background activity", result);
+        assertTaskStack(null, APP_A_BACKGROUND_ACTIVITY);
+    }
+
+    @Test
+    public void testBackgroundActivityBlocked_PublicVirtualDisplay() throws Exception {
+        mContext.sendBroadcast(new Intent().setComponent(APP_A_VIRTUAL_DISPLAY_RECEIVER)
+                .putExtra(USE_PUBLIC_PRESENTATION, true));
+        int TYPE_PRESENTATION = 2037; // constant is @hide
+        assertTrue(mWmState.waitFor((wmState) ->
+                wmState.getWindowByPackageName(APP_A_PACKAGE_NAME, TYPE_PRESENTATION)
                         != null, "Private presentation was never created"));
 
         // Start AppA background activity and blocked
