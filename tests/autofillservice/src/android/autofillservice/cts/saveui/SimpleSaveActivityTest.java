@@ -1742,6 +1742,7 @@ public class SimpleSaveActivityTest extends CustomDescriptionWithLinkTestCase<Si
     @Test
     @AppModeFull(reason = "No real use case for instant mode af service")
     public void testTapUrlSpanOnCustomDescription_thenTapBack() throws Exception {
+        mUiBot.assumeMinimumResolution(500);
         saveUiRestoredAfterTappingSpanTest(DescriptionType.CUSTOM,
                 ViewActionActivity.ActivityCustomAction.NORMAL_ACTIVITY);
     }
@@ -1769,6 +1770,7 @@ public class SimpleSaveActivityTest extends CustomDescriptionWithLinkTestCase<Si
     @AppModeFull(reason = "No real use case for instant mode af service")
     public void testTapUrlSpanOnCustomDescription_forwardAnotherActivityThenTapBack()
             throws Exception {
+        mUiBot.assumeMinimumResolution(500);
         saveUiRestoredAfterTappingSpanTest(DescriptionType.CUSTOM,
                 ViewActionActivity.ActivityCustomAction.FAST_FORWARD_ANOTHER_ACTIVITY);
     }
