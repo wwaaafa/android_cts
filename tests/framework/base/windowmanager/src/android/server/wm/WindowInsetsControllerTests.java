@@ -239,8 +239,10 @@ public class WindowInsetsControllerTests extends WindowManagerTestBase {
         assumeThat(MockImeSession.getUnavailabilityReason(instrumentation.getContext()),
                 nullValue());
         final Resources resources = instrumentation.getContext().getResources();
-        final boolean isHideNavBarForKeyboardEnabled = resources.getBoolean(
-                resources.getIdentifier("config_hideNavBarForKeyboard", "bool", "android"));
+        final int hideNavBarForKeyboardResId = resources.getIdentifier(
+                "config_hideNavBarForKeyboard", "bool", "android");
+        final boolean isHideNavBarForKeyboardEnabled = hideNavBarForKeyboardResId != 0
+                && resources.getBoolean(hideNavBarForKeyboardResId);
         assumeFalse("Device is configured to not show navigation bar for keyboard",
                 isHideNavBarForKeyboardEnabled);
         final MockImeSession imeSession = MockImeHelper.createManagedMockImeSession(this);
