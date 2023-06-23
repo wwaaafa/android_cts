@@ -67,4 +67,8 @@ public class Components extends ComponentsBase {
                 "START_ACTIVITY_FROM_FG_ACTIVITY_DELAY_MS_EXTRA";
     }
 
+    /** Extra key constants for {@link #APP_A_VIRTUAL_DISPLAY_RECEIVER} */
+    public static class VirtualDisplayReceiver {
+        public static final String USE_PUBLIC_PRESENTATION = "USE_PUBLIC_PRESENTATION";
+    }
 }

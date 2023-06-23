@@ -30,7 +30,23 @@ public class VirtualDisplayReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        createVirtualDisplayAndShowPresentation(context);
+        boolean usePublicPresentation = intent.getBooleanExtra(
+                Components.VirtualDisplayReceiver.USE_PUBLIC_PRESENTATION, false);
+        if (usePublicPresentation) {
+            createPublicVirtualDisplayAndShowPresentation(context);
+        } else {
+            createVirtualDisplayAndShowPresentation(context);
+        }
+    }
+
+    private void createPublicVirtualDisplayAndShowPresentation(Context context) {
+        DisplayManager displayManager = context.getSystemService(DisplayManager.class);
+        VirtualDisplay virtualDisplay = displayManager.createVirtualDisplay(
+                "VirtualDisplay1", 10, 10, 10, null,
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC
+                        + DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION
+                        + DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY);
+        new Presentation(context, virtualDisplay.getDisplay()).show();
     }
 
     private void createVirtualDisplayAndShowPresentation(Context context) {
