@@ -66,6 +66,7 @@ public class DeviceAdminActivationTest
     private static final int UI_EFFECT_TIMEOUT_MILLIS = 5000;
 
     private boolean mDeviceAdmin;
+
     @Mock private OnActivityResultListener mMockOnActivityResultListener;
 
     public DeviceAdminActivationTest() {
