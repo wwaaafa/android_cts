@@ -32,6 +32,7 @@ public class ResourceManagerTestActivityBase extends Activity {
     public static final int TYPE_NONSECURE = 0;
     public static final int TYPE_SECURE = 1;
     public static final int TYPE_MIX = 2;
+    protected static final int MAX_INSTANCES = 32;
 
     protected String TAG;
     private static final int FRAME_RATE = 10;
