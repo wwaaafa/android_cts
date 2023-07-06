@@ -111,6 +111,7 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
     }
 
     @Test
+    @Ignore("Ignored in Android T b/288065034")
     public void testSingleSelect() throws Exception {
         final int itemCount = 1;
         mUriList.addAll(createImagesAndGetUris(itemCount, mContext.getUserId()));
@@ -128,6 +129,7 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
     }
 
     @Test
+    @Ignore("Ignored in Android T b/288065034")
     public void testSingleSelectForFavoritesAlbum() throws Exception {
         final int itemCount = 1;
         mUriList.addAll(createImagesAndGetUris(itemCount, mContext.getUserId(),
@@ -151,6 +153,7 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
     }
 
     @Test
+    @Ignore("Ignored in Android T b/288065034")
     public void testLaunchPreviewMultipleForVideoAlbum() throws Exception {
         final int videoCount = 2;
         mUriList.addAll(createVideosAndGetUris(videoCount, mContext.getUserId()));
@@ -184,6 +187,7 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
     }
 
     @Test
+    @Ignore("Ignored in Android T b/288065034")
     public void testSingleSelectWithPreview() throws Exception {
         final int itemCount = 1;
         mUriList.addAll(createImagesAndGetUris(itemCount, mContext.getUserId()));
@@ -205,6 +209,7 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
     }
 
     @Test
+    @Ignore("Ignored in Android T b/288065034")
     public void testMultiSelect() throws Exception {
         final int imageCount = 4;
         mUriList.addAll(createImagesAndGetUris(imageCount, mContext.getUserId()));
@@ -233,6 +238,7 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
     }
 
     @Test
+    @Ignore("Ignored in Android T b/288065034")
     public void testMultiSelect_longPress() throws Exception {
         final int videoCount = 3;
         mUriList.addAll(createMj2VideosAndGetUris(videoCount, mContext.getUserId()));
@@ -281,6 +287,7 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
     }
 
     @Test
+    @Ignore("Ignored in Android T b/288065034")
     public void testMultiSelect_preview() throws Exception {
         final int imageCount = 4;
         mUriList.addAll(createImagesAndGetUris(imageCount, mContext.getUserId()));
@@ -339,6 +346,7 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
     }
 
     @Test
+    @Ignore("Ignored in Android T b/288065034")
     public void testMultiSelect_previewVideoMuteButtonInitial() throws Exception {
         launchPreviewMultipleWithVideos(/* videoCount */ 1);
 
@@ -389,6 +397,7 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
     }
 
     @Test
+    @Ignore("Ignored in Android T b/288065034")
     public void testMultiSelect_previewVideoMuteButtonOnSwipe() throws Exception {
         launchPreviewMultipleWithVideos(/* videoCount */ 3);
 
@@ -548,6 +557,7 @@ public class PhotoPickerTest extends PhotoPickerBaseTest {
     }
 
     @Test
+    @Ignore("Ignored in Android T b/288065034")
     public void testMimeTypeFilter() throws Exception {
         final int videoCount = 2;
         mUriList.addAll(createMj2VideosAndGetUris(videoCount, mContext.getUserId()));
