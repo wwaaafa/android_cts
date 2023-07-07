@@ -1137,9 +1137,12 @@ public class ActivityManagerTest extends InstrumentationTestCase {
                 int current = DeviceConfig.getInt(namespaceActivityManager,
                         maxPhantomProcesses, -1);
                 currentMax.putInt(keyCurrent, current);
-                DeviceConfig.setProperty(namespaceActivityManager,
-                        maxPhantomProcesses,
-                        Integer.toString(maxPhantomProcessesNum), false);
+                int currentRunningPhantomProcesses =
+                        SystemUtil.runShellCommand(mInstrumentation, "dumpsys activity processes")
+                                .split("PhantomProcessRecord", -1).length - 1;
+                DeviceConfig.setProperty(namespaceActivityManager, maxPhantomProcesses,
+                        Integer.toString(maxPhantomProcessesNum + currentRunningPhantomProcesses),
+                        false);
             });
 
             // Make sure we could start activity from background
