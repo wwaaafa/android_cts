@@ -36,6 +36,7 @@
     Bug: 234104089 android.intent.action.SAFETY_CENTER
     Bug: 234104089 android.intent.action.VIEW_SAFETY_CENTER_QS
     Bug: 238841916 android.intent.action.TIPS_CONFIG_PROVIDER
+    Bug: 286793759 android.intent.action.REVIEW_APP_DATA_SHARING_UPDATES (system in API 34)
 -->
 <dynamicConfig>
     <entry key ="intent_whitelist">
@@ -60,5 +61,6 @@
       <value>android.intent.action.SAFETY_CENTER</value>
       <value>android.intent.action.VIEW_SAFETY_CENTER_QS</value>
       <value>android.intent.action.TIPS_CONFIG_PROVIDER</value>
+      <value>android.intent.action.REVIEW_APP_DATA_SHARING_UPDATES</value>
     </entry>
 </dynamicConfig>
