@@ -42,10 +42,4 @@
     <option name="compatibility:exclude-filter" value="CtsJvmtiRunTest913HostTestCases" />
     <option name="compatibility:exclude-filter" value="CtsJvmtiRunTest912HostTestCases" />
     <option name="compatibility:exclude-filter" value="CtsJvmtiRunTest988HostTestCases" />
-
-    <!-- Exclude VirtualMachine_ExitTest#testExit001 that is failing on a known bug in
-         apache-harmony. There is no branch for apache-harmony in these tests.
-         TODO(b/286794967): Remove this temporary exclusion when branch aosp/android12L-tests-dev
-         is created in `platform/external/apache-harmony` (b/289038766) -->
-    <option name="compatibility:exclude-filter" value="CtsJdwpTestCases org.apache.harmony.jpda.tests.jdwp.VirtualMachine_ExitTest#testExit001" />
 </configuration>
