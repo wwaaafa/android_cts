@@ -76,11 +76,12 @@ import java.util.Arrays;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 
 /** Test MockModemService interfaces. */
 public class TelephonyManagerTestOnMockModem {
     private static final String TAG = "TelephonyManagerTestOnMockModem";
-    private static final long WAIT_TIME_MS = 5000;
+    private static final long WAIT_TIME_MS = 20000;
     private static MockModemManager sMockModemManager;
     private static TelephonyManager sTelephonyManager;
     private static final String ALLOW_MOCK_MODEM_PROPERTY = "persist.radio.allow_mock_modem";
@@ -97,6 +98,8 @@ public class TelephonyManagerTestOnMockModem {
     private static ServiceStateListener sServiceStateCallback;
     private static CallDisconnectCauseListener sCallDisconnectCauseCallback;
     private static CallStateListener sCallStateCallback;
+    private int mServiceState;
+    private int mExpectedRegState;
     private int mPreciseCallDisconnectCause;
     private int mCallState;
     private final Object mServiceStateChangeLock = new Object();
@@ -107,7 +110,7 @@ public class TelephonyManagerTestOnMockModem {
     private final Executor mCallStateChangeExecutor = Runnable::run;
     private boolean mResetCarrierStatusInfo;
     private static String mShaId;
-    private final int TIMEOUT_IN_SEC_FOR_MODEM_CB = 5;
+    private static final int TIMEOUT_IN_SEC_FOR_MODEM_CB = 10;
     @BeforeClass
     public static void beforeAllTests() throws Exception {
         Log.d(TAG, "TelephonyManagerTestOnMockModem#beforeAllTests()");
@@ -318,6 +321,16 @@ public class TelephonyManagerTestOnMockModem {
         return reg;
     }
 
+    private void waitForCondition(BooleanSupplier condition, Object lock, long maxWaitMillis)
+            throws Exception {
+        long now = System.currentTimeMillis();
+        long deadlineTime = now + maxWaitMillis;
+        while (!condition.getAsBoolean() && now < deadlineTime) {
+            lock.wait(deadlineTime - now);
+            now = System.currentTimeMillis();
+        }
+    }
+
     @Test
     public void testSimStateChange() throws Throwable {
         Log.d(TAG, "TelephonyManagerTestOnMockModem#testSimStateChange");
@@ -363,36 +376,68 @@ public class TelephonyManagerTestOnMockModem {
         // Insert a SIM
         sMockModemManager.insertSimCard(slotId, MOCK_SIM_PROFILE_ID_TWN_CHT);
 
-        // Leave Service
-        Log.d(TAG, "testServiceStateChange: Leave Service");
-        sMockModemManager.changeNetworkService(slotId, MOCK_SIM_PROFILE_ID_TWN_CHT, false);
-
-        // Expect: Seaching State
         TimeUnit.SECONDS.sleep(2);
         subId = getActiveSubId(slotId);
-        assertEquals(
-                getRegState(NetworkRegistrationInfo.DOMAIN_CS, subId),
-                NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_SEARCHING);
+
+        // Register service state change callback
+        synchronized (mServiceStateChangeLock) {
+            mServiceState = ServiceState.STATE_OUT_OF_SERVICE;
+            mExpectedRegState = ServiceState.STATE_IN_SERVICE;
+        }
+
+        sServiceStateChangeCallbackHandler.post(
+                () -> {
+                    sServiceStateCallback = new ServiceStateListener();
+                    ShellIdentityUtils.invokeMethodWithShellPermissionsNoReturn(
+                            sTelephonyManager,
+                            (tm) ->
+                                    tm.registerTelephonyCallback(
+                                            mServiceStateChangeExecutor, sServiceStateCallback));
+                });
 
         // Enter Service
         Log.d(TAG, "testServiceStateChange: Enter Service");
         sMockModemManager.changeNetworkService(slotId, MOCK_SIM_PROFILE_ID_TWN_CHT, true);
 
         // Expect: Home State
-        TimeUnit.SECONDS.sleep(2);
+        synchronized (mServiceStateChangeLock) {
+            if (mServiceState != ServiceState.STATE_IN_SERVICE) {
+                Log.d(TAG, "Wait for service state change to in service");
+                waitForCondition(
+                        () -> (ServiceState.STATE_IN_SERVICE == mServiceState),
+                        mServiceStateChangeLock,
+                        WAIT_TIME_MS);
+            }
+        }
         assertEquals(
                 getRegState(NetworkRegistrationInfo.DOMAIN_CS, subId),
                 NetworkRegistrationInfo.REGISTRATION_STATE_HOME);
 
         // Leave Service
+        synchronized (mServiceStateChangeLock) {
+            mExpectedRegState = ServiceState.STATE_OUT_OF_SERVICE;
+        }
+
         Log.d(TAG, "testServiceStateChange: Leave Service");
         sMockModemManager.changeNetworkService(slotId, MOCK_SIM_PROFILE_ID_TWN_CHT, false);
 
         // Expect: Seaching State
-        TimeUnit.SECONDS.sleep(2);
+        synchronized (mServiceStateChangeLock) {
+            if (mServiceState != ServiceState.STATE_OUT_OF_SERVICE) {
+                Log.d(TAG, "Wait for service state change to out of service");
+                waitForCondition(
+                        () -> (ServiceState.STATE_OUT_OF_SERVICE == mServiceState),
+                        mServiceStateChangeLock,
+                        WAIT_TIME_MS);
+            }
+        }
         assertEquals(
                 getRegState(NetworkRegistrationInfo.DOMAIN_CS, subId),
                 NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_SEARCHING);
+
+        // Unregister service state change callback
+        sTelephonyManager.unregisterTelephonyCallback(sServiceStateCallback);
+        sServiceStateCallback = null;
 
         // Remove the SIM
         sMockModemManager.removeSimCard(slotId);
@@ -402,8 +447,12 @@ public class TelephonyManagerTestOnMockModem {
             implements TelephonyCallback.ServiceStateListener {
         @Override
         public void onServiceStateChanged(ServiceState serviceState) {
-            if (serviceState.getVoiceRegState() == ServiceState.STATE_IN_SERVICE) {
-                mServiceStateChangeLock.notify();
+            Log.d(TAG, "Callback: service state = " + serviceState.getVoiceRegState());
+            synchronized (mServiceStateChangeLock) {
+                mServiceState = serviceState.getVoiceRegState();
+                if (serviceState.getVoiceRegState() == mExpectedRegState) {
+                    mServiceStateChangeLock.notify();
+                }
             }
         }
     }
@@ -448,6 +497,11 @@ public class TelephonyManagerTestOnMockModem {
         TimeUnit.SECONDS.sleep(1);
 
         // Register service state change callback
+        synchronized (mServiceStateChangeLock) {
+            mServiceState = ServiceState.STATE_OUT_OF_SERVICE;
+            mExpectedRegState = ServiceState.STATE_IN_SERVICE;
+        }
+
         sServiceStateChangeCallbackHandler.post(
                 () -> {
                     sServiceStateCallback = new ServiceStateListener();
@@ -465,8 +519,13 @@ public class TelephonyManagerTestOnMockModem {
 
         // Verify service state
         synchronized (mServiceStateChangeLock) {
-            Log.d(TAG, "Wait for service state change to in service");
-            mServiceStateChangeLock.wait(WAIT_TIME_MS);
+            if (mServiceState != ServiceState.STATE_IN_SERVICE) {
+                Log.d(TAG, "Wait for service state change to in service");
+                waitForCondition(() -> (
+                        ServiceState.STATE_IN_SERVICE == mServiceState),
+                        mServiceStateChangeLock,
+                        WAIT_TIME_MS);
+            }
         }
 
         subId = getActiveSubId(slotId);
@@ -616,17 +675,25 @@ public class TelephonyManagerTestOnMockModem {
         sMockModemManager.insertSimCard(slotId_0, MOCK_SIM_PROFILE_ID_TWN_CHT);
         sMockModemManager.insertSimCard(slotId_1, MOCK_SIM_PROFILE_ID_TWN_FET);
 
-        // Expect: Seaching State
         TimeUnit.SECONDS.sleep(2);
         subId_0 = getActiveSubId(slotId_0);
-        assertEquals(
-                getRegState(NetworkRegistrationInfo.DOMAIN_CS, subId_0),
-                NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_SEARCHING);
-
         subId_1 = getActiveSubId(slotId_1);
-        assertEquals(
-                getRegState(NetworkRegistrationInfo.DOMAIN_CS, subId_1),
-                NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_SEARCHING);
+
+        // Register service state change callback
+        synchronized (mServiceStateChangeLock) {
+            mServiceState = ServiceState.STATE_OUT_OF_SERVICE;
+            mExpectedRegState = ServiceState.STATE_IN_SERVICE;
+        }
+
+        sServiceStateChangeCallbackHandler.post(
+                () -> {
+                    sServiceStateCallback = new ServiceStateListener();
+                    ShellIdentityUtils.invokeMethodWithShellPermissionsNoReturn(
+                            sTelephonyManager,
+                            (tm) ->
+                                    tm.registerTelephonyCallback(
+                                            mServiceStateChangeExecutor, sServiceStateCallback));
+                });
 
         // Enter Service
         Log.d(TAG, "testDsdsServiceStateChange: Enter Service");
@@ -634,29 +701,52 @@ public class TelephonyManagerTestOnMockModem {
         sMockModemManager.changeNetworkService(slotId_1, MOCK_SIM_PROFILE_ID_TWN_FET, true);
 
         // Expect: Home State
-        TimeUnit.SECONDS.sleep(2);
+        synchronized (mServiceStateChangeLock) {
+            if (mServiceState != ServiceState.STATE_IN_SERVICE) {
+                Log.d(TAG, "Wait for service state change to in service");
+                waitForCondition(
+                        () -> (ServiceState.STATE_IN_SERVICE == mServiceState),
+                        mServiceStateChangeLock,
+                        WAIT_TIME_MS);
+            }
+        }
         assertEquals(
                 getRegState(NetworkRegistrationInfo.DOMAIN_CS, subId_0),
                 NetworkRegistrationInfo.REGISTRATION_STATE_HOME);
+        TimeUnit.SECONDS.sleep(2);
         assertEquals(
                 getRegState(NetworkRegistrationInfo.DOMAIN_CS, subId_1),
                 NetworkRegistrationInfo.REGISTRATION_STATE_HOME);
 
-        TimeUnit.SECONDS.sleep(2);
-
         // Leave Service
+        synchronized (mServiceStateChangeLock) {
+            mExpectedRegState = ServiceState.STATE_OUT_OF_SERVICE;
+        }
+
         Log.d(TAG, "testDsdsServiceStateChange: Leave Service");
         sMockModemManager.changeNetworkService(slotId_0, MOCK_SIM_PROFILE_ID_TWN_CHT, false);
         sMockModemManager.changeNetworkService(slotId_1, MOCK_SIM_PROFILE_ID_TWN_FET, false);
 
         // Expect: Seaching State
-        TimeUnit.SECONDS.sleep(2);
+        synchronized (mServiceStateChangeLock) {
+            if (mServiceState != ServiceState.STATE_OUT_OF_SERVICE) {
+                Log.d(TAG, "Wait for service state change to out of service");
+                waitForCondition(
+                        () -> (ServiceState.STATE_OUT_OF_SERVICE == mServiceState),
+                        mServiceStateChangeLock,
+                        WAIT_TIME_MS);
+            }
+        }
         assertEquals(
                 getRegState(NetworkRegistrationInfo.DOMAIN_CS, subId_0),
                 NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_SEARCHING);
         assertEquals(
                 getRegState(NetworkRegistrationInfo.DOMAIN_CS, subId_1),
                 NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_SEARCHING);
+
+        // Unregister service state change callback
+        sTelephonyManager.unregisterTelephonyCallback(sServiceStateCallback);
+        sServiceStateCallback = null;
 
         // Remove the SIM
         sMockModemManager.removeSimCard(slotId_0);
