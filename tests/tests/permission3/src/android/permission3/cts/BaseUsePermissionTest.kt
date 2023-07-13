@@ -250,9 +250,17 @@ abstract class BaseUsePermissionTest : BasePermissionTest() {
     ) {
         val result = requestAppPermissions(*permissions, block = block)
         assertEquals(Activity.RESULT_OK, result.resultCode)
+        // Note that the behavior around requesting `null` permissions changed in the platform
+        // in Android U. In Android R, null permissions are included in the result set.
+        val responseSize: Int =
+            result.resultData!!.getStringArrayExtra("$APP_PACKAGE_NAME.PERMISSIONS")!!.size
+        assertTrue(permissions.size >= responseSize)
         assertEquals(
-            permissionAndExpectedGrantResults.toList(),
+            permissionAndExpectedGrantResults
+                .filter { it.first != null }
+                .toList(),
             result.resultData!!.getStringArrayExtra("$APP_PACKAGE_NAME.PERMISSIONS")!!
+                .filterNotNull()
                 .zip(
                     result.resultData!!.getIntArrayExtra("$APP_PACKAGE_NAME.GRANT_RESULTS")!!
                         .map { it == PackageManager.PERMISSION_GRANTED }
