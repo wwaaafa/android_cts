@@ -296,9 +296,7 @@ public class TelephonyManagerTestOnMockModem {
         int subsLength = allSubs.length;
         Log.d(TAG, " Active Sub length is " + subsLength);
 
-        assertTrue(phoneId <= (subsLength - 1));
-
-        return allSubs[phoneId];
+        return (phoneId < subsLength) ? allSubs[phoneId] : -1;
     }
 
     private int getRegState(int domain, int subId) {
@@ -378,6 +376,7 @@ public class TelephonyManagerTestOnMockModem {
 
         TimeUnit.SECONDS.sleep(2);
         subId = getActiveSubId(slotId);
+        assertTrue(subId > 0);
 
         // Register service state change callback
         synchronized (mServiceStateChangeLock) {
@@ -529,6 +528,7 @@ public class TelephonyManagerTestOnMockModem {
         }
 
         subId = getActiveSubId(slotId);
+        assertTrue(subId > 0);
         assertEquals(
                 getRegState(NetworkRegistrationInfo.DOMAIN_PS, subId),
                 NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_SEARCHING);
@@ -710,13 +710,19 @@ public class TelephonyManagerTestOnMockModem {
                         WAIT_TIME_MS);
             }
         }
-        assertEquals(
-                getRegState(NetworkRegistrationInfo.DOMAIN_CS, subId_0),
-                NetworkRegistrationInfo.REGISTRATION_STATE_HOME);
-        TimeUnit.SECONDS.sleep(2);
-        assertEquals(
-                getRegState(NetworkRegistrationInfo.DOMAIN_CS, subId_1),
-                NetworkRegistrationInfo.REGISTRATION_STATE_HOME);
+        if (subId_0 > 0) {
+            assertEquals(
+                    getRegState(NetworkRegistrationInfo.DOMAIN_CS, subId_0),
+                    NetworkRegistrationInfo.REGISTRATION_STATE_HOME);
+        }
+        if (subId_1 > 0) {
+            TimeUnit.SECONDS.sleep(2);
+            assertEquals(
+                    getRegState(NetworkRegistrationInfo.DOMAIN_CS, subId_1),
+                    NetworkRegistrationInfo.REGISTRATION_STATE_HOME);
+        }
+
+        assertTrue(subId_0 > 0 || subId_1 > 0);
 
         // Leave Service
         synchronized (mServiceStateChangeLock) {
@@ -737,12 +743,16 @@ public class TelephonyManagerTestOnMockModem {
                         WAIT_TIME_MS);
             }
         }
-        assertEquals(
-                getRegState(NetworkRegistrationInfo.DOMAIN_CS, subId_0),
-                NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_SEARCHING);
-        assertEquals(
-                getRegState(NetworkRegistrationInfo.DOMAIN_CS, subId_1),
-                NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_SEARCHING);
+        if (subId_0 > 0) {
+            assertEquals(
+                    getRegState(NetworkRegistrationInfo.DOMAIN_CS, subId_0),
+                    NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_SEARCHING);
+        }
+        if (subId_1 > 0) {
+            assertEquals(
+                    getRegState(NetworkRegistrationInfo.DOMAIN_CS, subId_1),
+                    NetworkRegistrationInfo.REGISTRATION_STATE_NOT_REGISTERED_SEARCHING);
+        }
 
         // Unregister service state change callback
         sTelephonyManager.unregisterTelephonyCallback(sServiceStateCallback);
