@@ -41,11 +41,21 @@ public class CertificateTest extends AndroidTestCase {
     private static final String DIR_OF_CACERTS_FOR_WFA =
             "/apex/com.android.wifi/etc/security/cacerts_wfa";
 
+    // Fix for b/289965967 due to backport issues. These certs were deleted but may still be on some
+    // devices
+    private Set<String> mOptionalCertificates = new HashSet<String>(
+            Arrays.asList(
+            new String[] {"B8:BE:6D:CB:56:F1:55:B9:63:D4:12:CA:4E:06:34:C7:94:B2:1C:C0",
+                "FF:BD:CD:E7:82:C8:43:5E:3C:6F:26:86:5C:CA:A8:3A:45:5B:C3:0A",
+                "51:C6:E7:08:49:06:6E:F3:92:D4:5C:A0:0D:6D:A3:62:8F:C3:52:39",
+                "58:D1:DF:95:95:67:6B:63:C0:F0:5B:1C:17:4D:8B:84:0B:C8:78:BD"}));
+
     public void testNoRemovedCertificates() throws Exception {
         Set<String> expectedCertificates = new HashSet<String>(
                 Arrays.asList(CertificateData.CERTIFICATE_DATA));
         Set<String> deviceCertificates = getDeviceCertificates();
         expectedCertificates.removeAll(deviceCertificates);
+        expectedCertificates.removeAll(mOptionalCertificates);
         assertEquals("Missing CA certificates", Collections.EMPTY_SET, expectedCertificates);
     }
 
@@ -72,6 +82,7 @@ public class CertificateTest extends AndroidTestCase {
                 Arrays.asList(CertificateData.CERTIFICATE_DATA));
         Set<String> deviceCertificates = getDeviceCertificates();
         deviceCertificates.removeAll(expectedCertificates);
+        deviceCertificates.removeAll(mOptionalCertificates);
         assertEquals("Unknown CA certificates", Collections.EMPTY_SET, deviceCertificates);
     }
 
