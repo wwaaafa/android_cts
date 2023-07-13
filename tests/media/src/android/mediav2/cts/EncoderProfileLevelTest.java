@@ -649,10 +649,29 @@ public class EncoderProfileLevelTest extends CodecEncoderTestBase {
                 Log.e(LOG_TAG, "profile in output doesn't match configured input");
                 return false;
             }
-            if (outFormat.getInteger(MediaFormat.KEY_LEVEL)
-                    != inpFormat.getInteger(MediaFormat.KEY_LEVEL)) {
-                Log.e(LOG_TAG, "level key in output doesn't match configured input");
-                return false;
+
+            int inputLevel = inpFormat.getInteger(MediaFormat.KEY_LEVEL);
+            int outputLevel = outFormat.getInteger(MediaFormat.KEY_LEVEL);
+
+            // H263 level 45 is out of order.
+            if (outMime.equals(MediaFormat.MIMETYPE_VIDEO_H263) && inputLevel == H263Level45) {
+                // If we are expecting a min level45, then any level other than the ones below
+                // level45 (level10) should be ok
+                if (H263Level10 == outputLevel) {
+                    return false;
+                }
+            } else if (outMime.equals(MediaFormat.MIMETYPE_VIDEO_H263)
+                    && outputLevel == H263Level45) {
+                // If we got level45, then input level must be level10 or level45
+                if (H263Level10 != inputLevel) {
+                    return false;
+                }
+            } else {
+                if (outputLevel < inputLevel) {
+                    Log.e(LOG_TAG, "output level: " + outputLevel + " is < input level: "
+                            + inputLevel);
+                    return false;
+                }
             }
         } else {
             Log.w(LOG_TAG, "non media mime:" + outMime);
