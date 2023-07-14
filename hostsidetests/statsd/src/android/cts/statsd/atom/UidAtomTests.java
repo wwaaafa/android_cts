@@ -1004,7 +1004,18 @@ public class UidAtomTests extends DeviceAtomTestCase {
         List<Set<Integer>> stateSet = Arrays.asList(lockOn, lockOff);
 
         createAndUploadConfig(atomTag, true);  // True: uses attribution.
-        runDeviceTests(DEVICE_SIDE_TEST_PACKAGE, ".AtomTests", "testWifiLockLowLatency");
+
+        // For low latency lock to be active following conditions need to be met,
+        //    - Wi-Fi is connected
+        //    - Screen On
+        //    - Application is foreground.
+
+        // Turn screen on.
+        turnScreenOn();
+
+        // Acquire and release low latency lock in foreground activity.
+        runActivity("StatsdCtsForegroundActivity", "action", "action.acquire_release_wifi_ll_lock");
+        Thread.sleep(WAIT_TIME_SHORT);
 
         // Sorted list of events in order in which they occurred.
         List<EventMetricData> data = getEventMetricDataList();
