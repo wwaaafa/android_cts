@@ -978,6 +978,7 @@ public class UidAtomTests extends DeviceAtomTestCase {
 
         createAndUploadConfig(atomTag, true);  // True: uses attribution.
         runDeviceTests(DEVICE_SIDE_TEST_PACKAGE, ".AtomTests", "testWifiLockHighPerf");
+        Thread.sleep(WAIT_TIME_LONG);
 
         // Sorted list of events in order in which they occurred.
         List<EventMetricData> data = getEventMetricDataList();
@@ -1015,7 +1016,7 @@ public class UidAtomTests extends DeviceAtomTestCase {
 
         // Acquire and release low latency lock in foreground activity.
         runActivity("StatsdCtsForegroundActivity", "action", "action.acquire_release_wifi_ll_lock");
-        Thread.sleep(WAIT_TIME_SHORT);
+        Thread.sleep(WAIT_TIME_LONG);
 
         // Sorted list of events in order in which they occurred.
         List<EventMetricData> data = getEventMetricDataList();
@@ -1047,6 +1048,7 @@ public class UidAtomTests extends DeviceAtomTestCase {
 
         createAndUploadConfig(atomTag, true);
         runDeviceTests(DEVICE_SIDE_TEST_PACKAGE, ".AtomTests", "testWifiMulticastLock");
+        Thread.sleep(WAIT_TIME_LONG);
 
         // Sorted list of events in order in which they occurred.
         List<EventMetricData> data = getEventMetricDataList();
