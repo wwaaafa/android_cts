@@ -200,7 +200,14 @@
             android:grantUriPermissions="true"
             android:process=":badprovider" />
 
-        <activity android:name="android.security.cts.CVE_2022_20143.PocActivity"
+        <activity android:name="android.security.cts.AutomaticZenRuleTests.PocActivity"
+                  android:exported="true">
+            <intent-filter>
+                <action android:name="android.app.action.AUTOMATIC_ZEN_RULE"/>
+            </intent-filter>
+        </activity>
+
+        <activity android:name="android.security.cts.AutomaticZenRuleTests.SecondPocActivity"
                   android:exported="true">
             <intent-filter>
                 <action android:name="android.app.action.AUTOMATIC_ZEN_RULE"/>
@@ -261,6 +268,14 @@
             <intent-filter>
                 <action android:name="CVE_2021_0642_ACTION" />
                 <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name="android.security.cts.CVE_2023_20916.PocActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
