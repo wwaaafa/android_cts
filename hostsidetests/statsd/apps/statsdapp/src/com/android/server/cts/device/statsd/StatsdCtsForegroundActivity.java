@@ -27,6 +27,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.net.ConnectivityManager;
+import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.RemoteException;
@@ -49,6 +50,8 @@ public class StatsdCtsForegroundActivity extends Activity {
     public static final String ACTION_CRASH = "action.crash";
     public static final String ACTION_CREATE_CHANNEL_GROUP = "action.create_channel_group";
     public static final String ACTION_POLL_NETWORK_STATS = "action.poll_network_stats";
+    public static final String ACTION_WIFI_LL_LOCK = "action.acquire_release_wifi_ll_lock";
+    public static final String ACTION_WIFI_HIPERF_LOCK = "action.acquire_release_wifi_hiperf_lock";
 
     public static final int SLEEP_OF_ACTION_SLEEP_WHILE_TOP = 2_000;
     public static final int SLEEP_OF_ACTION_SHOW_APPLICATION_OVERLAY = 2_000;
@@ -92,6 +95,13 @@ public class StatsdCtsForegroundActivity extends Activity {
             case ACTION_POLL_NETWORK_STATS:
                 doPollNetworkStats();
                 break;
+            case ACTION_WIFI_LL_LOCK:
+                doAcquireReleaseLock(WifiManager.WIFI_MODE_FULL_LOW_LATENCY);
+                break;
+            case ACTION_WIFI_HIPERF_LOCK:
+                doAcquireReleaseLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF);
+                break;
+
             default:
                 Log.e(TAG, "Intent had invalid action " + action);
                 finish();
@@ -197,5 +207,14 @@ public class StatsdCtsForegroundActivity extends Activity {
     @SuppressWarnings("ConstantOverflow")
     private void doCrash() {
         Log.e(TAG, "About to crash the app with 1/0 " + (long) 1 / 0);
+    }
+
+    private void doAcquireReleaseLock(int lockMode) {
+        WifiManager wm = getSystemService(WifiManager.class);
+        WifiManager.WifiLock lock = wm.createWifiLock(lockMode, "StatsdCTSWifiLock");
+        lock.acquire();
+        AtomTests.sleep(500);
+        lock.release();
+        finish();
     }
 }
