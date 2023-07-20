@@ -19,10 +19,10 @@ Running these CTS tests requires a specific HDMI layout with a CEC adapter.
 *   Install `cec-client` binary, see [install instructions](cec_adapter.md#software)
 *   HDMI Display (aka a TV) with CEC disabled to avoid interference, or an HDMI fake plug
 
-It is recommended that the playback device has an HDMI physical address of `1.0.0.0` while running
-the tests. In case the DUT takes a physical address other than `1.0.0.0` and this is unavoidable,
-the tests can be configured to expect a different physical address by appending these arguments to
-the tradefed command:
+It is recommended that the source device has an HDMI physical address of `1.0.0.0` while running
+the tests. [DEPRECATED] In case the DUT takes a physical address other than `1.0.0.0` and this is
+unavoidable, the tests can be configured to expect a different physical address by appending these
+arguments to the tradefed command:
 ```
 --module-arg CtsHdmiCecHostTestCases:set-option:cec-phy-addr:<address_in_decimal>
 ```
