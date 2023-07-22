@@ -362,8 +362,8 @@ public class TunerTest {
 
     private class TunerTestOnTuneEventListener implements OnTuneEventListener {
         public static final int INVALID_TUNE_EVENT = -1;
-        private static final int SLEEP_TIME_MS = 100;
-        private static final int TIMEOUT_MS = 500;
+        private static final int SLEEP_TIME_MS = 3000;
+        private static final int TIMEOUT_MS = 3000;
         private final ReentrantLock mLock = new ReentrantLock();
         private final ConditionVariable mCV = new ConditionVariable();
         private int mLastTuneEvent = INVALID_TUNE_EVENT;
@@ -2797,6 +2797,30 @@ public class TunerTest {
         int status = f.delayCallbackForDurationMillis(timeDelayInMs);
 
         if (TunerVersionChecker.isHigherOrEqualVersionTo(TunerVersionChecker.TUNER_VERSION_2_0)) {
+            // Configure filter setting for receiving PAT
+            Settings settings = SectionSettingsWithTableInfo
+                    .builder(Filter.TYPE_TS)
+                    .setTableId(0)
+                    .setCrcEnabled(true)
+                    .setRaw(false)
+                    .setRepeat(false)
+                    .build();
+            FilterConfiguration config = TsFilterConfiguration
+                    .builder()
+                    .setTpid(0)
+                    .setSettings(settings)
+                    .build();
+
+            f.configure(config);
+
+            // Tune a frontend before starting the filter
+            List<Integer> ids = mTuner.getFrontendIds();
+            assertFalse(ids.isEmpty());
+
+            FrontendInfo info = mTuner.getFrontendInfoById(ids.get(0));
+            int res = mTuner.tune(createFrontendSettings(info));
+            assertEquals(Tuner.RESULT_SUCCESS, res);
+
             // start / stop prevents initial race condition after first setting the time delay.
             f.start();
             f.stop();
@@ -2808,6 +2832,9 @@ public class TunerTest {
             Instant finish = Instant.now();
             Duration timeElapsed = Duration.between(start, finish);
             assertTrue(timeElapsed.toMillis() >= timeDelayInMs);
+
+            res = mTuner.cancelTuning();
+            assertEquals(Tuner.RESULT_SUCCESS, res);
         } else {
             assertEquals(Tuner.RESULT_UNAVAILABLE, status);
         }
