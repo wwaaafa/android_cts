@@ -66,10 +66,10 @@ public class SurfacePixelValidator2 {
             }
             Trace.endSection();
 
-            boolean success = mPixelChecker.validatePlane(plane, mFrameNumber++, mBoundsToCheck,
-                    mWidth, mHeight);
 
             synchronized (mResultLock) {
+                boolean success = mPixelChecker.validatePlane(plane, mFrameNumber++, mBoundsToCheck,
+                        mWidth, mHeight);
                 mResultLock.notifyAll();
                 if (success) {
                     mResultSuccessFrames++;
@@ -152,8 +152,8 @@ public class SurfacePixelValidator2 {
             for (int i = 0; i < mFirstFailures.size(); i++) {
                 testResult.failures.put(mFirstFailures.keyAt(i), mFirstFailures.valueAt(i));
             }
+            mImageReader.close();
+            mWorkerThread.quitSafely();
         }
-        mImageReader.close();
-        mWorkerThread.quitSafely();
     }
 }
