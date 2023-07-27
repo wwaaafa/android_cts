@@ -38,6 +38,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
+import static org.junit.Assume.assumeFalse;
 
 import android.app.Activity;
 import android.app.WindowConfiguration;
@@ -152,6 +153,8 @@ public class ActivityStarterTests extends ActivityLifecycleClientTestBase {
      */
     @Test
     public void testLaunchNoHistoryActivityShowWhenLocked() {
+        // Allow TV devices to skip this test.
+        assumeFalse(isLeanBack());
         final LockScreenSession lockScreenSession = createManagedLockScreenSession();
         lockScreenSession.sleepDevice();
 
