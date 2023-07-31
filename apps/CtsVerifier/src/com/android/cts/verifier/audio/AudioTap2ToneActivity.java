@@ -24,6 +24,9 @@ import android.widget.Button;
 import android.widget.RadioButton;
 import android.widget.TextView;
 
+import static com.android.cts.verifier.TestListActivity.sCurrentDisplayMode;
+import static com.android.cts.verifier.TestListAdapter.setTestNameSuffix;
+
 import com.android.compatibility.common.util.ResultType;
 import com.android.compatibility.common.util.ResultUnit;
 import com.android.cts.verifier.audio.audiolib.StatUtils;
@@ -123,6 +126,7 @@ public class AudioTap2ToneActivity
     private double[] mLatencyMillis = new double[NUM_TEST_PHASES];
 
     // ReportLog Schema
+    private static final String SECTION_TAP_TO_TONE_LATENCY = "tap_to_tone_latency";
     // Note that each key will be suffixed with the ID of the API tested
     private static final String KEY_LATENCY_MIN = "latency_min_";
     private static final String KEY_LATENCY_MAX = "latency_max_";
@@ -263,7 +267,21 @@ public class AudioTap2ToneActivity
         getPassButton().setEnabled(testCompleted);
     }
 
-    private void recordTestStatus() {
+    @Override
+    public String getTestId() {
+        return setTestNameSuffix(sCurrentDisplayMode, getClass().getName());
+    }
+
+    @Override
+    public String getReportFileName() { return PassFailButtons.AUDIO_TESTS_REPORT_LOG_NAME; }
+
+    @Override
+    public final String getReportSectionName() {
+        return setTestNameSuffix(sCurrentDisplayMode, SECTION_TAP_TO_TONE_LATENCY);
+    }
+
+    @Override
+    public void recordTestResults() {
         CtsVerifierReportLog reportLog = getReportLog();
         for (int api = TEST_API_NATIVE; api <= TEST_API_JAVA; api++) {
             reportLog.addValue(
@@ -438,7 +456,6 @@ public class AudioTap2ToneActivity
     @Override
     public void setTestResultAndFinish(boolean passed) {
         stopAudio();
-        recordTestStatus();
         super.setTestResultAndFinish(passed);
     }
 
