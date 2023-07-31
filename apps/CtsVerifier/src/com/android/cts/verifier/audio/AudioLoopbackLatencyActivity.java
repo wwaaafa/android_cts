@@ -406,7 +406,7 @@ public class AudioLoopbackLatencyActivity extends PassFailButtons.Activity {
     }
 
     //
-    // Subclasses should call this explicitly. SubClasses should call submit() after their logs
+    // This will be called from PassFailButtons base class when the test is completed.
     //
     @Override
     public void recordTestResults() {
@@ -566,8 +566,6 @@ public class AudioLoopbackLatencyActivity extends PassFailButtons.Activity {
             }
         }
         mResultText.setText(result);
-
-        recordTestResults();
 
         showWait(false);
         mTestButton.setEnabled(true);
