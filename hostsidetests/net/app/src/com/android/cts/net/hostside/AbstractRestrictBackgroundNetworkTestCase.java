@@ -28,6 +28,7 @@ import static com.android.cts.net.hostside.NetworkPolicyTestUtils.getInstrumenta
 import static com.android.cts.net.hostside.NetworkPolicyTestUtils.getWifiManager;
 import static com.android.cts.net.hostside.NetworkPolicyTestUtils.isDozeModeSupported;
 import static com.android.cts.net.hostside.NetworkPolicyTestUtils.restrictBackgroundValueToString;
+import static com.android.cts.net.hostside.NetworkPolicyTestUtils.setRestrictBackground;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -154,6 +155,7 @@ public abstract class AbstractRestrictBackgroundNetworkTestCase {
         mServiceClient.bind();
         mDeviceIdleConstantsSetting = "device_idle_constants";
         executeShellCommand("cmd netpolicy start-watching " + mUid);
+        setRestrictBackground(false);
         setAppIdle(false);
         mLock = mPowerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG);
 
