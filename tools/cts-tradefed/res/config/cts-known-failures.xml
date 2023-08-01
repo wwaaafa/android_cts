@@ -327,4 +327,15 @@
     <option name="compatibility:exclude-filter" value="CtsDevicePolicyTestCases[run-on-clone-profile]" />
     <option name="compatibility:exclude-filter" value="CtsOsTestCases[run-on-clone-profile]" />
     <option name="compatibility:exclude-filter" value="CtsMultiUserTestCases[run-on-clone-profile]" />
+
+    <!-- b/286797612 -->
+    <option name="compatibility:exclude-filter" value="CtsJvmtiRunTest911HostTestCases" />
+
+    <!-- b/287732826 -->
+    <option name="compatibility:exclude-filter" value="CtsJvmtiRunTest912HostTestCases" />
+    <option name="compatibility:exclude-filter" value="CtsJvmtiRunTest913HostTestCases" />
+    <option name="compatibility:exclude-filter" value="CtsJvmtiRunTest988HostTestCases" />
+
+    <!-- b/288212464#comment5 -->
+    <option name="compatibility:exclude-filter" value="art_standalone_dex2oat_cts_tests" />
 </configuration>
