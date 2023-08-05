@@ -80,6 +80,9 @@ public class PermissionPolicyTest {
     private static final String LAUNCH_PERMISSION_SETTINGS =
             "android.permission.LAUNCH_PERMISSION_SETTINGS";
 
+    private static final String SUBSCRIBE_TO_KEYGUARD_LOCKED_STATE
+            = "android.permission.SUBSCRIBE_TO_KEYGUARD_LOCKED_STATE";
+
     private static final String LOG_TAG = "PermissionProtectionTest";
 
     private static final String PLATFORM_PACKAGE_NAME = "android";
@@ -537,6 +540,8 @@ public class PermissionPolicyTest {
                 return true;
             case LAUNCH_PERMISSION_SETTINGS:
                 return true;
+            case SUBSCRIBE_TO_KEYGUARD_LOCKED_STATE:
+                return sContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WATCH);
             default:
                 return false;
         }
