@@ -5165,6 +5165,10 @@ You should be prompted to select credentials; choose the ones you just installed
           It might require multiple tries until a confidence >= 0.6 is achieved.
     </string>
     <string name="audio_loopback_level_text">Audio Level</string>
+    <string name="audio_loopback_test_not_required">
+          Test NOT required for this device. Press pass button.
+    </string>
+    <string name="audio_loopback_test_required">Test required on this handheld device.</string>
 
     <!-- UI Labels -->
     <string name="audio_loopback_lbl_proaudio">Pro Audio:</string>
