@@ -152,6 +152,11 @@
                         android:id="@+id/audio_loopback_recommended_latency"/>
                 </LinearLayout>
 
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/audio_loopback_requirement"/>
+
                 <LinearLayout
                     android:orientation="horizontal"
                     android:layout_width="match_parent"
