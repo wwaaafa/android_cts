@@ -48,14 +48,14 @@ public final class SupportMessageTest {
     public static final DeviceState sDeviceState = new DeviceState();
 
     private static final int SHORT_SUPPORT_MESSAGE_MAX_LENGTH = 200;
-    private static final int LONG_SUPPORT_MESSAGE_REASONABLE_LENGTH = 4000;
+    private static final int LONG_SUPPORT_MESSAGE_REASONABLE_LENGTH = 20000;
     private static final String VALID_SUPPORT_MESSAGE = "My valid support message.";
     private static final String SHORT_SUPPORT_MESSAGE_TOO_LONG =
             new String(new char[SHORT_SUPPORT_MESSAGE_MAX_LENGTH + 1])
                     .replace('\0', 'A');
     private static final String SHORT_SUPPORT_MESSAGE_TOO_LONG_TRUNCATED =
             SHORT_SUPPORT_MESSAGE_TOO_LONG
-                    .subSequence(0, SHORT_SUPPORT_MESSAGE_MAX_LENGTH + 1)
+                    .subSequence(0, SHORT_SUPPORT_MESSAGE_MAX_LENGTH)
                     .toString();
     private static final String LONG_SUPPORT_MESSAGE_REASONABLY_LONG =
             new String(new char[LONG_SUPPORT_MESSAGE_REASONABLE_LENGTH])
@@ -152,9 +152,8 @@ public final class SupportMessageTest {
     @PositivePolicyTest(policy = SupportMessage.class)
     @Postsubmit(reason = "new test")
     public void setLongSupportMessage_longText_notTruncated() {
-        mDevicePolicyManager.setShortSupportMessage(mAdmin, LONG_SUPPORT_MESSAGE_REASONABLY_LONG);
-
-        assertThat(mDevicePolicyManager.getShortSupportMessage(mAdmin))
+        mDevicePolicyManager.setLongSupportMessage(mAdmin, LONG_SUPPORT_MESSAGE_REASONABLY_LONG);
+        assertThat(mDevicePolicyManager.getLongSupportMessage(mAdmin).toString())
                 .isEqualTo(LONG_SUPPORT_MESSAGE_REASONABLY_LONG);
     }
 
