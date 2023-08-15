@@ -93,6 +93,8 @@ public class AudioLoopbackLatencyActivity extends PassFailButtons.Activity {
     private boolean mSupportsMMAP = AudioUtils.isMMapSupported();
     private boolean mSupportsMMAPExclusive = AudioUtils.isMMapExclusiveSupported();
 
+    private boolean mIsHandheld;
+
     // Peripheral(s)
     boolean mIsPeripheralAttached;  // CDD ProAudio section C-1-3
     AudioDeviceInfo mOutputDevInfo;
@@ -225,11 +227,13 @@ public class AudioLoopbackLatencyActivity extends PassFailButtons.Activity {
         @Override
         public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
             scanPeripheralList(mAudioManager.getDevices(AudioManager.GET_DEVICES_ALL));
+            mTestButton.setEnabled(mustRunTest() && isPeripheralValidForTest());
         }
 
         @Override
         public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
             scanPeripheralList(mAudioManager.getDevices(AudioManager.GET_DEVICES_ALL));
+            mTestButton.setEnabled(mustRunTest() && isPeripheralValidForTest());
         }
     }
 
@@ -295,8 +299,6 @@ public class AudioLoopbackLatencyActivity extends PassFailButtons.Activity {
                 break;
         }
         mTestPathTxt.setText(pathName);
-        mTestButton.setEnabled(
-                isPeripheralValidForTest());
 //                mTestPeripheral != TESTPERIPHERAL_INVALID && mTestPeripheral != TESTPERIPHERAL_NONE);
 
     }
@@ -410,7 +412,7 @@ public class AudioLoopbackLatencyActivity extends PassFailButtons.Activity {
     //
     @Override
     public void recordTestResults() {
-        if (mNativeAnalyzerThread == null) {
+        if (mNativeAnalyzerThread == null || !mustRunTest()) {
             return; // no results to report
         }
 
@@ -648,12 +650,13 @@ public class AudioLoopbackLatencyActivity extends PassFailButtons.Activity {
         setContentView(R.layout.audio_loopback_latency_activity);
 
         setPassFailButtonClickListeners();
-        getPassButton().setEnabled(false);
         setInfoResources(R.string.audio_loopback_latency_test, R.string.audio_loopback_info, -1);
 
         mClaimsOutput = AudioSystemFlags.claimsOutput(this);
         mClaimsInput = AudioSystemFlags.claimsInput(this);
         mClaimsProAudio = AudioSystemFlags.claimsProAudio(this);
+
+        mIsHandheld = AudioSystemFlags.isHandheld(this);
 
         mYesString = getResources().getString(R.string.audio_general_yes);
         mNoString = getResources().getString(R.string.audio_general_no);
@@ -683,8 +686,18 @@ public class AudioLoopbackLatencyActivity extends PassFailButtons.Activity {
 
         connectLoopbackUI();
 
-        calculateLatencyThresholds();
-        displayLatencyThresholds();
+        TextView testRequirementView = (TextView) findViewById(R.id.audio_loopback_requirement);
+        if (mustRunTest()) {
+            testRequirementView.setText(getString(R.string.audio_loopback_test_required));
+            getPassButton().setEnabled(false);
+        } else {
+            testRequirementView.setText(getString(R.string.audio_loopback_test_not_required));
+            getPassButton().setEnabled(true);
+        }
+    }
+
+    private boolean mustRunTest() {
+        return mIsHandheld;
     }
 
     private class OnBtnClickListener implements OnClickListener {
