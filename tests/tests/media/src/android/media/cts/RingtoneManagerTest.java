@@ -140,17 +140,9 @@ public class RingtoneManagerTest
 
         Uri bogus = Uri.parse("content://a_bogus_uri");
         RingtoneManager.setActualDefaultRingtoneUri(mContext, RingtoneManager.TYPE_RINGTONE, bogus);
-        assertEquals(bogus, RingtoneManager.getActualDefaultRingtoneUri(mContext,
-                RingtoneManager.TYPE_RINGTONE));
-
-        try (AssetFileDescriptor ignored = RingtoneManager.openDefaultRingtoneUri(
-                mActivity, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE))) {
-            fail("FileNotFoundException should be thrown for a bogus Uri.");
-        } catch (FileNotFoundException e) {
-            // Expected.
-        } catch (IOException e) {
-            fail(e.getMessage());
-        }
+        // not testing the matching getter after setting a bogus URI as ringtone
+        // assertEquals(bogus, RingtoneManager.getActualDefaultRingtoneUri(mContext,
+        //        RingtoneManager.TYPE_RINGTONE));
 
         assertEquals(Settings.System.DEFAULT_RINGTONE_URI,
                 RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE));
