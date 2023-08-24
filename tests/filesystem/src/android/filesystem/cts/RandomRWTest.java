@@ -28,6 +28,7 @@ import com.android.compatibility.common.util.DeviceReportLog;
 
 import static org.junit.Assert.assertTrue;
 
+import org.junit.Before;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,8 +52,14 @@ public class RandomRWTest {
         }
     }
 
+    @Before
+    public void setUp() throws Exception {
+        CarTestUtil.getInstance().setUp();
+    }
+
     @After
     public void tearDown() throws Exception {
+        CarTestUtil.getInstance().tearDown();
         FileUtil.removeFileOrDir(getContext(), DIR_RANDOM_WR);
         FileUtil.removeFileOrDir(getContext(), DIR_RANDOM_RD);
     }
