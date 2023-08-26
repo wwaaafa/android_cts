@@ -76,6 +76,7 @@ class RawSensitivityBurstTest(its_base_test.ItsBaseTest):
           camera_properties_utils.read_3a(props) and
           camera_properties_utils.per_frame_control(props) and
           not camera_properties_utils.mono_camera(props))
+      name_with_log_path = os.path.join(self.log_path, _NAME)
 
       # Load chart for scene
       its_session_utils.load_scene(
@@ -127,11 +128,13 @@ class RawSensitivityBurstTest(its_base_test.ItsBaseTest):
       pylab.ylabel('Image Center Patch Variance')
       pylab.title(_NAME)
       matplotlib.pyplot.savefig(
-          f'{os.path.join(self.log_path, _NAME)}_variances.png')
+          f'{name_with_log_path}_variances.png')
 
-      # Asserts that each shot is noisier than previous
+      # Assert each shot is noisier than previous and save img on FAIL
       for i in x[0:-1]:
         if variances[i] >= variances[i+1] / _VAR_THRESH:
+          image_processing_utils.capture_scene_image(
+              cam, props, name_with_log_path)
           raise AssertionError(
               f'variances [i]: {variances[i] :.5f}, [i+1]: '
               f'{variances[i+1]:.5f}, THRESH: {_VAR_THRESH}')

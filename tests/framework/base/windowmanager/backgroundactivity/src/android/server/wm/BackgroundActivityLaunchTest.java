@@ -89,7 +89,7 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * This class covers all test cases for starting/blocking background activities.
- * As instrumentation tests started by shell are whitelisted to allow starting background activity,
+ * As instrumentation tests started by shell are allowlisted to allow starting background activity,
  * tests can't be done in this app alone.
  * Hence, there are 2 extra apps, appA and appB. This class will send commands to appA/appB, for
  * example, send a broadcast to appA and ask it to start a background activity, and we will monitor
@@ -251,10 +251,11 @@ public class BackgroundActivityLaunchTest extends BackgroundActivityTestBase {
     public void testActivityNotBlockedWhenForegroundActivityLaunch() throws Exception {
         // Start foreground activity, and foreground activity able to launch background activity
         // successfully
-        startActivityUnchecked(APP_A.FOREGROUND_ACTIVITY,
-                new String[]{APP_A.FOREGROUND_ACTIVITY_EXTRA.LAUNCH_BACKGROUND_ACTIVITY});
+        startActivity(APP_A.FOREGROUND_ACTIVITY);
 
+        mContext.sendBroadcast(getLaunchActivitiesBroadcast(APP_A, APP_A.BACKGROUND_ACTIVITY));
         assertActivityFocused(APP_A.BACKGROUND_ACTIVITY);
+
         assertTaskStackHasComponents(APP_A.FOREGROUND_ACTIVITY,
                 APP_A.BACKGROUND_ACTIVITY,
                 APP_A.FOREGROUND_ACTIVITY);
@@ -291,7 +292,7 @@ public class BackgroundActivityLaunchTest extends BackgroundActivityTestBase {
 
         // Refresh last-stop-app-switch-time by returning to home and then make the task foreground.
         pressHomeAndResumeAppSwitch();
-        startActivityUnchecked(APP_A.FOREGROUND_ACTIVITY, new String[]{});
+        startActivityUnchecked(APP_A.FOREGROUND_ACTIVITY);
         mWmState.waitForValidState(APP_B.FOREGROUND_ACTIVITY);
         // As A is not visible, it can not start activities.
         mContext.sendBroadcast(new Intent(
@@ -307,7 +308,6 @@ public class BackgroundActivityLaunchTest extends BackgroundActivityTestBase {
     }
 
     @Test
-    @FlakyTest(bugId = 272082654)
     public void testActivityFromBgActivityInFgTaskSdk33_isNotBlocked() {
         // Launch Activity A, B in the same task with different processes.
         startActivity(APP_A_33.FOREGROUND_ACTIVITY);
@@ -319,7 +319,7 @@ public class BackgroundActivityLaunchTest extends BackgroundActivityTestBase {
 
         // Refresh last-stop-app-switch-time by returning to home and then make the task foreground.
         pressHomeAndResumeAppSwitch();
-        startActivityUnchecked(APP_A_33.FOREGROUND_ACTIVITY, new String[]{});
+        startActivityUnchecked(APP_A_33.FOREGROUND_ACTIVITY);
         mWmState.waitForValidState(APP_B.FOREGROUND_ACTIVITY);
         // Though process A is in background, it is in a visible Task (top is B) so it should be
         // able to start activity successfully.
@@ -354,11 +354,13 @@ public class BackgroundActivityLaunchTest extends BackgroundActivityTestBase {
     public void testSecondActivityNotBlockedWhenForegroundActivityLaunch() throws Exception {
         // Start AppA foreground activity, which will immediately launch one activity
         // and then the second.
-        startActivityUnchecked(APP_A.FOREGROUND_ACTIVITY,
-                new String[]{APP_A.FOREGROUND_ACTIVITY_EXTRA.LAUNCH_BACKGROUND_ACTIVITY,
-                        APP_A.FOREGROUND_ACTIVITY_EXTRA.LAUNCH_SECOND_BACKGROUND_ACTIVITY});
+        startActivity(APP_A.FOREGROUND_ACTIVITY);
 
+        mContext.sendBroadcast(getLaunchActivitiesBroadcast(APP_A, APP_A.BACKGROUND_ACTIVITY));
+        assertActivityFocused(APP_A.BACKGROUND_ACTIVITY);
+        mContext.sendBroadcast(getLaunchActivitiesBroadcast(APP_A, APP_A.SECOND_BACKGROUND_ACTIVITY));
         assertActivityFocused(APP_A.SECOND_BACKGROUND_ACTIVITY);
+
         assertTaskStackHasComponents(APP_A.FOREGROUND_ACTIVITY,
                 APP_A.SECOND_BACKGROUND_ACTIVITY,
                 APP_A.BACKGROUND_ACTIVITY,
@@ -1041,7 +1043,11 @@ public class BackgroundActivityLaunchTest extends BackgroundActivityTestBase {
         secondIntent.putExtra(
                 appToSendPendingIntent.START_PENDING_INTENT_ACTIVITY_EXTRA.PENDING_INTENT, pi);
         secondIntent.putExtra(
-                appToSendPendingIntent.START_PENDING_INTENT_ACTIVITY_EXTRA.ALLOW_BAL, allowBal);
+                appToSendPendingIntent.START_PENDING_INTENT_ACTIVITY_EXTRA.START_BUNDLE,
+                ActivityOptions.makeBasic().setPendingIntentBackgroundActivityStartMode(
+                        allowBal ? ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+                                : ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_DENIED)
+                        .toBundle());
         mContext.startActivity(secondIntent);
     }
 

@@ -207,7 +207,7 @@ public class CtsWindowInfoUtils {
     }
 
     /**
-     * Waits until the window specified by windowTokenSupplier is present, not occluded, and hasn't
+     * Waits until the window specified by the predicate is present, not occluded, and hasn't
      * had geometry changes for 200ms.
      *
      * The window is considered occluded if any part of another window is above it, excluding
@@ -228,7 +228,7 @@ public class CtsWindowInfoUtils {
      * reached. False otherwise.
      */
     public static boolean waitForWindowOnTop(int timeout, @NonNull TimeUnit unit,
-            @NonNull Supplier<IBinder> windowTokenSupplier)
+                                             @NonNull Predicate<WindowInfo> predicate)
             throws InterruptedException {
         var latch = new CountDownLatch(1);
         var satisfied = new AtomicBoolean();
@@ -252,15 +252,10 @@ public class CtsWindowInfoUtils {
                     return;
                 }
 
-                IBinder windowToken = windowTokenSupplier.get();
-                if (windowToken == null) {
-                    return;
-                }
-
                 WindowInfo targetWindowInfo = null;
                 ArrayList<WindowInfo> aboveWindowInfos = new ArrayList<>();
                 for (var windowInfo : windowInfos) {
-                    if (windowInfo.windowToken == windowToken) {
+                    if (predicate.test(windowInfo)) {
                         targetWindowInfo = windowInfo;
                         break;
                     }
@@ -305,7 +300,7 @@ public class CtsWindowInfoUtils {
                         latch.countDown();
                     }
                 };
-                mTimer.schedule(mTask, 200);
+                mTimer.schedule(mTask, 200 * HW_TIMEOUT_MULTIPLIER);
             }
         };
 
@@ -340,6 +335,36 @@ public class CtsWindowInfoUtils {
     }
 
     /**
+     * Waits until the window specified by windowTokenSupplier is present, not occluded, and hasn't
+     * had geometry changes for 200ms.
+     *
+     * The window is considered occluded if any part of another window is above it, excluding
+     * trusted overlays.
+     *
+     * <p>
+     * <strong>Note:</strong>If the caller has any adopted shell permissions, they must include
+     * android.permission.ACCESS_SURFACE_FLINGER.
+     * </p>
+     *
+     * @param timeout             The amount of time to wait for the window to be visible.
+     * @param unit                The units associated with timeout.
+     * @param windowTokenSupplier Supplies the window token for the window to wait on. The
+     *                            supplier is called each time window infos change. If the
+     *                            supplier returns null, the window is assumed not visible
+     *                            yet.
+     * @return True if the window satisfies the visibility requirements before the timeout is
+     * reached. False otherwise.
+     */
+    public static boolean waitForWindowOnTop(int timeout, @NonNull TimeUnit unit,
+            @NonNull Supplier<IBinder> windowTokenSupplier)
+            throws InterruptedException {
+        return waitForWindowOnTop(timeout, unit, windowInfo -> {
+            IBinder windowToken = windowTokenSupplier.get();
+            return windowToken != null && windowInfo.windowToken == windowToken;
+        });
+    }
+
+    /**
      * Tap on the center coordinates of the specified window.
      * </p>
      * @param instrumentation Instrumentation object to use for tap.
@@ -352,7 +377,8 @@ public class CtsWindowInfoUtils {
      * @throws InterruptedException if failed to wait for WindowInfo
      */
     public static boolean tapOnWindowCenter(Instrumentation instrumentation,
-            @NonNull Supplier<IBinder> windowTokenSupplier) throws InterruptedException {
+            @NonNull Supplier<IBinder> windowTokenSupplier, boolean useGlobalInjection)
+            throws InterruptedException {
         Rect bounds = getWindowBoundsInDisplaySpace(windowTokenSupplier);
         if (bounds == null) {
             return false;
@@ -360,7 +386,7 @@ public class CtsWindowInfoUtils {
 
         final Point coord = new Point(bounds.left + bounds.width() / 2,
                 bounds.top + bounds.height() / 2);
-        sendTap(instrumentation, coord);
+        sendTap(instrumentation, coord, useGlobalInjection);
         return true;
     }
 
@@ -378,7 +404,8 @@ public class CtsWindowInfoUtils {
      * @throws InterruptedException if failed to wait for WindowInfo
      */
     public static boolean tapOnWindow(Instrumentation instrumentation,
-            @NonNull Supplier<IBinder> windowTokenSupplier, @Nullable Point offset)
+            @NonNull Supplier<IBinder> windowTokenSupplier, @Nullable Point offset,
+            boolean useGlobalInjection)
             throws InterruptedException {
         Rect bounds = getWindowBoundsInDisplaySpace(windowTokenSupplier);
         if (bounds == null) {
@@ -387,7 +414,7 @@ public class CtsWindowInfoUtils {
 
         final Point coord = new Point(bounds.left + (offset != null ? offset.x : 0),
                 bounds.top + (offset != null ? offset.y : 0));
-        sendTap(instrumentation, coord);
+        sendTap(instrumentation, coord, useGlobalInjection);
         return true;
     }
 
@@ -436,15 +463,16 @@ public class CtsWindowInfoUtils {
         return bounds;
     }
 
-    private static void sendTap(Instrumentation instrumentation, Point coord) {
+    private static void sendTap(Instrumentation instrumentation, Point coord,
+            boolean useGlobalInjection) {
         // Get anchor coordinates on the screen
         final long downTime = SystemClock.uptimeMillis();
 
-        UiAutomation uiAutomation = instrumentation.getUiAutomation();
         CtsTouchUtils ctsTouchUtils = new CtsTouchUtils(instrumentation.getTargetContext());
-        ctsTouchUtils.injectDownEvent(uiAutomation, downTime, coord.x, coord.y, true, null);
-        ctsTouchUtils.injectUpEvent(uiAutomation, downTime, false, coord.x, coord.y,
-                true, null);
+        ctsTouchUtils.injectDownEvent(instrumentation, downTime, coord.x, coord.y,
+                /* eventInjectionListener= */ null, useGlobalInjection);
+        ctsTouchUtils.injectUpEvent(instrumentation, downTime, false, coord.x, coord.y,
+                /*waitForAnimations=*/ true, null, useGlobalInjection);
 
         instrumentation.waitForIdleSync();
     }

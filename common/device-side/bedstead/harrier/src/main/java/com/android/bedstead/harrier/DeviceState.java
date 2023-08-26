@@ -17,6 +17,8 @@
 package com.android.bedstead.harrier;
 
 import static android.Manifest.permission.INTERACT_ACROSS_USERS_FULL;
+import static android.app.admin.DevicePolicyManager.OPERATION_SAFETY_REASON_NONE;
+import static android.app.role.RoleManager.ROLE_BROWSER;
 import static android.content.pm.PackageManager.FEATURE_MANAGED_USERS;
 import static android.os.Build.VERSION.SDK_INT;
 
@@ -76,6 +78,7 @@ import com.android.bedstead.harrier.annotations.EnsureHasAccountAuthenticator;
 import com.android.bedstead.harrier.annotations.EnsureHasAccounts;
 import com.android.bedstead.harrier.annotations.EnsureHasAdditionalUser;
 import com.android.bedstead.harrier.annotations.EnsureHasAppOp;
+import com.android.bedstead.harrier.annotations.RequireHasDefaultBrowser;
 import com.android.bedstead.harrier.annotations.EnsureHasNoAccounts;
 import com.android.bedstead.harrier.annotations.EnsureHasNoAdditionalUser;
 import com.android.bedstead.harrier.annotations.EnsureHasPermission;
@@ -84,6 +87,7 @@ import com.android.bedstead.harrier.annotations.EnsureHasUserRestriction;
 import com.android.bedstead.harrier.annotations.EnsurePackageNotInstalled;
 import com.android.bedstead.harrier.annotations.EnsurePasswordNotSet;
 import com.android.bedstead.harrier.annotations.EnsurePasswordSet;
+import com.android.bedstead.harrier.annotations.EnsurePolicyOperationUnsafe;
 import com.android.bedstead.harrier.annotations.EnsureScreenIsOn;
 import com.android.bedstead.harrier.annotations.EnsureSecureSettingSet;
 import com.android.bedstead.harrier.annotations.EnsureTestAppDoesNotHavePermission;
@@ -147,6 +151,7 @@ import com.android.bedstead.harrier.annotations.meta.RequireRunOnUserAnnotation;
 import com.android.bedstead.harrier.annotations.meta.RequiresBedsteadJUnit4;
 import com.android.bedstead.nene.TestApis;
 import com.android.bedstead.nene.accounts.AccountReference;
+import com.android.bedstead.nene.devicepolicy.CommonDevicePolicy;
 import com.android.bedstead.nene.devicepolicy.DeviceOwner;
 import com.android.bedstead.nene.devicepolicy.DeviceOwnerType;
 import com.android.bedstead.nene.devicepolicy.DevicePolicyController;
@@ -264,6 +269,8 @@ public final class DeviceState extends HarrierRule {
     // if not - we assume the test should never run under permission instrumentation
     // This is only used if a permission instrumentation package is set
     private boolean mHasRequirePermissionInstrumentation = false;
+
+    private boolean mNextSafetyOperationSet = false;
 
     private static final String TV_PROFILE_TYPE_NAME = "com.android.tv.profile";
     private static final String CLONE_PROFILE_TYPE_NAME = "android.os.usertype.profile.CLONE";
@@ -1297,6 +1304,16 @@ public final class DeviceState extends HarrierRule {
                         requireQuickSettingsSupport.failureMode());
                 continue;
             }
+            if (annotation instanceof RequireHasDefaultBrowser) {
+                RequireHasDefaultBrowser requireHasDefaultBrowser =
+                        (RequireHasDefaultBrowser) annotation;
+                    UserReference user =
+                            resolveUserTypeToUser(requireHasDefaultBrowser.forUser());
+                    checkFailOrSkip("User: " + user + " does not have a default browser",
+                            !TestApis.roles().getRoleHoldersAsUser(ROLE_BROWSER, user).isEmpty(),
+                            requireHasDefaultBrowser.failureMode());
+                    continue;
+            }
 
             if (annotation instanceof RequireTelephonySupport) {
                 RequireTelephonySupport requireTelephonySupport =
@@ -1358,6 +1375,16 @@ public final class DeviceState extends HarrierRule {
             if (annotation instanceof RequireAdbRoot) {
                 RequireAdbRoot requireAdbRootAnnotation = (RequireAdbRoot) annotation;
                 requireAdbRoot(requireAdbRootAnnotation.failureMode());
+
+                continue;
+            }
+
+            if (annotation instanceof EnsurePolicyOperationUnsafe) {
+                EnsurePolicyOperationUnsafe ensurePolicyOperationUnsafeAnnotation =
+                        (EnsurePolicyOperationUnsafe) annotation;
+                ensurePolicyOperationUnsafe(ensurePolicyOperationUnsafeAnnotation.operation(),
+                        ensurePolicyOperationUnsafeAnnotation.reason());
+
                 continue;
             }
         }
@@ -2596,6 +2623,13 @@ public final class DeviceState extends HarrierRule {
         mOriginalFlagValues.clear();
 
         mAnnotationExecutors.values().forEach(AnnotationExecutor::teardownNonShareableState);
+
+        if (mNextSafetyOperationSet) {
+            ensurePolicyOperationUnsafe(
+                    CommonDevicePolicy.DevicePolicyOperation.OPERATION_NONE,
+                    CommonDevicePolicy.OperationSafetyReason.OPERATION_SAFETY_REASON_NONE);
+            mNextSafetyOperationSet = false;
+        }
     }
 
     private Set<TestAppInstance> mInstalledTestApps = new HashSet<>();
@@ -4346,15 +4380,22 @@ public final class DeviceState extends HarrierRule {
                 TestApis.services().serviceIsAvailable(serviceClass), failureMode);
     }
 
-    private void requireAdbRoot(FailureMode failureMode) {
-        if (TestApis.adb().isRootAvailable()) {
-            Tags.addTag(Tags.ADB_ROOT);
-        } else {
-            failOrSkip("Device does not have root available.", failureMode);
+        private void requireAdbRoot(FailureMode failureMode) {
+            if (TestApis.adb().isRootAvailable()) {
+                Tags.addTag(Tags.ADB_ROOT);
+            } else {
+                failOrSkip("Device does not have root available.", failureMode);
+            }
         }
+
+        private static boolean shouldRunAsRoot() {
+            return Tags.hasTag(Tags.ADB_ROOT);
     }
 
-    private static boolean shouldRunAsRoot() {
-        return Tags.hasTag(Tags.ADB_ROOT);
-    }
+    private void ensurePolicyOperationUnsafe(
+            CommonDevicePolicy.DevicePolicyOperation operation,
+            CommonDevicePolicy.OperationSafetyReason reason){
+            mNextSafetyOperationSet = true;
+            TestApis.devicePolicy().setNextOperationSafety(operation, reason);
+        }
 }

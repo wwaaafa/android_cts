@@ -71,6 +71,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.hardware.display.DisplayManager;
@@ -81,6 +82,7 @@ import android.os.Bundle;
 import android.os.ResultReceiver;
 import android.os.SystemClock;
 import android.platform.test.annotations.AppModeFull;
+import android.server.wm.WakeUpAndUnlockRule;
 import android.server.wm.WindowManagerStateHelper;
 import android.util.DisplayMetrics;
 import android.view.Display;
@@ -91,7 +93,6 @@ import android.virtualdevice.cts.common.util.VirtualDeviceTestUtils;
 
 import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.FlakyTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.compatibility.common.util.AdoptShellPermissionsRule;
@@ -103,6 +104,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.RuleChain;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -130,16 +132,17 @@ public class StreamedAppClipboardTest {
                     .build();
 
     @Rule
-    public AdoptShellPermissionsRule mAdoptShellPermissionsRule = new AdoptShellPermissionsRule(
-            InstrumentationRegistry.getInstrumentation().getUiAutomation(),
-            ACTIVITY_EMBEDDING,
-            ADD_TRUSTED_DISPLAY,
-            CREATE_VIRTUAL_DEVICE,
-            READ_CLIPBOARD_IN_BACKGROUND,
-            READ_DEVICE_CONFIG,
-            WRITE_ALLOWLISTED_DEVICE_CONFIG,
-            WRITE_SECURE_SETTINGS,
-            WAKE_LOCK);
+    public RuleChain chain = RuleChain.outerRule(new WakeUpAndUnlockRule())
+            .around(new AdoptShellPermissionsRule(
+                    InstrumentationRegistry.getInstrumentation().getUiAutomation(),
+                    ACTIVITY_EMBEDDING,
+                    ADD_TRUSTED_DISPLAY,
+                    CREATE_VIRTUAL_DEVICE,
+                    READ_CLIPBOARD_IN_BACKGROUND,
+                    READ_DEVICE_CONFIG,
+                    WRITE_ALLOWLISTED_DEVICE_CONFIG,
+                    WRITE_SECURE_SETTINGS,
+                    WAKE_LOCK));
 
     @Rule
     public FakeAssociationRule mFakeAssociationRule = new FakeAssociationRule();
@@ -163,7 +166,11 @@ public class StreamedAppClipboardTest {
         MockitoAnnotations.initMocks(this);
         mContext = getApplicationContext();
         final PackageManager packageManager = mContext.getPackageManager();
-        assumeTrue(packageManager.hasSystemFeature(PackageManager.FEATURE_COMPANION_DEVICE_SETUP));
+        assumeTrue(mContext.getResources().getBoolean(
+                Resources.getSystem().getIdentifier(
+                        "config_enableVirtualDeviceManager",
+                        "bool",
+                        "android")));
         assumeTrue(packageManager.hasSystemFeature(
                 PackageManager.FEATURE_ACTIVITIES_ON_SECONDARY_DISPLAYS));
         // TODO(b/261155110): Re-enable tests once freeform mode is supported in Virtual Display.
@@ -353,7 +360,6 @@ public class StreamedAppClipboardTest {
         assertThat(clipData).isNull();
     }
 
-    @FlakyTest(bugId = 293404975)
     @Test
     public void twoAppsOnVirtualDevice_firstAppWrites_secondAppCanRead() {
         final Intent firstAppIntent =

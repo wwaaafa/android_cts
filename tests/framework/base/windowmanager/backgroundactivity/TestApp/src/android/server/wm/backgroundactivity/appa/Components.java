@@ -69,16 +69,8 @@ public class Components extends ComponentsBase {
 
     /** Extra key constants for {@link #FOREGROUND_ACTIVITY}. */
     public static class ForegroundActivityExtra {
-        public final String LAUNCH_BACKGROUND_ACTIVITY =
-                "LAUNCH_BACKGROUND_ACTIVITY_EXTRA";
-        public final String LAUNCH_SECOND_BACKGROUND_ACTIVITY =
-                "LAUNCH_SECOND_BACKGROUND_ACTIVITY_EXTRA";
         public final String RELAUNCH_FOREGROUND_ACTIVITY_EXTRA =
                 "RELAUNCH_FOREGROUND_ACTIVITY_EXTRA";
-        public final String START_ACTIVITY_FROM_FG_ACTIVITY_DELAY_MS =
-                "START_ACTIVITY_FROM_FG_ACTIVITY_DELAY_MS_EXTRA";
-        public final String START_ACTIVITY_FROM_FG_ACTIVITY_NEW_TASK =
-                "START_ACTIVITY_FROM_FG_ACTIVITY_NEW_TASK_EXTRA";
 
         // Keep in sync with  android.server.wm.backgroundactivity.common.CommonComponents
         // .CommonForegroundActivityExtras
@@ -90,18 +82,10 @@ public class Components extends ComponentsBase {
     /** Extra key constants for {@link #START_PENDING_INTENT_ACTIVITY} */
     public static class StartPendingIntentActivityExtra {
         /**
-         * If present starts the pending intent with a bundle created from ActivityOptions where
-         * setBackgroundActivityLaunchAllowed() was set to this value.
+         * The bundle to use to start the pending intent/
          */
-        public final String ALLOW_BAL = "ALLOW_BAL_EXTRA";
+        public final String START_BUNDLE = "START_BUNDLE";
 
-        /** Start the pending intent with a `null` bundle if no options are set. */
-        public final String USE_NULL_BUNDLE = "USE_NULL_BUNDLE";
-        /**
-         * If present and true starts the pending intent with a bundle created from ActivityOptions
-         * where setPendingIntentCreatorBackgroundActivityStartMode() to allow BAL.
-         */
-        public final String ALLOW_CREATOR_BAL = "ALLOW_CREATOR_BAL";
         public final String PENDING_INTENT = "PENDING_INTENT_EXTRA";
     }
 
