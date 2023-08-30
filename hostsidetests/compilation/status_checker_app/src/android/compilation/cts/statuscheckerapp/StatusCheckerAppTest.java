@@ -29,9 +29,12 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import dalvik.system.ApplicationRuntime;
+import dalvik.system.DexFile;
 import dalvik.system.PathClassLoader;
+import dalvik.system.VMRuntime;
 
 import com.google.common.io.ByteStreams;
+import com.google.common.truth.Correspondence;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -74,6 +77,19 @@ public class StatusCheckerAppTest {
         copyResourceToFile(SECONDARY_DEX_RES, secondaryDexFile);
         assertThat(secondaryDexFile.setReadOnly()).isTrue();
         new PathClassLoader(secondaryDexFile.getAbsolutePath(), this.getClass().getClassLoader());
+    }
+
+    @Test
+    public void testGetDexFileOutputPaths() throws Exception {
+        Context context = ApplicationProvider.getApplicationContext();
+        String[] paths = DexFile.getDexFileOutputPaths(
+                context.getApplicationInfo().sourceDir, VMRuntime.getRuntime().vmInstructionSet());
+
+        // We can't be too specific because the paths are ART-internal and are subject to change.
+        assertThat(paths)
+                .asList()
+                .comparingElementsUsing(Correspondence.from(String::endsWith, "ends with"))
+                .containsAtLeast(".odex", ".vdex");
     }
 
     public File copyResourceToFile(String resourceName, File file) throws Exception {
