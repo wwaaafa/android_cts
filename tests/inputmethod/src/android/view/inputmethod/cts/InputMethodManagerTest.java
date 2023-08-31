@@ -23,6 +23,7 @@ import static android.view.inputmethod.cts.util.TestUtils.isInputMethodPickerSho
 import static android.view.inputmethod.cts.util.TestUtils.waitOnMainUntil;
 
 import static com.android.compatibility.common.util.SystemUtil.runShellCommand;
+import static com.android.compatibility.common.util.SystemUtil.runShellCommandOrThrow;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -336,7 +337,7 @@ public class InputMethodManagerTest {
                 return condition.canProceed();
             });
         } catch (AssertionError e) {
-            File heap = new File(mContext.getExternalFilesDir(null), "dump.hprof");
+            File heap = new File("/sdcard/DumpOnFailure", "inputmethod-dump.hprof");
             Debug.dumpHprofData(heap.getAbsolutePath());
             throw new AssertionError("Dumped heap in device at " + heap.getAbsolutePath(), e);
         }
@@ -344,7 +345,7 @@ public class InputMethodManagerTest {
 
     private void enableImes(String... ids) {
         for (String id : ids) {
-            runShellCommand("ime enable " + id);
+            runShellCommandOrThrow("ime enable " + id);
         }
         mNeedsImeReset = true;
     }
