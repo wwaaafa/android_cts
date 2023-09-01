@@ -1204,8 +1204,13 @@ public class MediaPlayerTest extends MediaPlayerTestBase {
         mMediaPlayer.seekTo(0);
         mOnSeekCompleteCalled.waitForSignal();
         Thread.sleep(playTime);
-        assertTrue("MediaPlayer should not be playing",
-                !mMediaPlayer.isPlaying() && mMediaPlayer.getCurrentPosition() == 0);
+        assertFalse("MediaPlayer should not be playing", mMediaPlayer.isPlaying());
+        int positionAtStart = mMediaPlayer.getCurrentPosition();
+        // Allow both 0 and 23 (the timestamp of the second audio sample) to avoid flaky failures
+        // on builds that don't include http://r.android.com/2700283.
+        if (positionAtStart != 0 && positionAtStart != 23) {
+            fail("MediaPlayer position should be 0 or 23");
+        }
 
         mMediaPlayer.start();
         Thread.sleep(playTime);
