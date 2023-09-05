@@ -19,6 +19,7 @@ package android.content.pm.cts;
 import static android.app.WindowConfiguration.WINDOWING_MODE_FULLSCREEN;
 import static android.content.pm.PackageManager.MATCH_ARCHIVED_PACKAGES;
 import static android.content.pm.PackageManager.MATCH_UNINSTALLED_PACKAGES;
+import static android.content.pm.cts.PackageManagerShellCommandIncrementalTest.executeShellCommand;
 
 import static com.android.compatibility.common.util.SystemUtil.runWithShellPermissionIdentity;
 
@@ -29,16 +30,19 @@ import static junit.framework.Assert.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 import android.Manifest;
 import android.app.ActivityOptions;
 import android.app.Instrumentation;
 import android.app.usage.StorageStats;
 import android.app.usage.StorageStatsManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IIntentReceiver;
 import android.content.IIntentSender;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.IntentSender;
 import android.content.pm.PackageArchiver;
 import android.content.pm.PackageInfo;
@@ -59,6 +63,7 @@ import androidx.test.uiautomator.By;
 import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.Until;
 
+import com.android.compatibility.common.util.FeatureUtil;
 import com.android.compatibility.common.util.SystemUtil;
 
 import com.google.common.truth.Expect;
@@ -69,7 +74,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 // TODO(b/290775207) Add more test cases
@@ -79,8 +86,14 @@ public class PackageArchiverTest {
 
     private static final String SAMPLE_APK_BASE = "/data/local/tmp/cts/content/";
     private static final String PACKAGE_NAME = "android.content.cts.mocklauncherapp";
+
+    private static final String NO_ACTIVITY_PACKAGE_NAME =
+            "android.content.cts.IntentResolutionTest";
     private static final String ACTIVITY_NAME = PACKAGE_NAME + ".Launcher";
     private static final String APK_PATH = SAMPLE_APK_BASE + "CtsContentMockLauncherTestApp.apk";
+
+    private static final String NO_ACTIVITY_APK_PATH =
+            SAMPLE_APK_BASE + "CtsIntentResolutionTestApp.apk";
 
     @Rule
     public final Expect expect = Expect.create();
@@ -94,6 +107,7 @@ public class PackageArchiverTest {
 
     @Before
     public void setup() throws Exception {
+        assumeTrue("Form factor is not supported", isFormFactorSupported());
         Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
         mUiDevice = UiDevice.getInstance(
                 androidx.test.InstrumentationRegistry.getInstrumentation());
@@ -106,12 +120,12 @@ public class PackageArchiverTest {
 
     @After
     public void uninstall() {
-        uninstallPackage();
+        uninstallPackage(PACKAGE_NAME);
     }
 
     @Test
     public void archiveApp_dataIsKept() throws Exception {
-        installPackage();
+        installPackage(APK_PATH);
         // This creates a data directory which will be verified later.
         launchTestActivity();
         PackageInfo packageInfo = getPackageInfo();
@@ -138,7 +152,7 @@ public class PackageArchiverTest {
 
     @Test
     public void archiveApp_noInstaller() {
-        installAppWithNoInstaller();
+        installPackageWithNoInstaller(APK_PATH);
 
         PackageManager.NameNotFoundException e =
                 runWithShellPermissionIdentity(
@@ -155,7 +169,7 @@ public class PackageArchiverTest {
 
     @Test
     public void matchArchivedPackages() throws Exception {
-        installPackage();
+        installPackage(APK_PATH);
 
         runWithShellPermissionIdentity(
                 () -> mPackageArchiver.requestArchive(PACKAGE_NAME,
@@ -169,6 +183,61 @@ public class PackageArchiverTest {
                 PackageInfoFlags.of(MATCH_ARCHIVED_PACKAGES)).isArchived).isTrue();
         assertThrows(NameNotFoundException.class,
                 () -> mPackageManager.getPackageInfo(PACKAGE_NAME, /* flags= */ 0));
+    }
+
+    @Test
+    public void unarchiveApp() throws IOException, ExecutionException, InterruptedException {
+        installPackage(APK_PATH);
+        runWithShellPermissionIdentity(
+                () -> mPackageArchiver.requestArchive(PACKAGE_NAME,
+                        new IntentSender((IIntentSender) mIntentSender)),
+                Manifest.permission.DELETE_PACKAGES);
+        UnarchiveBroadcastReceiver unarchiveReceiver = new UnarchiveBroadcastReceiver();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(Intent.ACTION_UNARCHIVE_PACKAGE);
+        mContext.registerReceiver(
+                unarchiveReceiver,
+                intentFilter,
+                null,
+                null,
+                Context.RECEIVER_EXPORTED
+        );
+
+        runWithShellPermissionIdentity(
+                () -> mPackageArchiver.requestUnarchive(PACKAGE_NAME),
+                Manifest.permission.INSTALL_PACKAGES);
+        // Make sure broadcast has been sent from PackageManager
+        executeShellCommand("pm wait-for-handler --timeout 2000");
+        // Make sure broadcast has been dispatched from the queue
+        executeShellCommand(String.format(
+                "am wait-for-broadcast-dispatch -a %s -d package:%s",
+                Intent.ACTION_PACKAGE_FULLY_REMOVED, mContext.getPackageName()));
+        assertThat(unarchiveReceiver.mPackage.get()).isEqualTo(PACKAGE_NAME);
+        assertThat(unarchiveReceiver.mAllUsers.get()).isFalse();
+
+        mContext.unregisterReceiver(unarchiveReceiver);
+    }
+
+    @Test
+    public void archiveApp_noMainActivity() {
+        // To ensure the installer is set.
+        uninstallPackage(NO_ACTIVITY_PACKAGE_NAME);
+        installPackage(NO_ACTIVITY_APK_PATH);
+
+        PackageManager.NameNotFoundException e =
+                runWithShellPermissionIdentity(
+                        () -> assertThrows(
+                                PackageManager.NameNotFoundException.class,
+                                () -> mPackageArchiver.requestArchive(NO_ACTIVITY_PACKAGE_NAME,
+                                        new IntentSender((IIntentSender) mIntentSender))),
+                        Manifest.permission.DELETE_PACKAGES);
+
+        assertThat(e).hasMessageThat()
+                .isEqualTo(TextUtils.formatSimple("The app %s does not have a main activity.",
+                        NO_ACTIVITY_PACKAGE_NAME));
+
+        // Reset for other PM tests.
+        installPackageWithNoInstaller(NO_ACTIVITY_APK_PATH);
     }
 
     private void launchTestActivity() {
@@ -191,15 +260,20 @@ public class PackageArchiverTest {
         return intent;
     }
 
-    private void uninstallPackage() {
+    private void uninstallPackage(String packageName) {
         SystemUtil.runShellCommand(
-                String.format("pm uninstall %s", PACKAGE_NAME));
+                String.format("pm uninstall %s", packageName));
     }
 
-    private void installPackage() {
+    private void installPackage(String path) {
         assertEquals("Success\n", SystemUtil.runShellCommand(
                 String.format("pm install -r -i %s -t -g %s", mContext.getPackageName(),
-                        APK_PATH)));
+                        path)));
+    }
+
+    private void installPackageWithNoInstaller(String path) {
+        assertEquals("Success\n",
+                SystemUtil.runShellCommand(String.format("pm install -r -t -g %s", path)));
     }
 
     private PackageInfo getPackageInfo() {
@@ -211,6 +285,32 @@ public class PackageArchiverTest {
                     + mContext.getUser() + ": " + e);
         }
         return null;
+    }
+
+    private static boolean isFormFactorSupported() {
+        return !FeatureUtil.isArc()
+                && !FeatureUtil.isAutomotive()
+                && !FeatureUtil.isTV()
+                && !FeatureUtil.isWatch()
+                && !FeatureUtil.isVrHeadset();
+    }
+
+    static class UnarchiveBroadcastReceiver extends BroadcastReceiver {
+
+        final CompletableFuture<String> mPackage = new CompletableFuture<>();
+        final CompletableFuture<Boolean> mAllUsers = new CompletableFuture<>();
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (!intent.getAction().equals(Intent.ACTION_UNARCHIVE_PACKAGE)) {
+                return;
+            }
+
+            mPackage.complete(
+                    intent.getStringExtra(PackageArchiver.EXTRA_UNARCHIVE_PACKAGE_NAME));
+            mAllUsers.complete(
+                    intent.getBooleanExtra(PackageArchiver.EXTRA_UNARCHIVE_ALL_USERS, true));
+        }
     }
 
     static class ArchiveIntentSender extends IIntentSender.Stub {

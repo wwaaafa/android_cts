@@ -67,7 +67,6 @@ public abstract class DeviceAndProfileOwnerTest extends BaseDevicePolicyTest {
     protected static final String DEVICE_ADMIN_COMPONENT_FLATTENED =
             DEVICE_ADMIN_PKG + "/" + ADMIN_RECEIVER_TEST_CLASS;
 
-    protected static final String STORAGE_ENCRYPTION_TEST_CLASS = ".StorageEncryptionTest";
     protected static final String IS_SYSTEM_USER_PARAM = "isSystemUser";
 
     protected static final String INTENT_RECEIVER_PKG = "com.android.cts.intent.receiver";
@@ -104,9 +103,6 @@ public abstract class DeviceAndProfileOwnerTest extends BaseDevicePolicyTest {
     private static final String VPN_APP_NOT_ALWAYS_ON_APK = "CtsVpnFirewallAppNotAlwaysOn.apk";
 
     private static final String DISALLOW_REMOVE_USER = "no_remove_user";
-
-    private static final String CUSTOMIZATION_APP_PKG = "com.android.cts.customizationapp";
-    private static final String CUSTOMIZATION_APP_APK = "CtsCustomizationApp.apk";
 
     private static final String AUTOFILL_APP_PKG = "com.android.cts.devicepolicy.autofillapp";
     private static final String AUTOFILL_APP_APK = "CtsDevicePolicyAutofillApp.apk";
@@ -180,7 +176,6 @@ public abstract class DeviceAndProfileOwnerTest extends BaseDevicePolicyTest {
         getDevice().uninstallPackage(VPN_APP_NOT_ALWAYS_ON_APK);
         getDevice().uninstallPackage(INTENT_RECEIVER_PKG);
         getDevice().uninstallPackage(INTENT_SENDER_PKG);
-        getDevice().uninstallPackage(CUSTOMIZATION_APP_PKG);
         getDevice().uninstallPackage(AUTOFILL_APP_PKG);
         getDevice().uninstallPackage(CONTENT_CAPTURE_SERVICE_PKG);
         getDevice().uninstallPackage(CONTENT_CAPTURE_APP_PKG);
@@ -510,27 +505,6 @@ public abstract class DeviceAndProfileOwnerTest extends BaseDevicePolicyTest {
         }
     }
 
-    // Sets restrictions and launches non-admin app, that tries to set wallpaper.
-    // Non-admin apps must not violate any user restriction.
-    @Test
-    public void testSetWallpaper_disallowed() throws Exception {
-        // UserManager.DISALLOW_SET_WALLPAPER
-        final String DISALLOW_SET_WALLPAPER = "no_set_wallpaper";
-        if (!hasService("wallpaper")) {
-            CLog.d("testSetWallpaper_disallowed(): device does not support wallpapers");
-            return;
-        }
-
-        installAppAsUser(CUSTOMIZATION_APP_APK, mUserId);
-        try {
-            changeUserRestrictionOrFail(DISALLOW_SET_WALLPAPER, true, mUserId);
-            runDeviceTestsAsUser(CUSTOMIZATION_APP_PKG, ".CustomizationTest",
-                "testSetWallpaper_disallowed", mUserId);
-        } finally {
-            changeUserRestrictionOrFail(DISALLOW_SET_WALLPAPER, false, mUserId);
-        }
-    }
-
     // Runs test with admin privileges. The test methods set all the tested restrictions
     // inside. But these restrictions must have no effect on the device/profile owner behavior.
     @Test
@@ -765,14 +739,6 @@ public abstract class DeviceAndProfileOwnerTest extends BaseDevicePolicyTest {
         // Verify that the package is not suspended from the PREVIOUS test and that the app launches
         executeSuspendPackageTestMethod("testPackageNotSuspended");
     }
-
-    @Test
-    public void testTrustAgentInfo() throws Exception {
-        assumeHasSecureLockScreenFeature();
-
-        executeDeviceTestClass(".TrustAgentInfoTest");
-    }
-
     @Test
     public void testRequiredStrongAuthTimeout() throws Exception {
         assumeHasSecureLockScreenFeature();
@@ -945,14 +911,6 @@ public abstract class DeviceAndProfileOwnerTest extends BaseDevicePolicyTest {
                 .setAdminPackageName(DEVICE_ADMIN_PKG)
                 .setStrings(NOT_CALLED_FROM_PARENT, "com.google.pkg.one", "com.google.pkg.two")
                 .build());
-    }
-
-    @Test
-    public void testSetStorageEncryption() throws Exception {
-        Map<String, String> params =
-                ImmutableMap.of(IS_SYSTEM_USER_PARAM, String.valueOf(mUserId == USER_SYSTEM));
-        runDeviceTestsAsUser(
-                DEVICE_ADMIN_PKG, STORAGE_ENCRYPTION_TEST_CLASS, null, mUserId, params);
     }
 
     @Test
