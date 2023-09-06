@@ -66,4 +66,13 @@
     <!-- CtsMediaMiscTestCases: b/261813452 -->
     <option name="compatibility:exclude-filter" value="CtsMediaMiscTestCases android.media.misc.cts.HeifWriterTest" />
 
+    <!-- CtsVideoCodecTestCases: b/276746681 -->
+    <option name="compatibility:exclude-filter" value="CtsVideoCodecTestCases android.videocodec.cts.VideoEncoderMinMaxTest" />
+
+    <!-- CtsVideoTestCases: b/284192974 -->
+    <option name="compatibility:exclude-filter" value="CtsVideoTestCases android.video.cts.VideoEncoderDecoderTest" />
+
+    <!-- CtsMediaDecoderTestCases: b/284409693 -->
+    <option name="compatibility:exclude-filter" value="CtsMediaDecoderTestCases android.media.decoder.cts.VideoDecoderPerfTest" />
+
 </configuration>
