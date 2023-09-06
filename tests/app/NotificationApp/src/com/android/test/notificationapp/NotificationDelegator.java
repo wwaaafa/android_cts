@@ -21,7 +21,6 @@ import static android.app.NotificationManager.IMPORTANCE_LOW;
 import android.app.Activity;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.os.Bundle;
 import android.util.Log;
 
 public class NotificationDelegator extends Activity {
@@ -30,8 +29,8 @@ public class NotificationDelegator extends Activity {
     private static final String CHANNEL = "channel";
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public void onResume() {
+        super.onResume();
         setContentView(R.layout.activity);
 
         NotificationManager nm = getSystemService(NotificationManager.class);
@@ -39,6 +38,7 @@ public class NotificationDelegator extends Activity {
         nm.createNotificationChannel(new NotificationChannel(CHANNEL, CHANNEL, IMPORTANCE_LOW));
         nm.setNotificationDelegate(DELEGATE);
         Log.d(TAG, "Set delegate: " + nm.getNotificationDelegate());
+        setResult(RESULT_OK);
         finish();
     }
 }
