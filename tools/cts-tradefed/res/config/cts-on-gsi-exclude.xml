@@ -136,10 +136,6 @@
     <option name="compatibility:exclude-filter" value="CtsScopedStorageDeviceOnlyTest android.scopedstorage.cts.device.ScopedStorageDeviceTest#testOpenContentResolverFirstWriteContentResolver[volume=volume_public]" />
     <option name="compatibility:exclude-filter" value="CtsScopedStorageDeviceOnlyTest android.scopedstorage.cts.device.ScopedStorageDeviceTest#testOpenContentResolverWriteOnly[volume=volume_public]" />
 
-    <!-- b/290651182 -->
-    <option name="compatibility:exclude-filter" value="CtsSecurityTestCases android.security.cts.CertificateTest#testNoAddedCertificates" />
-    <option name="compatibility:exclude-filter" value="CtsSecurityTestCases android.security.cts.CertificateTest#testNoRemovedCertificates" />
-
     <!-- b/293024970 -->
     <option name="compatibility:exclude-filter" value="CtsOsTestCases android.os.cts.SecurityFeaturesTest#testPrctlDumpable" />
     <option name="compatibility:exclude-filter" value="CtsPermission4TestCases android.permission4.cts.CameraMicIndicatorsPermissionTest#testCameraIndicator" />
