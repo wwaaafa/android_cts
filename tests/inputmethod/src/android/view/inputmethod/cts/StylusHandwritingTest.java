@@ -2014,7 +2014,12 @@ public class StylusHandwritingTest extends EndToEndImeTestBase {
                     HANDWRITING_BOUNDS_OFFSET_PX,
                     HANDWRITING_BOUNDS_OFFSET_PX,
                     HANDWRITING_BOUNDS_OFFSET_PX);
-            layout.addView(nonFocusedEditText);
+            // Leave margin between the EditTexts so that their extended handwriting bounds do not
+            // overlap.
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            layoutParams.topMargin = 3 * HANDWRITING_BOUNDS_OFFSET_PX;
+            layout.addView(nonFocusedEditText, layoutParams);
             return layout;
         });
         return new Pair<>(focusedEditTextRef.get(), nonFocusedEditTextRef.get());
