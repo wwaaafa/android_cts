@@ -1978,7 +1978,12 @@ public class StylusHandwritingTest extends EndToEndImeTestBase {
 
     private static int getTouchSlop() {
         final Context context = InstrumentationRegistry.getInstrumentation().getContext();
-        return ViewConfiguration.get(context).getScaledTouchSlop();
+        // Some tests require stylus movements to exceed the touch slop so that they are not
+        // interpreted as clicks. Other tests require the movements to exceed the handwriting slop
+        // to trigger handwriting initiation. Using the larger value allows all tests to pass.
+        return Math.max(
+                ViewConfiguration.get(context).getScaledTouchSlop(),
+                ViewConfiguration.get(context).getScaledHandwritingSlop());
     }
 
     private Pair<EditText, EditText> launchTestActivity(@NonNull String focusedMarker,
