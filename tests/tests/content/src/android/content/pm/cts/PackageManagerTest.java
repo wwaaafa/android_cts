@@ -38,6 +38,7 @@ import static android.content.pm.PackageManager.GET_PERMISSIONS;
 import static android.content.pm.PackageManager.GET_PROVIDERS;
 import static android.content.pm.PackageManager.GET_RECEIVERS;
 import static android.content.pm.PackageManager.GET_SERVICES;
+import static android.content.pm.PackageManager.MATCH_ANY_USER;
 import static android.content.pm.PackageManager.MATCH_APEX;
 import static android.content.pm.PackageManager.MATCH_DISABLED_COMPONENTS;
 import static android.content.pm.PackageManager.MATCH_FACTORY_ONLY;
@@ -58,7 +59,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.expectThrows;
@@ -116,7 +116,6 @@ import android.os.IBinder;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.SystemClock;
-import android.os.SystemProperties;
 import android.os.UserHandle;
 import android.platform.test.annotations.AppModeFull;
 import android.platform.test.annotations.RequiresFlagsDisabled;
@@ -1608,8 +1607,6 @@ public class PackageManagerTest {
 
     @Test
     public void testGetPackageInfo_ApexSupported_ApexPackage_MatchesApex() throws Exception {
-        assumeTrue("Device doesn't support updating APEX", isUpdatingApexSupported());
-
         final int flags = PackageManager.MATCH_APEX
                 | PackageManager.MATCH_FACTORY_ONLY
                 | PackageManager.GET_SIGNING_CERTIFICATES
@@ -1621,32 +1618,6 @@ public class PackageManagerTest {
 
     @Test
     public void testGetPackageInfo_ApexSupported_ApexPackage_DoesNotMatchApex() {
-        assumeTrue("Device doesn't support updating APEX", isUpdatingApexSupported());
-
-        try {
-            mPackageManager.getPackageInfo(SHIM_APEX_PACKAGE_NAME,
-                    PackageManager.PackageInfoFlags.of(0));
-            fail("NameNotFoundException expected");
-        } catch (NameNotFoundException expected) {
-        }
-    }
-
-    @Test
-    public void testGetPackageInfo_ApexNotSupported_ApexPackage_MatchesApex() {
-        assumeFalse("Device supports updating APEX", isUpdatingApexSupported());
-
-        try {
-            mPackageManager.getPackageInfo(SHIM_APEX_PACKAGE_NAME,
-                    PackageManager.PackageInfoFlags.of(PackageManager.MATCH_APEX));
-            fail("NameNotFoundException expected");
-        } catch (NameNotFoundException expected) {
-        }
-    }
-
-    @Test
-    public void testGetPackageInfo_ApexNotSupported_ApexPackage_DoesNotMatchApex() {
-        assumeFalse("Device supports updating APEX", isUpdatingApexSupported());
-
         try {
             mPackageManager.getPackageInfo(SHIM_APEX_PACKAGE_NAME,
                     PackageManager.PackageInfoFlags.of(0));
@@ -1657,8 +1628,6 @@ public class PackageManagerTest {
 
     @Test
     public void testGetInstalledPackages_ApexSupported_MatchesApex() {
-        assumeTrue("Device doesn't support updating APEX", isUpdatingApexSupported());
-
         final int flags = PackageManager.MATCH_APEX
                 | PackageManager.MATCH_FACTORY_ONLY
                 | PackageManager.GET_SIGNING_CERTIFICATES
@@ -1674,32 +1643,6 @@ public class PackageManagerTest {
 
     @Test
     public void testGetInstalledPackages_ApexSupported_DoesNotMatchApex() {
-        assumeTrue("Device doesn't support updating APEX", isUpdatingApexSupported());
-
-        List<PackageInfo> installedPackages = mPackageManager.getInstalledPackages(
-                PackageManager.PackageInfoFlags.of(0));
-        List<PackageInfo> shimApex = installedPackages.stream().filter(
-                packageInfo -> packageInfo.packageName.equals(SHIM_APEX_PACKAGE_NAME)).collect(
-                Collectors.toList());
-        assertWithMessage("Shim apex wasn't supposed to be found").that(shimApex).isEmpty();
-    }
-
-    @Test
-    public void testGetInstalledPackages_ApexNotSupported_MatchesApex() {
-        assumeFalse("Device supports updating APEX", isUpdatingApexSupported());
-
-        List<PackageInfo> installedPackages = mPackageManager.getInstalledPackages(
-                PackageManager.PackageInfoFlags.of(PackageManager.MATCH_APEX));
-        List<PackageInfo> shimApex = installedPackages.stream().filter(
-                packageInfo -> packageInfo.packageName.equals(SHIM_APEX_PACKAGE_NAME)).collect(
-                Collectors.toList());
-        assertWithMessage("Shim apex wasn't supposed to be found").that(shimApex).isEmpty();
-    }
-
-    @Test
-    public void testGetInstalledPackages_ApexNotSupported_DoesNotMatchApex() {
-        assumeFalse("Device supports updating APEX", isUpdatingApexSupported());
-
         List<PackageInfo> installedPackages = mPackageManager.getInstalledPackages(
                 PackageManager.PackageInfoFlags.of(0));
         List<PackageInfo> shimApex = installedPackages.stream().filter(
@@ -1912,8 +1855,6 @@ public class PackageManagerTest {
 
     @Test
     public void testGetApplicationInfo_ApexSupported_MatchesApex() throws Exception {
-        assumeTrue("Device doesn't support updating APEX", isUpdatingApexSupported());
-
         ApplicationInfo ai = mPackageManager.getApplicationInfo(
                 SHIM_APEX_PACKAGE_NAME,
                 PackageManager.ApplicationInfoFlags.of(PackageManager.MATCH_APEX));
@@ -1932,10 +1873,6 @@ public class PackageManagerTest {
         final ApplicationInfo info = mPackageManager.getApplicationInfo(HELLO_WORLD_PACKAGE_NAME,
                 PackageManager.ApplicationInfoFlags.of(0));
         assertThat(info.icon).isEqualTo((useRoundIcon ? info.roundIconRes : info.iconRes));
-    }
-
-    private boolean isUpdatingApexSupported() {
-        return SystemProperties.getBoolean("ro.apex.updatable", false);
     }
 
     private static void assertShimApexInfoIsCorrect(PackageInfo packageInfo) {
@@ -2776,6 +2713,25 @@ public class PackageManagerTest {
     }
 
     @Test
+    public void testUninstall() throws Exception {
+        final int userId = mContext.getUserId();
+        installPackage(HELLO_WORLD_APK);
+        // Test that the installed state is true in the dumpsys
+        assertThat(getInstalledState(HELLO_WORLD_PACKAGE_NAME, userId)).isEqualTo("true");
+        // Queryable without special flags
+        mPackageManager.getPackageInfo(HELLO_WORLD_PACKAGE_NAME,
+                PackageManager.PackageInfoFlags.of(0));
+        uninstallPackage(HELLO_WORLD_PACKAGE_NAME);
+        assertThat(isAppInstalled(HELLO_WORLD_PACKAGE_NAME)).isFalse();
+        // Not queryable even MATCH_KNOWN_PACKAGES
+        assertThrows(NameNotFoundException.class,
+                () -> mPackageManager.getPackageInfo(HELLO_WORLD_PACKAGE_NAME,
+                        PackageManager.PackageInfoFlags.of(MATCH_KNOWN_PACKAGES)));
+        // No installed state in dumpsys
+        assertThat(getInstalledState(HELLO_WORLD_PACKAGE_NAME, userId)).isNull();
+    }
+
+    @Test
     public void testUninstallWithKeepData() throws Exception {
         final int userId = mContext.getUserId();
         installPackage(HELLO_WORLD_APK);
@@ -2796,7 +2752,15 @@ public class PackageManagerTest {
         uninstallPackageKeepData(HELLO_WORLD_PACKAGE_NAME);
         assertThat(isAppInstalled(HELLO_WORLD_PACKAGE_NAME)).isFalse();
 
-        // Test query with MATCH_UNINSTALLED_PACKAGES
+        // Queryable with MATCH_UNINSTALLED_PACKAGES and MATCH_KNOWN_PACKAGES flags
+        expectThrows(NameNotFoundException.class,
+                () -> mPackageManager.getPackageInfo(HELLO_WORLD_PACKAGE_NAME,
+                        PackageManager.PackageInfoFlags.of(0)));
+        expectThrows(NameNotFoundException.class,
+                () -> mPackageManager.getPackageInfo(HELLO_WORLD_PACKAGE_NAME,
+                        PackageManager.PackageInfoFlags.of(MATCH_ANY_USER)));
+        mPackageManager.getPackageInfo(HELLO_WORLD_PACKAGE_NAME,
+                PackageManager.PackageInfoFlags.of(MATCH_KNOWN_PACKAGES));
         packageInfo = mPackageManager.getPackageInfo(HELLO_WORLD_PACKAGE_NAME,
                 PackageManager.PackageInfoFlags.of(MATCH_UNINSTALLED_PACKAGES));
         assertThat(packageInfo.packageName).isEqualTo(HELLO_WORLD_PACKAGE_NAME);

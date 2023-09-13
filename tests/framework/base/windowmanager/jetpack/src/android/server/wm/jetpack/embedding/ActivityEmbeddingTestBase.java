@@ -35,6 +35,7 @@ import androidx.window.extensions.embedding.SplitInfo;
 import org.junit.After;
 import org.junit.Before;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -70,8 +71,13 @@ public class ActivityEmbeddingTestBase extends WindowManagerJetpackTestBase {
         return ActivityTaskManager.supportsMultiWindow(ApplicationProvider.getApplicationContext());
     }
 
+    @Override
     @After
-    public void cleanUp() {
+    public void tearDown() {
+        super.tearDown();
         mReportedDisplayMetrics.restoreDisplayMetrics();
+        if (mActivityEmbeddingComponent != null) {
+            mActivityEmbeddingComponent.setEmbeddingRules(Collections.emptySet());
+        }
     }
 }
