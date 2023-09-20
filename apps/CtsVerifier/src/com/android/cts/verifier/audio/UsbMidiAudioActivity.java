@@ -39,7 +39,7 @@ import java.util.concurrent.Executor;
 /**
  * Tests MIDI and Audio for an USB peripheral.
  */
-@CddTest(requirement = "5.9/C-1-3,C-1-2|7.8.2/C-1-1,C-1-2")
+@CddTest(requirements = {"5.9/C-1-2,C-1-3", "7.8.2/C-1-1,C-1-2"})
 public class UsbMidiAudioActivity extends USBAudioPeripheralPlayerActivity {
 
     private static final String TAG = "UsbMidiAudioActivity";
@@ -273,6 +273,12 @@ public class UsbMidiAudioActivity extends USBAudioPeripheralPlayerActivity {
 
             case MidiTestModule.TESTSTATUS_FAILED_JNI:
                 return appResources.getString(R.string.midiFailedJNILbl);
+
+            case MidiTestModule.TESTSTATUS_FAILED_SETUP:
+                return appResources.getString(R.string.midiFailedSetupLbl);
+
+            case MidiTestModule.TESTSTATUS_FAILED_SEND:
+                return appResources.getString(R.string.midiFailedSendLbl);
 
             default:
                 return "Unknown Test Status.";
