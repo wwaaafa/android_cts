@@ -165,6 +165,8 @@ class CameraMicIndicatorsPermissionTest : StsExtraBusinessLogicTestCase {
     @Test
     @AsbSecurityTest(cveBugId = [258672042])
     fun testMicIndicatorWithManualFinishOpStillShows() {
+        // Auto is not required to have the mic indicator
+        assumeFalse(isCar)
         testCameraAndMicIndicator(useMic = true, useCamera = false, finishEarly = true)
     }
 
