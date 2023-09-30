@@ -29,7 +29,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.Parcel;
 import android.telecom.Call;
 import android.telecom.Conference;
 import android.telecom.Connection;
@@ -102,7 +101,8 @@ public class RemoteConnectionTest extends BaseRemoteTelecomTest {
     }
 
     public void testRemoteConnectionOutgoingEmergencyCall() {
-        if (!mShouldTestTelecom) {
+        if (!mShouldTestTelecom || !TestUtils.hasTelephonyFeature(
+                getInstrumentation().getContext())) {
             return;
         }
         addRemoteConnectionOutgoingEmergencyCall();
