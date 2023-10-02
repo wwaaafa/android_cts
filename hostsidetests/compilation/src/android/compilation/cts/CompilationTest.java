@@ -147,6 +147,17 @@ public class CompilationTest extends BaseHostJUnit4Test {
         checkDexoptStatus(dump, "secondary\\.jar", "run-from-apk");
     }
 
+    @Test
+    public void testGetDexFileOutputPaths() throws Exception {
+        mUtils.assertCommandSucceeds("pm compile -m verify -f " + STATUS_CHECKER_PKG);
+
+        var options = new DeviceTestRunOptions(STATUS_CHECKER_PKG)
+                              .setTestClassName(STATUS_CHECKER_CLASS)
+                              .setTestMethodName("testGetDexFileOutputPaths")
+                              .setDisableHiddenApiCheck(true);
+        assertThat(runDeviceTests(options)).isTrue();
+    }
+
     private void checkDexoptStatus(String dump, String dexfilePattern, String statusPattern) {
         // Matches the dump output typically being:
         //     /data/user/0/android.compilation.cts.statuscheckerapp/secondary.jar
