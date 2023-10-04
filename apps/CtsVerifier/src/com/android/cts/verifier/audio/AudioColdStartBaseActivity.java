@@ -172,15 +172,15 @@ public abstract class AudioColdStartBaseActivity
         switch (v.getId()) {
             case R.id.audioJavaApiBtn:
                 stopAudioTest();
-                updateTestStateButtons();
                 clearResults();
+                updateTestStateButtons();
                 mAudioApi = BuilderBase.TYPE_JAVA;
                 break;
 
             case R.id.audioNativeApiBtn:
                 stopAudioTest();
-                updateTestStateButtons();
                 clearResults();
+                updateTestStateButtons();
                 mAudioApi = BuilderBase.TYPE_OBOE;
                 break;
 
