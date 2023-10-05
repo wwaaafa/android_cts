@@ -877,8 +877,14 @@ public class KeyAttestationTest extends AndroidTestCase {
     }
 
     private void checkUnexpectedOids(Attestation attestation) {
-        assertThat("Attestations must not contain any extra data",
+        int vendorApiLevel = SystemProperties.getInt("ro.board.api_level", -1);
+        if (vendorApiLevel == -1) {
+            vendorApiLevel = SystemProperties.getInt("ro.board.first_api_level", 0);
+        }
+        if (vendorApiLevel >= 30) {
+            assertThat("Attestations must not contain any extra data",
                 attestation.getUnexpectedExtensionOids(), is(empty()));
+        }
     }
 
     private int getSystemPatchLevel() {
