@@ -1211,6 +1211,18 @@ public final class DeviceState extends HarrierRule {
                 continue;
             }
 
+            if (annotation instanceof RequireHasDefaultBrowser) {
+                RequireHasDefaultBrowser requireHasDefaultBrowser =
+                        (RequireHasDefaultBrowser) annotation;
+                UserReference user =
+                        resolveUserTypeToUser(requireHasDefaultBrowser.forUser());
+
+                checkFailOrSkip("User: " + user + " does not have a default browser",
+                        TestApis.packages().defaultBrowserForUser(user) != null,
+                        requireHasDefaultBrowser.failureMode());
+                continue;
+            }
+
             if (annotation instanceof RequireTelephonySupport requireTelephonySupport) {
                 checkFailOrSkip("Device does not have telephony support",
                         mPackageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY),
@@ -1552,13 +1564,14 @@ public final class DeviceState extends HarrierRule {
 
     private void requireRunOnAdditionalUser(OptionalBoolean switchedToUser) {
         requireRunOnUser(new String[]{SECONDARY_USER_TYPE_NAME}, switchedToUser);
-
         if (TestApis.users().isHeadlessSystemUserMode()) {
             if (TestApis.users().instrumented().equals(TestApis.users().initial())) {
                 throw new AssumptionViolatedException(
                         "This test requires running on an additional secondary user");
             }
         }
+
+        mAdditionalUser = additionalUserOrNull();
     }
 
     private void requireRunOnUser(String[] userTypes, OptionalBoolean switchedToUser) {
