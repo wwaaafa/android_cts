@@ -242,7 +242,7 @@ public class BaseTelecomTestWithMockServices extends InstrumentationTestCase {
         EmergencyNumber mLastOutgoingEmergencyNumber;
 
         LinkedBlockingQueue<Map<Integer, List<EmergencyNumber>>> mEmergencyNumberListQueue =
-               new LinkedBlockingQueue<>(2);
+                new LinkedBlockingQueue<>();
 
         @Override
         public void onCallStateChanged(int state) {
@@ -269,6 +269,10 @@ public class BaseTelecomTestWithMockServices extends InstrumentationTestCase {
         public Map<Integer, List<EmergencyNumber>> waitForEmergencyNumberListUpdate(
                 long timeoutMillis) throws Throwable {
             return mEmergencyNumberListQueue.poll(timeoutMillis, TimeUnit.MILLISECONDS);
+        }
+
+        public void clearEmergencyNumberQueue() {
+            mEmergencyNumberListQueue.clear();
         }
     }
 
@@ -2014,7 +2018,7 @@ public class BaseTelecomTestWithMockServices extends InstrumentationTestCase {
     }
 
     void assertCtsConnectionServiceUnbound() {
-        if (CtsConnectionService.isBound()) {
+        if (CtsConnectionService.isServiceRegisteredToTelecom()) {
             assertTrue("CtsConnectionService not yet unbound!",
                     CtsConnectionService.waitForUnBinding());
         }
