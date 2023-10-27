@@ -17,7 +17,6 @@
 package android.security.cts;
 
 import static com.android.sts.common.NativePocCrashAsserter.assertNoCrash;
-import static com.android.sts.common.NativePocStatusAsserter.assertNotVulnerableExitCode;
 
 import static org.junit.Assume.assumeNoException;
 
@@ -32,35 +31,28 @@ import com.android.tradefed.testtype.DeviceJUnit4ClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-// CVE-2023-21261 includes fix for CVE-2022-27406.
-// Hence checking for both the vulnerabilties
 @RunWith(DeviceJUnit4ClassRunner.class)
-public class CVE_2023_21261 extends NonRootSecurityTestCase {
+public class CVE_2023_21118 extends NonRootSecurityTestCase {
 
-    // b/271680254
-    // Vulnerability Behaviour : SIGSEGV in self
-    // Vulnerable Library      : libft2.so (As per AOSP code)
-    // Vulnerable Function     : FT_Request_Size (As per AOSP code)
-    // Is Play managed         : No
-    @AsbSecurityTest(cveBugId = 271680254)
+    @AsbSecurityTest(cveBugId = 269014004)
     @Test
-    public void testPocCVE_2023_21261() {
+    public void testPocCVE_2023_21118() {
         try {
-            String binaryName = "CVE-2023-21261";
-            String inputFile = "cve_2023_21261.ttf";
+            String binaryName = "CVE-2023-21118";
+            String inputFile = "cve_2023_21118.bin";
 
+            String[] signals = {TombstoneUtils.Signals.SIGSEGV};
             TombstoneUtils.Config crashConfig =
                     new TombstoneUtils.Config()
                             .setProcessPatterns(binaryName)
                             .setBacktraceIncludes(
-                                    new BacktraceFilterPattern("libft2.so", "FT_Request_Size"))
-                            .setSignals(TombstoneUtils.Signals.SIGSEGV)
-                            .setIgnoreLowFaultAddress(false);
+                                    new BacktraceFilterPattern(
+                                            "libsensor.so", "android::Sensor::unflatten"))
+                            .setSignals(signals);
 
-            // Running the PoC for CVE-2022-27406
+            // Running the PoC for CVE-2023-21118
             NativePoc.builder()
                     .pocName(binaryName)
-                    .args("CVE-2022-27406", inputFile)
                     .resources(inputFile)
                     .asserter(assertNoCrash(crashConfig))
                     .build()
