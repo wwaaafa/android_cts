@@ -37,6 +37,7 @@ android_test {
         "junit",
         "flag-junit",
         "android.companion.virtual.flags-aconfig-java",
+        "platform-compat-test-rules",
     ],
 
     srcs: [
@@ -51,7 +52,6 @@ android_test {
     ],
     data: [
         ":CtsVirtualDeviceStreamedTestApp",
-        ":CtsVirtualDeviceStreamedTestApp2",
     ],
     per_testcase_directory: true,
 }
