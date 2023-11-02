@@ -463,15 +463,33 @@ public class SubscriptionManagerTest {
 
     @Test
     public void testSetDefaultVoiceSubId() {
+        // Only make sense to set default sub if the device supports more than 1 modem.
+        final TelephonyManager tm = InstrumentationRegistry.getContext()
+                .getSystemService(TelephonyManager.class).createForSubscriptionId(mSubId);
+        assumeTrue(tm.getSupportedModemCount() > 1);
+
         int oldSubId = SubscriptionManager.getDefaultVoiceSubscriptionId();
         InstrumentationRegistry.getInstrumentation().getUiAutomation()
                 .adoptShellPermissionIdentity();
+
+        final String uniqueId = "00:01:02:03:04:05";
+        final String displayName = "device_name";
         try {
+            // Insert a second SIM
+            mSm.addSubscriptionInfoRecord(uniqueId, displayName, 1,
+                    SubscriptionManager.SUBSCRIPTION_TYPE_REMOTE_SIM);
+            mSm.getActiveSubscriptionInfoForIcc(uniqueId);
+
             mSm.setDefaultVoiceSubscriptionId(SubscriptionManager.INVALID_SUBSCRIPTION_ID);
             assertEquals(SubscriptionManager.INVALID_SUBSCRIPTION_ID,
                     SubscriptionManager.getDefaultVoiceSubscriptionId());
             mSm.setDefaultVoiceSubscriptionId(oldSubId);
             assertEquals(oldSubId, SubscriptionManager.getDefaultVoiceSubscriptionId());
+
+            // Remove the second SIM
+            mSm.removeSubscriptionInfoRecord(uniqueId,
+                    SubscriptionManager.SUBSCRIPTION_TYPE_REMOTE_SIM);
+            assertNull(mSm.getActiveSubscriptionInfoForIcc(uniqueId));
         } finally {
             InstrumentationRegistry.getInstrumentation().getUiAutomation()
                     .dropShellPermissionIdentity();
