@@ -2167,6 +2167,34 @@ public class PackageManagerTest {
     }
 
     @Test
+    public void testInvalidInstallSessionParamsPackageNames() throws Exception {
+        var maliciousPayload = """
+@null
+
+victim $UID 1 /data/user/0 default:targetSdkVersion=28 none 0 0 1 @null
+                """;
+
+        var packageInstaller = mContext.getPackageManager().getPackageInstaller();
+        SystemUtil.runWithShellPermissionIdentity(mInstrumentation.getUiAutomation(), () -> {
+            var params1 = new SessionParams(MODE_FULL_INSTALL);
+            params1.setAppPackageName(maliciousPayload);
+            params1.setInstallerPackageName(mContext.getPackageName());
+            var session1 = packageInstaller.getSessionInfo(packageInstaller.createSession(params1));
+            assertThat(session1.getAppPackageName()).isNull();
+            assertThat(session1.getInstallerPackageName()).isEqualTo(mContext.getPackageName());
+            packageInstaller.openSession(session1.sessionId).abandon();
+
+            var params2 = new SessionParams(MODE_FULL_INSTALL);
+            params2.setAppPackageName("android.com");
+            params2.setInstallerPackageName(maliciousPayload);
+            var session2 = packageInstaller.getSessionInfo(packageInstaller.createSession(params2));
+            assertThat(session2.getAppPackageName()).isEqualTo("android.com");
+            assertThat(session2.getInstallerPackageName()).isEqualTo(mContext.getPackageName());
+            packageInstaller.openSession(session2.sessionId).abandon();
+        });
+    }
+
+    @Test
     public void testGetLaunchIntentSenderForPackage() throws Exception {
         final Instrumentation.ActivityMonitor monitor = new Instrumentation.ActivityMonitor(
                 LauncherMockActivity.class.getName(), null /* result */, false /* block */);
@@ -3355,6 +3383,7 @@ public class PackageManagerTest {
 
         // Flag treatment.
         ApplicationInfo appInfo = mPackageManager.getApplicationInfo(HELLO_WORLD_PACKAGE_NAME, 0);
+        assertTrue(appInfo.enabled);
 
         // Default filtration of activities.
         List<ResolveInfo> activitiesResult;
@@ -3435,7 +3464,6 @@ public class PackageManagerTest {
 
         if (enabled) {
             assertThat(runCommand("pm list packages -q")).contains(HELLO_WORLD_PACKAGE_NAME);
-            assertFalse(appInfo.enabled);
             assertTrue(servicesResult.toString(), servicesResult.size() == 0);
             assertTrue(providersResult1.toString(), providersResult1.size() == 0);
             assertTrue(providersResult2.toString(), providersResult2.size() == 0);
@@ -3443,7 +3471,6 @@ public class PackageManagerTest {
             assertFalse(providerFound);
         } else {
             assertThat(runCommand("pm list packages -q")).doesNotContain(HELLO_WORLD_PACKAGE_NAME);
-            assertTrue(appInfo.enabled);
             assertEquals(servicesResult.toString(), 1, servicesResult.size());
             assertEquals("com.example.helloworld.TestService",
                     servicesResult.get(0).serviceInfo.name);
