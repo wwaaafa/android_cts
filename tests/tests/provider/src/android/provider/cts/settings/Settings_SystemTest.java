@@ -182,9 +182,42 @@ public class Settings_SystemTest extends StsExtraBusinessLogicTestCase {
         final ContentResolver cr = InstrumentationRegistry.getTargetContext().getContentResolver();
         final String originalValue = System.getString(cr, System.RINGTONE);
         final String invalidUri = "content://10@media/external/audio/media/1000000019";
-        System.putString(cr, System.RINGTONE, invalidUri);
+        try {
+            System.putString(cr, System.RINGTONE, invalidUri);
+        } catch (Exception ignored) {
+            // Some implementation of SettingsProvider might throw an exception here, which
+            // is okay, as long as the insertion of the invalid setting fails in the end
+        }
         // Assert that the insertion didn't take effect
         assertThat(System.getString(cr, System.RINGTONE)).isEqualTo(originalValue);
+    }
+
+    @Test
+    @AsbSecurityTest(cveBugId = 227201030)
+    public void testInvalidAlarmAlertUriIsRejected() {
+        final ContentResolver cr = InstrumentationRegistry.getTargetContext().getContentResolver();
+        final String originalValue = System.getString(cr, System.NOTIFICATION_SOUND);
+        final String invalidUri = "content://10@media/external/audio/media/1000000019";
+        try {
+            System.putString(cr, System.NOTIFICATION_SOUND, invalidUri);
+        } catch (Exception ignored) {
+        }
+        // Assert that the insertion didn't take effect
+        assertThat(System.getString(cr, System.NOTIFICATION_SOUND)).isEqualTo(originalValue);
+    }
+
+    @Test
+    @AsbSecurityTest(cveBugId = 227201030)
+    public void testInvalidNotificationSoundUriIsRejected() {
+        final ContentResolver cr = InstrumentationRegistry.getTargetContext().getContentResolver();
+        final String originalValue = System.getString(cr, System.ALARM_ALERT);
+        final String invalidUri = "content://10@media/external/audio/media/1000000019";
+        try {
+            System.putString(cr, System.ALARM_ALERT, invalidUri);
+        } catch (Exception ignored) {
+        }
+        // Assert that the insertion didn't take effect
+        assertThat(System.getString(cr, System.ALARM_ALERT)).isEqualTo(originalValue);
     }
 
     @Test
