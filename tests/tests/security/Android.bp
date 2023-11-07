@@ -31,6 +31,7 @@ android_test {
         "platform-test-annotations",
         "sts-device-util",
         "hamcrest-library",
+        "cts-wm-util",
     ],
     libs: [
         "android.test.runner.stubs",
@@ -64,6 +65,7 @@ android_test {
         ":CtsUsePermissionApp22_2",
         ":CtsHelperAppOverlay",
         ":CtsDummyTargetApi15TestApp",
+        ":CtsWallpaperBalTestApp",
     ],
     //sdk_version: "current",
     platform_apis: true,
