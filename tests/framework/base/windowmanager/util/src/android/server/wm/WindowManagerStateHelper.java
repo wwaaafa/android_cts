@@ -46,6 +46,7 @@ import android.util.SparseArray;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -129,7 +130,7 @@ public class WindowManagerStateHelper extends WindowManagerState {
         });
     }
 
-    void waitForHomeActivityVisible() {
+    public void waitForHomeActivityVisible() {
         ComponentName homeActivity = getHomeActivityName();
         // Sometimes this function is called before we know what Home Activity is
         if (homeActivity == null) {
@@ -294,6 +295,18 @@ public class WindowManagerStateHelper extends WindowManagerState {
             return stack != null
                     && topFocus == (amState.getFocusedStackId() == stack.getRootTaskId());
         }, message);
+    }
+
+    public boolean waitForFocusedActivity(final String msg, final ComponentName activityName) {
+        final String activityComponentName = getActivityName(activityName);
+        return waitFor(msg,
+                wmState -> Objects.equals(activityComponentName, wmState.getFocusedActivity())
+                && Objects.equals(activityComponentName, wmState.getFocusedApp()));
+    }
+
+    /** A variant of waitFor with different parameter order for better Kotlin interop. */
+    public boolean waitFor(String message, Predicate<WindowManagerState> waitCondition) {
+        return waitFor(waitCondition, message);
     }
 
     /** @return {@code true} if the wait is successful; {@code false} if timeout occurs. */
