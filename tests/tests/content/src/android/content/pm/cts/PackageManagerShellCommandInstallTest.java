@@ -44,6 +44,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
+import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.expectThrows;
 
 import android.app.UiAutomation;
@@ -942,19 +943,133 @@ public class PackageManagerShellCommandInstallTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_DISALLOW_SDK_LIBS_TO_BE_APPS)
-    public void testSdkInstallNoComponentRegistered() throws Exception {
+    public void testCannotGetPackageInfoForSdkIfNotSystemOrShell() throws Exception {
         onBeforeSdkTests();
 
         installPackage(TEST_SDK1);
         assertTrue(isSdkInstalled(TEST_SDK1_NAME, 1));
 
-        Intent intent = new Intent();
-        intent.setClassName(TEST_SDK1_PACKAGE, TEST_SDK1_PACKAGE + ".MainActivity");
-        List<ResolveInfo> resolveInfoList =
-                getPackageManager().queryIntentActivities(intent, 0);
+        // Normal access
+        assertThrows(PackageManager.NameNotFoundException.class,
+                () -> getPackageManager().getPackageInfo(TEST_SDK1_PACKAGE,
+                        PackageManager.PackageInfoFlags.of(MATCH_STATIC_SHARED_AND_SDK_LIBRARIES)));
+        assertThrows(PackageManager.NameNotFoundException.class,
+                () -> getPackageManager().getApplicationInfo(TEST_SDK1_PACKAGE,
+                        PackageManager.ApplicationInfoFlags.of(
+                                MATCH_STATIC_SHARED_AND_SDK_LIBRARIES)));
 
-        assertThat(resolveInfoList).isEmpty();
+        final List<SharedLibraryInfo> shareLibs = getPackageManager().getSharedLibraries(0);
+        SharedLibraryInfo sdk1 = findLibrary(shareLibs, TEST_SDK1_NAME, 1);
+        assertThat(sdk1).isNull();
+
+        PackageManager.Property property =
+                getPackageManager().getProperty("com.test.sdk1_1.TEST_PROPERTY",
+                        TEST_SDK1_PACKAGE);
+        assertThat(property).isNotNull();
+        assertThat(property.getName()).isEqualTo("com.test.sdk1_1.TEST_PROPERTY");
+        assertThat(property.getString()).isEqualTo("com.test.sdk1_1.testp1");
+
+        // Access as a shell
+        SystemUtil.runWithShellPermissionIdentity(() -> {
+            PackageInfo info = getPackageManager().getPackageInfo(TEST_SDK1_PACKAGE,
+                    PackageManager.PackageInfoFlags.of(MATCH_STATIC_SHARED_AND_SDK_LIBRARIES));
+
+            assertThat(info).isNotNull();
+            assertThat(info.packageName).isEqualTo(TEST_SDK1_PACKAGE);
+
+            ApplicationInfo appInfo = getPackageManager().getApplicationInfo(TEST_SDK1_PACKAGE,
+                    PackageManager.ApplicationInfoFlags.of(
+                            MATCH_STATIC_SHARED_AND_SDK_LIBRARIES));
+
+            assertThat(appInfo).isNotNull();
+            assertThat(appInfo.icon).isGreaterThan(0);
+        });
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_DISALLOW_SDK_LIBS_TO_BE_APPS)
+    public void testSdkBlockSdkLibsBeAppsNoComponentRegistered() throws Exception {
+        onBeforeSdkTests();
+
+        installPackage(TEST_SDK1);
+        assertTrue(isSdkInstalled(TEST_SDK1_NAME, 1));
+
+        // Check Activity
+        Intent intent1 = new Intent();
+        intent1.setClassName(TEST_SDK1_PACKAGE, TEST_SDK1_PACKAGE + ".MainActivity");
+        List<ResolveInfo> resolveInfoList1 =
+                getPackageManager().queryIntentActivities(intent1, 0);
+
+        assertThat(resolveInfoList1).isEmpty();
+
+        // Check Service
+        Intent intent2 = new Intent();
+        intent2.setClassName(TEST_SDK1_PACKAGE, TEST_SDK1_PACKAGE + ".FakeService");
+        List<ResolveInfo> resolveInfoList2 =
+                getPackageManager().queryIntentServices(intent2, 0);
+
+        assertThat(resolveInfoList2).isEmpty();
+
+        // Check Receiver
+        Intent intent3 = new Intent();
+        intent3.setClassName(TEST_SDK1_PACKAGE, TEST_SDK1_PACKAGE + ".FakeReceiver");
+        List<ResolveInfo> resolveInfoList3 =
+                getPackageManager().queryBroadcastReceivers(intent3, 0);
+
+        assertThat(resolveInfoList3).isEmpty();
+
+        // Check Provider
+        Intent intent4 = new Intent();
+        intent4.setClassName(TEST_SDK1_PACKAGE, TEST_SDK1_PACKAGE + ".FakeProvider");
+        List<ResolveInfo> resolveInfoList4 =
+                getPackageManager().queryIntentContentProviders(intent4, 0);
+
+        assertThat(resolveInfoList4).isEmpty();
+    }
+
+    @Test
+    @RequiresFlagsDisabled(Flags.FLAG_DISALLOW_SDK_LIBS_TO_BE_APPS)
+    public void testSdkLibsBeAppsComponentRegistered() throws Exception {
+        onBeforeSdkTests();
+
+        installPackage(TEST_SDK1);
+        assertTrue(isSdkInstalled(TEST_SDK1_NAME, 1));
+
+        // Check Activity
+        Intent intent1 = new Intent();
+        intent1.setClassName(TEST_SDK1_PACKAGE, TEST_SDK1_PACKAGE + ".MainActivity");
+        List<ResolveInfo> resolveInfoList1 =
+                getPackageManager().queryIntentActivities(intent1, 0);
+
+        assertThat(resolveInfoList1).isNotEmpty();
+        assertThat(resolveInfoList1.size()).isEqualTo(1);
+
+        // Check Service
+        Intent intent2 = new Intent();
+        intent2.setClassName(TEST_SDK1_PACKAGE, TEST_SDK1_PACKAGE + ".FakeService");
+        List<ResolveInfo> resolveInfoList2 =
+                getPackageManager().queryIntentServices(intent2, 0);
+
+        assertThat(resolveInfoList2).isNotEmpty();
+        assertThat(resolveInfoList2.size()).isEqualTo(1);
+
+        // Check Receiver
+        Intent intent3 = new Intent();
+        intent3.setClassName(TEST_SDK1_PACKAGE, TEST_SDK1_PACKAGE + ".FakeReceiver");
+        List<ResolveInfo> resolveInfoList3 =
+                getPackageManager().queryBroadcastReceivers(intent3, 0);
+
+        assertThat(resolveInfoList3).isNotEmpty();
+        assertThat(resolveInfoList3.size()).isEqualTo(1);
+
+        // Check Provider
+        Intent intent4 = new Intent();
+        intent4.setClassName(TEST_SDK1_PACKAGE, TEST_SDK1_PACKAGE + ".FakeProvider");
+        List<ResolveInfo> resolveInfoList4 =
+                getPackageManager().queryIntentContentProviders(intent4, 0);
+
+        assertThat(resolveInfoList4).isNotEmpty();
+        assertThat(resolveInfoList4.size()).isEqualTo(1);
     }
 
     @Test
