@@ -48,12 +48,13 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.media.ExifInterface;
 import android.net.Uri;
+import android.scopedstorage.cts.lib.ScopedStorageBaseDeviceTest;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.FileUtils;
 import android.os.ParcelFileDescriptor;
-import android.system.Os;
 import android.provider.MediaStore;
+import android.system.Os;
 
 import androidx.test.filters.SdkSuppress;
 
@@ -78,7 +79,9 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Device-side test suite to verify redacted URI operations.
+ * We are in process of splitting CtsScopedStorageDeviceOnlyTest module into multiple ones.
+ * This is a temporary test class, and it will be deleted
+ * after all the links to new modules are created.
  */
 @RunWith(Parameterized.class)
 @SdkSuppress(minSdkVersion = 31, codeName = "S")
@@ -93,7 +96,8 @@ public class RedactUriDeviceTest extends ScopedStorageBaseDeviceTest {
 
     static final String IMAGE_FILE_NAME = "ScopedStorageDeviceTest_file_" + NONCE + ".jpg";
 
-    static final String FUZZER_HEIC_FILE_NAME = "ScopedStorageDeviceTest_file_fuzzer_" + NONCE + ".heic";
+    static final String FUZZER_HEIC_FILE_NAME =
+            "ScopedStorageDeviceTest_file_fuzzer_" + NONCE + ".heic";
 
     // An app with no permissions
     private static final TestApp APP_B_NO_PERMS = new TestApp("TestAppB",
@@ -469,7 +473,7 @@ public class RedactUriDeviceTest extends ScopedStorageBaseDeviceTest {
             assertUriIsUnredacted(img);
 
             try (ParcelFileDescriptor pfd =
-                    getContentResolver().openFileDescriptor(redactedUri, "r")) {
+                         getContentResolver().openFileDescriptor(redactedUri, "r")) {
                 FileDescriptor fd = pfd.getFileDescriptor();
                 ExifInterface redactedExifInf = new ExifInterface(fd);
                 assertUriIsRedacted(redactedExifInf);
@@ -549,7 +553,7 @@ public class RedactUriDeviceTest extends ScopedStorageBaseDeviceTest {
         assertTrue(fileSize == 4407744);
         for (int index = 0; index < start.length && index < end.length; index++) {
             for (int c = start[index]; c < end[index]; c++) {
-                assertTrue("It should be zero!", data[c] == (byte)0);
+                assertTrue("It should be zero!", data[c] == (byte) 0);
             }
         }
     }
