@@ -22,14 +22,13 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Geocoder;
 import android.test.AndroidTestCase;
+import android.util.Log;
 
 import java.io.IOException;
 import java.util.Locale;
 
 public class GeocoderTest extends AndroidTestCase {
-
-    private static final int MAX_NUM_RETRIES = 5;
-    private static final int TIME_BETWEEN_RETRIES_MS = 10 * 1000;
+    private static final String TAG = GeocoderTest.class.getSimpleName();
 
     public void testConstructor() {
         new Geocoder(getContext());
@@ -70,22 +69,13 @@ public class GeocoderTest extends AndroidTestCase {
         // Thus only test that calling the method with valid arguments doesn't produce
         // an unexpected exception
         // Note: there is a risk this test will fail if device under test does not have
-        // a network connection. This is why we try the geocode 5 times if it fails due
-        // to a network error.
-        int numRetries = 0;
-        while (numRetries < MAX_NUM_RETRIES) {
-            try {
-                geocoder.getFromLocation(60, 30, 5);
-                break;
-            } catch (IOException e) {
-                Thread.sleep(TIME_BETWEEN_RETRIES_MS);
-                numRetries++;
-            }
+        // a network connection. This is why we don't fail the test if we get an
+        // IOException.
+        try {
+            geocoder.getFromLocation(60, 30, 5);
+        } catch (IOException e) {
+            Log.e(TAG, "GeoCoder getFromLocation request failed.", e);
         }
-        if (numRetries >= MAX_NUM_RETRIES) {
-            fail("Failed to geocode location " + MAX_NUM_RETRIES + " times.");
-        }
-
 
         try {
             // latitude is less than -90
@@ -123,20 +113,12 @@ public class GeocoderTest extends AndroidTestCase {
         // Thus only test that calling the method with valid arguments doesn't produce
         // an unexpected exception
         // Note: there is a risk this test will fail if device under test does not have
-        // a network connection. This is why we try the geocode 5 times if it fails due
-        // to a network error.
-        int numRetries = 0;
-        while (numRetries < MAX_NUM_RETRIES) {
-            try {
-                geocoder.getFromLocationName("Dalvik,Iceland", 5);
-                break;
-            } catch (IOException e) {
-                Thread.sleep(TIME_BETWEEN_RETRIES_MS);
-                numRetries++;
-            }
-        }
-        if (numRetries >= MAX_NUM_RETRIES) {
-            fail("Failed to geocode location name " + MAX_NUM_RETRIES + " times.");
+        // a network connection. This is why we don't fail the test if we get an
+        // IOException.
+        try {
+            geocoder.getFromLocationName("Dalvik,Iceland", 5);
+        } catch (IOException e) {
+            Log.e(TAG, "GeoCoder getFromLocationName request failed.", e);
         }
 
         try {
