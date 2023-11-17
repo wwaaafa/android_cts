@@ -965,7 +965,7 @@ public abstract class ActivityManagerTestBase {
         mWmState.computeState();
         final List<Task> rootTasks = mWmState.getRootTasks();
         for (Task rootTask : rootTasks) {
-            if (rootTask.getTaskId() == taskId) {
+            if (rootTask.getRootTaskId() == taskId) {
                 return rootTask;
             }
         }
@@ -3319,5 +3319,14 @@ public abstract class ActivityManagerTestBase {
                 windowState.getMergedLocalInsetsSources().stream().filter(
                         predicate).findFirst();
         insetsOptional.ifPresent(insets -> insets.insetGivenFrame(inOutBounds));
+    }
+
+    /**
+     * Checks whether the device has automotive split-screen multitasking feature enabled
+     */
+    protected boolean hasAutomotiveSplitscreenMultitaskingFeature() {
+        return mContext.getPackageManager()
+                .hasSystemFeature(/* PackageManager.FEATURE_CAR_SPLITSCREEN_MULTITASKING */
+                        "android.software.car.splitscreen_multitasking") && isCar();
     }
 }

@@ -255,6 +255,8 @@ public class PackageManagerTest {
             + "CtsContentLongLabelNameTestApp.apk";
     private static final String LONG_USES_PERMISSION_NAME_APK = SAMPLE_APK_BASE
             + "CtsContentLongUsesPermissionNameTestApp.apk";
+    private static final String SHELL_NAME_APK = SAMPLE_APK_BASE
+            + "CtsContentShellTestApp.apk";
 
     private static final String TEST_ICON = SAMPLE_APK_BASE + "icon.png";
     private static final String TEST_ICON_MONO = SAMPLE_APK_BASE + "icon_mono.png";
@@ -277,6 +279,9 @@ public class PackageManagerTest {
     private static final String HELLO_WORLD_UPDATED_APK = SAMPLE_APK_BASE + "HelloWorld7.apk";
     private static final String HELLO_WORLD_LOTS_OF_FLAGS_APK =
             SAMPLE_APK_BASE + "HelloWorldLotsOfFlags.apk";
+    private static final String HELLO_WORLD_NON_UPDATABLE_SYSTEM_APK = SAMPLE_APK_BASE
+            + "HelloWorldNonUpdatableSystem.apk";
+
     private static final String MOCK_LAUNCHER_PACKAGE_NAME = "android.content.cts.mocklauncherapp";
     private static final String MOCK_LAUNCHER_APK = SAMPLE_APK_BASE
             + "CtsContentMockLauncherTestApp.apk";
@@ -2056,6 +2061,20 @@ public class PackageManagerTest {
         assertThat(installResult.contains(expectedErrorMessage)).isTrue();
     }
 
+    @Test
+    public void testUpdateShellFailed() {
+        assertThat(SystemUtil.runShellCommand("pm install -t -g " + SHELL_NAME_APK)).contains(
+                "Installation of this package is not allowed");
+    }
+
+    @Test
+    public void testInstallNonUpdatableSystemFailed() {
+        installPackage(HELLO_WORLD_APK);
+        assertThat(SystemUtil.runShellCommand(
+                "pm install -t -g " + HELLO_WORLD_NON_UPDATABLE_SYSTEM_APK)).contains(
+                "Non updatable system package");
+    }
+
     private String installPackageWithResult(String apkPath) {
         return SystemUtil.runShellCommand("pm install -t " + apkPath);
     }
@@ -3391,7 +3410,7 @@ victim $UID 1 /data/user/0 default:targetSdkVersion=28 none 0 0 1 @null
                     new String[]{HELLO_WORLD_PACKAGE_NAME}, true, null, null, null,
                     FLAG_SUSPEND_QUARANTINED);
             assertEquals("", String.join(",", notset));
-        });
+        }, android.Manifest.permission.QUARANTINE_APPS);
 
         // Flag treatment.
         ApplicationInfo appInfo = mPackageManager.getApplicationInfo(HELLO_WORLD_PACKAGE_NAME, 0);
@@ -3475,14 +3494,14 @@ victim $UID 1 /data/user/0 default:targetSdkVersion=28 none 0 0 1 @null
         }
 
         if (enabled) {
-            assertThat(runCommand("pm list packages -q")).contains(HELLO_WORLD_PACKAGE_NAME);
+            assertTrue(isPackageQuarantined(HELLO_WORLD_PACKAGE_NAME));
             assertTrue(servicesResult.toString(), servicesResult.size() == 0);
             assertTrue(providersResult1.toString(), providersResult1.size() == 0);
             assertTrue(providersResult2.toString(), providersResult2.size() == 0);
             assertTrue(providersResult3.toString(), providersResult3.size() == 0);
             assertFalse(providerFound);
         } else {
-            assertThat(runCommand("pm list packages -q")).doesNotContain(HELLO_WORLD_PACKAGE_NAME);
+            assertFalse(isPackageQuarantined(HELLO_WORLD_PACKAGE_NAME));
             assertEquals(servicesResult.toString(), 1, servicesResult.size());
             assertEquals("com.example.helloworld.TestService",
                     servicesResult.get(0).serviceInfo.name);
@@ -3500,6 +3519,12 @@ victim $UID 1 /data/user/0 default:targetSdkVersion=28 none 0 0 1 @null
                     contentProvider.name);
             assertTrue(providerFound);
         }
+    }
+
+    private boolean isPackageQuarantined(String packageName) {
+        return SystemUtil.runWithShellPermissionIdentity(
+                () -> mPackageManager.isPackageQuarantined(packageName),
+                android.Manifest.permission.QUARANTINE_APPS);
     }
 
     private void sendIntent(IntentSender intentSender) throws IntentSender.SendIntentException {
