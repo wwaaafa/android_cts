@@ -4513,9 +4513,8 @@ You should be prompted to select credentials; choose the ones you just installed
     <string name="test_accessibility_service_label">Test accessibility service</string>
     <string name="policy_transparency_test_instructions">
         1. <xliff:g id="set_step" example="Set policy by turning the switch on">%1$s</xliff:g>\n
-        2. Open Settings app by clicking the "Open settings" button below. Note that this will open the personal Settings app. If this device has the work settings in a different app or screen, then navigate there, ignoring the button if necessary.\n
-        3. Verify that performing the following action will trigger a support dialog:\n
-           <xliff:g id="user_action" example="Adding an account">%2$s</xliff:g>.<xliff:g id="exception_node" example="NOTE: if the device doesn't support the action...">%3$s</xliff:g>\n
+        2. Open Settings app by clicking the \"Open settings\" button below. Note that this will open the personal Settings app. If this device has the work settings in a different app or screen, then navigate there, ignoring the button if necessary.\n
+        3. Verify that clicking on \"Allow multiple users\" toggle will trigger a support dialog.\n
         4. Verify that the support dialog displays the short support message set earlier.\n
     </string>
     <string name="optional_policy_transparency_test_note">\n\t<b>NOTE</b>: if the device doesn\'t support this action please skip this test and mark it as passing.</string>
@@ -5691,6 +5690,7 @@ You should be prompted to select credentials; choose the ones you just installed
     <string name="audio_general_ok">Ok</string>
     <string name="audio_general_start">Start</string>
     <string name="audio_general_stop">Stop</string>
+    <string name="audio_general_done">Done</string>
     <string name="audio_general_status">Status</string>
     <string name="audio_general_pass">PASS</string>
     <string name="audio_general_teststatus_pass">Test Status: PASS</string>
@@ -5701,7 +5701,8 @@ You should be prompted to select credentials; choose the ones you just installed
     <string name="audio_general_required">Required</string>
     <string name="audio_general_run">Run</string>
     <string name="audio_general_cancel">Cancel</string>
-
+    <string name="audio_general_left">Left</string>
+    <string name="audio_general_right">Right</string>
     <string name="audio_general_Input">Input</string>
     <string name="audio_general_Output">Output</string>
 
@@ -5727,6 +5728,9 @@ You should be prompted to select credentials; choose the ones you just installed
     <string name="audio_datapaths_mmap_shared">MMAP Shared</string>
     <string name="audio_datapaths_mmap_exclusive">MMAP Exclusive</string>
     <string name="audio_datapaths_invalid_transfer">Invalid Transfer Type</string>
+
+    <string name="audio_datapaths_calibrate">Calibrate Audio</string>
+    <string name="audio_datapaths_calibratetitle">Calibrate Loopback Audio</string>
 
     <string name="audio_datapaths_internal_test">Audio Data Paths Internal Test</string>
     <string name="audio_datapaths_internal_info">This test verifies basic functionality over a set of audio routes
@@ -5789,6 +5793,8 @@ You should be prompted to select credentials; choose the ones you just installed
         run the test again.</string>
     <string name="audio_datapaths_noio">"No valid datapaths. PASS."</string>
     <string name="audio_datapaths_results">%1$s\n%2$s -> %3$s</string>
+
+    <string name="audio_loopback_calibrate_default">Default</string>
 
     <!-- Audio Loopback Latency Test -->
     <string name="audio_loopback_latency_test">Audio Loopback Latency Test</string>
