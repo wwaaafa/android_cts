@@ -205,7 +205,6 @@ public class ActivityVisibilityTests extends ActivityManagerTestBase {
 
     @Test
     public void testTurnScreenOnActivity() {
-
         final LockScreenSession lockScreenSession = createManagedLockScreenSession();
         final ActivitySessionClient activityClient = createManagedActivityClientSession();
         testTurnScreenOnActivity(lockScreenSession, activityClient,
@@ -218,7 +217,10 @@ public class ActivityVisibilityTests extends ActivityManagerTestBase {
         // (b/308213530).
         // Wait for the existing TurnScreenOnActivity to finish and the home activity to be in
         // stopped state as the display is OFF.
-        mWmState.waitForAllStoppedActivities();
+        if (supportsLockScreen()) {
+            mWmState.waitForAllStoppedActivities();
+        }
+
         // Start TURN_SCREEN_ON_ACTIVITY
         launchActivity(TURN_SCREEN_ON_ACTIVITY, WINDOWING_MODE_FULLSCREEN);
         mWmState.assertVisibility(TURN_SCREEN_ON_ACTIVITY, true);
@@ -453,7 +455,11 @@ public class ActivityVisibilityTests extends ActivityManagerTestBase {
         mWmState.waitForActivityState(MOVE_TASK_TO_BACK_ACTIVITY,STATE_STOPPED);
         final boolean shouldBeVisible =
                 !mWmState.isBehindOpaqueActivities(MOVE_TASK_TO_BACK_ACTIVITY);
-        mWmState.assertVisibility(MOVE_TASK_TO_BACK_ACTIVITY, shouldBeVisible);
+        if (shouldBeVisible) {
+            mWmState.assertVisibility(MOVE_TASK_TO_BACK_ACTIVITY, true);
+        } else {
+            mWmState.waitAndAssertVisibilityGone(MOVE_TASK_TO_BACK_ACTIVITY);
+        }
         mWmState.assertVisibility(BROADCAST_RECEIVER_ACTIVITY, true);
 
         // Finish the top-most activity.
