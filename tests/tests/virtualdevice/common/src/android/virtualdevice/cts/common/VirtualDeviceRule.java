@@ -52,7 +52,6 @@ import android.os.Bundle;
 import android.platform.test.flag.junit.DeviceFlagsValueProvider;
 import android.server.wm.WindowManagerStateHelper;
 import android.view.Surface;
-import android.virtualdevice.cts.common.util.VirtualDeviceTestUtils;
 
 import com.android.compatibility.common.util.AdoptShellPermissionsRule;
 import com.android.internal.app.BlockedAppStreamingActivity;
@@ -66,7 +65,7 @@ import org.junit.runners.model.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -82,16 +81,12 @@ public class VirtualDeviceRule implements TestRule {
             ADD_ALWAYS_UNLOCKED_DISPLAY
     };
 
-    /** Compat change ID that affects default virtual display flags for virtual devices. */
-    public static final long MAKE_VIRTUAL_DISPLAY_FLAGS_CONSISTENT_WITH_DISPLAY_MANAGER =
-            294837146L;
-
     public static final VirtualDeviceParams DEFAULT_VIRTUAL_DEVICE_PARAMS =
             new VirtualDeviceParams.Builder().build();
     public static final VirtualDisplayConfig DEFAULT_VIRTUAL_DISPLAY_CONFIG =
             createDefaultVirtualDisplayConfigBuilder().build();
     public static final VirtualDisplayConfig TRUSTED_VIRTUAL_DISPLAY_CONFIG =
-            VirtualDeviceTestUtils.createDefaultVirtualDisplayConfigBuilder()
+            createDefaultVirtualDisplayConfigBuilder()
                     .setFlags(DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC
                             | DisplayManager.VIRTUAL_DISPLAY_FLAG_TRUSTED
                             | DisplayManager.VIRTUAL_DISPLAY_FLAG_OWN_CONTENT_ONLY)
@@ -101,8 +96,6 @@ public class VirtualDeviceRule implements TestRule {
     public static final int DEFAULT_VIRTUAL_DISPLAY_WIDTH = 640;
     public static final int DEFAULT_VIRTUAL_DISPLAY_HEIGHT = 480;
     public static final int DEFAULT_VIRTUAL_DISPLAY_DPI = 420;
-
-    public static final long DEFAULT_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(3);
 
     public static final ComponentName BLOCKED_ACTIVITY_COMPONENT =
             new ComponentName("android", BlockedAppStreamingActivity.class.getName());
@@ -285,25 +278,35 @@ public class VirtualDeviceRule implements TestRule {
                 "Waiting for display to be removed");
     }
 
+    /** Returns the WM state helper. */
+    public WindowManagerStateHelper getWmState() {
+        return mWmState;
+    }
+
+    /** Drops the current CDM association. */
+    public void dropCompanionDeviceAssociation() {
+        mFakeAssociationRule.disassociate();
+    }
+
     /**
-     * Temporarily assumes the given permissions and executes the given runnable. Reverts any
+     * Temporarily assumes the given permissions and executes the given supplier. Reverts any
      * permissions currently held after the execution.
      */
-    public void runWithTemporaryPermission(Runnable runnable, String... permissions) {
+    public <T> T runWithTemporaryPermission(Supplier<T> supplier, String... permissions) {
         UiAutomation uiAutomation = sInstrumentation.getUiAutomation();
         final Set<String> currentPermissions = uiAutomation.getAdoptedShellPermissions();
         uiAutomation.adoptShellPermissionIdentity(permissions);
         try {
-            runnable.run();
+            return supplier.get();
         } finally {
             // Revert the permissions needed for the test again.
             uiAutomation.adoptShellPermissionIdentity(
-                    currentPermissions.toArray(new String[currentPermissions.size()]));
+                    currentPermissions.toArray(new String[0]));
         }
     }
 
     /**
-     * Starts the activity for the given class on the given virtul display and blocks until it is
+     * Starts the activity for the given class on the given virtual display and blocks until it is
      * successfully launched there.
      */
     public <T extends Activity> T startActivityOnDisplaySync(
@@ -339,9 +342,9 @@ public class VirtualDeviceRule implements TestRule {
     }
 
     /**
-     * Creates activity options for launching activities on the given display.
+     * Checks that the given activity is in fact shown on the given display.
      */
-    public <T extends Activity> void assertActivityOnDisplay(T activity, int displayId) {
+    public void assertActivityOnDisplay(Activity activity, int displayId) {
         mWmState.assertActivityDisplayed(activity.getComponentName());
         assertThat(activity.getDisplay().getDisplayId()).isEqualTo(displayId);
     }
