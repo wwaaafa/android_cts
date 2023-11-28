@@ -16,7 +16,6 @@
 
 package android.virtualdevice.cts.common;
 
-import static android.Manifest.permission.ADD_ALWAYS_UNLOCKED_DISPLAY;
 import static android.Manifest.permission.ADD_TRUSTED_DISPLAY;
 import static android.Manifest.permission.CREATE_VIRTUAL_DEVICE;
 import static android.content.pm.PackageManager.FEATURE_ACTIVITIES_ON_SECONDARY_DISPLAYS;
@@ -39,10 +38,10 @@ import android.app.UiAutomation;
 import android.companion.virtual.VirtualDeviceManager;
 import android.companion.virtual.VirtualDeviceManager.VirtualDevice;
 import android.companion.virtual.VirtualDeviceParams;
-import android.compat.testing.PlatformCompatChangeRule;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.SurfaceTexture;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.hardware.display.VirtualDisplayConfig;
@@ -80,8 +79,7 @@ public class VirtualDeviceRule implements TestRule {
     /** General permissions needed for created virtual devices and displays. */
     private static final String[] REQUIRED_PERMISSIONS = new String[] {
             CREATE_VIRTUAL_DEVICE,
-            ADD_TRUSTED_DISPLAY,
-            ADD_ALWAYS_UNLOCKED_DISPLAY
+            ADD_TRUSTED_DISPLAY
     };
 
     public static final VirtualDeviceParams DEFAULT_VIRTUAL_DEVICE_PARAMS =
@@ -128,7 +126,6 @@ public class VirtualDeviceRule implements TestRule {
         mRuleChain = RuleChain
                 .outerRule(mFakeAssociationRule)
                 .around(DeviceFlagsValueProvider.createCheckFlagsRule())
-                .around(new PlatformCompatChangeRule())
                 .around(new AdoptShellPermissionsRule(
                         getInstrumentation().getUiAutomation(), permissions))
                 .around(mTrackerRule);
@@ -236,10 +233,12 @@ public class VirtualDeviceRule implements TestRule {
      */
     @NonNull
     public static VirtualDisplayConfig.Builder createDefaultVirtualDisplayConfigBuilder() {
+        SurfaceTexture texture = new SurfaceTexture(1);
+        texture.setDefaultBufferSize(DEFAULT_VIRTUAL_DISPLAY_WIDTH, DEFAULT_VIRTUAL_DISPLAY_HEIGHT);
         return new VirtualDisplayConfig.Builder(
                 DEFAULT_VIRTUAL_DISPLAY_NAME, DEFAULT_VIRTUAL_DISPLAY_WIDTH,
                 DEFAULT_VIRTUAL_DISPLAY_HEIGHT, DEFAULT_VIRTUAL_DISPLAY_DPI)
-                .setSurface(new Surface());
+                .setSurface(new Surface(texture));
     }
 
     /**
