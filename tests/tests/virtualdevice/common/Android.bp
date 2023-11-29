@@ -28,6 +28,7 @@ android_library {
         "junit",
         "flag-junit",
         "android.companion.virtual.flags-aconfig-java",
+        "android.companion.virtualdevice.flags-aconfig-java",
     ],
     manifest: "AndroidManifest.xml",
 }
