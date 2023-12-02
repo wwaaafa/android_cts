@@ -117,8 +117,14 @@ public class PackageInstallerArchiveTest {
     private static final String NO_ACTIVITY_APK_PATH =
             SAMPLE_APK_BASE + "CtsIntentResolutionTestApp.apk";
 
+    private static final String SYSTEM_PACKAGE_NAME = "android";
+
     private static final int TIMEOUT = 30000;
     private static final int SECOND = 1000;
+
+    private static final String ACTION_UNARCHIVE_ERROR_DIALOG =
+            "android.intent.action.UNARCHIVE_ERROR_DIALOG";
+
 
     private static CompletableFuture<Integer> sUnarchiveId;
     private static CompletableFuture<String> sUnarchiveReceiverPackageName;
@@ -340,7 +346,7 @@ public class PackageInstallerArchiveTest {
 
     @Test
     @RequiresFlagsEnabled(Flags.FLAG_ARCHIVING)
-    public void testGetArchiveTimeMillis() throws Exception {
+    public void archiveApp_getArchiveTimeMillis() throws Exception {
         installPackage(PACKAGE_NAME, APK_PATH);
         final long timestampBeforeArchive = System.currentTimeMillis();
         runWithShellPermissionIdentity(
@@ -357,6 +363,32 @@ public class PackageInstallerArchiveTest {
         assertThat(pi).isNotNull();
         assertThat(pi.getArchiveTimeMillis()).isGreaterThan(timestampBeforeArchive);
         assertThat(pi.getArchiveTimeMillis()).isLessThan(timestampAfterArchive);
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ARCHIVING)
+    public void archiveApp_archiveStateClearedAfterUpdate() throws Exception {
+        installPackage(PACKAGE_NAME, APK_PATH);
+        runWithShellPermissionIdentity(
+                () -> mPackageInstaller.requestArchive(PACKAGE_NAME,
+                        new IntentSender((IIntentSender) mArchiveIntentSender)),
+                Manifest.permission.DELETE_PACKAGES);
+
+        assertThat(mArchiveIntentSender.mStatus.get()).isEqualTo(PackageInstaller.STATUS_SUCCESS);
+
+        // Test that the archiveTimeMillis field is valid
+        PackageInfo pi = mPackageManager.getPackageInfo(PACKAGE_NAME,
+                PackageInfoFlags.of(MATCH_ARCHIVED_PACKAGES));
+        assertThat(pi).isNotNull();
+        assertThat(pi.getArchiveTimeMillis()).isGreaterThan(0);
+        assertThat(pi.applicationInfo.isArchived).isTrue();
+
+        // reinstall the app
+        installPackage(PACKAGE_NAME, APK_PATH);
+        pi = mPackageManager.getPackageInfo(PACKAGE_NAME, PackageInfoFlags.of(0));
+        assertThat(pi).isNotNull();
+        assertThat(pi.getArchiveTimeMillis()).isEqualTo(0);
+        assertThat(pi.applicationInfo.isArchived).isFalse();
     }
 
     @Test
@@ -451,7 +483,6 @@ public class PackageInstallerArchiveTest {
 
     // TODO(b/312452414) Move to PackageInstallerActivity directory.
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ARCHIVING)
     public void unarchiveApp_weakPermissions() throws Exception {
         installPackage(PACKAGE_NAME, APK_PATH);
         runWithShellPermissionIdentity(
@@ -474,7 +505,7 @@ public class PackageInstallerArchiveTest {
         assertThat(mUnarchiveIntentSender.mStatus.get(10, TimeUnit.MILLISECONDS)).isEqualTo(
                 PackageInstaller.STATUS_PENDING_USER_ACTION);
 
-        Intent extraIntent = mUnarchiveIntentSender.mPermissionIntent.get(10,
+        Intent extraIntent = mUnarchiveIntentSender.mIntent.get(10,
                 TimeUnit.MILLISECONDS);
         extraIntent.addFlags(FLAG_ACTIVITY_CLEAR_TASK | FLAG_ACTIVITY_NEW_TASK);
         prepareDevice();
@@ -483,7 +514,7 @@ public class PackageInstallerArchiveTest {
 
         assertThat(waitFor(Until.findObject(By.textContains("Restore")))).isNotNull();
 
-        UiObject2 clickableView = mUiDevice.findObject(By.text("Restore"));
+        UiObject2 clickableView = mUiDevice.findObject(By.res(SYSTEM_PACKAGE_NAME, "button1"));
         if (clickableView == null) {
             Assert.fail("Restore button not shown");
         }
@@ -558,6 +589,8 @@ public class PackageInstallerArchiveTest {
                 PACKAGE_NAME);
         assertThat(mUnarchiveIntentSender.mStatus.get(10, TimeUnit.MILLISECONDS)).isEqualTo(
                 PackageInstaller.UNARCHIVAL_OK);
+        assertThat(mUnarchiveIntentSender.mIntent.get(10, TimeUnit.MILLISECONDS)).isNull();
+
         mPackageInstaller.abandonSession(unarchiveId);
     }
 
@@ -593,6 +626,8 @@ public class PackageInstallerArchiveTest {
                 PACKAGE_NAME);
         assertThat(mUnarchiveIntentSender.mStatus.get(10, TimeUnit.MILLISECONDS)).isEqualTo(
                 PackageInstaller.UNARCHIVAL_GENERIC_ERROR);
+        assertThat(mUnarchiveIntentSender.mIntent.get(10,
+                TimeUnit.MILLISECONDS).getAction()).isEqualTo(ACTION_UNARCHIVE_ERROR_DIALOG);
 
         assertThat(sessionListener.mSessionIdFinished.get(5, TimeUnit.SECONDS)).isEqualTo(
                 draftSessionId);
@@ -978,7 +1013,7 @@ public class PackageInstallerArchiveTest {
 
         final CompletableFuture<String> mPackage = new CompletableFuture<>();
         final CompletableFuture<Integer> mStatus = new CompletableFuture<>();
-        final CompletableFuture<Intent> mPermissionIntent = new CompletableFuture<>();
+        final CompletableFuture<Intent> mIntent = new CompletableFuture<>();
 
         @Override
         public void send(int code, Intent intent, String resolvedType,
@@ -987,10 +1022,7 @@ public class PackageInstallerArchiveTest {
             mPackage.complete(intent.getStringExtra(PackageInstaller.EXTRA_PACKAGE_NAME));
             int status = intent.getIntExtra(PackageInstaller.EXTRA_UNARCHIVE_STATUS, -100);
             mStatus.complete(status);
-            if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
-                mPermissionIntent.complete(
-                        intent.getParcelableExtra(Intent.EXTRA_INTENT, Intent.class));
-            }
+            mIntent.complete(intent.getParcelableExtra(Intent.EXTRA_INTENT, Intent.class));
         }
 
     }
