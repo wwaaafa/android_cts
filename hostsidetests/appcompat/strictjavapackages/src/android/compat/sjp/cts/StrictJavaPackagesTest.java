@@ -29,6 +29,7 @@ import android.compat.testing.SharedLibraryInfo;
 
 import com.android.compatibility.common.tradefed.build.CompatibilityBuildHelper;
 import com.android.modules.utils.build.testing.DeviceSdkLevel;
+import com.android.tools.smali.dexlib2.iface.ClassDef;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.INativeDevice;
 import com.android.tradefed.device.ITestDevice;
@@ -49,7 +50,6 @@ import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 
-import org.jf.dexlib2.iface.ClassDef;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -246,7 +246,8 @@ public class StrictJavaPackagesTest extends BaseHostJUnit4Test {
                     "Landroid/app/sdksandbox/ISdkSandboxProcessDeathCallback;",
                     "Landroid/app/sdksandbox/ISendDataCallback;",
                     "Landroid/app/sdksandbox/ISharedPreferencesSyncCallback;",
-                    "Landroid/app/sdksandbox/ISdkToServiceCallback;"
+                    "Landroid/app/sdksandbox/ISdkToServiceCallback;",
+                    "Landroid/app/sdksandbox/IUnloadSdkCallback;"
             );
 
     private static final String FEATURE_WEARABLE = "android.hardware.type.watch";
@@ -448,7 +449,6 @@ public class StrictJavaPackagesTest extends BaseHostJUnit4Test {
                 "Lcom/android/sdksandbox/ISdkSandboxService;",
                 "Lcom/android/sdksandbox/SandboxLatencyInfo-IA;",
                 "Lcom/android/sdksandbox/SandboxLatencyInfo;",
-                "Lcom/android/sdksandbox/IUnloadSdkCallback;",
                 "Lcom/android/sdksandbox/IComputeSdkStorageCallback;"
             );
 
