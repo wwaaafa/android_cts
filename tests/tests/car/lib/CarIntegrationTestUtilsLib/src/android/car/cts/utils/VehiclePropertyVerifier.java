@@ -17,6 +17,7 @@
 package android.car.cts.utils;
 
 import static android.car.cts.utils.ShellPermissionUtils.runWithShellPermissionIdentity;
+import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
@@ -49,12 +50,15 @@ import android.car.hardware.property.ErrorState;
 import android.car.hardware.property.PropertyNotAvailableAndRetryException;
 import android.car.hardware.property.PropertyNotAvailableErrorCode;
 import android.car.hardware.property.PropertyNotAvailableException;
+import android.content.Context;
+import android.os.Build;
 import android.os.SystemClock;
 import android.util.Log;
 import android.util.SparseArray;
 import android.util.SparseIntArray;
 
 import androidx.annotation.Nullable;
+import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.internal.annotations.GuardedBy;
 
@@ -76,6 +80,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+/**
+ * A class for verifying the implementation for one VHAL property.
+ *
+ * @param T The type for the property.
+ */
 public class VehiclePropertyVerifier<T> {
     private static final String TAG = VehiclePropertyVerifier.class.getSimpleName();
     private static final String CAR_PROPERTY_VALUE_SOURCE_GETTER = "Getter";
@@ -128,6 +137,8 @@ public class VehiclePropertyVerifier<T> {
     private static Class<?> sExceptionClassOnGet;
     private static Class<?> sExceptionClassOnSet;
 
+    private final Context mContext =
+            InstrumentationRegistry.getInstrumentation().getTargetContext();
     private final CarPropertyManager mCarPropertyManager;
     private final int mPropertyId;
     private final String mPropertyName;
@@ -143,6 +154,7 @@ public class VehiclePropertyVerifier<T> {
     private final Optional<Integer> mDependentOnPropertyId;
     private final ImmutableSet<String> mDependentOnPropertyPermissions;
     private final ImmutableSet<Integer> mPossibleConfigArrayValues;
+    private final boolean mEnumIsBitMap;
     private final ImmutableSet<T> mAllPossibleEnumValues;
     private final ImmutableSet<T> mAllPossibleUnwritableValues;
     private final ImmutableSet<T> mAllPossibleUnavailableValues;
@@ -175,6 +187,7 @@ public class VehiclePropertyVerifier<T> {
             Optional<Integer> dependentPropertyId,
             ImmutableSet<String> dependentOnPropertyPermissions,
             ImmutableSet<Integer> possibleConfigArrayValues,
+            boolean enumIsBitMap,
             ImmutableSet<T> allPossibleEnumValues,
             ImmutableSet<T> allPossibleUnwritableValues,
             ImmutableSet<T> allPossibleUnavailableValues,
@@ -203,6 +216,7 @@ public class VehiclePropertyVerifier<T> {
         mDependentOnPropertyId = dependentPropertyId;
         mDependentOnPropertyPermissions = dependentOnPropertyPermissions;
         mPossibleConfigArrayValues = possibleConfigArrayValues;
+        mEnumIsBitMap = enumIsBitMap;
         mAllPossibleEnumValues = allPossibleEnumValues;
         mAllPossibleUnwritableValues = allPossibleUnwritableValues;
         mAllPossibleUnavailableValues = allPossibleUnavailableValues;
@@ -218,6 +232,9 @@ public class VehiclePropertyVerifier<T> {
         mPropertyToAreaIdValues = new SparseArray<>();
     }
 
+    /**
+     * Gets a new builder for the verifier.
+     */
     public static <T> Builder<T> newBuilder(
             int propertyId, int access, int areaType, int changeMode, Class<T> propertyType,
             CarPropertyManager carPropertyManager) {
@@ -225,10 +242,16 @@ public class VehiclePropertyVerifier<T> {
                 carPropertyManager);
     }
 
+    /**
+     * Gets the name for the property.
+     */
     public String getPropertyName() {
         return mPropertyName;
     }
 
+    /**
+     * Gets the default value based on the type.
+     */
     @Nullable
     public static <U> U getDefaultValue(Class<?> clazz) {
         if (clazz == Boolean.class) {
@@ -320,19 +343,39 @@ public class VehiclePropertyVerifier<T> {
         return mCachedCarPropertyConfig;
     }
 
+    /**
+     * Returns whether the property is supported.
+     */
     public boolean isSupported() {
         return getCarPropertyConfig() != null;
     }
 
+    /**
+     * Runs various verifications on the property.
+     */
     public void verify() {
         verify(null);
     }
 
+    /**
+     * Runs various verifications on the property with exceptions expected.
+     *
+     * @param exceptedExceptionClass The exception class expected for reading/writing the property.
+     */
     public void verify(@Nullable Class<?> exceptedExceptionClass) {
         verifyConfig();
         verifyPermissionNotGrantedException();
         verifyReadPermissions(exceptedExceptionClass);
         verifyWritePermissions(exceptedExceptionClass);
+    }
+
+    private void assertGetPropertyNotSupported(String msg) {
+        if (isAtLeastU()) {
+            assertThrows(msg, IllegalArgumentException.class,
+                    () -> mCarPropertyManager.getProperty(mPropertyId, /*areaId=*/ 0));
+        } else {
+            assertThat(mCarPropertyManager.getProperty(mPropertyId, /* areaId= */ 0)).isNull();
+        }
     }
 
     private void verifyConfig() {
@@ -348,12 +391,9 @@ public class VehiclePropertyVerifier<T> {
                     if (carPropertyConfig == null) {
                         if (mAccess == CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ || mAccess
                                 == CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE) {
-                            assertThrows("Test does not have correct permissions granted for "
-                                            + mPropertyName + ". Requested permissions: "
-                                            + allPermissions,
-                                    IllegalArgumentException.class,
-                                    () -> mCarPropertyManager.getProperty(mPropertyId, /*areaId=*/
-                                            0));
+                            assertGetPropertyNotSupported(
+                                    "Test does not have correct permissions granted for "
+                                    + mPropertyName + ". Requested permissions: " + allPermissions);
                         } else if (mAccess == CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_WRITE) {
                             assertThrows("Test does not have correct permissions granted for "
                                             + mPropertyName + ". Requested permissions: "
@@ -407,6 +447,22 @@ public class VehiclePropertyVerifier<T> {
         }
     }
 
+    private boolean hasWritePermissions(ImmutableList<ImmutableSet<String>> writePermissions) {
+        for (ImmutableSet<String> writePermissionSet: writePermissions) {
+            boolean result = true;
+            for (String permission : writePermissionSet) {
+                if (mContext.checkSelfPermission(permission) != PERMISSION_GRANTED) {
+                    result = false;
+                    break;
+                }
+            }
+            if (result) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void verifyReadPermissionCannotWrite(String readPermission,
             ImmutableList<ImmutableSet<String>> writePermissions) {
         // If the read permission is the same as the write permission and the property does not
@@ -415,6 +471,12 @@ public class VehiclePropertyVerifier<T> {
             if (writePermissionSet.size() == 1 && writePermissionSet.contains(readPermission)) {
                 return;
             }
+        }
+        // It is possible that the caller has the write permissions without adopting the shell
+        // identity. In this case, we cannot revoke the write permission so we cannot test
+        // setProperty without write permissions.
+        if (hasWritePermissions(writePermissions)) {
+            return;
         }
         runWithShellPermissionIdentity(
                 () -> {
@@ -463,10 +525,25 @@ public class VehiclePropertyVerifier<T> {
         }
     }
 
+    private boolean hasReadPermissions(ImmutableSet<String> allReadPermissions) {
+        for (String permission : allReadPermissions) {
+            if (mContext.checkSelfPermission(permission) == PERMISSION_GRANTED) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private void verifyWritePermissionsCannotRead(ImmutableSet<String> writePermissions,
             ImmutableSet<String> allReadPermissions) {
         // If there is any write permission that is also a read permission we skip the permissions.
         if (!Collections.disjoint(writePermissions, allReadPermissions)) {
+            return;
+        }
+        // It is possible that the caller has the read permissions without adopting the shell
+        // identity. In this case, we cannot revoke the read permissions so we cannot test
+        // getProperty without read permissions.
+        if (hasReadPermissions(allReadPermissions)) {
             return;
         }
         runWithShellPermissionIdentity(
@@ -500,6 +577,12 @@ public class VehiclePropertyVerifier<T> {
 
     private void verifyIndividualWritePermissionsCannotWrite(
             ImmutableSet<String> writePermissions) {
+        // It is possible that the caller has the write permissions without adopting
+        // the shell identity. In this case, we cannot revoke individual permissions.
+        if (hasWritePermissions(ImmutableList.of(writePermissions))) {
+            return;
+        }
+
         String writePermissionsNeededString = String.join(", ", writePermissions);
         for (String writePermission: writePermissions) {
             runWithShellPermissionIdentity(
@@ -592,8 +675,11 @@ public class VehiclePropertyVerifier<T> {
         return true;
     }
 
+    /**
+     * Enables the ADAS feature if the property is an ADAS property.
+     */
     public void enableAdasFeatureIfAdasStateProperty() {
-        if (mDependentOnPropertyId.isEmpty()) {
+        if (!mDependentOnPropertyId.isPresent()) {
             return;
         }
 
@@ -626,8 +712,11 @@ public class VehiclePropertyVerifier<T> {
         }
     }
 
+    /**
+     * Disables the ADAS feature if the property is an ADAS property.
+     */
     public boolean disableAdasFeatureIfAdasStateProperty() {
-        if (mDependentOnPropertyId.isEmpty()) {
+        if (!mDependentOnPropertyId.isPresent()) {
             return false;
         }
 
@@ -795,6 +884,10 @@ public class VehiclePropertyVerifier<T> {
         return null;
     }
 
+    private boolean isAtLeastU() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
+    }
+
     /**
      * Gets the possible values for an integer property.
      */
@@ -818,7 +911,7 @@ public class VehiclePropertyVerifier<T> {
             return possibleValues;
         }
 
-        if (!mAllPossibleEnumValues.isEmpty()) {
+        if (!mAllPossibleEnumValues.isEmpty() && isAtLeastU()) {
             AreaIdConfig areaIdConfig = carPropertyConfig.getAreaIdConfig(areaId);
             for (Integer value : (List<Integer>) areaIdConfig.getSupportedEnumValues()) {
                 if ((mAllPossibleUnwritableValues.isEmpty()
@@ -913,7 +1006,7 @@ public class VehiclePropertyVerifier<T> {
                 verifySetProperty(areaId, (T) valueToSet);
             }
         }
-        if (!mAllPossibleEnumValues.isEmpty()) {
+        if (!mAllPossibleEnumValues.isEmpty() && isAtLeastU()) {
             for (AreaIdConfig<?> areaIdConfig : carPropertyConfig.getAreaIdConfigs()) {
                 for (T valueToSet : (List<T>) areaIdConfig.getSupportedEnumValues()) {
                     if (!mAllPossibleUnwritableValues.isEmpty()
@@ -1304,7 +1397,7 @@ public class VehiclePropertyVerifier<T> {
                         .isTrue();
             }
 
-            if (mRequirePropertyValueToBeInConfigArray) {
+            if (mRequirePropertyValueToBeInConfigArray && isAtLeastU()) {
                 List<?> supportedEnumValues = carPropertyConfig.getAreaIdConfig(
                         areaId).getSupportedEnumValues();
                 assertWithMessage(mPropertyName + " - areaId: " + areaId
@@ -1314,7 +1407,7 @@ public class VehiclePropertyVerifier<T> {
             }
 
             if (mChangeMode == CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE
-                    && !mAllPossibleEnumValues.isEmpty()) {
+                    && !mAllPossibleEnumValues.isEmpty() && isAtLeastU()) {
                 List<?> supportedEnumValues = carPropertyConfig.getAreaIdConfig(
                         areaId).getSupportedEnumValues();
                 assertWithMessage(mPropertyName + " - areaId: " + areaId
@@ -1328,7 +1421,7 @@ public class VehiclePropertyVerifier<T> {
                                 + supportedEnumValues + " must all exist in all possible enum set "
                                 + mAllPossibleEnumValues).that(
                         mAllPossibleEnumValues.containsAll(supportedEnumValues)).isTrue();
-            } else {
+            } else if (isAtLeastU()) {
                 assertWithMessage(mPropertyName + " - areaId: " + areaId
                         + "'s supported enum values must be empty since property does not support"
                         + " an enum").that(
@@ -1546,12 +1639,25 @@ public class VehiclePropertyVerifier<T> {
                     .contains(value);
         }
 
-        List<T> supportedEnumValues = carPropertyConfig.getAreaIdConfig(
-                areaId).getSupportedEnumValues();
-        if (!supportedEnumValues.isEmpty()) {
-            assertWithMessage(mPropertyName + " - areaId: " + areaId + " - source: " + source
-                    + " value must be listed in getSupportedEnumValues()").that(value).isIn(
-                    supportedEnumValues);
+        if (isAtLeastU()) {
+            List<T> supportedEnumValues = carPropertyConfig.getAreaIdConfig(
+                    areaId).getSupportedEnumValues();
+            if (!supportedEnumValues.isEmpty()) {
+                if (mEnumIsBitMap) {
+                    int allValidValues = 0;
+                    for (T bitEnumValue : supportedEnumValues) {
+                        allValidValues |= ((Integer) bitEnumValue).intValue();
+                    }
+                    assertWithMessage(mPropertyName + " - areaId: " + areaId + " - source: "
+                            + source + " value must be a combination of values listed in "
+                            + "getSupportedEnumValues()")
+                            .that(((Integer) value).intValue() & allValidValues).isEqualTo(value);
+                } else {
+                    assertWithMessage(mPropertyName + " - areaId: " + areaId + " - source: "
+                            + source + " value must be listed in getSupportedEnumValues()").that(
+                                    value).isIn(supportedEnumValues);
+                }
+            }
         }
 
         T areaIdMinValue = (T) carPropertyConfig.getMinValue(areaId);
@@ -1638,6 +1744,12 @@ public class VehiclePropertyVerifier<T> {
     }
 
     private void verifyPermissionNotGrantedException() {
+        // If the client itself already has read/write permissions without adopting any permissions
+        // from the shell, skip the test.
+        if (hasReadPermissions(mReadPermissions) || hasWritePermissions(mWritePermissions)) {
+            return;
+        }
+
         CarPropertyConfig<T> carPropertyConfig = getCarPropertyConfig();
         assertWithMessage(
                     mPropertyName
@@ -1746,6 +1858,9 @@ public class VehiclePropertyVerifier<T> {
                 .isEqualTo(numIncrementsCelsius);
     }
 
+    /**
+     * Verifies that hvac temperature is valid.
+     */
     public static void verifyHvacTemperatureIsValid(float temp, int minTempTimesTen,
             int maxTempTimesTen, int incrementTimesTen) {
         int intTempTimesTen = (int) (temp * 10f);
@@ -1766,23 +1881,50 @@ public class VehiclePropertyVerifier<T> {
                 .isEqualTo(0);
     }
 
+    /**
+     * An interface for verifying the config array.
+     */
     public interface ConfigArrayVerifier {
+        /**
+         * Verifies the config array. Throws exception if not valid.
+         */
         void verify(List<Integer> configArray);
     }
 
+    /**
+     * An interface for verifying the property value.
+     */
     public interface CarPropertyValueVerifier<T> {
+        /**
+         * Verifies the property value. Throws exception if not valid.
+         */
         void verify(CarPropertyConfig<T> carPropertyConfig, int propertyId, int areaId,
                 long timestampNanos, T value);
     }
 
+    /**
+     * An interface for verifying the areaIds.
+     */
     public interface AreaIdsVerifier {
+        /**
+         * Verifies the areaIds. Throws exception if not valid.
+         */
         void verify(int[] areaIds);
     }
 
+    /**
+     * An interface for verifying the {@link CarPropertyConfig}.
+     */
     public interface CarPropertyConfigVerifier {
+        /**
+         * Verifies the property config. Throws exception if not valid.
+         */
         void verify(CarPropertyConfig<?> carPropertyConfig);
     }
 
+    /**
+     * The builder class.
+     */
     public static class Builder<T> {
         private final int mPropertyId;
         private final int mAccess;
@@ -1798,6 +1940,7 @@ public class VehiclePropertyVerifier<T> {
         private Optional<Integer> mDependentOnPropertyId = Optional.empty();
         private ImmutableSet<String> mDependentOnPropertyPermissions = ImmutableSet.of();
         private ImmutableSet<Integer> mPossibleConfigArrayValues = ImmutableSet.of();
+        private boolean mEnumIsBitMap = false;
         private ImmutableSet<T> mAllPossibleEnumValues = ImmutableSet.of();
         private ImmutableSet<T> mAllPossibleUnwritableValues = ImmutableSet.of();
         private ImmutableSet<T> mAllPossibleUnavailableValues = ImmutableSet.of();
@@ -1822,33 +1965,51 @@ public class VehiclePropertyVerifier<T> {
             mCarPropertyManager = carPropertyManager;
         }
 
+        /**
+         * Sets the property as required. Test will fail if the property is not supported.
+         */
         public Builder<T> requireProperty() {
             mRequiredProperty = true;
             return this;
         }
 
+        /**
+         * Sets the config array verifier.
+         */
         public Builder<T> setConfigArrayVerifier(ConfigArrayVerifier configArrayVerifier) {
             mConfigArrayVerifier = Optional.of(configArrayVerifier);
             return this;
         }
 
+        /**
+         * Sets the car property value verifier.
+         */
         public Builder<T> setCarPropertyValueVerifier(
                 CarPropertyValueVerifier<T> carPropertyValueVerifier) {
             mCarPropertyValueVerifier = Optional.of(carPropertyValueVerifier);
             return this;
         }
 
+        /**
+         * Sets the areaIds verifier.
+         */
         public Builder<T> setAreaIdsVerifier(AreaIdsVerifier areaIdsVerifier) {
             mAreaIdsVerifier = Optional.of(areaIdsVerifier);
             return this;
         }
 
+        /**
+         * Sets the car property config verifier.
+         */
         public Builder<T> setCarPropertyConfigVerifier(
                 CarPropertyConfigVerifier carPropertyConfigVerifier) {
             mCarPropertyConfigVerifier = Optional.of(carPropertyConfigVerifier);
             return this;
         }
 
+        /**
+         * Sets that the property is depending on other properties.
+         */
         public Builder<T> setDependentOnProperty(Integer dependentPropertyId,
                 ImmutableSet<String> dependentPropertyPermissions) {
             mDependentOnPropertyId = Optional.of(dependentPropertyId);
@@ -1856,22 +2017,35 @@ public class VehiclePropertyVerifier<T> {
             return this;
         }
 
+        /**
+         * Sets the possible config array values.
+         */
         public Builder<T> setPossibleConfigArrayValues(
                 ImmutableSet<Integer> possibleConfigArrayValues) {
             mPossibleConfigArrayValues = possibleConfigArrayValues;
             return this;
         }
 
-        /*
+        /**
          * Used to assert that supportedEnum values provided in config are a subset of all possible
          * enum values that can be set for the property.
+         */
+        public Builder<T> setBitMapEnumEnabled(boolean enabled) {
+            mEnumIsBitMap = enabled;
+            return this;
+        }
+
+        /*
+         * Used to assert that supportedEnum values provided in config are a subset of all possible
+         * enum values that can be set for the property. If enums is defined as a bit map rather
+         * than a regular integer, setBitMapEnumEnabled(boolean) should be used as well.
          */
         public Builder<T> setAllPossibleEnumValues(ImmutableSet<T> allPossibleEnumValues) {
             mAllPossibleEnumValues = allPossibleEnumValues;
             return this;
         }
 
-        /*
+        /**
          * Used to assert that certain values that must not be allowed to be written will throw an
          * IllegalArgumentException when we try to write them using setProperty.
          */
@@ -1881,7 +2055,7 @@ public class VehiclePropertyVerifier<T> {
             return this;
         }
 
-        /*
+        /**
          * Used to assert that certain values that are temporarily unavailable to be written will
          * throw a PropertyNotAvailableException when we try to write them using setProperty.
          */
@@ -1891,48 +2065,72 @@ public class VehiclePropertyVerifier<T> {
             return this;
         }
 
+        /**
+         * Requires that the property value must be one of the value defined in the config array.
+         */
         public Builder<T> requirePropertyValueTobeInConfigArray() {
             mRequirePropertyValueToBeInConfigArray = true;
             return this;
         }
 
+        /**
+         * Uses the config array values to set the property value.
+         */
         public Builder<T> verifySetterWithConfigArrayValues() {
             mVerifySetterWithConfigArrayValues = true;
             return this;
         }
 
+        /**
+         * Requires minValue and maxValue to be set.
+         */
         public Builder<T> requireMinMaxValues() {
             mRequireMinMaxValues = true;
             return this;
         }
 
+        /**
+         * Requires minValue to be 0.
+         */
         public Builder<T> requireMinValuesToBeZero() {
             mRequireMinValuesToBeZero = true;
             return this;
         }
 
+        /**
+         * Requires 0 to be contains within minValue and maxValue.
+         */
         public Builder<T> requireZeroToBeContainedInMinMaxRanges() {
             mRequireZeroToBeContainedInMinMaxRanges = true;
             return this;
         }
 
+        /**
+         * Sets that the property might depend on HVAC_POEWR_ON.
+         */
         public Builder<T> setPossiblyDependentOnHvacPowerOn() {
             mPossiblyDependentOnHvacPowerOn = true;
             return this;
         }
 
+        /**
+         * Verifies if returning error state, the error state is expected.
+         */
         public Builder<T> verifyErrorStates() {
             mVerifyErrorStates = true;
             return this;
         }
 
+        /**
+         * Adds the required read permission.
+         */
         public Builder<T> addReadPermission(String readPermission) {
             mReadPermissionsBuilder.add(readPermission);
             return this;
         }
 
         /**
-         * Add a single permission that alone can be used to update the property. Any set of
+         * Adds a single permission that alone can be used to update the property. Any set of
          * permissions in {@code mWritePermissionsBuilder} can be used to set the property.
          *
          * @param writePermission a permission used to update the property
@@ -1943,7 +2141,7 @@ public class VehiclePropertyVerifier<T> {
         }
 
         /**
-         * Add a set of permissions that together can be used to update the property. Any set of
+         * Adds a set of permissions that together can be used to update the property. Any set of
          * permissions in {@code mWritePermissionsBuilder} can be used to set the property.
          *
          * @param writePermissionSet a set of permissions that together can be used to update the
@@ -1954,6 +2152,9 @@ public class VehiclePropertyVerifier<T> {
             return this;
         }
 
+        /**
+         * Builds the verifier.
+         */
         public VehiclePropertyVerifier<T> build() {
             return new VehiclePropertyVerifier<>(
                     mCarPropertyManager,
@@ -1970,6 +2171,7 @@ public class VehiclePropertyVerifier<T> {
                     mDependentOnPropertyId,
                     mDependentOnPropertyPermissions,
                     mPossibleConfigArrayValues,
+                    mEnumIsBitMap,
                     mAllPossibleEnumValues,
                     mAllPossibleUnwritableValues,
                     mAllPossibleUnavailableValues,
@@ -2258,6 +2460,9 @@ public class VehiclePropertyVerifier<T> {
     }
 
     private void verifyGetPropertiesAsync() {
+        if (!isAtLeastU()) {
+            return;
+        }
         CarPropertyConfig<T> carPropertyConfig = getCarPropertyConfig();
         if (carPropertyConfig.getAccess() == CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_WRITE) {
             verifyGetPropertiesAsyncFails();
@@ -2314,6 +2519,9 @@ public class VehiclePropertyVerifier<T> {
     }
 
     private void verifyGetPropertiesAsyncFails() {
+        if (!isAtLeastU()) {
+            return;
+        }
         CarPropertyConfig<T> carPropertyConfig = getCarPropertyConfig();
         List<GetPropertyRequest> getPropertyRequests = new ArrayList<>();
         GetPropertyRequest getPropertyRequest = mCarPropertyManager.generateGetPropertyRequest(
@@ -2332,6 +2540,9 @@ public class VehiclePropertyVerifier<T> {
     }
 
     private void verifySetPropertiesAsync() {
+        if (!isAtLeastU()) {
+            return;
+        }
         CarPropertyConfig<T> carPropertyConfig = getCarPropertyConfig();
         if (carPropertyConfig.getAccess() == CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ) {
             verifySetPropertiesAsyncFails();
@@ -2393,6 +2604,9 @@ public class VehiclePropertyVerifier<T> {
     }
 
     private void verifySetPropertiesAsyncFails() {
+        if (!isAtLeastU()) {
+            return;
+        }
         CarPropertyConfig<T> carPropertyConfig = getCarPropertyConfig();
         List<SetPropertyRequest<?>> setPropertyRequests = new ArrayList<>();
         SetPropertyRequest setPropertyRequest = mCarPropertyManager.generateSetPropertyRequest(
