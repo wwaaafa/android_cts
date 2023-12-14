@@ -67,14 +67,17 @@ import android.car.hardware.property.EvStoppingMode;
 import android.car.hardware.property.ForwardCollisionWarningState;
 import android.car.hardware.property.HandsOnDetectionDriverState;
 import android.car.hardware.property.HandsOnDetectionWarning;
+import android.car.hardware.property.ImpactSensorLocation;
 import android.car.hardware.property.LaneCenteringAssistCommand;
 import android.car.hardware.property.LaneCenteringAssistState;
 import android.car.hardware.property.LaneDepartureWarningState;
 import android.car.hardware.property.LaneKeepAssistState;
 import android.car.hardware.property.LocationCharacterization;
+import android.car.hardware.property.LowSpeedCollisionWarningState;
 import android.car.hardware.property.PropertyNotAvailableException;
 import android.car.hardware.property.Subscription;
 import android.car.hardware.property.TrailerState;
+import android.car.hardware.property.VehicleAirbagLocation;
 import android.car.hardware.property.VehicleAutonomousState;
 import android.car.hardware.property.VehicleElectronicTollCollectionCardStatus;
 import android.car.hardware.property.VehicleElectronicTollCollectionCardType;
@@ -275,6 +278,25 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehicleAutonomousState.LEVEL_4,
                             VehicleAutonomousState.LEVEL_5)
                     .build();
+    private static final ImmutableSet<Integer> VEHICLE_AIRBAG_LOCATIONS =
+            ImmutableSet.<Integer>builder()
+                    .add(
+                            VehicleAirbagLocation.FRONT,
+                            VehicleAirbagLocation.KNEE,
+                            VehicleAirbagLocation.LEFT_SIDE,
+                            VehicleAirbagLocation.RIGHT_SIDE,
+                            VehicleAirbagLocation.CURTAIN)
+                    .build();
+    private static final ImmutableSet<Integer> IMPACT_SENSOR_LOCATIONS =
+            ImmutableSet.<Integer>builder()
+                    .add(
+                            ImpactSensorLocation.FRONT,
+                            ImpactSensorLocation.FRONT_LEFT_DOOR_SIDE,
+                            ImpactSensorLocation.FRONT_RIGHT_DOOR_SIDE,
+                            ImpactSensorLocation.REAR_LEFT_DOOR_SIDE,
+                            ImpactSensorLocation.REAR_RIGHT_DOOR_SIDE,
+                            ImpactSensorLocation.REAR)
+                    .build();
     private static final ImmutableSet<Integer> EMERGENCY_LANE_KEEP_ASSIST_STATES =
             ImmutableSet.<Integer>builder()
                     .add(
@@ -442,6 +464,13 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             CarHvacFanDirection.FACE,
                             CarHvacFanDirection.FLOOR,
                             CarHvacFanDirection.DEFROST);
+    private static final ImmutableSet<Integer> LOW_SPEED_COLLISION_WARNING_STATES =
+            ImmutableSet.<Integer>builder()
+                    .add(
+                            LowSpeedCollisionWarningState.OTHER,
+                            LowSpeedCollisionWarningState.NO_WARNING,
+                            LowSpeedCollisionWarningState.WARNING)
+                    .build();
     private static final ImmutableSet<Integer> ALL_POSSIBLE_HVAC_FAN_DIRECTIONS =
             generateAllPossibleHvacFanDirections();
     private static final ImmutableSet<Integer> VEHICLE_SEAT_OCCUPANCY_STATES = ImmutableSet.of(
@@ -512,7 +541,8 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.EV_CHARGE_STATE,
                             VehiclePropertyIds.EV_CHARGE_SWITCH,
                             VehiclePropertyIds.EV_CHARGE_TIME_REMAINING,
-                            VehiclePropertyIds.EV_REGENERATIVE_BRAKING_STATE)
+                            VehiclePropertyIds.EV_REGENERATIVE_BRAKING_STATE,
+                            VehiclePropertyIds.EV_BATTERY_AVERAGE_TEMPERATURE)
                     .build();
     private static final ImmutableList<Integer> PERMISSION_CAR_ENERGY_PORTS_PROPERTIES =
             ImmutableList.<Integer>builder()
@@ -590,10 +620,20 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.STEERING_WHEEL_LOCKED,
                             VehiclePropertyIds.STEERING_WHEEL_EASY_ACCESS_ENABLED)
                     .build();
+    private static final ImmutableList<Integer> PERMISSION_READ_CAR_AIRBAGS_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.SEAT_AIRBAGS_DEPLOYED)
+                    .build();
     private static final ImmutableList<Integer> PERMISSION_CONTROL_CAR_AIRBAGS_PROPERTIES =
             ImmutableList.<Integer>builder()
                     .add(
                             VehiclePropertyIds.SEAT_AIRBAG_ENABLED)
+                    .build();
+    private static final ImmutableList<Integer> PERMISSION_READ_IMPACT_SENSORS_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.IMPACT_DETECTED)
                     .build();
     private static final ImmutableList<Integer> PERMISSION_CONTROL_CAR_SEATS_PROPERTIES =
             ImmutableList.<Integer>builder()
@@ -633,6 +673,21 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.SEAT_LUMBAR_VERTICAL_MOVE,
                             VehiclePropertyIds.SEAT_WALK_IN_POS,
                             VehiclePropertyIds.SEAT_OCCUPANCY)
+                    .build();
+    private static final ImmutableList<Integer> PERMISSION_READ_CAR_SEAT_BELTS_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.SEAT_BELT_PRETENSIONER_DEPLOYED)
+                    .build();
+    private static final ImmutableList<Integer> PERMISSION_READ_VALET_MODE_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.VALET_MODE_ENABLED)
+                    .build();
+    private static final ImmutableList<Integer> PERMISSION_CONTROL_VALET_MODE_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.VALET_MODE_ENABLED)
                     .build();
     private static final ImmutableList<Integer> PERMISSION_IDENTIFICATION_PROPERTIES =
             ImmutableList.<Integer>builder()
@@ -691,7 +746,13 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
             ImmutableList.<Integer>builder()
                     .add(
                             VehiclePropertyIds.ABS_ACTIVE,
-                            VehiclePropertyIds.TRACTION_CONTROL_ACTIVE)
+                            VehiclePropertyIds.TRACTION_CONTROL_ACTIVE,
+                            VehiclePropertyIds.ELECTRONIC_STABILITY_CONTROL_ENABLED)
+                    .build();
+    private static final ImmutableList<Integer> PERMISSION_CONTROL_CAR_DYNAMICS_STATE_PROPERTIES =
+            ImmutableList.<Integer>builder()
+                    .add(
+                            VehiclePropertyIds.ELECTRONIC_STABILITY_CONTROL_ENABLED)
                     .build();
     private static final ImmutableList<Integer> PERMISSION_CONTROL_CAR_CLIMATE_PROPERTIES =
             ImmutableList.<Integer>builder()
@@ -823,7 +884,8 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.LANE_KEEP_ASSIST_ENABLED,
                             VehiclePropertyIds.LANE_CENTERING_ASSIST_ENABLED,
                             VehiclePropertyIds.EMERGENCY_LANE_KEEP_ASSIST_ENABLED,
-                            VehiclePropertyIds.CRUISE_CONTROL_ENABLED)
+                            VehiclePropertyIds.CRUISE_CONTROL_ENABLED,
+                            VehiclePropertyIds.LOW_SPEED_COLLISION_WARNING_ENABLED)
                     .build();
     private static final ImmutableList<Integer> PERMISSION_CONTROL_ADAS_SETTINGS_PROPERTIES =
             ImmutableList.<Integer>builder()
@@ -835,7 +897,8 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.LANE_KEEP_ASSIST_ENABLED,
                             VehiclePropertyIds.LANE_CENTERING_ASSIST_ENABLED,
                             VehiclePropertyIds.EMERGENCY_LANE_KEEP_ASSIST_ENABLED,
-                            VehiclePropertyIds.CRUISE_CONTROL_ENABLED)
+                            VehiclePropertyIds.CRUISE_CONTROL_ENABLED,
+                            VehiclePropertyIds.LOW_SPEED_COLLISION_WARNING_ENABLED)
                     .build();
     private static final ImmutableList<Integer> PERMISSION_READ_ADAS_STATES_PROPERTIES =
             ImmutableList.<Integer>builder()
@@ -852,7 +915,8 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                             VehiclePropertyIds.CRUISE_CONTROL_TARGET_SPEED,
                             VehiclePropertyIds.ADAPTIVE_CRUISE_CONTROL_TARGET_TIME_GAP,
                             VehiclePropertyIds
-                                    .ADAPTIVE_CRUISE_CONTROL_LEAD_VEHICLE_MEASURED_DISTANCE)
+                                    .ADAPTIVE_CRUISE_CONTROL_LEAD_VEHICLE_MEASURED_DISTANCE,
+                            VehiclePropertyIds.LOW_SPEED_COLLISION_WARNING_STATE)
                     .build();
     private static final ImmutableList<Integer> PERMISSION_CONTROL_ADAS_STATES_PROPERTIES =
             ImmutableList.<Integer>builder()
@@ -1227,6 +1291,14 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
              getDoorLockVerifier(),
              getDoorChildLockEnabledVerifier(),
              getVehicleDrivingAutomationCurrentLevelVerifier(),
+             getSeatAirbagsDeployedVerifier(),
+             getSeatBeltPretensionerDeployedVerifier(),
+             getImpactDetectedVerifier(),
+             getEvBatteryAverageTemperatureVerifier(),
+             getLowSpeedCollisionWarningEnabledVerifier(),
+             getLowSpeedCollisionWarningStateVerifier(),
+             getValetModeEnabledVerifier(),
+             getElectronicStabilityControlEnabledVerifier(),
              // TODO(b/273988725): Put all verifiers here.
         };
     }
@@ -1787,7 +1859,7 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ANDROID_VIC_VEHICLE_PROPERTIES)
+    @RequiresFlagsEnabled("android.car.feature.android_vic_vehicle_properties")
     public void testDriverDrowsinessAttentionSystemEnabledIfSupported() {
         getDriverDrowsinessAttentionSystemEnabledVerifier().verify();
     }
@@ -1815,13 +1887,13 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ANDROID_VIC_VEHICLE_PROPERTIES)
+    @RequiresFlagsEnabled("android.car.feature.android_vic_vehicle_properties")
     public void testDriverDrowsinessAttentionStateVerifierIfSupported() {
         getDriverDrowsinessAttentionStateVerifier().verify();
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ANDROID_VIC_VEHICLE_PROPERTIES)
+    @RequiresFlagsEnabled("android.car.feature.android_vic_vehicle_properties")
     public void testDriverDrowsinessAttentionStateAndErrorStateDontIntersect() {
         verifyEnumValuesAreDistinct(HANDS_ON_DETECTION_DRIVER_STATES, ERROR_STATES);
     }
@@ -1840,7 +1912,7 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ANDROID_VIC_VEHICLE_PROPERTIES)
+    @RequiresFlagsEnabled("android.car.feature.android_vic_vehicle_properties")
     public void testDriverDrowsinessAttentionWarningEnabledIfSupported() {
         getDriverDrowsinessAttentionWarningEnabledVerifier().verify();
     }
@@ -1868,13 +1940,13 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ANDROID_VIC_VEHICLE_PROPERTIES)
+    @RequiresFlagsEnabled("android.car.feature.android_vic_vehicle_properties")
     public void testDriverDrowsinessAttentionWarningIfSupported() {
         getDriverDrowsinessAttentionWarningVerifier().verify();
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ANDROID_VIC_VEHICLE_PROPERTIES)
+    @RequiresFlagsEnabled("android.car.feature.android_vic_vehicle_properties")
     public void testDriverDrowsinessAttentionWarningAndErrorStateDontIntersect() {
         verifyEnumValuesAreDistinct(DRIVER_DROWSINESS_ATTENTION_WARNINGS, ERROR_STATES);
     }
@@ -1893,7 +1965,7 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ANDROID_VIC_VEHICLE_PROPERTIES)
+    @RequiresFlagsEnabled("android.car.feature.android_vic_vehicle_properties")
     public void testDriverDistractionSystemEnabledIfSupported() {
         getDriverDistractionSystemEnabledVerifier().verify();
     }
@@ -1921,13 +1993,13 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ANDROID_VIC_VEHICLE_PROPERTIES)
+    @RequiresFlagsEnabled("android.car.feature.android_vic_vehicle_properties")
     public void testDriverDistractionStateVerifierIfSupported() {
         getDriverDistractionStateVerifier().verify();
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ANDROID_VIC_VEHICLE_PROPERTIES)
+    @RequiresFlagsEnabled("android.car.feature.android_vic_vehicle_properties")
     public void testDriverDistractionStateAndErrorStateDontIntersect() {
         verifyEnumValuesAreDistinct(DRIVER_DISTRACTION_STATES, ERROR_STATES);
     }
@@ -1946,7 +2018,7 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ANDROID_VIC_VEHICLE_PROPERTIES)
+    @RequiresFlagsEnabled("android.car.feature.android_vic_vehicle_properties")
     public void testDriverDistractionWarningEnabledIfSupported() {
         getDriverDistractionWarningEnabledVerifier().verify();
     }
@@ -1974,13 +2046,13 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ANDROID_VIC_VEHICLE_PROPERTIES)
+    @RequiresFlagsEnabled("android.car.feature.android_vic_vehicle_properties")
     public void testDriverDistractionWarningIfSupported() {
         getDriverDistractionWarningVerifier().verify();
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ANDROID_VIC_VEHICLE_PROPERTIES)
+    @RequiresFlagsEnabled("android.car.feature.android_vic_vehicle_properties")
     public void testDriverDistractionWarningAndErrorStateDontIntersect() {
         verifyEnumValuesAreDistinct(DRIVER_DISTRACTION_WARNINGS, ERROR_STATES);
     }
@@ -3618,6 +3690,22 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                 .verify();
     }
 
+    private VehiclePropertyVerifier<Float> getEvBatteryAverageTemperatureVerifier() {
+        return VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.EV_BATTERY_AVERAGE_TEMPERATURE,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_CONTINUOUS,
+                        Float.class, mCarPropertyManager)
+                .addReadPermission(Car.PERMISSION_ENERGY)
+                .build();
+    }
+
+    @Test
+    public void testEvBatteryAverageTemperatureIfSupported() {
+        getEvBatteryAverageTemperatureVerifier().verify();
+    }
+
     @Test
     public void testFuelLevelLowIfSupported() {
         VehiclePropertyVerifier.newBuilder(
@@ -3958,6 +4046,23 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                 .addWritePermission(Car.PERMISSION_CAR_ENGINE_DETAILED)
                 .build()
                 .verify();
+    }
+    private VehiclePropertyVerifier<Integer> getImpactDetectedVerifier() {
+        return VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.IMPACT_DETECTED,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Integer.class, mCarPropertyManager)
+                .setAllPossibleEnumValues(IMPACT_SENSOR_LOCATIONS)
+                .setBitMapEnumEnabled(true)
+                .addReadPermission(Car.PERMISSION_READ_IMPACT_SENSORS)
+                .build();
+    }
+
+    @Test
+    public void testImpactDetectedIfSupported() {
+        getImpactDetectedVerifier().verify();
     }
 
     @Test
@@ -5302,6 +5407,58 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
                 .verify();
     }
 
+    private VehiclePropertyVerifier<Integer> getSeatAirbagsDeployedVerifier() {
+        return VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.SEAT_AIRBAGS_DEPLOYED,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_SEAT,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Integer.class, mCarPropertyManager)
+                .setAllPossibleEnumValues(VEHICLE_AIRBAG_LOCATIONS)
+                .setBitMapEnumEnabled(true)
+                .addReadPermission(Car.PERMISSION_READ_CAR_AIRBAGS)
+                .build();
+    }
+
+    @Test
+    public void testSeatAirbagsDeployedIfSupported() {
+        getSeatAirbagsDeployedVerifier().verify();
+    }
+
+    private VehiclePropertyVerifier<Boolean> getSeatBeltPretensionerDeployedVerifier() {
+        return VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.SEAT_BELT_PRETENSIONER_DEPLOYED,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_SEAT,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Boolean.class, mCarPropertyManager)
+                .addReadPermission(Car.PERMISSION_READ_CAR_SEAT_BELTS)
+                .build();
+    }
+
+    @Test
+    public void testSeatBeltPretensionerDeployedIfSupported() {
+        getSeatBeltPretensionerDeployedVerifier().verify();
+    }
+
+    private VehiclePropertyVerifier<Boolean> getValetModeEnabledVerifier() {
+        return VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.VALET_MODE_ENABLED,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Boolean.class, mCarPropertyManager)
+                .addReadPermission(Car.PERMISSION_READ_VALET_MODE)
+                .addReadPermission(Car.PERMISSION_CONTROL_VALET_MODE)
+                .addWritePermission(Car.PERMISSION_CONTROL_VALET_MODE)
+                .build();
+    }
+
+    @Test
+    public void testValetModeEnabledIfSupported() {
+        getValetModeEnabledVerifier().verify();
+    }
+
     @Test
     @ApiTest(
             apis = {
@@ -6462,6 +6619,78 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     @Test
     public void testLaneCenteringAssistStateWithErrorState() {
         verifyEnumValuesAreDistinct(LANE_CENTERING_ASSIST_STATES, ERROR_STATES);
+    }
+
+    private VehiclePropertyVerifier<Boolean> getLowSpeedCollisionWarningEnabledVerifier() {
+        return VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.LOW_SPEED_COLLISION_WARNING_ENABLED,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Boolean.class, mCarPropertyManager)
+                .addReadPermission(Car.PERMISSION_READ_ADAS_SETTINGS)
+                .addReadPermission(Car.PERMISSION_CONTROL_ADAS_SETTINGS)
+                .addWritePermission(Car.PERMISSION_CONTROL_ADAS_SETTINGS)
+                .build();
+    }
+
+    @Test
+    public void testLowSpeedCollisionWarningEnabledIfSupported() {
+        getLowSpeedCollisionWarningEnabledVerifier().verify();
+    }
+
+    private VehiclePropertyVerifier<Integer> getLowSpeedCollisionWarningStateVerifier() {
+        ImmutableSet<Integer> combinedCarPropertyValues = ImmutableSet.<Integer>builder()
+                .addAll(LOW_SPEED_COLLISION_WARNING_STATES)
+                .add(
+                        ErrorState.OTHER_ERROR_STATE,
+                        ErrorState.NOT_AVAILABLE_DISABLED,
+                        ErrorState.NOT_AVAILABLE_SPEED_HIGH,
+                        ErrorState.NOT_AVAILABLE_POOR_VISIBILITY,
+                        ErrorState.NOT_AVAILABLE_SAFETY)
+                .build();
+
+        return VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.LOW_SPEED_COLLISION_WARNING_STATE,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Integer.class, mCarPropertyManager)
+                .setAllPossibleEnumValues(combinedCarPropertyValues)
+                .setDependentOnProperty(VehiclePropertyIds.LOW_SPEED_COLLISION_WARNING_ENABLED,
+                        ImmutableSet.of(Car.PERMISSION_READ_ADAS_SETTINGS,
+                                Car.PERMISSION_CONTROL_ADAS_SETTINGS))
+                .verifyErrorStates()
+                .addReadPermission(Car.PERMISSION_READ_ADAS_STATES)
+                .build();
+    }
+
+    @Test
+    public void testLowSpeedCollisionWarningStateIfSupported() {
+        getLowSpeedCollisionWarningStateVerifier().verify();
+    }
+
+    @Test
+    public void testLowSpeedCollisionWarningStateWithErrorState() {
+        verifyEnumValuesAreDistinct(LOW_SPEED_COLLISION_WARNING_STATES, ERROR_STATES);
+    }
+
+    private VehiclePropertyVerifier<Boolean> getElectronicStabilityControlEnabledVerifier() {
+        return VehiclePropertyVerifier.newBuilder(
+                        VehiclePropertyIds.ELECTRONIC_STABILITY_CONTROL_ENABLED,
+                        CarPropertyConfig.VEHICLE_PROPERTY_ACCESS_READ_WRITE,
+                        VehicleAreaType.VEHICLE_AREA_TYPE_GLOBAL,
+                        CarPropertyConfig.VEHICLE_PROPERTY_CHANGE_MODE_ONCHANGE,
+                        Boolean.class, mCarPropertyManager)
+                .addReadPermission(Car.PERMISSION_CAR_DYNAMICS_STATE)
+                .addReadPermission(Car.PERMISSION_CONTROL_CAR_DYNAMICS_STATE)
+                .addWritePermission(Car.PERMISSION_CONTROL_CAR_DYNAMICS_STATE)
+                .build();
+    }
+
+    @Test
+    public void testElectronicStabilityControlEnabledIfSupported() {
+        getElectronicStabilityControlEnabledVerifier().verify();
     }
 
     @SuppressWarnings("unchecked")
@@ -7760,6 +7989,27 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
     }
 
     @Test
+    public void testPermissionReadCarSeatBeltsGranted() {
+        verifyExpectedPropertiesWhenPermissionsGranted(
+                PERMISSION_READ_CAR_SEAT_BELTS_PROPERTIES,
+                Car.PERMISSION_READ_CAR_SEAT_BELTS);
+    }
+
+    @Test
+    public void testPermissionReadImpactSensorsGranted() {
+        verifyExpectedPropertiesWhenPermissionsGranted(
+                PERMISSION_READ_IMPACT_SENSORS_PROPERTIES,
+                Car.PERMISSION_READ_IMPACT_SENSORS);
+    }
+
+    @Test
+    public void testPermissionReadCarAirbagsGranted() {
+        verifyExpectedPropertiesWhenPermissionsGranted(
+                PERMISSION_READ_CAR_AIRBAGS_PROPERTIES,
+                Car.PERMISSION_READ_CAR_AIRBAGS);
+    }
+
+    @Test
     public void testPermissionControlCarAirbagsGranted() {
         verifyExpectedPropertiesWhenPermissionsGranted(
                 PERMISSION_CONTROL_CAR_AIRBAGS_PROPERTIES,
@@ -7834,6 +8084,13 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
         verifyExpectedPropertiesWhenPermissionsGranted(
                 PERMISSION_CAR_DYNAMICS_STATE_PROPERTIES,
                 Car.PERMISSION_CAR_DYNAMICS_STATE);
+    }
+
+    @Test
+    public void testPermissionControlCarDynamicsStateGranted() {
+        verifyExpectedPropertiesWhenPermissionsGranted(
+                PERMISSION_CONTROL_CAR_DYNAMICS_STATE_PROPERTIES,
+                Car.PERMISSION_CONTROL_CAR_DYNAMICS_STATE);
     }
 
     @Test
@@ -7925,6 +8182,20 @@ public final class CarPropertyManagerTest extends AbstractCarTestCase {
         verifyExpectedPropertiesWhenPermissionsGranted(
                 PERMISSION_CAR_DRIVING_STATE_PROPERTIES,
                 Car.PERMISSION_CAR_DRIVING_STATE);
+    }
+
+    @Test
+    public void testPermissionReadValetModeGranted() {
+        verifyExpectedPropertiesWhenPermissionsGranted(
+                PERMISSION_READ_VALET_MODE_PROPERTIES,
+                Car.PERMISSION_READ_VALET_MODE);
+    }
+
+    @Test
+    public void testPermissionControlValetModeGranted() {
+        verifyExpectedPropertiesWhenPermissionsGranted(
+                PERMISSION_CONTROL_VALET_MODE_PROPERTIES,
+                Car.PERMISSION_CONTROL_VALET_MODE);
     }
 
     @Test
