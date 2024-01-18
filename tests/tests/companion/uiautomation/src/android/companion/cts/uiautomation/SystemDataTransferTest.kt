@@ -177,13 +177,13 @@ class SystemDataTransferTest : UiAutomationTestBase(null, null) {
 
         val resultCode = requestPermissionTransferUserConsent(association.id, ACTION_CLICK_DISALLOW)
 
-        assertEquals(expected = RESULT_OK, actual = resultCode)
+        assertEquals(expected = RESULT_CANCELED, actual = resultCode)
         if (Flags.permSyncUserConsent()) {
             assertFalse(cdm.isPermissionTransferUserConsented(association.id))
         }
 
         val resultCode2 = requestPermissionTransferUserConsent(association.id, ACTION_CLICK_ALLOW)
-        assertEquals(expected = RESULT_CANCELED, actual = resultCode2)
+        assertEquals(expected = RESULT_OK, actual = resultCode2)
         if (Flags.permSyncUserConsent()) {
             assertTrue(cdm.isPermissionTransferUserConsented(association.id))
         }
