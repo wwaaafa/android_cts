@@ -1210,13 +1210,31 @@ public class UiBot {
     }
 
     /**
+     * Trys to set the orientation, if possible. No-op if the device does not support rotation
+     *
+     * @return True if the device orientation matches the requested orientation, else false
+     */
+    public boolean maybeSetScreenOrientation(int orientation) {
+        mAutoman.setRotation(orientation);
+        final int currentRotation =
+                InstrumentationRegistry.getInstrumentation()
+                        .getContext()
+                        .getSystemService(DisplayManager.class)
+                        .getDisplay(Display.DEFAULT_DISPLAY)
+                        .getRotation();
+        return orientation == currentRotation;
+    }
+
+    /**
      * Sets the screen orientation.
      *
      * @param orientation typically {@link #LANDSCAPE} or {@link #PORTRAIT}.
-     *
+     * @throws org.junit.AssumptionViolatedException if device does not support rotation.
      * @throws RetryableException if value didn't change.
      */
     public void setScreenOrientation(int orientation) throws Exception {
+        assumeTrue("Rotation is supported", Helper.isRotationSupported(mContext));
+
         // Use the platform API instead of mDevice.getDisplayRotation(), which is slow due to
         // waitForIdle(). waitForIdle() is not needed here because in AutoFillServiceTestCase we
         // always use UiBot#setScreenOrientation() to change the screen rotation, which blocks until
@@ -1471,7 +1489,8 @@ public class UiBot {
     public void touchOutsideDialog() throws Exception {
         Log.v(TAG, "touchOutsideDialog()");
         final UiObject2 picker = findFillDialogPicker();
-        assertThat(injectClick(new Point(1, picker.getVisibleBounds().top / 2))).isTrue();
+        final Rect bounds = picker.getVisibleBounds();
+        assertThat(injectClick(new Point(bounds.left, bounds.top / 2))).isTrue();
     }
 
     /**
@@ -1481,7 +1500,8 @@ public class UiBot {
         Log.v(TAG, "touchOutsideSaveDialog()");
         final UiObject2 picker = waitForObject(SAVE_UI_SELECTOR, SAVE_TIMEOUT);
         Log.v(TAG, "got picker: " + picker);
-        assertThat(injectClick(new Point(1, picker.getVisibleBounds().top / 2))).isTrue();
+        final Rect bounds = picker.getVisibleBounds();
+        assertThat(injectClick(new Point(bounds.left, bounds.top / 2))).isTrue();
     }
 
     /**
