@@ -88,7 +88,6 @@ public class MockSatelliteService extends SatelliteImplBase {
         }
     }
 
-    private boolean mIsCommunicationAllowedInLocation;
     private boolean mIsEnabled;
     private boolean mIsProvisioned;
     private boolean mIsSupported;
@@ -121,7 +120,6 @@ public class MockSatelliteService extends SatelliteImplBase {
      */
     public MockSatelliteService(@NonNull Executor executor) {
         super(executor);
-        mIsCommunicationAllowedInLocation = true;
         mIsEnabled = false;
         mIsProvisioned = false;
         mIsSupported = true;
@@ -497,17 +495,6 @@ public class MockSatelliteService extends SatelliteImplBase {
     }
 
     @Override
-    public void requestIsSatelliteCommunicationAllowedForCurrentLocation(
-            @NonNull IIntegerConsumer errorCallback, @NonNull IBooleanConsumer callback) {
-        logd("requestIsCommunicationAllowedForCurrentLocation: mErrorCode=" + mErrorCode);
-        if (mErrorCode != SatelliteResult.SATELLITE_RESULT_SUCCESS) {
-            runWithExecutor(() -> errorCallback.accept(mErrorCode));
-            return;
-        }
-        runWithExecutor(() -> callback.accept(mIsCommunicationAllowedInLocation));
-    }
-
-    @Override
     public void requestTimeForNextSatelliteVisibility(@NonNull IIntegerConsumer errorCallback,
             @NonNull IIntegerConsumer callback) {
         logd("requestTimeForNextSatelliteVisibility: mErrorCode=" + mErrorCode);
@@ -668,14 +655,6 @@ public class MockSatelliteService extends SatelliteImplBase {
 
     public void setShouldRespondTelephony(boolean shouldRespondTelephony) {
         mShouldRespondTelephony.set(shouldRespondTelephony);
-    }
-
-    /**
-     * Set whether satellite communication should be allowed.
-     */
-    public void setSatelliteCommunicationAllowed(boolean allowed) {
-        logd("setSatelliteCommunicationAllowed: allowed=" + allowed);
-        mIsCommunicationAllowedInLocation = allowed;
     }
 
     public void sendOnSatelliteDatagramReceived(SatelliteDatagram datagram, int pendingCount) {

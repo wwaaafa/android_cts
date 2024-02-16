@@ -952,15 +952,6 @@ class MockSatelliteServiceManager {
         mSatelliteService.setNtnSignalStrength(ntnSignalStrength);
     }
 
-    void setSatelliteCommunicationAllowed(boolean allowed) {
-        logd("setSatelliteCommunicationAllowed: allowed=" + allowed);
-        if (mSatelliteService == null) {
-            loge("setSatelliteCommunicationAllowed: mSatelliteService is null");
-            return;
-        }
-        mSatelliteService.setSatelliteCommunicationAllowed(allowed);
-    }
-
     void sendOnSatelliteDatagramReceived(SatelliteDatagram datagram, int pendingCount) {
         logd("sendOnSatelliteDatagramReceived");
         if (mSatelliteService == null) {
