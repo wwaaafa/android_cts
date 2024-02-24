@@ -19,22 +19,18 @@ package android.mediav2.cts;
 import static android.media.MediaCodecInfo.CodecCapabilities.FEATURE_MultipleFrames;
 import static android.mediav2.common.cts.CodecTestBase.SupportClass.CODEC_OPTIONAL;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
-import android.media.AudioFormat;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
-import android.mediav2.common.cts.CodecAsyncHandlerMultiAccessUnits;
+import android.mediav2.common.cts.CodecDecoderMultiAccessUnitTestBase;
 import android.mediav2.common.cts.CodecDecoderTestBase;
 import android.mediav2.common.cts.OutputManager;
 import android.os.Build;
 import android.platform.test.annotations.AppModeFull;
 import android.platform.test.annotations.RequiresFlagsEnabled;
-import android.util.Log;
-import android.util.Pair;
 
 import androidx.test.filters.LargeTest;
 import androidx.test.filters.SdkSuppress;
@@ -42,20 +38,16 @@ import androidx.test.filters.SdkSuppress;
 import com.android.compatibility.common.util.ApiTest;
 import com.android.media.codec.flags.Flags;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Tests audio decoders support for feature MultipleFrames.
@@ -74,7 +66,7 @@ import java.util.Locale;
 @AppModeFull(reason = "Instant apps cannot access the SD card")
 @RequiresFlagsEnabled(Flags.FLAG_LARGE_AUDIO_FRAME)
 @RunWith(Parameterized.class)
-public class CodecDecoderMultiAccessUnitTest extends CodecDecoderTestBase {
+public class CodecDecoderMultiAccessUnitTest extends CodecDecoderMultiAccessUnitTestBase {
     private static final String LOG_TAG = CodecDecoderMultiAccessUnitTest.class.getSimpleName();
     private static final String MEDIA_DIR = WorkDir.getMediaDirString();
     private static final int[][] OUT_SIZE_IN_MS = {
@@ -84,10 +76,6 @@ public class CodecDecoderMultiAccessUnitTest extends CodecDecoderTestBase {
             {100, 100},
             {40, 100}
     };
-
-    private CodecAsyncHandlerMultiAccessUnits mAsyncHandleMultiAccessUnits;
-    private int mMaxOutputSizeBytes;
-    private int mMaxInputLimitMs;
 
     @Parameterized.Parameters(name = "{index}_{0}_{1}")
     public static Collection<Object[]> input() {
@@ -321,21 +309,6 @@ public class CodecDecoderMultiAccessUnitTest extends CodecDecoderTestBase {
     public CodecDecoderMultiAccessUnitTest(String decoder, String mediaType, String testFile,
             String allTestParams) {
         super(decoder, mediaType, MEDIA_DIR + testFile, allTestParams);
-        mAsyncHandle = new CodecAsyncHandlerMultiAccessUnits();
-    }
-
-    private static float getCompressionRatio(String mediaType) {
-        switch (mediaType) {
-            case MediaFormat.MIMETYPE_AUDIO_FLAC:
-                return 0.7f;
-            case MediaFormat.MIMETYPE_AUDIO_G711_MLAW:
-            case MediaFormat.MIMETYPE_AUDIO_G711_ALAW:
-            case MediaFormat.MIMETYPE_AUDIO_MSGSM:
-                return 0.5f;
-            case MediaFormat.MIMETYPE_AUDIO_RAW:
-                return 1.0f;
-        }
-        return 0.1f;
     }
 
     @Before
@@ -345,176 +318,6 @@ public class CodecDecoderMultiAccessUnitTest extends CodecDecoderTestBase {
         ArrayList<MediaFormat> formatList = new ArrayList<>();
         formatList.add(format);
         checkFormatSupport(mCodecName, mMediaType, false, formatList, null, CODEC_OPTIONAL);
-        Object asyncHandle = mAsyncHandle;
-        Assert.assertTrue("async handle shall be an instance of CodecAsyncHandlerMultiAccessUnits"
-                        + " while testing Feature_MultipleFrames" + mTestConfig + mTestEnv,
-                asyncHandle instanceof CodecAsyncHandlerMultiAccessUnits);
-        mAsyncHandleMultiAccessUnits = (CodecAsyncHandlerMultiAccessUnits) asyncHandle;
-    }
-
-    @Override
-    protected void resetContext(boolean isAsync, boolean signalEOSWithLastFrame) {
-        super.resetContext(isAsync, signalEOSWithLastFrame);
-        mMaxOutputSizeBytes = 0;
-        mMaxInputLimitMs = 0;
-    }
-
-    @Override
-    protected void enqueueInput(int bufferIndex) {
-        if (mExtractor.getSampleSize() < 0) {
-            enqueueEOS(bufferIndex);
-        } else {
-            ArrayDeque<MediaCodec.BufferInfo> infos = new ArrayDeque<>();
-            ByteBuffer inputBuffer = mCodec.getInputBuffer(bufferIndex);
-            Assert.assertNotNull("error, getInputBuffer returned null.\n" + mTestConfig + mTestEnv,
-                    inputBuffer);
-            int offset = 0;
-            int basePts = (int) mExtractor.getSampleTime();
-            while (true) {
-                int size = (int) mExtractor.getSampleSize();
-                if (size <= 0) break;
-                int deltaPts = (int) mExtractor.getSampleTime() - basePts;
-                assertTrue("Difference between basePts: " + basePts + " and current pts: "
-                        + mExtractor.getSampleTime() + " should be greater than or equal "
-                        + "to zero.\n" + mTestConfig + mTestEnv, deltaPts >= 0);
-                if (deltaPts / 1000 > mMaxInputLimitMs) {
-                    break;
-                }
-                if (offset + size <= inputBuffer.capacity()) {
-                    mExtractor.readSampleData(inputBuffer, offset);
-                } else {
-                    if (offset == 0) {
-                        throw new RuntimeException(String.format(Locale.getDefault(),
-                                "access unit size %d exceeds capacity of the buffer %d, unable to "
-                                        + "queue input", size, inputBuffer.capacity()));
-                    }
-                    break;
-                }
-                int extractorFlags = mExtractor.getSampleFlags();
-                long pts = mExtractor.getSampleTime();
-                int codecFlags = 0;
-                if ((extractorFlags & MediaExtractor.SAMPLE_FLAG_SYNC) != 0) {
-                    codecFlags |= MediaCodec.BUFFER_FLAG_KEY_FRAME;
-                }
-                if ((extractorFlags & MediaExtractor.SAMPLE_FLAG_PARTIAL_FRAME) != 0) {
-                    codecFlags |= MediaCodec.BUFFER_FLAG_PARTIAL_FRAME;
-                }
-                if (!mExtractor.advance() && mSignalEOSWithLastFrame) {
-                    codecFlags |= MediaCodec.BUFFER_FLAG_END_OF_STREAM;
-                    mSawInputEOS = true;
-                }
-                MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
-                bufferInfo.set(offset, size, pts, codecFlags);
-                offset += bufferInfo.size;
-                infos.add(bufferInfo);
-            }
-            if (infos.size() > 0) {
-                mCodec.queueInputBuffers(bufferIndex, infos);
-                for (MediaCodec.BufferInfo info : infos) {
-                    if (info.size > 0 && (info.flags & (MediaCodec.BUFFER_FLAG_CODEC_CONFIG
-                            | MediaCodec.BUFFER_FLAG_PARTIAL_FRAME)) == 0) {
-                        mOutputBuff.saveInPTS(info.presentationTimeUs);
-                        mInputCount++;
-                    }
-                    if (ENABLE_LOGS) {
-                        Log.v(LOG_TAG, "input: id: " + bufferIndex + " size: " + info.size
-                                + " pts: " + info.presentationTimeUs + " flags: " + info.flags);
-                    }
-                }
-            }
-        }
-    }
-
-    private void validateOutputFormat(MediaFormat outFormat) {
-        Assert.assertTrue("Output format " + outFormat + " does not contain key "
-                        + MediaFormat.KEY_BUFFER_BATCH_MAX_OUTPUT_SIZE + ". \n"
-                        + mTestConfig + mTestEnv,
-                outFormat.containsKey(MediaFormat.KEY_BUFFER_BATCH_MAX_OUTPUT_SIZE));
-        mMaxOutputSizeBytes = outFormat.getInteger(MediaFormat.KEY_BUFFER_BATCH_MAX_OUTPUT_SIZE);
-    }
-
-    private void dequeueOutputs(int bufferIndex, ArrayDeque<MediaCodec.BufferInfo> infos) {
-        if (ENABLE_LOGS) {
-            Log.v(LOG_TAG, "output: id: " + bufferIndex);
-        }
-        if (mOutputCount == 0) {
-            validateOutputFormat(mCodec.getOutputFormat(bufferIndex));
-        }
-        ByteBuffer buf = mCodec.getOutputBuffer(bufferIndex);
-        int totalSize = 0;
-        for (MediaCodec.BufferInfo info : infos) {
-            Assert.assertNotNull("received null entry in dequeueOutput infos list. \n"
-                    + mTestConfig + mTestEnv, info);
-            if (info.size > 0 && mSaveToMem) {
-                mOutputBuff.saveToMemory(buf, info);
-            }
-            if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                mSawOutputEOS = true;
-            }
-            if (ENABLE_LOGS) {
-                Log.v(LOG_TAG, " flags: " + info.flags + " size: " + info.size + " timestamp: "
-                        + info.presentationTimeUs);
-            }
-            if (info.size > 0 && ((info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) == 0)) {
-                mOutputBuff.saveOutPTS(info.presentationTimeUs);
-                mOutputCount++;
-            }
-            totalSize += info.size;
-        }
-        assertTrue("Sum of all info sizes: " + totalSize + " exceeds max output size: "
-                        + mMaxOutputSizeBytes + " \n" + mTestConfig + mTestEnv,
-                totalSize <= mMaxOutputSizeBytes);
-        mCodec.releaseOutputBuffer(bufferIndex, false);
-    }
-
-    @Override
-    protected void doWork(int frameLimit) throws InterruptedException, IOException {
-        // dequeue output after inputEOS is expected to be done in waitForAllOutputs()
-        while (!mAsyncHandleMultiAccessUnits.hasSeenError() && !mSawInputEOS
-                && mInputCount < frameLimit) {
-            Pair<Integer, ArrayDeque<MediaCodec.BufferInfo>> element =
-                    mAsyncHandleMultiAccessUnits.getWorkList();
-            if (element != null) {
-                int bufferID = element.first;
-                ArrayDeque<MediaCodec.BufferInfo> infos = element.second;
-                if (infos != null) {
-                    // <id, infos> corresponds to output callback. Handle it accordingly
-                    dequeueOutputs(bufferID, infos);
-                } else {
-                    // <id, null> corresponds to input callback. Handle it accordingly
-                    enqueueInput(bufferID);
-                }
-            }
-        }
-    }
-
-    @Override
-    protected void queueEOS() throws InterruptedException {
-        while (!mAsyncHandleMultiAccessUnits.hasSeenError() && !mSawInputEOS) {
-            Pair<Integer, ArrayDeque<MediaCodec.BufferInfo>> element =
-                    mAsyncHandleMultiAccessUnits.getWorkList();
-            if (element != null) {
-                int bufferID = element.first;
-                ArrayDeque<MediaCodec.BufferInfo> infos = element.second;
-                if (infos != null) {
-                    dequeueOutputs(bufferID, infos);
-                } else {
-                    enqueueEOS(element.first);
-                }
-            }
-        }
-    }
-
-    @Override
-    protected void waitForAllOutputs() throws InterruptedException {
-        while (!mAsyncHandleMultiAccessUnits.hasSeenError() && !mSawOutputEOS) {
-            Pair<Integer, ArrayDeque<MediaCodec.BufferInfo>> element =
-                    mAsyncHandleMultiAccessUnits.getOutputs();
-            if (element != null) {
-                dequeueOutputs(element.first, element.second);
-            }
-        }
-        validateTestState();
     }
 
     /**
@@ -549,22 +352,10 @@ public class CodecDecoderMultiAccessUnitTest extends CodecDecoderTestBase {
         OutputManager testB = new OutputManager(ref.getSharedErrorLogs());
         MediaFormat format = setUpSource(mTestFile);
         int maxSampleSize = getMaxSampleSizeForMediaType(mTestFile, mMediaType);
-        int bytesPerSample = AudioFormat.getBytesPerSample(
-                format.getInteger(MediaFormat.KEY_PCM_ENCODING, AudioFormat.ENCODING_PCM_16BIT));
-        int sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE);
-        int channelCount = format.getInteger(MediaFormat.KEY_CHANNEL_COUNT);
         mCodec = MediaCodec.createByCodecName(mCodecName);
         for (int[] outSizeInMs : OUT_SIZE_IN_MS) {
-            int maxOutputSize =
-                    (outSizeInMs[0] * bytesPerSample * sampleRate * channelCount) / 1000;
-            int maxInputSize = Math.max(maxSampleSize,
-                    (int) (maxOutputSize * getCompressionRatio(mMediaType)));
-            int thresholdOutputSize =
-                    (outSizeInMs[1] * bytesPerSample * sampleRate * channelCount) / 1000;
-            format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, maxInputSize);
-            format.setInteger(MediaFormat.KEY_BUFFER_BATCH_MAX_OUTPUT_SIZE, maxOutputSize);
-            format.setInteger(MediaFormat.KEY_BUFFER_BATCH_THRESHOLD_OUTPUT_SIZE,
-                    thresholdOutputSize);
+            configureKeysForLargeAudioFrameMode(format, maxSampleSize, outSizeInMs[0],
+                    outSizeInMs[1]);
             for (boolean eosType : boolStates) {
                 mOutputBuff = eosType ? testA : testB;
                 mOutputBuff.reset();
