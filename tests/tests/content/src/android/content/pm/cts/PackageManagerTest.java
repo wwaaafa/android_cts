@@ -272,6 +272,8 @@ public class PackageManagerTest {
     private static final String DIFF_SIGNER_CERTIFICATE = SAMPLE_APK_BASE + "cts-testkey1.x509.pem";
 
     private static final String EMPTY_APP_PACKAGE_NAME = "android.content.cts.emptytestapp";
+    private static final String EMPTY_APP_ACTIVITY_NAME =
+            "android.content.cts.emptytestapp.MockActivity";
     private static final String EMPTY_APP_MAX_PACKAGE_NAME = "android.content.cts.emptytestapp27j"
             + "EBRNRG3ozwBsGr1sVIM9U0bVTI2TdyIyeRkZgW4JrJefwNIBAmCg4AzqXiCvG6JjqA0uTCWSFu2YqAVxVd"
             + "iRKAay19k5VFlSaM7QW9uhvlrLQqsTW01ofFzxNDbp2QfIFHZR6rebKzKBz6byQFM0DYQnYMwFWXjWkMPN"
@@ -992,6 +994,23 @@ public class PackageManagerTest {
             }
         }
         assertTrue(isContained);
+    }
+
+    @Test
+    public void testEnabledSettingAfterUpdate() {
+        assertThat(installPackage(LONG_LABEL_NAME_APK)).isTrue();
+
+        ComponentName compName = new ComponentName(EMPTY_APP_PACKAGE_NAME, EMPTY_APP_ACTIVITY_NAME);
+        SystemUtil.runWithShellPermissionIdentity(() ->
+                mPackageManager.setComponentEnabledSetting(compName,
+                 COMPONENT_ENABLED_STATE_ENABLED, DONT_KILL_APP));
+        assertEquals(COMPONENT_ENABLED_STATE_ENABLED,
+                mPackageManager.getComponentEnabledSetting(compName));
+
+        // Update to the app whose enabled component is removed
+        assertThat(installPackage(EMPTY_APP_APK)).isTrue();
+        assertEquals(COMPONENT_ENABLED_STATE_DEFAULT,
+                mPackageManager.getComponentEnabledSetting(compName));
     }
 
     @Test
@@ -3502,6 +3521,9 @@ victim $UID 1 /data/user/0 default:targetSdkVersion=28 none 0 0 1 @null
         assertEquals(HELLO_WORLD_PACKAGE_NAME, archivedPackage.getPackageName());
         archivedPackage.setSigningInfo(signingInfo);
         assertEquals(signingInfo, archivedPackage.getSigningInfo());
+        assertEquals(3, archivedPackage.getSigningInfo().getSchemeVersion());
+        assertThat(archivedPackage.getSigningInfo().getPublicKeys()).containsExactlyElementsIn(
+                List.of(publicKey));
         archivedPackage.setLauncherActivities(activities);
         assertEquals(activities, archivedPackage.getLauncherActivities());
         archivedPackage.setVersionCode(1);
