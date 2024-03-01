@@ -26,6 +26,7 @@ android_test {
         "Harrier",
         "junit",
         "truth",
+        "telephony_flags_core_java_lib",
     ],
 
     srcs: ["src/**/*.java"],
