@@ -978,7 +978,10 @@ public class SatelliteManagerTestBase {
     protected static void requestSatelliteEnabledForDemoMode(boolean enabled) {
         LinkedBlockingQueue<Integer> error = new LinkedBlockingQueue<>(1);
         sSatelliteManager.requestEnabled(
-                new EnableRequestAttributes.Builder(enabled).setDemoMode(true).build(),
+                new EnableRequestAttributes.Builder(enabled)
+                        .setDemoMode(true)
+                        .setEmergencyMode(true)
+                        .build(),
                 getContext().getMainExecutor(), error::offer);
         Integer errorCode;
         try {
