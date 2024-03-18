@@ -185,6 +185,18 @@ class BackupAndRestoreTest : CoreTestBase() {
         assertRoleGrantedToApp(testApp, DEVICE_PROFILE_WATCH)
     }
 
+    @Test
+    fun test_applyRestoredPayload_badPayloads_noExceptionsThrown() {
+        // Empty payload
+        applyRestoredPayload("", userId)
+
+        // Bad version number
+        applyRestoredPayload("/////w==", userId)
+
+        // Correct version number but bad payload
+        applyRestoredPayload("AAAAAKo=", userId)
+    }
+
     private fun getBackupPayload(userId: Int) =
             runShellCommand("cmd companiondevice get-backup-payload $userId")
 
