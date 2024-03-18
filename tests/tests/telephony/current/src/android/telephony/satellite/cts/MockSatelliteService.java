@@ -727,6 +727,16 @@ public class MockSatelliteService extends SatelliteImplBase {
                 listener.onSatelliteCapabilitiesChanged(satelliteCapabilities)));
     }
 
+    /**
+     * This API is used by CTS test cases to update satellite supported state.
+     * @param supported The new satellite supported state.
+     */
+    public void sendOnSatelliteSupportedStateChanged(boolean supported) {
+        logd("sendOnSatelliteSupportedStateChanged: supported=" + supported);
+        mRemoteListeners.values().forEach(listener -> runWithExecutor(() ->
+                listener.onSatelliteSupportedStateChanged(supported)));
+    }
+
     public void setWaitToSend(boolean wait) {
         mWaitToSend.set(wait);
     }
