@@ -17,18 +17,23 @@
 package android.settings.cts;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assume.assumeTrue;
 
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.platform.test.annotations.RequiresFlagsEnabled;
+import android.platform.test.flag.junit.CheckFlagsRule;
+import android.platform.test.flag.junit.DeviceFlagsValueProvider;
 import android.provider.Settings;
 
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.android.internal.telephony.flags.Flags;
+
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -38,11 +43,11 @@ import org.junit.runner.RunWith;
  */
 @RunWith(AndroidJUnit4.class)
 public class SettingsIntentsTest {
+    @Rule
+    public final CheckFlagsRule mCheckFlagsRule =
+            DeviceFlagsValueProvider.createCheckFlagsRule();
 
     static final String TAG = "SettingsIntentsTest";
-
-    private static final String FEATURE_TELEPHONY_SATELLITE =
-            "android.hardware.telephony.satellite";
 
     private PackageManager mPackageManager;
 
@@ -50,10 +55,10 @@ public class SettingsIntentsTest {
     public void setUp() throws Exception {
         mPackageManager =
                 InstrumentationRegistry.getInstrumentation().getContext().getPackageManager();
-        assumeTrue(mPackageManager.hasSystemFeature(FEATURE_TELEPHONY_SATELLITE));
     }
 
     @Test
+    @RequiresFlagsEnabled(Flags.FLAG_CARRIER_ENABLED_SATELLITE_FLAG)
     public void settingActivity_launchSatelliteSettingIntent() {
         Context targetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
 
