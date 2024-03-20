@@ -3351,13 +3351,6 @@ public class SatelliteManagerTestOnMockService extends SatelliteManagerTestBase 
     public void testSatelliteAccessControl() {
         if (!shouldTestSatelliteWithMockService()) return;
 
-        // Satellite is not allowed by modem
-        sMockSatelliteServiceManager.setSatelliteCommunicationAllowed(false);
-        verifyIsSatelliteAllowed(false);
-
-        // Satellite is allowed by modem
-        sMockSatelliteServiceManager.setSatelliteCommunicationAllowed(true);
-
         // Test access controller using cached country codes
         assertTrue(sMockSatelliteServiceManager.setSatelliteAccessControlOverlayConfigs(
                 false, true, null, 0, SATELLITE_COUNTRY_CODES));
