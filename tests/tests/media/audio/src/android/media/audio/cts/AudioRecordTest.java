@@ -1208,6 +1208,14 @@ public class AudioRecordTest {
             final int BUFFER_SAMPLES = BUFFER_FRAMES * numChannels;
             // TODO: verify behavior when buffer size is not a multiple of frame size.
 
+            // For fine accuracy timestamp checks, we sample the timestamps
+            // 1/6 and 5/6 of the way through recording to avoid the effects
+            // of AudioRecord start and stop.
+            final int runningTimestampStart = targetSamples * 1 / 6;
+            final int runningTimestampStop = targetSamples * 5 / 6;
+            AudioTimestamp running1Ts = new AudioTimestamp();
+            AudioTimestamp running2Ts = new AudioTimestamp();
+
             int samplesRead = 0;
             // abstract out the buffer type used with lambda.
             final byte[] byteData = new byte[BUFFER_SAMPLES];
@@ -1281,6 +1289,14 @@ public class AudioRecordTest {
                     assertTrue("expecting valid timestamp with nonzero nanoTime",
                             startTs.nanoTime > 0);
                 }
+                if (samplesRead > runningTimestampStart
+                        && running1Ts.nanoTime == 0 && ret > 0) {
+                    record.getTimestamp(running1Ts, AudioTimestamp.TIMEBASE_MONOTONIC);
+                }
+                if (samplesRead > runningTimestampStop
+                        && running2Ts.nanoTime == 0 && ret > 0) {
+                    record.getTimestamp(running2Ts, AudioTimestamp.TIMEBASE_MONOTONIC);
+                }
             }
 
             // We've read all the frames, now check the record timing.
@@ -1334,6 +1350,7 @@ public class AudioRecordTest {
             listener.stop();
 
             // get stop timestamp
+            // Note: the stop timestamp is collected *after* stop is called.
             AudioTimestamp stopTs = new AudioTimestamp();
             assertEquals("should successfully get timestamp after stop",
                     AudioRecord.SUCCESS,
@@ -1361,7 +1378,12 @@ public class AudioRecordTest {
             // that first data arrives before the first timestamp is ready.
             assertTrue("no start timestamp read", startTs.nanoTime > 0);
 
-            verifyContinuousTimestamps(startTs, stopTs, TEST_SR);
+            // we allow more timestamp inaccuacy for the entire recording run,
+            // including start and stop.
+            verifyContinuousTimestamps(startTs, stopTs, TEST_SR, true /* coarse */);
+
+            // during the middle 2/3 of the run, we expect stable timestamps.
+            verifyContinuousTimestamps(running1Ts, running2Ts, TEST_SR, false /* coarse */);
 
             // clean up
             if (makeSomething != null) {
@@ -1578,18 +1600,19 @@ public class AudioRecordTest {
     }
 
     private void verifyContinuousTimestamps(
-            AudioTimestamp startTs, AudioTimestamp stopTs, int sampleRate)
+            AudioTimestamp startTs, AudioTimestamp stopTs, int sampleRate, boolean coarse)
             throws Exception {
         final long timeDiff = stopTs.nanoTime - startTs.nanoTime;
         final long frameDiff = stopTs.framePosition - startTs.framePosition;
         final long NANOS_PER_SECOND = 1000000000;
         final long timeByFrames = frameDiff * NANOS_PER_SECOND / sampleRate;
         final double ratio = (double)timeDiff / timeByFrames;
+        final double tolerance = (isLowLatencyDevice() ? 0.01 : 0.5) * (coarse ? 3. : 1.);
 
         // Usually the ratio is accurate to one part per thousand or better.
         // Log.d(TAG, "ratio=" + ratio + ", timeDiff=" + timeDiff + ", frameDiff=" + frameDiff +
         //        ", timeByFrames=" + timeByFrames + ", sampleRate=" + sampleRate);
-        assertEquals(1.0 /* expected */, ratio, isLowLatencyDevice() ? 0.01 : 0.5 /* delta */);
+        assertEquals(1.0 /* expected */, ratio, tolerance);
     }
 
     // remove if AudioTimestamp has a better toString().
