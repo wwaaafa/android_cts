@@ -855,4 +855,18 @@ public class SatelliteManagerTest extends SatelliteManagerTestBase {
                 () -> sSatelliteManager.getSatellitePlmnsForCarrier(
                         getActiveSubIDForCarrierSatelliteTest()));
     }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_OEM_ENABLED_SATELLITE_FLAG)
+    public void testRegisterForSatelliteSupportedStateChanged() {
+        if (!shouldTestSatellite()) return;
+
+        SatelliteSupportedStateCallbackTest satelliteSupportedStateCallback =
+                new SatelliteSupportedStateCallbackTest();
+
+        // Throws SecurityException as we do not have SATELLITE_COMMUNICATION permission.
+        assertThrows(SecurityException.class,
+                () -> sSatelliteManager.registerForSupportedStateChanged(
+                        getContext().getMainExecutor(), satelliteSupportedStateCallback));
+    }
 }

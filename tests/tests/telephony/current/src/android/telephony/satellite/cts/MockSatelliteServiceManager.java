@@ -1004,6 +1004,15 @@ class MockSatelliteServiceManager {
         mSatelliteService.sendOnSatelliteCapabilitiesChanged(satelliteCapabilities);
     }
 
+    void sendOnSatelliteSupportedStateChanged(boolean supported) {
+        logd("sendOnSatelliteSupportedStateChanged: " + supported);
+        if (mSatelliteService == null) {
+            loge("sendOnSatelliteSupportedStateChanged: mSatelliteService is null");
+            return;
+        }
+        mSatelliteService.sendOnSatelliteSupportedStateChanged(supported);
+    }
+
     boolean setSatelliteListeningTimeoutDuration(long timeoutMillis) {
         try {
             String result =
