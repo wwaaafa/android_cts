@@ -3623,6 +3623,66 @@ public class SatelliteManagerTestOnMockService extends SatelliteManagerTestBase 
                 TIMEOUT_TYPE_WAIT_FOR_SATELLITE_ENABLING_RESPONSE, 0));
     }
 
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_OEM_ENABLED_SATELLITE_FLAG)
+    public void testRegisterForSupportedStateChanged() {
+        if (!shouldTestSatelliteWithMockService()) return;
+
+        logd("testRegisterForSupportedStateChanged: start");
+        grantSatellitePermission();
+
+        /* Backup satellite supported state */
+        final Pair<Boolean, Integer> originalSupportState = requestIsSatelliteSupported();
+
+        SatelliteSupportedStateCallbackTest satelliteSupportedStateCallbackTest =
+                new SatelliteSupportedStateCallbackTest();
+
+        /* Register callback for satellite supported state changed event */
+        @SatelliteManager.SatelliteResult int registerError =
+                sSatelliteManager.registerForSupportedStateChanged(
+                        getContext().getMainExecutor(), satelliteSupportedStateCallbackTest);
+        assertEquals(SatelliteManager.SATELLITE_RESULT_SUCCESS, registerError);
+
+        /* Verify redundant report is ignored */
+        sendOnSatelliteSupportedStateChanged(true);
+        assertFalse(satelliteSupportedStateCallbackTest.waitUntilResult(1));
+
+        /* Satellite is unsupported */
+        sendOnSatelliteSupportedStateChanged(false);
+        assertTrue(satelliteSupportedStateCallbackTest.waitUntilResult(1));
+        assertFalse(satelliteSupportedStateCallbackTest.isSupported);
+
+        /* Verify satellite is disabled */
+        Pair<Boolean, Integer> pairResult = requestIsSatelliteSupported();
+        assertFalse(pairResult.first);
+        assertNull(pairResult.second);
+
+        /* Verify redundant report is ignored */
+        sendOnSatelliteSupportedStateChanged(false);
+        assertFalse(satelliteSupportedStateCallbackTest.waitUntilResult(1));
+
+        /* Verify whether satellite support changed event has received */
+        sendOnSatelliteSupportedStateChanged(true);
+        assertTrue(satelliteSupportedStateCallbackTest.waitUntilResult(1));
+        assertTrue(satelliteSupportedStateCallbackTest.isSupported);
+
+        /* Verify whether notified and requested capabilities are equal */
+        pairResult = requestIsSatelliteSupported();
+        assertTrue(pairResult.first);
+        assertNull(pairResult.second);
+
+        /* Verify redundant report is ignored */
+        sendOnSatelliteSupportedStateChanged(true);
+        assertFalse(satelliteSupportedStateCallbackTest.waitUntilResult(1));
+
+        /* Restore initial satellite support state */
+        sendOnSatelliteSupportedStateChanged(originalSupportState.first);
+        satelliteSupportedStateCallbackTest.clearSupportedStates();
+
+        sSatelliteManager.unregisterForSupportedStateChanged(satelliteSupportedStateCallbackTest);
+        revokeSatellitePermission();
+    }
+
     /*
      * Before calling this function, caller need to make sure the modem is in LISTENING or IDLE
      * state.
@@ -4399,6 +4459,37 @@ public class SatelliteManagerTestOnMockService extends SatelliteManagerTestBase 
         return new Pair<>(SatelliteCapabilities.get(), callback.get());
     }
 
+    private Pair<Boolean, Integer> requestIsSatelliteSupported() {
+        final AtomicReference<Boolean> supported = new AtomicReference<>();
+        final AtomicReference<Integer> callback = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
+        OutcomeReceiver<Boolean, SatelliteManager.SatelliteException> receiver =
+                new OutcomeReceiver<>() {
+                    @Override
+                    public void onResult(Boolean result) {
+                        logd("requestIsSatelliteSupported.onResult: result=" + result);
+                        supported.set(result);
+                        latch.countDown();
+                    }
+
+                    @Override
+                    public void onError(SatelliteManager.SatelliteException exception) {
+                        logd("requestIsSatelliteSupported.onError: onError="
+                                + exception.getErrorCode());
+                        callback.set(exception.getErrorCode());
+                        latch.countDown();
+                    }
+                };
+
+        sSatelliteManager.requestIsSupported(getContext().getMainExecutor(), receiver);
+        try {
+            assertTrue(latch.await(TIMEOUT, TimeUnit.MILLISECONDS));
+        } catch (InterruptedException e) {
+            fail(e.toString());
+        }
+        return new Pair<>(supported.get(), callback.get());
+    }
+
     private abstract static class BaseReceiver extends BroadcastReceiver {
         protected CountDownLatch mLatch = new CountDownLatch(1);
 
@@ -4482,6 +4573,10 @@ public class SatelliteManagerTestOnMockService extends SatelliteManagerTestBase 
     private void sendOnSatelliteCapabilitiesChanged(
             android.telephony.satellite.stub.SatelliteCapabilities satelliteCapabilities) {
         sMockSatelliteServiceManager.sendOnSatelliteCapabilitiesChanged(satelliteCapabilities);
+    }
+
+    private void sendOnSatelliteSupportedStateChanged(boolean supported) {
+        sMockSatelliteServiceManager.sendOnSatelliteSupportedStateChanged(supported);
     }
 
     @Nullable

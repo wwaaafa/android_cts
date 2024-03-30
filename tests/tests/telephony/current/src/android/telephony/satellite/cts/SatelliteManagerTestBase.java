@@ -53,6 +53,7 @@ import android.telephony.satellite.SatelliteDatagramCallback;
 import android.telephony.satellite.SatelliteManager;
 import android.telephony.satellite.SatelliteModemStateCallback;
 import android.telephony.satellite.SatelliteProvisionStateCallback;
+import android.telephony.satellite.SatelliteSupportedStateCallback;
 import android.telephony.satellite.SatelliteTransmissionUpdateCallback;
 import android.text.TextUtils;
 import android.util.Log;
@@ -610,6 +611,66 @@ public class SatelliteManagerTestBase {
                 }
             }
             return true;
+        }
+    }
+
+    protected static class SatelliteSupportedStateCallbackTest implements
+            SatelliteSupportedStateCallback {
+        public boolean isSupported = false;
+        private List<Boolean> mSupportedStates = new ArrayList<>();
+        private final Object mSupportedStatesLock = new Object();
+        private final Semaphore mSemaphore = new Semaphore(0);
+
+        @Override
+        public void onSatelliteSupportedStateChanged(boolean supported) {
+            logd("onSatelliteSupportedStateChanged: supported=" + supported);
+            isSupported = supported;
+            synchronized (mSupportedStatesLock) {
+                mSupportedStates.add(supported);
+            }
+            try {
+                mSemaphore.release();
+            } catch (Exception ex) {
+                loge("onSatelliteSupportedStateChanged: Got exception, ex=" + ex);
+            }
+        }
+
+        public boolean waitUntilResult(int expectedNumberOfEvents) {
+            for (int i = 0; i < expectedNumberOfEvents; i++) {
+                try {
+                    if (!mSemaphore.tryAcquire(TIMEOUT, TimeUnit.MILLISECONDS)) {
+                        loge("Timeout to receive onSatelliteSupportedStateChanged");
+                        return false;
+                    }
+                } catch (Exception ex) {
+                    loge("onSatelliteSupportedStateChanged: Got exception=" + ex);
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public void clearSupportedStates() {
+            synchronized (mSupportedStatesLock) {
+                mSupportedStates.clear();
+                mSemaphore.drainPermits();
+            }
+        }
+
+        public int getTotalCountOfSupportedStates() {
+            synchronized (mSupportedStatesLock) {
+                return mSupportedStates.size();
+            }
+        }
+
+        public Boolean getSupportedState(int index) {
+            synchronized (mSupportedStatesLock) {
+                if (index < mSupportedStates.size()) {
+                    return mSupportedStates.get(index);
+                }
+            }
+            loge("getSupportedState: invalid index=" + index);
+            return null;
         }
     }
 
