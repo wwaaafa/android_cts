@@ -1198,6 +1198,14 @@ class MockSatelliteServiceManager {
         return Arrays.stream(plmnArr).toList();
     }
 
+    @Nullable Boolean getIsEmergency() {
+        if (mSatelliteService == null) {
+            loge("getIsEmergency: mSatelliteService is null");
+            return null;
+        }
+        return mSatelliteService.getIsEmergency();
+    }
+
     /** Set telephony country codes */
     boolean setCountryCodes(boolean reset, @Nullable String currentNetworkCountryCodes,
             @Nullable String cachedNetworkCountryCodes, @Nullable String locationCountryCode,

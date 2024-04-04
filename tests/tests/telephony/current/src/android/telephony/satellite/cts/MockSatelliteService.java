@@ -111,6 +111,7 @@ public class MockSatelliteService extends SatelliteImplBase {
     private IIntegerConsumer mRequestSatelliteEnabledErrorCallback;
     private IIntegerConsumer mRequestSatelliteDisabledErrorCallback;
     private final Object mRequestSatelliteEnabledLock = new Object();
+    private boolean mIsEmergnecy;
 
     /**
      * Create MockSatelliteService using the Executor specified for methods being called from
@@ -125,6 +126,7 @@ public class MockSatelliteService extends SatelliteImplBase {
         mIsSupported = true;
         mModemState = SatelliteModemState.SATELLITE_MODEM_STATE_OFF;
         mSupportedRadioTechnologies = SUPPORTED_RADIO_TECHNOLOGIES;
+        mIsEmergnecy = false;
     }
 
     /**
@@ -196,10 +198,11 @@ public class MockSatelliteService extends SatelliteImplBase {
 
     @Override
     public void requestSatelliteEnabled(boolean enableSatellite, boolean enableDemoMode,
-            @NonNull IIntegerConsumer errorCallback) {
+            boolean isEmergency, @NonNull IIntegerConsumer errorCallback) {
         logd("requestSatelliteEnabled: mErrorCode=" + mErrorCode
                 + ", enableSatellite=" + enableSatellite
                 + ", enableDemoMode=" + enableDemoMode
+                + ", isEmergency= " + isEmergency
                 + ", mShouldRespondTelephony=" + mShouldRespondTelephony.get());
         if (mErrorCode != SatelliteResult.SATELLITE_RESULT_SUCCESS) {
             if (mShouldRespondTelephony.get()) {
@@ -213,6 +216,7 @@ public class MockSatelliteService extends SatelliteImplBase {
         } else {
             disableSatellite(errorCallback);
         }
+        mIsEmergnecy = isEmergency;
 
         if (mLocalListener != null) {
             runWithExecutor(() -> mLocalListener.onRequestSatelliteEnabled(enableSatellite));
@@ -848,6 +852,14 @@ public class MockSatelliteService extends SatelliteImplBase {
         logd("updateSatelliteProvisionState: isProvisioned=" + isProvisioned
                 + ", mIsProvisioned=" + mIsProvisioned);
         mIsProvisioned = isProvisioned;
+    }
+
+    /**
+     * Get the emergency mode or not
+     */
+    public boolean getIsEmergency() {
+        logd("getIsEmergency: mIsEmergnecy=" + mIsEmergnecy);
+        return mIsEmergnecy;
     }
 
     /**
