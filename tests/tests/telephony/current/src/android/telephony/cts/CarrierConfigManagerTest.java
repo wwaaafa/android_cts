@@ -23,9 +23,11 @@ import static android.telephony.CarrierConfigManager.KEY_CARRIER_NAME_OVERRIDE_B
 import static android.telephony.CarrierConfigManager.KEY_CARRIER_NAME_STRING;
 import static android.telephony.CarrierConfigManager.KEY_CARRIER_VOLTE_PROVISIONED_BOOL;
 import static android.telephony.CarrierConfigManager.KEY_CELLULAR_SERVICE_CAPABILITIES_INT_ARRAY;
+import static android.telephony.CarrierConfigManager.KEY_EMERGENCY_CALL_TO_SATELLITE_T911_HANDOVER_TIMEOUT_MILLIS_INT;
 import static android.telephony.CarrierConfigManager.KEY_FORCE_HOME_NETWORK_BOOL;
-import static android.telephony.CarrierConfigManager.KEY_SATELLITE_CONNECTION_HYSTERESIS_SEC_INT;
 import static android.telephony.CarrierConfigManager.KEY_OVERRIDE_WFC_ROAMING_MODE_WHILE_USING_NTN_BOOL;
+import static android.telephony.CarrierConfigManager.KEY_SATELLITE_CONNECTION_HYSTERESIS_SEC_INT;
+import static android.telephony.CarrierConfigManager.KEY_EMERGENCY_MESSAGING_SUPPORTED_BOOL;
 import static android.telephony.CarrierConfigManager.KEY_SATELLITE_ENTITLEMENT_STATUS_REFRESH_DAYS_INT;
 import static android.telephony.ServiceState.STATE_IN_SERVICE;
 
@@ -239,6 +241,13 @@ public class CarrierConfigManagerTest {
             assertEquals("KEY_SATELLITE_ENTITLEMENT_STATUS_REFRESH_DAYS_INT "
                     + "doesn't match static default.",
                     config.getInt(KEY_SATELLITE_ENTITLEMENT_STATUS_REFRESH_DAYS_INT), 7);
+            assertFalse("KEY_EMERGENCY_MESSAGING_SUPPORTED_BOOL "
+                            + "doesn't match static default.",
+                    config.getBoolean(KEY_EMERGENCY_MESSAGING_SUPPORTED_BOOL));
+            assertEquals("KEY_EMERGENCY_CALL_TO_SATELLITE_T911_HANDOVER_TIMEOUT_MILLIS_INT "
+                            + "doesn't match static default.",
+                    config.getInt(KEY_EMERGENCY_CALL_TO_SATELLITE_T911_HANDOVER_TIMEOUT_MILLIS_INT),
+                    TimeUnit.SECONDS.toMillis(30));
 
             assertArrayEquals("KEY_CAPABILITIES_EXEMPT_FROM_SINGLE_DC_CHECK_INT_ARRAY"
                             + " doesn't match static default.",

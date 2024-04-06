@@ -217,6 +217,13 @@ public class SatelliteManagerTestBase {
         }
 
         @Override
+        public void onSendDatagramStateChanged(
+                int datagramType, int state, int sendPendingCount, int errorCode) {
+            logd("onSendDatagramStateChanged:datagramType=" + datagramType + ", state=" + state
+                    + ", sendPendingCount=" + sendPendingCount + ", errorCode=" + errorCode);
+        }
+
+        @Override
         public void onReceiveDatagramStateChanged(
                 int state, int receivePendingCount, int errorCode) {
             logd("onReceiveDatagramStateChanged: state=" + state + ", "
