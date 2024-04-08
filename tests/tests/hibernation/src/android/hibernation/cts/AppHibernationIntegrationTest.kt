@@ -385,12 +385,7 @@ class AppHibernationIntegrationTest {
 
     private fun isArchivingEnabled(): Boolean {
         if (!SdkLevel.isAtLeastV()) return false
-        if (Flags.archiving()) return true
-        var systemProperty: String? = null
-        runWithShellPermissionIdentity {
-            systemProperty = System.getProperty("pm.archiving.enabled")
-        }
-        return "true" == systemProperty
+        return Flags.archiving()
     }
 
     private fun leaveApp(packageName: String) {
