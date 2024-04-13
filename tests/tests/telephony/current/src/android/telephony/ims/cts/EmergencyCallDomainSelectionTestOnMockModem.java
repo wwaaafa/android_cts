@@ -215,6 +215,8 @@ public class EmergencyCallDomainSelectionTestOnMockModem extends ImsCallingBase 
         sVoLteEnabled = ShellIdentityUtils.invokeMethodWithShellPermissions(mmTelManager,
                 ImsMmTelManager::isAdvancedCallingSettingEnabled);
 
+        TimeUnit.MILLISECONDS.sleep(WAIT_UPDATE_TIMEOUT_MS);
+
         sMockModemManager.notifyEmergencyNumberList(sTestSlot,
                 new String[] { TEST_EMERGENCY_NUMBER });
     }
