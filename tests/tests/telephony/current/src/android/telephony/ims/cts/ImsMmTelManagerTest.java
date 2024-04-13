@@ -80,6 +80,9 @@ public class ImsMmTelManagerTest {
     private static final String KEY_OVERRIDE_WFC_ROAMING_MODE_WHILE_USING_NTN_BOOL =
             "override_wfc_roaming_mode_while_using_ntn_bool";
 
+    private static final String KEY_SATELLITE_ATTACH_SUPPORTED_BOOL =
+            "satellite_attach_supported_bool";
+
     private static int sTestSub = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
     private static Handler sHandler;
     private static CarrierConfigReceiver sReceiver;
@@ -514,6 +517,7 @@ public class ImsMmTelManagerTest {
 
         // Override carrier config
         PersistableBundle bundle = new PersistableBundle();
+        bundle.putBoolean(KEY_SATELLITE_ATTACH_SUPPORTED_BOOL, true);
         bundle.putBoolean(KEY_USE_WFC_HOME_NETWORK_MODE_IN_ROAMING_NETWORK_BOOL, false);
         bundle.putBoolean(KEY_EDITABLE_WFC_ROAMING_MODE_BOOL, true);
         bundle.putBoolean(KEY_OVERRIDE_WFC_ROAMING_MODE_WHILE_USING_NTN_BOOL, true);
