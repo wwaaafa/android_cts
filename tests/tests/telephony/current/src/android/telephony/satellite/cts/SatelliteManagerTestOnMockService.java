@@ -1985,6 +1985,7 @@ public class SatelliteManagerTestOnMockService extends SatelliteManagerTestBase 
             transmissionUpdateCallback.clearReceiveDatagramStateChanges();
             stopTransmissionUpdates(transmissionUpdateCallback);
 
+            datagramCallback.waitUntilResult(1);
             // Because demo mode is on, the received datagram should be the same as the
             // last sent datagram
             assertTrue(Arrays.equals(
