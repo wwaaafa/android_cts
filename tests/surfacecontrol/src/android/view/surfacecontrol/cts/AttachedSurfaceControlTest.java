@@ -227,18 +227,25 @@ public class AttachedSurfaceControlTest {
                 != ORIENTATION_LANDSCAPE) {
             Log.d(TAG, "Request landscape orientation");
             TransformHintListener listener = new TransformHintListener(mActivity,
-                    ORIENTATION_LANDSCAPE, hint -> transformHintResult[0] = hint);
+                    ORIENTATION_LANDSCAPE, hint -> {
+                transformHintResult[0] = hint;
+                Log.d(TAG, "firstListener fired with hint =" + hint);
+            });
             firstCallback[0] = listener.latch;
             mActivity.getWindow().getRootSurfaceControl()
                     .addOnBufferTransformHintChangedListener(listener);
             setRequestedOrientation(mActivity, ORIENTATION_LANDSCAPE);
             Assert.assertTrue(firstCallback[0].await(10, TimeUnit.SECONDS));
+        } else {
+            transformHintResult[0] =
+                    mActivity.getWindow().getRootSurfaceControl().getBufferTransformHint();
+            Log.d(TAG, "Skipped request landscape orientation: hint=" + transformHintResult[0]);
         }
 
         TransformHintListener secondListener = new TransformHintListener(mActivity,
                 ORIENTATION_LANDSCAPE, hint -> {
             transformHintResult[1] = hint;
-            Log.d(TAG, "TransformHintListener with hint =" + hint);
+            Log.d(TAG, "secondListener fired with hint =" + hint);
         });
         secondCallback[0] = secondListener.latch;
         mActivity.getWindow().getRootSurfaceControl()
