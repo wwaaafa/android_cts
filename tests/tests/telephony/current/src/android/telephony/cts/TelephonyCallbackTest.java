@@ -33,6 +33,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.os.Looper;
+import android.platform.test.annotations.RequiresFlagsEnabled;
 import android.platform.test.flag.junit.CheckFlagsRule;
 import android.platform.test.flag.junit.DeviceFlagsValueProvider;
 import android.telephony.Annotation.RadioPowerState;
@@ -113,6 +114,7 @@ public class TelephonyCallbackTest {
     private boolean mOnDataEnabledChangedCalled;
     private boolean mOnLinkCapacityEstimateChangedCalled;
     private boolean mOnEmergencyCallbackModeChangedCalled;
+    private boolean mOnCarrierRoamingNtnModeChangedCalled;
     @RadioPowerState
     private int mRadioPowerState;
     @SimActivationState
@@ -1658,5 +1660,37 @@ public class TelephonyCallbackTest {
         // Test unregister
         unRegisterTelephonyCallback(mOnEmergencyCallbackModeChangedCalled,
                 mEmergencyCallbackModeListener);
+    }
+
+    private CarrierRoamingNtnModeListener mCarrierRoamingNtnModeListener;
+
+    private class CarrierRoamingNtnModeListener extends TelephonyCallback
+            implements TelephonyCallback.CarrierRoamingNtnModeListener {
+
+        @Override
+        public void onCarrierRoamingNtnModeChanged(boolean active) {
+            synchronized (mLock) {
+                mOnCarrierRoamingNtnModeChangedCalled = true;
+                mLock.notify();
+            }
+        }
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_CARRIER_ENABLED_SATELLITE_FLAG)
+    public void testOnCarrierRoamingNtnModeListener() throws Throwable {
+        assertFalse(mOnCarrierRoamingNtnModeChangedCalled);
+        mCarrierRoamingNtnModeListener = new CarrierRoamingNtnModeListener();
+        registerTelephonyCallback(mCarrierRoamingNtnModeListener);
+
+        synchronized (mLock) {
+            while (!mOnCarrierRoamingNtnModeChangedCalled) {
+                mLock.wait(WAIT_TIME);
+            }
+        }
+        assertTrue(mOnCarrierRoamingNtnModeChangedCalled);
+
+        unRegisterTelephonyCallback(mOnCarrierRoamingNtnModeChangedCalled,
+                mCarrierRoamingNtnModeListener);
     }
 }

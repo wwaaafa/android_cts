@@ -63,6 +63,7 @@ import java.util.concurrent.TimeUnit;
 public class CarrierRoamingSatelliteTestBase {
     private static final String TAG = "CarrierRoamingSatelliteTestBase";
     protected static final long TIMEOUT = TimeUnit.SECONDS.toMillis(5);
+    protected static final int HYSTERESIS_TIMEOUT_SEC = 8;
     protected static final int SLOT_ID_0 = 0;
     protected static final int SLOT_ID_1 = 1;
 
@@ -320,6 +321,57 @@ public class CarrierRoamingSatelliteTestBase {
         }
     }
 
+    protected static class CarrierRoamingNtnModeListenerTest extends TelephonyCallback
+            implements TelephonyCallback.CarrierRoamingNtnModeListener {
+        private final Semaphore mSemaphore = new Semaphore(0);
+        private final Object mLock = new Object();
+
+        @GuardedBy("mLock")
+        public boolean mActive;
+
+        @Override
+        public void onCarrierRoamingNtnModeChanged(boolean active) {
+            logd(TAG, "onCarrierRoamingNtnModeChanged active:" + active);
+            synchronized (mLock) {
+                mActive = active;
+            }
+
+            try {
+                mSemaphore.release();
+            } catch (Exception e) {
+                loge(TAG, "onCarrierRoamingNtnModeChanged: Got exception, ex=" + e);
+            }
+        }
+
+        public boolean waitForModeChanged(int expectedNumOfEvents) {
+            for (int i = 0; i < expectedNumOfEvents; i++) {
+                try {
+                    if (!mSemaphore.tryAcquire(TIMEOUT, TimeUnit.MILLISECONDS)) {
+                        loge(TAG, "Timeout to receive onCarrierRoamingNtnModeChanged");
+                        return false;
+                    }
+                } catch (Exception ex) {
+                    loge(TAG, "onCarrierRoamingNtnModeChanged: Got exception=" + ex);
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public boolean getNtnMode() {
+            synchronized (mLock) {
+                return mActive;
+            }
+        }
+
+        public void clearModeChanges() {
+            synchronized (mLock) {
+                mActive = false;
+            }
+            mSemaphore.drainPermits();
+        }
+    }
+
     private static void overrideCarrierConfig(int subId, PersistableBundle bundle)
             throws Exception {
         logd(TAG, "overrideCarrierConfig() subId:" + subId);
@@ -359,6 +411,8 @@ public class CarrierRoamingSatelliteTestBase {
         PersistableBundle bundle = new PersistableBundle();
         bundle.putBoolean(
                 CarrierConfigManager.KEY_SATELLITE_ATTACH_SUPPORTED_BOOL, true);
+        bundle.putInt(CarrierConfigManager.KEY_SATELLITE_CONNECTION_HYSTERESIS_SEC_INT,
+                HYSTERESIS_TIMEOUT_SEC);
         PersistableBundle plmnBundle = new PersistableBundle();
         int[] intArray1 = {3, 5};
         plmnBundle.putIntArray(mccmnc, intArray1);
