@@ -115,24 +115,13 @@ public class CameraExtensionSessionTest extends Camera2ParameterizedTestCase {
             CaptureRequest.CONTROL_ZOOM_RATIO};
     private static final CaptureResult.Key[] ZOOM_CAPTURE_RESULT_SET = {
             CaptureResult.CONTROL_ZOOM_RATIO};
-    private static final CaptureRequest.Key[] EYES_FREE_AUTO_ZOOM_REQUEST_SET = {
-            ExtensionCaptureRequest.EFV_AUTO_ZOOM,
-            ExtensionCaptureRequest.EFV_MAX_PADDING_ZOOM_FACTOR};
-    private static final CaptureResult.Key[] EYES_FREE_AUTO_ZOOM_RESULT_SET = {
-            ExtensionCaptureResult.EFV_AUTO_ZOOM,
-            ExtensionCaptureResult.EFV_AUTO_ZOOM_PADDING_REGION};
-    private static final CaptureRequest.Key[] EYES_FREE_REQUEST_SET = {
-            ExtensionCaptureRequest.EFV_PADDING_ZOOM_FACTOR,
-            ExtensionCaptureRequest.EFV_STABILIZATION_MODE,
-            ExtensionCaptureRequest.EFV_TRANSLATE_VIEWPORT,
-            ExtensionCaptureRequest.EFV_ROTATE_VIEWPORT};
-    private static final CaptureResult.Key[] EYES_FREE_RESULT_SET = {
-            ExtensionCaptureResult.EFV_PADDING_REGION,
-            ExtensionCaptureResult.EFV_TARGET_COORDINATES,
-            ExtensionCaptureResult.EFV_PADDING_ZOOM_FACTOR,
-            ExtensionCaptureResult.EFV_STABILIZATION_MODE,
-            ExtensionCaptureResult.EFV_ROTATE_VIEWPORT,
-            ExtensionCaptureResult.EFV_TRANSLATE_VIEWPORT};
+    private CaptureRequest.Key[] EYES_FREE_AUTO_ZOOM_REQUEST_SET = new CaptureRequest.Key[0];
+    private CaptureResult.Key[] EYES_FREE_AUTO_ZOOM_RESULT_SET = new CaptureResult.Key[0];
+    private CaptureRequest.Key[] EYES_FREE_REQUEST_SET = new CaptureRequest.Key[0];
+    private CaptureResult.Key[] EYES_FREE_RESULT_SET = new CaptureResult.Key[0];
+
+    private static final boolean EFV_API_SUPPORTED =
+            Build.VERSION.SDK_INT > Build.VERSION_CODES.UPSIDE_DOWN_CAKE && Flags.concertModeApi();
 
     private SurfaceTexture mSurfaceTexture = null;
     private Camera2AndroidTestRule mTestRule = null;
@@ -146,6 +135,26 @@ public class CameraExtensionSessionTest extends Camera2ParameterizedTestCase {
         mTestRule = new Camera2AndroidTestRule(mContext);
         mTestRule.before();
         mCollector = new CameraErrorCollector();
+        if (EFV_API_SUPPORTED) {
+            EYES_FREE_AUTO_ZOOM_REQUEST_SET = new CaptureRequest.Key[] {
+                    ExtensionCaptureRequest.EFV_AUTO_ZOOM,
+                    ExtensionCaptureRequest.EFV_MAX_PADDING_ZOOM_FACTOR};
+            EYES_FREE_AUTO_ZOOM_RESULT_SET = new CaptureResult.Key[] {
+                    ExtensionCaptureResult.EFV_AUTO_ZOOM,
+                    ExtensionCaptureResult.EFV_AUTO_ZOOM_PADDING_REGION};
+            EYES_FREE_REQUEST_SET = new CaptureRequest.Key[] {
+                    ExtensionCaptureRequest.EFV_PADDING_ZOOM_FACTOR,
+                    ExtensionCaptureRequest.EFV_STABILIZATION_MODE,
+                    ExtensionCaptureRequest.EFV_TRANSLATE_VIEWPORT,
+                    ExtensionCaptureRequest.EFV_ROTATE_VIEWPORT};
+            EYES_FREE_RESULT_SET = new CaptureResult.Key[] {
+                    ExtensionCaptureResult.EFV_PADDING_REGION,
+                    ExtensionCaptureResult.EFV_TARGET_COORDINATES,
+                    ExtensionCaptureResult.EFV_PADDING_ZOOM_FACTOR,
+                    ExtensionCaptureResult.EFV_STABILIZATION_MODE,
+                    ExtensionCaptureResult.EFV_ROTATE_VIEWPORT,
+                    ExtensionCaptureResult.EFV_TRANSLATE_VIEWPORT};
+        }
     }
 
     @Override
@@ -1362,7 +1371,8 @@ public class CameraExtensionSessionTest extends Camera2ParameterizedTestCase {
                     EYES_FREE_RESULT_SET, FOCUS_CAPTURE_RESULT_SET,
                     ZOOM_CAPTURE_RESULT_SET), supportedResultKeys, true);
 
-            if (supportedRequestKeys.contains(ExtensionCaptureRequest.EFV_AUTO_ZOOM)) {
+            if (EFV_API_SUPPORTED &&
+                    supportedRequestKeys.contains(ExtensionCaptureRequest.EFV_AUTO_ZOOM)) {
                 CameraTestUtils.checkKeysAreSupported(EYES_FREE_AUTO_ZOOM_REQUEST_SET,
                         supportedRequestKeys, true);
                 CameraTestUtils.checkKeysAreSupported(EYES_FREE_AUTO_ZOOM_RESULT_SET,
@@ -1900,7 +1910,8 @@ public class CameraExtensionSessionTest extends Camera2ParameterizedTestCase {
 
         private void verifyExtensionSpecificCaptureResults(TotalCaptureResult result,
                 CaptureRequest request) {
-            if (mExtensionType != CameraExtensionCharacteristics.EXTENSION_EYES_FREE_VIDEOGRAPHY) {
+            if (EFV_API_SUPPORTED &&
+                    mExtensionType != CameraExtensionCharacteristics.EXTENSION_EYES_FREE_VIDEOGRAPHY) {
                 return;
             }
 
