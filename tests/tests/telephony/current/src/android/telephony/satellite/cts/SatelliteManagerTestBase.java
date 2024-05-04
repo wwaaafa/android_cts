@@ -48,6 +48,7 @@ import android.telephony.satellite.NtnSignalStrengthCallback;
 import android.telephony.satellite.PointingInfo;
 import android.telephony.satellite.SatelliteCapabilities;
 import android.telephony.satellite.SatelliteCapabilitiesCallback;
+import android.telephony.satellite.SatelliteCommunicationAllowedStateCallback;
 import android.telephony.satellite.SatelliteDatagram;
 import android.telephony.satellite.SatelliteDatagramCallback;
 import android.telephony.satellite.SatelliteManager;
@@ -678,6 +679,39 @@ public class SatelliteManagerTestBase {
             }
             loge("getSupportedState: invalid index=" + index);
             return null;
+        }
+    }
+
+    protected static class SatelliteCommunicationAllowedStateCallbackTest implements
+            SatelliteCommunicationAllowedStateCallback {
+        public boolean isAllowed = false;
+        private final Semaphore mSemaphore = new Semaphore(0);
+
+        @Override
+        public void onSatelliteCommunicationAllowedStateChanged(boolean allowed) {
+            logd("onSatelliteCommunicationAllowedStateChanged: isAllowed=" + allowed);
+            isAllowed = allowed;
+
+            try {
+                mSemaphore.release();
+            } catch (Exception e) {
+                loge("onSatelliteCommunicationAllowedStateChanged: Got exception, ex=" + e);
+            }
+        }
+
+        public boolean waitUntilResult(int expectedNumberOfEvents) {
+            for (int i = 0; i < expectedNumberOfEvents; i++) {
+                try {
+                    if (!mSemaphore.tryAcquire(TIMEOUT, TimeUnit.MILLISECONDS)) {
+                        loge("Timeout to receive onSatelliteCommunicationAllowedStateChanged");
+                        return false;
+                    }
+                } catch (Exception ex) {
+                    loge("onNtnSignalStrengthChanged: Got exception=" + ex);
+                    return false;
+                }
+            }
+            return true;
         }
     }
 
