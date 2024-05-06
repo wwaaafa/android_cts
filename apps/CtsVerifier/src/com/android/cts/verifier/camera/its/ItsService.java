@@ -1273,17 +1273,22 @@ public class ItsService extends Service implements SensorEventListener {
             }
         }
 
-        public void sendResponseCaptureResult(CameraCharacteristics cameraCharacteristics,
-            CaptureRequest request,
-            TotalCaptureResult result,
-            ImageReader[] readers)
-            throws ItsException {
+        public void sendResponseCaptureResult(
+                CaptureRequest request, TotalCaptureResult result, ImageReader[] readers)
+                throws ItsException {
             try {
                 JSONArray jsonSurfaces = new JSONArray();
                 for (int i = 0; i < readers.length; i++) {
                     JSONObject jsonSurface = new JSONObject();
                     jsonSurface.put("width", readers[i].getWidth());
                     jsonSurface.put("height", readers[i].getHeight());
+
+                    CameraCharacteristics cameraCharacteristics = mCameraCharacteristics;
+                    String physicalCameraId = mPhysicalStreamMap.get(i);
+                    if (physicalCameraId != null && !physicalCameraId.isEmpty()) {
+                        cameraCharacteristics = mPhysicalCameraChars.get(physicalCameraId);
+                    }
+
                     int format = readers[i].getImageFormat();
                     if (format == ImageFormat.RAW_SENSOR) {
                         if (mCaptureRawIsStats) {
@@ -4465,8 +4470,7 @@ public class ItsService extends Service implements SensorEventListener {
 
                 int count = mCountCapRes.getAndIncrement();
                 mCaptureResults[count] = result;
-                mSocketRunnableObj.sendResponseCaptureResult(mCameraCharacteristics,
-                        request, result, mOutputImageReaders);
+                mSocketRunnableObj.sendResponseCaptureResult(request, result, mOutputImageReaders);
                 synchronized(mCountCallbacksRemaining) {
                     mCountCallbacksRemaining.decrementAndGet();
                     mCountCallbacksRemaining.notify();
@@ -4504,8 +4508,7 @@ public class ItsService extends Service implements SensorEventListener {
 
                 int count = mCountCapRes.getAndIncrement();
                 mCaptureResults[count] = result;
-                mSocketRunnableObj.sendResponseCaptureResult(mCameraCharacteristics,
-                        request, result, mOutputImageReaders);
+                mSocketRunnableObj.sendResponseCaptureResult(request, result, mOutputImageReaders);
                 synchronized(mCountCallbacksRemaining) {
                     mCountCallbacksRemaining.decrementAndGet();
                     mCountCallbacksRemaining.notify();
