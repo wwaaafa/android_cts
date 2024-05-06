@@ -90,6 +90,9 @@ class RawSensitivityTest(its_base_test.ItsBaseTest):
         # Capture in rawStats to reduce test run time
         fmt = define_raw_stats_fmt(props)
         cap = cam.do_capture(req, fmt)
+        image_processing_utils.assert_capture_width_and_height(
+            cap, _IMG_STATS_GRID, _IMG_STATS_GRID
+        )
 
         # Measure mean & variance
         mean_img, var_img = image_processing_utils.unpack_rawstats_capture(cap)
