@@ -7311,6 +7311,24 @@ public class TelephonyManagerTest {
         }
     }
 
+    @Test
+    public void testGetServiceStateForSlot() {
+        assumeTrue(hasFeature(PackageManager.FEATURE_TELEPHONY_RADIO_ACCESS));
+
+        InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                .adoptShellPermissionIdentity(
+                        android.Manifest.permission.READ_PRIVILEGED_PHONE_STATE);
+        try {
+            for (int i = 0; i < mTelephonyManager.getActiveModemCount(); i++) {
+                ServiceState serviceState = mTelephonyManager.getServiceStateForSlot(i);
+                assertNotNull(serviceState);
+            }
+        } finally {
+            InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                    .dropShellPermissionIdentity();
+        }
+    }
+
     private Integer getSecondTestSubId() {
         try {
             InstrumentationRegistry.getInstrumentation().getUiAutomation()
