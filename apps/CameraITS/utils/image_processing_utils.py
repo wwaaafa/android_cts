@@ -81,6 +81,15 @@ def assert_props_is_not_none(props):
     raise AssertionError('props is None')
 
 
+def assert_capture_width_and_height(cap, width, height):
+  if cap['width'] != width or cap['height'] != height:
+    raise AssertionError(
+        'Unexpected capture WxH size, expected [{}x{}], actual [{}x{}]'.format(
+            width, height, cap['width'], cap['height']
+        )
+    )
+
+
 def convert_capture_to_rgb_image(cap,
                                  props=None,
                                  apply_ccm_raw_to_rgb=True):
