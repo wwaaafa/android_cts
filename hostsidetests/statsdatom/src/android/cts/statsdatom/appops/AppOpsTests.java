@@ -126,33 +126,31 @@ public class AppOpsTests extends DeviceTestCase implements IBuildReceiver {
             }
         }
         for (AtomsProto.Atom atom : ReportUtils.getGaugeMetricAtoms(getDevice())) {
-
             AtomsProto.AppOps appOps = atom.getAppOps();
+            int opCode = appOps.getOpId().getNumber();
             if (appOps.getPackageName().equals(DeviceUtils.STATSD_ATOM_TEST_PKG)) {
-                if (appOps.getOpId().getNumber() == -1) {
+                if (opCode == -1) {
                     continue;
                 }
                 long totalNoted = appOps.getTrustedForegroundGrantedCount()
                         + appOps.getTrustedBackgroundGrantedCount()
                         + appOps.getTrustedForegroundRejectedCount()
                         + appOps.getTrustedBackgroundRejectedCount();
-                int expectedNoted =
-                        appOps.getOpId().getNumber() + 1
-                                + computeExpectedTransformedNoted(appOps.getOpId().getNumber());
-                assertWithMessage("Operation in APP_OPS_ENUM_MAP: " + appOps.getOpId().getNumber())
+                int expectedNoted = 1 + computeExpectedTransformedNoted(opCode);
+                assertWithMessage("NoteOp count mismatches, op code:" + opCode)
                         .that(totalNoted).isEqualTo(expectedNoted);
-                assertWithMessage("Unexpected Op reported").that(expectedOps).contains(
-                        appOps.getOpId().getNumber());
+                assertWithMessage("Unexpected Op reported")
+                        .that(expectedOps).contains(opCode);
                 expectedOps.remove(expectedOps.indexOf(appOps.getOpId().getNumber()));
             }
         }
-        assertWithMessage("Logging app op ids are missing in report.").that(expectedOps).isEmpty();
+        assertWithMessage("Noted ops are missing in report.").that(expectedOps).isEmpty();
     }
 
     private int computeExpectedTransformedNoted(int op) {
         if (!mTransformedFromOp.containsKey(op)) {
             return 0;
         }
-        return mTransformedFromOp.get(op) + 1;
+        return 1;
     }
 }
