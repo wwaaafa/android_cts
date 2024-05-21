@@ -79,6 +79,9 @@ class MockSatelliteServiceManager {
     private static final String SET_DATAGRAM_CONTROLLER_TIMEOUT_DURATION_CMD =
             "cmd phone set-datagram-controller-timeout-duration ";
 
+    private static final String SET_DATAGRAM_CONTROLLER_BOOLEAN_CONFIG_CMD =
+            "cmd phone set-datagram-controller-boolean-config ";
+
     private static final String SET_SATELLITE_CONTROLLER_TIMEOUT_DURATION_CMD =
             "cmd phone set-satellite-controller-timeout-duration ";
     private static final String SET_SHOULD_SEND_DATAGRAM_TO_MODEM_IN_DEMO_MODE =
@@ -1043,6 +1046,27 @@ class MockSatelliteServiceManager {
             return "true".equals(result);
         } catch (Exception e) {
             loge("setDatagramControllerTimeoutDuration: e=" + e);
+            return false;
+        }
+    }
+
+    boolean setDatagramControllerBooleanConfig(
+            boolean reset, int booleanType, boolean enable) {
+        StringBuilder command = new StringBuilder();
+        command.append(SET_DATAGRAM_CONTROLLER_BOOLEAN_CONFIG_CMD);
+        if (reset) {
+            command.append("-r");
+        }
+        command.append(" -t " + booleanType);
+        command.append(" -d " + enable);
+
+        try {
+            String result =
+                    TelephonyUtils.executeShellCommand(mInstrumentation, command.toString());
+            logd("setDatagramControllerBooleanConfig: result = " + result);
+            return "true".equals(result);
+        } catch (Exception e) {
+            loge("setDatagramControllerBooleanConfig: e=" + e);
             return false;
         }
     }
