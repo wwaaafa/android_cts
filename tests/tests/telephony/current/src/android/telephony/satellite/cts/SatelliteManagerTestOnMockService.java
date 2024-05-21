@@ -19,6 +19,8 @@ package android.telephony.satellite.cts;
 import static android.telephony.satellite.SatelliteManager.SATELLITE_COMMUNICATION_RESTRICTION_REASON_ENTITLEMENT;
 import static android.telephony.satellite.SatelliteManager.SATELLITE_COMMUNICATION_RESTRICTION_REASON_GEOLOCATION;
 
+import static com.android.internal.telephony.satellite.SatelliteController.TIMEOUT_TYPE_DEMO_POINTING_ALIGNED_DURATION_MILLIS;
+import static com.android.internal.telephony.satellite.SatelliteController.TIMEOUT_TYPE_DEMO_POINTING_NOT_ALIGNED_DURATION_MILLIS;
 import static com.android.internal.telephony.satellite.SatelliteController.TIMEOUT_TYPE_WAIT_FOR_SATELLITE_ENABLING_RESPONSE;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -183,6 +185,9 @@ public class SatelliteManagerTestOnMockService extends SatelliteManagerTestBase 
         sCarrierConfigReceiver = new CarrierConfigReceiver(SUB_ID);
         sLocationManager = getContext().getSystemService(LocationManager.class);
 
+        sMockSatelliteServiceManager.setDatagramControllerBooleanConfig(false,
+                DatagramController.BOOLEAN_TYPE_WAIT_FOR_DEVICE_ALIGNMENT_IN_DEMO_DATAGRAM, true);
+
         revokeSatellitePermission();
     }
 
@@ -231,6 +236,9 @@ public class SatelliteManagerTestOnMockService extends SatelliteManagerTestBase 
         if (!shouldTestSatelliteWithMockService()) return;
 
         grantSatellitePermission();
+
+        sMockSatelliteServiceManager.setDatagramControllerBooleanConfig(true,
+                DatagramController.BOOLEAN_TYPE_WAIT_FOR_DEVICE_ALIGNMENT_IN_DEMO_DATAGRAM, false);
 
         SatelliteModemStateCallbackTest callback = new SatelliteModemStateCallbackTest();
         long registerResult = sSatelliteManager.registerForModemStateChanged(
@@ -3908,6 +3916,84 @@ public class SatelliteManagerTestOnMockService extends SatelliteManagerTestBase 
 
         sSatelliteManager.unregisterForSupportedStateChanged(satelliteSupportedStateCallbackTest);
         revokeSatellitePermission();
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_OEM_ENABLED_SATELLITE_FLAG)
+    public void testDemoSimulator() {
+        if (!shouldTestSatelliteWithMockService()) return;
+
+        logd("testDemoSimulator: start");
+        updateSupportedRadioTechnologies(new int[]{NTRadioTechnology.NB_IOT_NTN}, true);
+
+        grantSatellitePermission();
+        assertTrue(isSatelliteProvisioned());
+        assertTrue(isSatelliteEnabled());
+
+        SatelliteModemStateCallbackTest stateCallback = new SatelliteModemStateCallbackTest();
+        sSatelliteManager.registerForModemStateChanged(
+                getContext().getMainExecutor(), stateCallback);
+        assertTrue(stateCallback.waitUntilResult(1));
+
+        NtnSignalStrengthCallbackTest ntnSignalStrengthCallback =
+                new NtnSignalStrengthCallbackTest();
+        /* register callback for non-terrestrial network signal strength changed event */
+        sSatelliteManager.registerForNtnSignalStrengthChanged(getContext().getMainExecutor(),
+                ntnSignalStrengthCallback);
+
+        assertTrue(sMockSatelliteServiceManager.setSatelliteControllerTimeoutDuration(false,
+                TIMEOUT_TYPE_DEMO_POINTING_ALIGNED_DURATION_MILLIS, 5));
+        assertTrue(sMockSatelliteServiceManager.setSatelliteControllerTimeoutDuration(false,
+                TIMEOUT_TYPE_DEMO_POINTING_NOT_ALIGNED_DURATION_MILLIS, 10));
+
+        try {
+            logd("testDemoSimulator: Disable satellite");
+            requestSatelliteEnabled(false);
+            assertTrue(stateCallback.waitUntilModemOff());
+            assertFalse(isSatelliteEnabled());
+            stateCallback.clearModemStates();
+
+            logd("testDemoSimulator: Enable satellite for demo mode");
+            stateCallback.clearModemStates();
+            requestSatelliteEnabledForDemoMode(true);
+            assertTrue(stateCallback.waitUntilResult(2));
+            assertTrue(isSatelliteEnabled());
+            assertTrue(ntnSignalStrengthCallback.waitUntilResult(1));
+            assertEquals(NtnSignalStrength.NTN_SIGNAL_STRENGTH_NONE,
+                    ntnSignalStrengthCallback.mNtnSignalStrength.getLevel());
+
+            logd("testDemoSimulator: Set device aligned with satellite");
+            stateCallback.clearModemStates();
+            sSatelliteManager.setDeviceAlignedWithSatellite(true);
+            assertTrue(stateCallback.waitUntilResult(1));
+            assertTrue(ntnSignalStrengthCallback.waitUntilResult(1));
+            assertEquals(NtnSignalStrength.NTN_SIGNAL_STRENGTH_MODERATE,
+                    ntnSignalStrengthCallback.mNtnSignalStrength.getLevel());
+
+            logd("testDemoSimulator: Set device not aligned with satellite");
+            stateCallback.clearModemStates();
+            sSatelliteManager.setDeviceAlignedWithSatellite(false);
+            assertTrue(stateCallback.waitUntilResult(1));
+            assertTrue(ntnSignalStrengthCallback.waitUntilResult(1));
+            assertEquals(NtnSignalStrength.NTN_SIGNAL_STRENGTH_NONE,
+                    ntnSignalStrengthCallback.mNtnSignalStrength.getLevel());
+
+            logd("testDemoSimulator: Disable satellite for demo mode");
+            stateCallback.clearModemStates();
+            requestSatelliteEnabledForDemoMode(false);
+            assertTrue(stateCallback.waitUntilResult(2));
+            assertFalse(isSatelliteEnabled());
+        } finally {
+            assertTrue(sMockSatelliteServiceManager.setSatelliteControllerTimeoutDuration(
+                    true, TIMEOUT_TYPE_DEMO_POINTING_ALIGNED_DURATION_MILLIS, 0));
+            assertTrue(sMockSatelliteServiceManager.setSatelliteControllerTimeoutDuration(
+                    true, TIMEOUT_TYPE_DEMO_POINTING_NOT_ALIGNED_DURATION_MILLIS, 0));
+
+            sSatelliteManager.unregisterForNtnSignalStrengthChanged(ntnSignalStrengthCallback);
+            sSatelliteManager.unregisterForModemStateChanged(stateCallback);
+            updateSupportedRadioTechnologies(new int[]{NTRadioTechnology.PROPRIETARY}, false);
+            revokeSatellitePermission();
+        }
     }
 
     /*
