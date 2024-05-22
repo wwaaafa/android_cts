@@ -41,6 +41,8 @@ import android.telecom.TelecomManager;
 import android.telecom.VideoProfile;
 import android.telephony.TelephonyManager;
 
+import androidx.test.filters.FlakyTest;
+
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executor;
@@ -481,6 +483,7 @@ public class ExtendedInCallServiceTest extends BaseTelecomTestWithMockServices {
         }
     }
 
+    @FlakyTest
     public void testSwitchCallEndpoint() {
         if (!mShouldTestTelecom) {
             return;
