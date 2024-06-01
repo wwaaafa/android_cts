@@ -89,6 +89,9 @@ class MockSatelliteServiceManager {
     private static final String SET_COUNTRY_CODES = "cmd phone set-country-codes";
     private static final String SET_SATELLITE_ACCESS_CONTROL_OVERLAY_CONFIGS =
             "cmd phone set-satellite-access-control-overlay-configs";
+    private static final String SET_IS_SATELLITE_COMMUNICATION_ALLOWED_FOR_CURRENT_LOCATION_CACHE =
+            "cmd phone set-is-satellite-communication-allowed-for-current-location-cache ";
+
     private static final long TIMEOUT = 5000;
     @NonNull private ActivityManager mActivityManager;
     @NonNull private UidImportanceListener mUidImportanceListener = new UidImportanceListener();
@@ -1380,6 +1383,31 @@ class MockSatelliteServiceManager {
             return true;
         } catch (Exception ex) {
             loge("setSatellitePointingUiClassName: ex = " + ex);
+            return false;
+        }
+    }
+
+    boolean setIsSatelliteCommunicationAllowedForCurrentLocationCache(String state) {
+        String option;
+        if ("cache_allowed".equalsIgnoreCase(state)) {
+            option = "-a";
+        } else if ("cache_clear_and_not_allowed".equalsIgnoreCase(state)) {
+            option = "-n";
+        } else if ("clear_cache_only".equalsIgnoreCase(state)) {
+            option = "-c";
+        } else {
+            return false;
+        }
+
+        try {
+            String result = TelephonyUtils.executeShellCommand(mInstrumentation,
+                    SET_IS_SATELLITE_COMMUNICATION_ALLOWED_FOR_CURRENT_LOCATION_CACHE
+                            + option);
+            logd("setIsSatelliteCommunicationAllowedForCurrentLocationCache(" + option
+                    + "): result = " + result);
+            return true;
+        } catch (Exception e) {
+            loge("setIsSatelliteCommunicationAllowedForCurrentLocationCache: e=" + e);
             return false;
         }
     }
