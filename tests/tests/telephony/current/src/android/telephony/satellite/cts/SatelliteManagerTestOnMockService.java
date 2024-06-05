@@ -75,6 +75,7 @@ import android.telephony.satellite.PointingInfo;
 import android.telephony.satellite.SatelliteCapabilities;
 import android.telephony.satellite.SatelliteDatagram;
 import android.telephony.satellite.SatelliteManager;
+import android.telephony.satellite.SatelliteSessionStats;
 import android.telephony.satellite.stub.NTRadioTechnology;
 import android.telephony.satellite.stub.SatelliteResult;
 import android.util.Log;
@@ -4023,6 +4024,91 @@ public class SatelliteManagerTestOnMockService extends SatelliteManagerTestBase 
         }
     }
 
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_OEM_ENABLED_SATELLITE_FLAG)
+    public void testRequestSessionStats() {
+        if (!shouldTestSatelliteWithMockService()) return;
+
+        logd("testRequestSessionStats: start");
+        grantSatellitePermission();
+        assertTrue(isSatelliteProvisioned());
+        assertTrue(isSatelliteEnabled());
+
+        SatelliteModemStateCallbackTest stateCallback = new SatelliteModemStateCallbackTest();
+        sSatelliteManager.registerForModemStateChanged(
+                getContext().getMainExecutor(), stateCallback);
+        assertTrue(stateCallback.waitUntilResult(1));
+
+        try {
+            SatelliteSessionStats sessionStats = new SatelliteSessionStats.Builder()
+                    .setCountOfSuccessfulUserMessages(0)
+                    .setCountOfUnsuccessfulUserMessages(0)
+                    .setCountOfTimedOutUserMessagesWaitingForConnection(0)
+                    .setCountOfTimedOutUserMessagesWaitingForAck(0)
+                    .setCountOfUserMessagesInQueueToBeSent(0)
+                    .build();
+            Pair<SatelliteSessionStats, Integer> result = requestSessionStats();
+            assertEquals(sessionStats, result.first);
+
+            sessionStats = new SatelliteSessionStats.Builder()
+                    .setCountOfSuccessfulUserMessages(5)
+                    .setCountOfUnsuccessfulUserMessages(2)
+                    .setCountOfTimedOutUserMessagesWaitingForConnection(0)
+                    .setCountOfTimedOutUserMessagesWaitingForAck(0)
+                    .setCountOfUserMessagesInQueueToBeSent(4)
+                    .build();
+
+            for (int i = 0; i < 5; i++) {
+                sendSatelliteDatagramSuccess(true, true);
+            }
+
+            LinkedBlockingQueue<Integer> resultListener = new LinkedBlockingQueue<>(1);
+            String mText = "This is a test datagram message from user";
+            SatelliteDatagram datagram = new SatelliteDatagram(mText.getBytes());
+
+            for (int i = 0; i < 2; i++) {
+                stateCallback.clearModemStates();
+                sMockSatelliteServiceManager.setErrorCode(SatelliteResult.SATELLITE_RESULT_ERROR);
+                sSatelliteManager.sendDatagram(
+                        SatelliteManager.DATAGRAM_TYPE_SOS_MESSAGE, datagram, true,
+                        getContext().getMainExecutor(), resultListener::offer);
+
+                Integer errorCode;
+                try {
+                    errorCode = resultListener.poll(TIMEOUT, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException ex) {
+                    fail("testSendSatelliteDatagram_failure: Got InterruptedException in waiting"
+                            + " for the sendSatelliteDatagram result code");
+                    return;
+                }
+                assertNotNull(errorCode);
+                assertThat(errorCode).isEqualTo(SatelliteManager.SATELLITE_RESULT_ERROR);
+            }
+
+            // Wait to process datagrams so that datagrams are added to pending list.
+            sMockSatelliteServiceManager.setWaitToSend(true);
+            for (int i = 0; i < 4; i++) {
+                // Send 4 user messages
+                sSatelliteManager.sendDatagram(SatelliteManager.DATAGRAM_TYPE_SOS_MESSAGE,
+                        datagram, true, getContext().getMainExecutor(),
+                        resultListener::offer);
+            }
+
+            // Send 1 keep alive message
+            // This should be ignored and not be included in pending datagrams count
+            sSatelliteManager.sendDatagram(SatelliteManager.DATAGRAM_TYPE_KEEP_ALIVE,
+                    datagram, true, getContext().getMainExecutor(),
+                    resultListener::offer);
+
+            result = requestSessionStats();
+            assertEquals(sessionStats, result.first);
+
+            sMockSatelliteServiceManager.setWaitToSend(false);
+        } finally {
+            revokeSatellitePermission();
+        }
+    }
+
     /*
      * Before calling this function, caller need to make sure the modem is in LISTENING or IDLE
      * state.
@@ -4797,6 +4883,45 @@ public class SatelliteManagerTestOnMockService extends SatelliteManagerTestBase 
             fail(e.toString());
         }
         return new Pair<>(SatelliteCapabilities.get(), callback.get());
+    }
+
+    private Pair<SatelliteSessionStats, Integer> requestSessionStats() {
+        AtomicReference<SatelliteSessionStats> sessionStats = new AtomicReference<>();
+        AtomicReference<Integer> callback = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
+        OutcomeReceiver<SatelliteSessionStats, SatelliteManager.SatelliteException> receiver =
+                new OutcomeReceiver<SatelliteSessionStats, SatelliteManager.SatelliteException>() {
+                    @Override
+                    public void onResult(SatelliteSessionStats result) {
+                        logd("requestSessionStats onResult:" + result);
+                        sessionStats.set(result);
+                        latch.countDown();
+                    }
+
+                    @Override
+                    public void onError(SatelliteManager.SatelliteException exception) {
+                        logd("requestSessionStats onError:" + exception);
+                        callback.set(exception.getErrorCode());
+                        latch.countDown();
+                    }
+
+                };
+
+        InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                .adoptShellPermissionIdentity(Manifest.permission.MODIFY_PHONE_STATE,
+                        Manifest.permission.PACKAGE_USAGE_STATS);
+        try {
+            sSatelliteManager.requestSessionStats(getContext().getMainExecutor(), receiver);
+            assertTrue(latch.await(TIMEOUT, TimeUnit.MILLISECONDS));
+        } catch (InterruptedException e) {
+            fail(e.toString());
+        } finally {
+            InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                    .dropShellPermissionIdentity();
+            grantSatellitePermission();
+        }
+
+        return new Pair<>(sessionStats.get(), callback.get());
     }
 
     private Pair<Boolean, Integer> requestIsSatelliteSupported() {
